@@ -1,17 +1,21 @@
 # Current Context
 
-The immediate task is to implement a proof-of-concept Server-Side Renderer (SSR). The initial focus is on rendering a static page.
+The immediate task is to implement the proof-of-concept Server-Side Renderer (SSR) based on the newly finalized architecture.
 
 ## Recent Changes
 
-*   Pivoted from `ConfigurationService` implementation to focus on a minimal SSR implementation first.
-*   Created the initial `PageTemplate.js` in `src/server/`.
-*   Established a key design requirement for the `PageTemplate`: it must support a modular, position-based system for adding content, similar to Joomla's template positions.
-*   Established that the project will use the MIT license.
+*   **Completed the `ConfigurationService`:** Implemented all four layers of configuration precedence, including runtime overrides from URL parameters.
+*   **Finalized the Rendering Architecture:** After extensive design discussions, the rendering pipeline has been finalized. Key features include:
+    *   A declarative, single-pass model.
+    *   Component handlers that return structured `payload` objects.
+    *   A distinction between declarative `content` payloads and primitive `html` payloads.
+    *   Support for intrinsic, automatically-scoped CSS via a `scopedCss` payload property and a `@@` substitution marker.
+    *   An ergonomic and secure `:class` attribute that accepts a list of class names.
+*   **Updated Documentation:** The `architecture.md` and `security.md` files in the memory bank have been updated to reflect this finalized design.
 
 ## Next Steps
 
-1.  Discuss and finalize the design for a mock/placeholder `ComponentFactory` before implementation.
-2.  Create the placeholder `ComponentFactory.js`.
-3.  Implement the core `SsrRenderer.js`.
-4.  Create a simple page data structure and render a static HTML page.
+1.  Create the placeholder `ComponentFactory.js` according to the new architecture.
+2.  Implement the core `SsrRenderer.js` to process component payloads and aggregate resources.
+3.  Create a simple page data structure using the new conventions.
+4.  Render a static HTML page to validate the complete SSR pipeline.

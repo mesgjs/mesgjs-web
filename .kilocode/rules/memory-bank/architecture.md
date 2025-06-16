@@ -59,11 +59,24 @@ graph TD
 
 To support advanced features like multi-plane layouts (e.g., modals, panels) and resource deduplication (for CSS, JS, and reusable HTML blocks), the rendering pipeline follows a declarative, single-pass model. This is achieved through a system of structured "payload" objects returned by component handlers.
 
+*   **Bilingual Data Handling:** The rendering system is fundamentally bilingual. The renderer and component handlers must be prepared to receive and process data structures (such as `content` payloads) in **either** native JavaScript (Arrays, Objects) **or** Mesgjs (`@list`/NANOS) format. The system will normalize these structures as needed to ensure seamless interoperability between JavaScript-based core components and Mesgjs-based user components.
 *   **Component Payloads:** Component handlers do not return HTML directly. Instead, they return a payload object that describes their output and resource needs.
     *   **`content` Payloads:** High-level semantic components act as macros. They return a `content` property containing a new Mesgjs data structure, effectively transforming their own definition into a more primitive one.
     *   **`html` Payloads:** Low-level `h.*` primitive components are the rendering engines. They are the only components that return a final `html` string.
 *   **Centralized Logic:** The `SsrRenderer` is responsible for traversing the page data, receiving these payloads, and centralizing all aggregation and deduplication logic. It recursively processes `content` payloads and assembles the final output from `html` payloads. This keeps the semantic component handlers pure and declarative.
 *   **Single Pass:** The renderer traverses the page data tree only once. During this pass, it collects all resources (styles, scripts, static blocks) and generates the main body HTML simultaneously. After the traversal is complete, it assembles the final `PageTemplate` with the deduplicated resources.
+
+#### Advanced Payload Features
+
+To further enhance component encapsulation and developer experience, the payload system supports several advanced features:
+
+*   **Intrinsic Scoped CSS:** Components can provide a `scopedCss` property at the top level of their payload. This property contains a CSS template string.
+    *   **Scoping Mechanism:** The renderer uses the component's unique resolved module specifier to generate a unique scope ID (e.g., `mwi-a1b2`) the first time a component of that type is rendered on a page.
+    *   **Substitution:** The renderer replaces all instances of a special marker (`@@`) within both the `scopedCss` template and the component's `content`/`html` with the generated scope ID. This allows for easy creation of scoped BEM-style class names (e.g., `class="@@-root"` becomes `class="mwi-a1b2-root"`).
+
+*   **Special Attributes (`:class`):** To improve ergonomics, the renderer supports special attributes that provide richer functionality.
+    *   The `:class` attribute accepts a Mesgjs list of class names. The renderer securely processes this list, performs any `@@` substitutions, and concatenates the values into a standard `class` attribute string.
+    *   This feature is subject to a strict security policy to prevent attribute injection. For full details, see `security.md`.
 
 ## Key Interfaces
 

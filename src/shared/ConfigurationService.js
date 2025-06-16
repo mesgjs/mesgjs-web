@@ -30,6 +30,16 @@ class ConfigurationService {
             }
         }
 
+        // 4. Runtime Override (URL Query Parameter)
+        // This check ensures 'location' is available, for browser environments
+        if (typeof location !== 'undefined' && location.search) {
+            const params = new URLSearchParams(location.search);
+            const urlOverride = params.get('mwi_enforce_schema');
+            if (urlOverride) {
+                enforceSchema = !(urlOverride === 'false' || urlOverride === '0');
+            }
+        }
+
         this._config = {
             enforceSchema,
             ...initialConfig

@@ -13,20 +13,20 @@ This document represents the consolidated requirements for the MWI project, inco
 *   **User-defined component sandboxing:** Resolved through a layered approach combining Mesgjs language-level sandboxing and Deno's process-level sandboxing with strict permissions. Account policies will further mitigate risks.
 *   **XSS/Code Injection in Attributes:** Resolved by ensuring all DOM changes are routed through system-supplied components that perform rigorous data sanitization and validation. Modules will be loaded from a catalog with integrity checks.
 *   **API for validator/event discovery:** Resolved by implementing a three-layered architecture (Catalog, Mapping/Alias, Registry/Runtime) for module registration and resolution. This provides a unified API for looking up components, validators, and event handlers.
+*   **Integration Concern:** Resolved by the architectural plan. The three-layer module resolution system and messaging-based architecture provide dedicated channels and policy enforcement for integrating permission-based messaging.
+*   **Performance:** Resolved by the architectural plan, which outlines that the module resolution system will support rate limiting and resource quotas.
+*   **Error/Warning Reporting:** Resolved by the architectural plan. The messaging-based system allows for dedicated channels for errors and warnings to be surfaced to the UI or logs.
+*   **SSR Child Node Processing:** Resolved by the architectural plan. The rendering walkthrough demonstrates that component handlers are responsible for processing their own children, giving them full control.
+*   **CSR Dynamic Content:** Resolved by the architectural plan, which specifies the use of the `@reactive` interface for efficient updates of dynamic content.
+*   **Component Factory Extensibility:** Resolved by the architectural plan. The unified `get(symbolicName)` method on the factory allows for new resource types to be added to the module system without changing the factory's interface.
+*   **Async Handling in Factory:** Resolved by the architectural plan. The factory's `get()` method returns a `Promise` that resolves to `undefined` if a component is not found, providing a clear mechanism for handling unavailable components and errors.
 
 ## Remaining Open Issues
 
 *   **SAAS Gap:** Collaborative editing and multi-media messaging requirements from SAAS context are not explicitly addressed in the main requirements.
-*   **Integration Concern:** How will permission-based messaging integrate with the rendering pipeline and user interface?
-*   **Performance:** No mention of rate limiting or resource quotas for SSR/CSR requests, which could be a vector for abuse in a SAAS context.
 *   **Best Practice:** Minimum browser capabilities and trade-offs for CSR are not defined; need to clarify support for shims and build steps.
-*   **Open Question:** How will error/warning reporting mechanisms be surfaced to users and developers, especially for a11y and i18n issues?
 *   **SSR Hydration:** How will SSR handle hydration for real-time media content (e.g., video, audio) to ensure seamless transition to CSR?
-*   **SSR Child Node Processing:** How should SSR determine, per component, whether to process child nodes, especially for components that do not support children (e.g., `<br>`, `<img>`)?
 *   **CSR Browser Support:** What is the minimum set of browser capabilities required for CSR, and what shims (if any) will be provided to support older browsers?
-*   **CSR Dynamic Content:** How will the system ensure efficient updates and memory management for components with dynamic/reactive content, especially in long-lived sessions?
-*   **Component Factory Extensibility:** How will the factory support future resource types without breaking existing interfaces?
-*   **Async Handling in Factory:** How should errors and unavailable components be handled in an async context—should there be fallback strategies or user feedback mechanisms?
 
 ## Project Elements Needed To Be Created
 
