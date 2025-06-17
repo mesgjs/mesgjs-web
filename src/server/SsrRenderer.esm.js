@@ -14,10 +14,10 @@ import { NANOS, isIndex } from '../shared/vendor.esm.js';
 // import { ConfigurationService } from '../shared/ConfigurationService.js';
 
 /**
- * A wrapper for strings that should not be HTML-escaped.
+ * A wrapper for strings that are already HTML and shouldn't be escaped.
  * @extends String
  */
-class UnescapedString extends String {}
+class HtmlString extends String {}
 
 /**
  * Renders a structured page description into an HTML document.
@@ -80,19 +80,19 @@ class SsrRenderer {
      * @private
      */
     async _renderNode(node) {
-        // Pass through UnescapedStrings without modification.
-        if (node instanceof UnescapedString) {
+        // Pass through HtmlStrings without modification.
+        if (node instanceof HtmlString) {
             return node;
         }
 
         if (typeof node === 'string') {
             // Escape HTML special characters in text nodes for security.
-            return node.replace(/&/g, '&').replace(/</g, '<').replace(/>/g, '>');
+            return new HtmlString(node.replace(/&/g, '&').replace(/</g, '<').replace(/>/g, '>'));
         }
 
         // Normalize Array to NANOS for consistent processing.
         if (Array.isArray(node)) {
-            // The NANOS constructor correctly handles flattening the array.
+            // The NANOS constructor handles remaining array flattening.
             node = new NANOS(...node.map(v => Array.isArray(v) ? [v] : v));
         }
 
@@ -103,7 +103,7 @@ class SsrRenderer {
 
         // A component's final output is HTML, so it should not be escaped later.
         const html = await this._renderComponent(node);
-        return new UnescapedString(html);
+        return new HtmlString(html);
     }
 
     /**
@@ -167,7 +167,7 @@ class SsrRenderer {
                 ? this._substituteScope(resolvedContent, scopeId)
                 : resolvedContent;
 
-            // The recursive call to _renderNode will return an UnescapedString.
+            // The recursive call to _renderNode will return an HtmlString.
             // We need to get its primitive value before returning.
             const result = await this._renderNode(contentToRender);
             return result.toString();
