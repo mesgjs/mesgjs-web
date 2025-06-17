@@ -119,3 +119,6 @@ This architecture provides a solid foundation for addressing the open issues men
 *   **SAAS Gaps & Performance:** The modular nature and policy enforcement in the module resolution system will allow for adding features like rate limiting and resource quotas for different account tiers.
 *   **Integration & Error Reporting:** The messaging-based nature of the system allows for dedicated channels for permissions, errors, and warnings, which can be surfaced to the UI or logs.
 *   **SSR/CSR Challenges:** The shared component model and well-defined interfaces for renderers and page templates will facilitate tackling complex issues like SSR hydration and child node processing.
+#### **7. Coding Conventions**
+
+*   **Private Properties:** Class properties and methods intended for internal use should be prefixed with a single underscore (`_`). This convention is preferred over JavaScript's native private fields (`#`) to allow for more flexible subclassing and extension by developers who may need to override or access these properties in derived classes.

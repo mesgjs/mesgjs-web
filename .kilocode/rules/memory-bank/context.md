@@ -1,21 +1,33 @@
 # Current Context
 
-The immediate task is to implement the proof-of-concept Server-Side Renderer (SSR) based on the newly finalized architecture.
+The initial implementation of the Server-Side Renderer (SSR) is now feature-complete and hardened. The core rendering pipeline, including support for advanced component features and critical security measures, is in place. The project is now ready to shift focus to the client-side portion of the architecture.
 
 ## Recent Changes
 
-*   **Completed the `ConfigurationService`:** Implemented all four layers of configuration precedence, including runtime overrides from URL parameters.
-*   **Finalized the Rendering Architecture:** After extensive design discussions, the rendering pipeline has been finalized. Key features include:
-    *   A declarative, single-pass model.
-    *   Component handlers that return structured `payload` objects.
-    *   A distinction between declarative `content` payloads and primitive `html` payloads.
-    *   Support for intrinsic, automatically-scoped CSS via a `scopedCss` payload property and a `@@` substitution marker.
-    *   An ergonomic and secure `:class` attribute that accepts a list of class names.
-*   **Updated Documentation:** The `architecture.md` and `security.md` files in the memory bank have been updated to reflect this finalized design.
+*   **Enhanced the `SsrRenderer`:**
+    *   Implemented support for recursive `content` payloads, allowing components to function as macros.
+    *   Added resource aggregation for `scopedCss`, including the `@@` substitution mechanism for generating unique component scope IDs.
+    *   Added a default sans-serif font stack to the page template to improve readability.
+*   **Hardened Security in Primitive Components:**
+    *   Implemented strict HTML escaping for all text nodes to prevent XSS from user-provided content.
+    *   Implemented the full security policy for the `h.*` primitive handlers, including strict validation of class names and robust HTML attribute escaping to prevent attribute injection attacks.
+*   **Expanded the `ComponentFactory`:**
+    *   Added a semantic `card` component that returns a `content` payload and `scopedCss` to validate the new rendering features.
+    *   Updated the factory to provide resolved component names to the renderer for managing CSS scope IDs.
+*   **Validated the Enhanced SSR Pipeline:** Updated the `ssr-test.js` script to use the new semantic component and confirmed that `content` payloads and `scopedCss` are rendered correctly.
 
 ## Next Steps
 
-1.  Create the placeholder `ComponentFactory.js` according to the new architecture.
-2.  Implement the core `SsrRenderer.js` to process component payloads and aggregate resources.
-3.  Create a simple page data structure using the new conventions.
-4.  Render a static HTML page to validate the complete SSR pipeline.
+The next major phase is to build the Client-Side Renderer (CSR) and the associated hydration mechanism.
+
+1.  **Create the CSR Foundation:**
+    *   Develop the initial `CsrRenderer.js` class.
+    *   Implement the client-side `ComponentFactory` to resolve and manage component handlers in the browser.
+    *   Create the client-side `h.*` primitive handlers that create and manipulate DOM elements instead of HTML strings.
+2.  **Implement Hydration:**
+    *   Develop the logic to "hydrate" a server-rendered page, attaching event listeners and making the page interactive without a full re-render.
+    *   Implement the mechanism for passing the initial page data and component state from the server to the client.
+3.  **Synchronize Configuration:**
+    *   Implement the server-to-client configuration synchronization as defined in the architecture, ensuring the CSR and SSR operate with the same settings.
+4.  **Establish Client-Side Testing:**
+    *   Create a basic HTML page or use a simple test runner to validate the CSR and hydration functionality in a browser environment.
