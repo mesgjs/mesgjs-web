@@ -93,7 +93,7 @@ class SsrRenderer {
         // Normalize Array to NANOS for consistent processing.
         if (Array.isArray(node)) {
             // The NANOS constructor correctly handles flattening the array.
-            node = new NANOS(...node);
+            node = new NANOS(...node.map(v => Array.isArray(v) ? [v] : v));
         }
 
         if (!(node instanceof NANOS) || node.size === 0) {
@@ -126,7 +126,8 @@ class SsrRenderer {
         }
 
         const renderedChildren = await Promise.all(children.map(child => this._renderNode(child)));
-        const payload = await handler(props, ...renderedChildren.map(c => c.toString()));
+        const childStrings = renderedChildren.map(c => c.toString());
+        const payload = await handler(props, ...childStrings);
 
         if (!payload) {
             return '';
@@ -156,10 +157,15 @@ class SsrRenderer {
         }
 
         // Process a `content` payload by recursively rendering it.
+        // Process a `content` payload by recursively rendering it.
         if (payload.content) {
+            const resolvedContent = await this._resolveContent(
+                payload.content, props, childStrings
+            );
+
             const contentToRender = scopeId
-                ? this._substituteScope(payload.content, scopeId)
-                : payload.content;
+                ? this._substituteScope(resolvedContent, scopeId)
+                : resolvedContent;
 
             // The recursive call to _renderNode will return an UnescapedString.
             // We need to get its primitive value before returning.
@@ -205,6 +211,34 @@ class SsrRenderer {
         }
 
         return data;
+    }
+
+    /**
+     * Resolves the content of a payload, handling cases where the content is
+     * a function (JS or Mesgjs) that needs to be executed.
+     *
+     * @param {any} content The content to resolve.
+     * @param {NANOS} props The component's properties.
+     * @param {string[]} children The component's rendered children.
+     * @returns {Promise<any>} The resolved content.
+     * @private
+     */
+    async _resolveContent(content, props, children) {
+        if (typeof content === 'function') {
+            if (content.msjsType === '@function') {
+                // Mesgjs @function: send a `(call)` message.
+                // The NANOS constructor will correctly destructure the props
+                // object and index the children, preserving order.
+                const mesgParams = new NANOS(props, ...children);
+                return await content('call', mesgParams);
+            } else {
+                // Standard JavaScript function
+                return await content(props, ...children);
+            }
+        }
+
+        // Content is a static data structure
+        return content;
     }
 }
 

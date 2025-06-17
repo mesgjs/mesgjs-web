@@ -23,6 +23,9 @@ This document outlines the key technologies, languages, and platforms used in th
 *   **Messaging-Based Communication:** Components and services interact via synchronous messaging. The message sender does not continue execution until a reply (even if the value is `@u`/`undefined` or a `Promise`) is received.
 *   **Reactivity:** The system includes a reactive value library for creating values and data structures (including NANOS objects) that can have dependencies on each other, with support for lazy and eager evaluation. This allows for building dynamic and responsive user interfaces.
 
+*   **Developer Guidance:**
+*   **Mesgjs Unconventionality:** Mesgjs has several unconventional features. Assumptions based on other languages are often incorrect. It is critical to consult the reference materials in `reference-materials/` before writing any Mesgjs code or designing interfaces that interact with it.
+
 ## Reference Materials
 
 This section provides a summary of the documents and source code located in the `reference-materials/` directory.

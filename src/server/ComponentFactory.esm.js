@@ -1,4 +1,5 @@
 import { NANOS } from '../shared/vendor.esm.js';
+import { StringSet } from '../shared/StringSet.esm.js';
 
 /**
  * @copyright 2025 Kappa Computer Solutions, LLC and Brian Katzung.
@@ -71,12 +72,36 @@ const componentHandlers = new Map([
     ['h.p', basicElementHandler('p')],
     ['h.h1', basicElementHandler('h1')],
     ['h.a', basicElementHandler('a')],
+    ['h.button', basicElementHandler('button')],
     ['h.img', basicElementHandler('img')],
     ['h.span', basicElementHandler('span')],
     ['h.title', basicElementHandler('title')],
     ['h.head', basicElementHandler('head')],
     ['h.body', basicElementHandler('body')],
     ['h.html', basicElementHandler('html')],
+    ['button', (props, ...children) => {
+        // If an href is provided, render a link styled as a button.
+        // Otherwise, render a standard button.
+        const propsSource = (props instanceof NANOS) ? props.storage : (props || {});
+        const tag = propsSource.href ? 'h.a' : 'h.button';
+
+        // Combine all class sources into a single set.
+        const classSet = new StringSet(
+            'button', // Default class
+            propsSource.class, // from a `class` attribute string
+            propsSource[':class'] // from a `:class` list/array
+        );
+
+        // Create the final props, ensuring `:class` is a NANOS list
+        // and removing the original `class` attribute.
+        const finalProps = new NANOS(props);
+        finalProps.set(':class', new NANOS(...classSet.toArray()));
+        finalProps.delete('class');
+
+        return {
+            content: [tag, finalProps, ...children]
+        };
+    }],
     ['card', (props, ...children) => {
         // Normalize properties from either a JS object or a NANOS instance.
         const propsSource = (props instanceof NANOS) ? props.storage : (props || {});

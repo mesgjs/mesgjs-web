@@ -63,6 +63,13 @@ These are the foundational systems that enable the dynamic and secure nature of 
     *   **Component-Driven:** Each component will declare its own schema, including allowed parent/child elements, attributes, and registered events.
     *   **Enforcement:** The SSR and CSR will use this dynamic schema to validate the page structure during rendering, ensuring that only allowed components and configurations are used.
 
+*   **Component Handler Mechanism:**
+    *   **Hybrid Nature:** To balance ease of use with flexibility, component handlers can be either static data structures or executable functions. This allows simple components to be purely declarative while enabling complex components to contain conditional logic.
+    *   **Handler Types:**
+        1.  **Static Data:** A `NANOS` object. This is the simplest form, used for purely declarative components that always render the same structure.
+        2.  **Mesgjs Function:** A Mesgjs `@function` object. This allows for sandboxed, secure, user-defined logic within a component (e.g., conditionally rendering an `<a>` vs. a `<button>`).
+        3.  **JavaScript Function:** A native JavaScript `Function`. Reserved for trusted, platform-level components where performance is critical. These handlers can only be loaded from specific, trusted internal modules to mitigate security risks.
+
 #### **3. Rendering Pipelines**
 
 The MWI will support both server-side and client-side rendering.
@@ -70,10 +77,11 @@ The MWI will support both server-side and client-side rendering.
 *   **Server-Side Renderer (SSR):**
     *   **Input:** Takes structured page description data (NANOS or JS object format).
     *   **Process:**
-        1.  Traverses the data structure non-recursively.
+        1.  Traverses the data structure.
         2.  For each element, it requests a component handler from the `ComponentFactory`.
-        3.  It messages the component handler to render its HTML.
-        4.  It assembles the final HTML page using a `PageTemplate` object, which provides placeholders for content, scripts, and styles.
+        3.  The `ComponentFactory` resolves the handler. If the handler is an executable function (JS or Mesgjs), the factory invokes it with the component's attributes to get a render payload. If the handler is static data, that data is the payload.
+        4.  The SSR processes the payload. It recursively expands `content` payloads and collects `html`, `scopedCss`, and other resources.
+        5.  It assembles the final HTML document using a `PageTemplate` object, injecting the deduplicated resources into the appropriate sections.
     *   **Output:** A complete HTML document.
 
 *   **Client-Side Renderer (CSR):**
@@ -87,7 +95,8 @@ These are the primary contracts that define how the different parts of the syste
 
 *   **Component-Handler Factory Interface:**
     *   **Responsibility:** A unified "resource factory" for finding and instantiating components, validators, and event handlers.
-    *   **Method:** A single `get(symbolicName)` method that returns a `Promise`. The promise will resolve to the requested handler or `undefined` if it's not found or not permitted.
+    *   **Method:** A single `get(symbolicName)` method that returns a `Promise`. The promise will resolve to the requested handler or `undefined` if it's not found or not permitted. The resolved handler may be a `NANOS` object (static data), a Mesgjs `@function`, or a native JavaScript `Function`.
+    *   **Security:** The factory is responsible for enforcing the security policy that restricts native JavaScript function handlers to trusted, internal modules only. It must prevent wrapped Mesgjs functions from being treated as trusted native functions.
     *   **Implementation:** This factory will be the public face of the three-layer module resolution system.
 
 *   **Page-Template Object Interface:**
