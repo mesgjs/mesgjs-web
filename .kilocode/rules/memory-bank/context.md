@@ -1,33 +1,20 @@
 # Current Context
 
-The initial implementation of the Server-Side Renderer (SSR) is now feature-complete and hardened. The core rendering pipeline, including support for advanced component features and critical security measures, is in place. The project is now ready to shift focus to the client-side portion of the architecture.
+The Server-Side Renderer (SSR) has been fixed. The previous implementation had a double-escaping bug where rendered child HTML was escaped again by the parent. This was caused by a misunderstanding of `NANOS` semantics, which led to incorrect component parsing.
+[This underscores the importance of utilizing the reference materials.
+It'll even help you find **my** mistakes, too! 🙄 - BK]
+
+The issue has been resolved by simplifying the renderer to align with the `NANOS` design. The fix removes the faulty parsing logic and relies on the `NANOS` constructor's native ability to flatten properties from objects. The double-escaping is prevented by using an `UnescapedString` wrapper to mark already-rendered HTML.
 
 ## Recent Changes
 
-*   **Enhanced the `SsrRenderer`:**
-    *   Implemented support for recursive `content` payloads, allowing components to function as macros.
-    *   Added resource aggregation for `scopedCss`, including the `@@` substitution mechanism for generating unique component scope IDs.
-    *   Added a default sans-serif font stack to the page template to improve readability.
-*   **Hardened Security in Primitive Components:**
-    *   Implemented strict HTML escaping for all text nodes to prevent XSS from user-provided content.
-    *   Implemented the full security policy for the `h.*` primitive handlers, including strict validation of class names and robust HTML attribute escaping to prevent attribute injection attacks.
-*   **Expanded the `ComponentFactory`:**
-    *   Added a semantic `card` component that returns a `content` payload and `scopedCss` to validate the new rendering features.
-    *   Updated the factory to provide resolved component names to the renderer for managing CSS scope IDs.
-*   **Validated the Enhanced SSR Pipeline:** Updated the `ssr-test.js` script to use the new semantic component and confirmed that `content` payloads and `scopedCss` are rendered correctly.
+*   **Fixed SSR Rendering:** Corrected the `SsrRenderer.esm.js` to properly handle nested components and prevent double-escaping of HTML.
+*   **Simplified Component Parsing:** Removed the unnecessary `_parseComponentDef` method and now rely on the `NANOS` constructor's built-in handling of property objects.
+*   **Introduced `UnescapedString`:** Added a wrapper class to mark strings that should not be HTML-escaped, ensuring rendered children are passed through as raw HTML.
 
 ## Next Steps
 
-The next major phase is to build the Client-Side Renderer (CSR) and the associated hydration mechanism.
-
-1.  **Create the CSR Foundation:**
-    *   Develop the initial `CsrRenderer.js` class.
-    *   Implement the client-side `ComponentFactory` to resolve and manage component handlers in the browser.
-    *   Create the client-side `h.*` primitive handlers that create and manipulate DOM elements instead of HTML strings.
-2.  **Implement Hydration:**
-    *   Develop the logic to "hydrate" a server-rendered page, attaching event listeners and making the page interactive without a full re-render.
-    *   Implement the mechanism for passing the initial page data and component state from the server to the client.
-3.  **Synchronize Configuration:**
-    *   Implement the server-to-client configuration synchronization as defined in the architecture, ensuring the CSR and SSR operate with the same settings.
-4.  **Establish Client-Side Testing:**
-    *   Create a basic HTML page or use a simple test runner to validate the CSR and hydration functionality in a browser environment.
+1.  **Verify the Fix:**
+    *   Run the `ssr-test.esm.js` script and confirm that the output matches the expected HTML, with no "component not found" errors and with all content correctly rendered and escaped.
+    [Successfully completed - BK]
+2.  **Re-evaluate CSR Foundation:** Once the SSR is confirmed stable, resume the work on the Client-Side Renderer (CSR) foundation, starting with the creation of the `CsrRenderer.esm.js` file.

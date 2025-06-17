@@ -8,10 +8,16 @@
  * @license MIT
  */
 
-import { ComponentFactory } from './ComponentFactory.js';
-import { PageTemplate as DefaultPageTemplate } from './DefaultPageTemplate.js';
-import { NANOS } from '../shared/vendor.esm.js';
+import { ComponentFactory } from './ComponentFactory.esm.js';
+import { PageTemplate as DefaultPageTemplate } from './DefaultPageTemplate.esm.js';
+import { NANOS, isIndex } from '../shared/vendor.esm.js';
 // import { ConfigurationService } from '../shared/ConfigurationService.js';
+
+/**
+ * A wrapper for strings that should not be HTML-escaped.
+ * @extends String
+ */
+class UnescapedString extends String {}
 
 /**
  * Renders a structured page description into an HTML document.
@@ -74,32 +80,43 @@ class SsrRenderer {
      * @private
      */
     async _renderNode(node) {
-        if (typeof node === 'string') {
-            // Escape HTML special characters in text nodes for security.
-            return node.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+        // Pass through UnescapedStrings without modification.
+        if (node instanceof UnescapedString) {
+            return node;
         }
 
-        // Normalize NANOS to a JS array for consistent processing.
-        const componentDef = (node instanceof NANOS) ? node.toJs() : node;
+        if (typeof node === 'string') {
+            // Escape HTML special characters in text nodes for security.
+            return node.replace(/&/g, '&').replace(/</g, '<').replace(/>/g, '>');
+        }
 
-        if (!Array.isArray(componentDef) || componentDef.length === 0) {
+        // Normalize Array to NANOS for consistent processing.
+        if (Array.isArray(node)) {
+            // The NANOS constructor correctly handles flattening the array.
+            node = new NANOS(...node);
+        }
+
+        if (!(node instanceof NANOS) || node.size === 0) {
+            // Do not render other non-string, non-NANOS types.
             return '';
         }
 
-        // This is a component definition.
-        return this._renderComponent(componentDef);
+        // A component's final output is HTML, so it should not be escaped later.
+        const html = await this._renderComponent(node);
+        return new UnescapedString(html);
     }
 
     /**
      * Renders a component, processes its payload, and handles recursive
      * rendering of `content` payloads.
      *
-     * @param {[string, object, ...any[]]} componentDef The component definition array.
+     * @param {NANOS} componentDef The component definition.
      * @returns {Promise<string>} The rendered HTML for the component.
      * @private
      */
     async _renderComponent(componentDef) {
-        const [componentName, props, ...children] = componentDef;
+        const [componentName, ...children] = componentDef.values();
+        const props = new NANOS().fromEntries(componentDef.namedEntries());
 
         const { handler, resolvedName } = await this._componentFactory.get(componentName) || {};
 
@@ -109,7 +126,7 @@ class SsrRenderer {
         }
 
         const renderedChildren = await Promise.all(children.map(child => this._renderNode(child)));
-        const payload = await handler(props, ...renderedChildren);
+        const payload = await handler(props, ...renderedChildren.map(c => c.toString()));
 
         if (!payload) {
             return '';
@@ -144,7 +161,10 @@ class SsrRenderer {
                 ? this._substituteScope(payload.content, scopeId)
                 : payload.content;
 
-            return this._renderNode(contentToRender);
+            // The recursive call to _renderNode will return an UnescapedString.
+            // We need to get its primitive value before returning.
+            const result = await this._renderNode(contentToRender);
+            return result.toString();
         }
 
         return html;

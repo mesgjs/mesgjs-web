@@ -1,3 +1,5 @@
+import { NANOS } from '../shared/vendor.esm.js';
+
 /**
  * @copyright 2025 Kappa Computer Solutions, LLC and Brian Katzung.
  *
@@ -20,24 +22,29 @@ const escapeAttr = (str) => String(str)
 
 /**
  * A generic handler for creating basic HTML elements. It implements security
- * policies for attribute and class rendering.
+ * policies for attribute and class rendering and supports bilingual data sources.
  * @param {string} tag The HTML tag to create.
  * @returns {function(object, ...any): {html: string}} A function that renders the element.
  */
 const basicElementHandler = (tag) => (props, ...children) => {
     const attributes = [];
     const classes = [];
+    // Normalize properties from either a JS object or a NANOS instance.
+    const propsSource = (props instanceof NANOS) ? props.storage : (props || {});
 
-    for (const [key, value] of Object.entries(props || {})) {
+    for (const [key, value] of Object.entries(propsSource)) {
         if (key === ':class') {
+            // Normalize the class list from either a JS array or a NANOS list.
+            const classList = (value instanceof NANOS) ? [...value.values()] : value;
+
             // Security: Process only indexed values from a list.
-            if (Array.isArray(value)) {
-                const validClasses = value
+            if (Array.isArray(classList)) {
+                const validClasses = classList
                     // Security: Validate each class name against a strict regex.
                     .filter(c => typeof c === 'string' && /^-?[_a-zA-Z]+[_a-zA-Z0-9-]*$/.test(c));
                 classes.push(...validClasses);
             }
-        } else if (key.startsWith(':')) {
+        } else if (String(key).startsWith(':')) {
             // Security: Ignore unknown special attributes to prevent injection.
         } else {
             // Security: Escape both attribute name and value to prevent XSS.
@@ -71,7 +78,10 @@ const componentHandlers = new Map([
     ['h.body', basicElementHandler('body')],
     ['h.html', basicElementHandler('html')],
     ['card', (props, ...children) => {
-        const { title = 'Default Title' } = props || {};
+        // Normalize properties from either a JS object or a NANOS instance.
+        const propsSource = (props instanceof NANOS) ? props.storage : (props || {});
+        const title = propsSource.title || 'Default Title';
+
         return {
             scopedCss: `
                 .@@-card { border: 1px solid #ccc; border-radius: 8px; padding: 16px; }

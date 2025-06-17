@@ -51,22 +51,22 @@ class PageTemplate {
      * @returns {string} The complete HTML page as a string.
      */
     render() {
-        const headContent = this._positions.get('head').join('\n    ');
-        const bodyContent = this._positions.get('body').join('\n    ');
+        const headContent = this._positions.get('head').join('\n');
+        const bodyContent = this._positions.get('body').join('\n');
 
         return `<!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MWI Page</title>
-    <style>
-        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
-    </style>
-    ${headContent}
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MWI Page</title>
+<style>
+body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
+</style>
+${headContent}
 </head>
 <body>
-    ${bodyContent}
+${bodyContent}
 </body>
 </html>`;
     }
