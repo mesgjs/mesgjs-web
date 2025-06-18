@@ -29,31 +29,32 @@ const escapeAttr = (str) => String(str)
  */
 const basicElementHandler = (tag) => (props, ...children) => {
     const attributes = [];
-    const classes = [];
     // Normalize properties from either a JS object or a NANOS instance.
     const propsSource = (props instanceof NANOS) ? props.storage : (props || {});
+    const classSet = new StringSet();
 
     for (const [key, value] of Object.entries(propsSource)) {
-        if (key === ':class') {
-            // Normalize the class list from either a JS array or a NANOS list.
-            const classList = (value instanceof NANOS) ? [...value.values()] : value;
-
-            // Security: Process only indexed values from a list.
-            if (Array.isArray(classList)) {
-                const validClasses = classList
-                    // Security: Validate each class name against a strict regex.
-                    .filter(c => typeof c === 'string' && /^-?[_a-zA-Z]+[_a-zA-Z0-9-]*$/.test(c));
-                classes.push(...validClasses);
+        switch (key) {
+        case ':class':
+            if (Array.isArray(value) || value instanceof NANOS) {
+                classSet.add(...value.values());
+                continue;
             }
-        } else if (String(key).startsWith(':')) {
-            // Security: Ignore unknown special attributes to prevent injection.
-        } else {
-            // Security: Escape both attribute name and value to prevent XSS.
+            // Fall through...
+        case 'class':
+            if (typeof value === 'string') {
+                classSet.add(value);
+            }
+            continue;
+        }
+        if (!String(key).startsWith(':')) {
             attributes.push(`${escapeAttr(key)}="${escapeAttr(value)}"`);
         }
     }
 
-    if (classes.length > 0) {
+    const classes = classSet.toArray().filter(c => typeof c === 'string' && /^-?[_a-zA-Z]+[_a-zA-Z0-9-]*$/.test(c));
+
+    if (classes.length) {
         // Security: The final class string is also escaped as a defense-in-depth measure.
         attributes.push(`class="${escapeAttr(classes.join(' '))}"`);
     }

@@ -19,25 +19,29 @@ class StringSet extends Set {
     constructor(...sources) {
         super();
 
-        for (const source of sources) {
-            if (!source) {
-                continue;
-            }
+        this.add(...sources);
+    }
 
-            if (typeof source === 'string') {
-                for (const item of source.split(/\s+/)) {
-                    if (item) {
-                        this.add(item);
+    add (...items) {
+        for (const item of items) {
+            if (typeof item === 'string') {
+                // Split whitespace-separated strings into individual items
+                for (const part of item.split(/\s+/)) {
+                    if (part) {
+                        super.add(part);
                     }
                 }
-            } else if (typeof source[Symbol.iterator] === 'function') {
-                for (const item of source) {
-                    if (item) {
-                        this.add(item);
-                    }
+            } else if (item instanceof StringSet || item instanceof Set) {
+                // Add all items from another StringSet or Set
+                for (const part of item) {
+                    super.add(part);
                 }
+            } else if (item) {
+                // Add single non-empty items directly
+                super.add(item);
             }
         }
+        return this;
     }
 
     /**

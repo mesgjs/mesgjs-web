@@ -10,7 +10,7 @@
 
 import { ComponentFactory } from './ComponentFactory.esm.js';
 import { PageTemplate as DefaultPageTemplate } from './DefaultPageTemplate.esm.js';
-import { NANOS, isIndex } from '../shared/vendor.esm.js';
+import { NANOS } from '../shared/vendor.esm.js';
 // import { ConfigurationService } from '../shared/ConfigurationService.js';
 
 /**
@@ -121,6 +121,7 @@ class SsrRenderer {
         const { handler, resolvedName } = await this._componentFactory.get(componentName) || {};
 
         if (!handler) {
+            console.log(componentDef)
             console.warn(`Component handler not found for "${componentName}"`);
             return '';
         }
@@ -157,8 +158,7 @@ class SsrRenderer {
         }
 
         // Process a `content` payload by recursively rendering it.
-        // Process a `content` payload by recursively rendering it.
-        if (payload.content) {
+         if (payload.content) {
             const resolvedContent = await this._resolveContent(
                 payload.content, props, childStrings
             );
