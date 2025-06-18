@@ -7,6 +7,12 @@ import h from './components/h.esm.js';
  * It resolves component names to their corresponding handler functions.
  */
 class ComponentFactory {
+    _components = {};
+
+    constructor(components = {}) {
+        this._components = { ...components, h };
+    }
+
     /**
      * Gets the handler for a given component definition.
      * @param {string | symbol} name The name of the component (e.g., 'h.div').
@@ -17,19 +23,16 @@ class ComponentFactory {
             return undefined;
         }
 
-        const parts = name.split('.');
-        const namespace = parts[0];
-
-        if (namespace === 'h') {
-            const tag = parts[1];
-            if (tag && h[tag]) {
-                return h[tag];
-            }
+        if (this._components[name]) {
+            return this._components[name];
         }
 
-        // In the future, this will support other namespaces and dynamic loading.
-        console.warn(`Component handler not found for "${name}"`);
-        return undefined;
+        if (name.startsWith('h.')) {
+            const tag = name.substring(2);
+            return this._components.h[tag];
+        }
+
+        return this._components[name];
     }
 }
 

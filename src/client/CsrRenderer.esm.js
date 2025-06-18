@@ -34,7 +34,7 @@ class CsrRenderer {
      *   checking the first item type.
      * @returns {Node[]} The rendered DOM node(s).
      */
-    render (content, childMode = false) {
+    async render (content, childMode = false) {
         if (typeof content === 'string') {
             // Return a text node for plain text
             return [document.createTextNode(content)];
@@ -49,14 +49,17 @@ class CsrRenderer {
             content = new NANOS(...content.map(v => (Array.isArray(v) || v instanceof NANOS) ? [v] : v));
         }
 
-        if (!content.size) {
+        if (!(content instanceof NANOS) || !content.size) {
             return [];
         }
         const first = content.at(0);
 
         if (childMode || typeof first !== 'string') {
             // If the first item is not a string, or in child mode, render all items.
-            return [...content.values()].map(item => this.render(item)).flat();
+            const rendered = await Promise.all(
+                [...content.values()].map(item => this.render(item))
+            );
+            return rendered.flat();
         }
 
         const handler = this._componentFactory.get(first);
@@ -67,7 +70,9 @@ class CsrRenderer {
         }
 
         // The handler is responsible for rendering children by calling this.render()
-        const payload = handler(content, this);
+        const props = new NANOS().fromEntries(content.namedEntries());
+        const [, ...children] = content.values();
+        const payload = await handler(props, children, this);
 
         if (!payload) {
             return [];
@@ -80,10 +85,37 @@ class CsrRenderer {
 
         // Support for `content` payloads allows for component macros.
         if (payload.content) {
-            return this.render(payload.content);
+            const resolvedContent = await this._resolveContent(payload.content, props, children);
+            return this.render(resolvedContent);
         }
 
         return []
+    }
+
+    /**
+     * Resolves the content of a payload, handling cases where the content is
+     * a function (JS or Mesgjs) that needs to be executed.
+     *
+     * @param {any} content The content to resolve.
+     * @param {NANOS} props The component's properties.
+     * @param {any[]} children The component's children definitions.
+     * @returns {Promise<any>} The resolved content.
+     * @private
+     */
+    async _resolveContent(content, props, children) {
+        if (typeof content === 'function') {
+            if (content.msjsType === '@function') {
+                // Mesgjs @function: send a `(call)` message.
+                const mesgParams = new NANOS(props, ...children);
+                return await content('call', mesgParams);
+            } else {
+                // Standard JavaScript function
+                return await content(props, ...children);
+            }
+        }
+
+        // Content is a static data structure
+        return content;
     }
 }
 

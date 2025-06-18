@@ -23,16 +23,17 @@ function createTagHandler (tag) {
 
     /**
      * The actual component handler.
-     * @param {NANOS} def The component definition.
+     * @param {NANOS} props The component properties.
+     * @param {Array} children The component children.
      * @param {object} renderer The CsrRenderer instance.
      * @returns {{dom: HTMLElement}} The payload with the created DOM element.
      */
-    const handler = (def, renderer) => {
+    const handler = async (props, children, renderer) => {
         const el = document.createElement(tag);
         const classSet = new StringSet();
 
         // Process attributes
-        for (const [key, value] of def.namedEntries()) {
+        for (const [key, value] of props.namedEntries()) {
             switch (key) {
             case ':class':
                 if (Array.isArray(value) || value instanceof NANOS) {
@@ -57,16 +58,9 @@ function createTagHandler (tag) {
             el.className = classes.join(' ');
         }
 
-        // Process children. Children are all indexed values after the component name.
-        const [ , ...children ] = def.values();
+        // Process children.
         if (children && children.length > 0) {
-            // The children are often wrapped in a single array from the source
-            // data, so we handle that common case.
-            const childrenToRender = (children.length === 1 && Array.isArray(children[0]))
-                ? children[0]
-                : children;
-
-            const childNodes = renderer.render(childrenToRender, true);
+            const childNodes = await renderer.render(children, true);
             if (childNodes?.length) {
                 el.append(...childNodes);
             }
