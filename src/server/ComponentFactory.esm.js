@@ -1,5 +1,4 @@
 import { NANOS } from '../shared/vendor.esm.js';
-import { StringSet } from '../shared/StringSet.esm.js';
 import h from './components/h.esm.js';
 
 /**
@@ -18,24 +17,18 @@ const componentHandlers = new Map([
     ['button', (vnode) => {
         // If an href is provided, render a link styled as a button.
         // Otherwise, render a standard button.
-        const tag = vnode.getAttribute('href') ? 'h.a' : 'h.button';
+        const tag = vnode.get('href') ? 'h.a' : 'h.button';
 
-        // Combine all class sources into a single set.
-        const classSet = new StringSet(
-            'button', // Default class
-            vnode.getAttribute('class') // from a `class` attribute string
-        );
-
-        // Create the final props, ensuring `class` is a string
-        const finalProps = new NANOS(vnode.attributes);
-        finalProps.set('class', classSet.toString());
+        if (tag === 'h.a') {
+            vnode.editClass('button');
+        }
 
         return {
-            content: [tag, finalProps, ...vnode.children]
+            content: [tag, vnode.attributes, ...vnode.children]
         };
     }],
     ['card', (vnode) => {
-        const title = vnode.getAttribute('title') || 'Default Title';
+        const title = vnode.get('title') || 'Default Title';
 
         return {
             scopedCss: `

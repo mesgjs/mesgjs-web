@@ -1,5 +1,5 @@
 const ehMap = { '&': '&amp;', '"': '&quot;', "'": '&#39;', '<': '&lt;', '>': '&gt;' };
-
+// Escape special HTML characters in a string
 function escapeHtml (str) {
     return String(str).replace(/[&"'<>]/g, (match) => ehMap[match]);
 }
@@ -17,30 +17,41 @@ function escapeHtml (str) {
  */
 export class VirtualNode {
     constructor (type, opts = {}) {
+        // Consider h.FRAG(MENT) for fragments?
         if (typeof type === 'string' && /^[a-zA-Z0-9@:.+-]+$/.test(type)) {
             this.type = type;
         } else {
             throw new TypeError(`Invalid virtual node name: ${type}`);
         }
         this.opts = opts;
-        this.attributes = new Map();
-        this.classNames = new Set();
-        this.children = [];                 // Rendered children
-        this.rawChildren = [];              // Unrendered children
-        this.scope = undefined;
-        this.styles = new Map();
+        this._attributes = new Map();
+        this.classNames = new Set();    // Active class names
+        this.children = [];             // Rendered children
+        this.rawChildren = [];          // Unrendered children
+        this.scope = undefined;         // Optional scope prefix for @@ replacements
+        this.styles = new Map();        // Active styles
     }
 
+    // Append children (rendered)
     append (...children) {
         this.children.push(...children);
         return this;
     }
 
+    // Append raw children (unrendered)
     appendRaw (...children) {
         this.rawChildren.push(...children);
     }
 
-    // Return active classes as a string.
+    // Return the internal attribute Map
+    get attributes () {
+        // Sync the current active class and style first
+        this._attributes.set('class', this.class || null);
+        this._attributes.set('style', this.style || null);
+        return this._attributes;
+    }
+
+   // Return active classes as a string.
     get class () {
         return Array.from(this.classNames).join(' ');
     }
@@ -93,7 +104,7 @@ export class VirtualNode {
             }
             if (typeof styleSpec[0] === 'object') {
                 const [styleObj] = styleSpec;
-                const entries = (typeof styleObj.entries === 'function') ? styleObj.entries() : Object.entries(styleObj);
+                const entries = (typeof styleObj?.entries === 'function') ? styleObj.entries() : Object.entries(styleObj);
                 for (const [key, value] of entries) {
                     if (!value) this.styles.delete(key);
                     else if (/^[a-zA-Z0-9_-]+$/.test(key)) this.styles.set(key, value);
@@ -103,9 +114,19 @@ export class VirtualNode {
         return this;
     }
 
+    // Return a document fragment (h.FRAG) node
+    static fragment (...children) {
+        const node = new VirtualNode('h.FRAG', { noOpen: true, noClose: true });
+        node.append(...children);
+        return node;
+    }
+
+    // Create a VirtualNode from structured data (JS Array or NANOS)
     static fromData (data) {
         let node;
         if (Array.isArray(data)) {
+            // [type, {attr: val, ...}, child, child, ...]
+            // Attribute objects are optional (0+), and order-independent
             for (const item of data) {
                 const type = typeof item, subtype = item?.constructor?.name;
                 if (type === 'string' && !node) {
@@ -114,7 +135,7 @@ export class VirtualNode {
                     if (item instanceof Map || (type === 'object' && (!subtype || subtype === 'Object'))) {
                         const entries = (typeof item.entries === 'function') ? item.entries() : Object.entries(item);
                         for (const [key, value] of entries) {
-                            node.setAttribute(key, value);
+                            node.set(key, value);
                         }
                     } else {
                         node.appendRaw(item);
@@ -122,25 +143,27 @@ export class VirtualNode {
                 }
             }
         } else if (typeof data?.values === 'function' && typeof data?.namedEntries === 'function') {
+            // NANOS structure: values() gives [type, child, child, ...]
+            // namedEntries() gives {attr: val, ...}
             const [type, ...rawChildren] = data.values();
             node = new VirtualNode(type);
             node.appendRaw(...rawChildren);
             for (const [key, value] of data.namedEntries()) {
-                node.setAttribute(key, value);
+                node.set(key, value);
             }
         }
         return node;
     }
 
     // Get an attribute ("prop") value
-    getAttribute (name) {
+    get (name) {
         switch (name) {
         case 'class':
             return this.class || undefined;
         case 'style':
             return this.style || undefined;
         default:
-            return this.attributes.get(name);
+            return this._attributes.get(name);
         }
     }
 
@@ -157,10 +180,6 @@ export class VirtualNode {
         const close = !this.opts.noClose ? `</${tag}>` : '';
         const attrs = [];
 
-        // Attribute-order-preserving active class and style (if any)
-        this.attributes.set('class', this.class || null);
-        this.attributes.set('style', this.style || null);
-
         for (const [key, value] of this.attributes.entries()) {
             if (value === true) {
                 attrs.push(' ', escapeHtml(key));
@@ -173,7 +192,7 @@ export class VirtualNode {
         return (this.scope ? html.replace(/@@/g, this.scope) : html);
     }
 
-    // Parse a style string into a setting: value map
+    // Parse a style string into a { setting: value } map
     static parseStyles(styleString) {
         const result = new Map();
         // Match key: value; where ; is not inside quotes
@@ -187,6 +206,13 @@ export class VirtualNode {
             }
         }
         return result;
+    }
+
+    // Return a (raw) document fragment (h.FRAG) node
+    static rawFragment (...children) {
+        const node = new VirtualNode('h.FRAG', { noOpen: true, noClose: true });
+        node.appendRaw(...children);
+        return node;
     }
 
     // Remove classes based on Arrays or strings of space-separated values
@@ -206,26 +232,27 @@ export class VirtualNode {
     }
 
     // Set an attribute ("prop") value (or remove it if the value is false/null)
-    setAttribute (name, value) {
+    set (name, value) {
         switch (name) {
         case 'class':
             this.clearClass();
-            this.editClass(value);
-            return;
+            if (value) this.editClass(value);
+            return this;
         case 'style':
             this.clearStyle();
-            this.editStyle(value);
-            return;
+            if (value) this.editStyle(value);
+            return this;
         }
         if (value === false || value === null) {
-            this.attributes.delete(name);
+            this._attributes.delete(name);
         } else if (/^[a-zA-Z0-9_-]+$/.test(name)) {
             if (value === true) {
-                this.attributes.set(name, true);
+                this._attributes.set(name, true);
             } else {
-                this.attributes.set(name, value);
+                this._attributes.set(name, value);
             }
         }
+        return this;
     }
 
     // Return the active styles as a string
@@ -235,9 +262,16 @@ export class VirtualNode {
             .join(' ');
     }
 
-    // Set the text content (for text nodes)
+    // Set the text content (for standalone text nodes)
     set textContent (text) {
         this.children = [text];
+    }
+
+    // Return a plain-text (h.TEXT) node
+    static textNode (text) {
+        const node = new VirtualNode('h.TEXT', { noOpen: true, noClose: true });
+        node.textContent = text;
+        return node;
     }
 
 }

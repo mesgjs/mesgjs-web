@@ -71,17 +71,17 @@ class SsrRenderer {
      * main entry point for the recursive rendering process.
      *
      * @param {any} node The node to render.
-     * @returns {Promise<VirtualNode|string>} A promise that resolves to the rendered node.
+     * @returns {Promise<VirtualNode>} A promise that resolves to the rendered node.
      * @private
      */
     async _renderNode(nodeData) {
         if (typeof nodeData === 'string') {
-            return nodeData; // Return strings directly, escaping happens at the end
+            return VirtualNode.textNode(nodeData);
         }
 
         const vnode = VirtualNode.fromData(nodeData);
         if (!vnode) {
-            return ''; // Not renderable
+            return VirtualNode.textNode(''); // Not renderable
         }
 
         // A component's final output is a VirtualNode
@@ -101,23 +101,56 @@ class SsrRenderer {
 
         if (!handler) {
             console.warn(`Component handler not found for "${vnode.type}"`);
-            // Return a non-rendering node
-            return new VirtualNode('mwi.noop');
+            return VirtualNode.textNode('');
         }
 
+        // Children must be rendered before the handler is called.
         const renderedChildren = await Promise.all(vnode.rawChildren.map(child => this._renderNode(child)));
         vnode.append(...renderedChildren);
 
         const payload = await handler(vnode);
 
+        // If the handler returns nothing, it's a simple pass-through.
         if (!payload) {
-            return vnode; // Return the original node
+            return vnode;
         }
 
-        let scopeId;
+        // If the handler returns a VirtualNode, it's a primitive component
+        // that has finished its configuration. Return it directly.
+        if (payload instanceof VirtualNode) {
+            return payload;
+        }
 
-        // Process scoped CSS if provided.
+        // If the handler returns a `content` payload, it's a semantic
+        // component acting as a macro. Render the content and return the result.
+        if (payload.content) {
+            let scopeId;
+            if (payload.scopedCss) {
+                if (!this._scopeIds.has(resolvedName)) {
+                    scopeId = `mwi-${this._nextScopeId++}`;
+                    this._scopeIds.set(resolvedName, scopeId);
+                    const css = payload.scopedCss.replace(/^\s+/g, '').replace(/@@/g, scopeId);
+                    this._scopedCss.set(resolvedName, css);
+                } else {
+                    scopeId = this._scopeIds.get(resolvedName);
+                }
+            }
+
+            const resolvedContent = await this._resolveContent(payload.content, vnode);
+            const contentVNode = await this._renderNode(resolvedContent);
+
+            // Apply the scope to the new node generated from the content.
+            if (scopeId && contentVNode.type) {
+                contentVNode.scope = scopeId;
+            }
+
+            return contentVNode;
+        }
+
+        // If the payload has other properties (like scopedCss) but no content,
+        // apply them to the original vnode.
         if (payload.scopedCss) {
+            let scopeId;
             if (!this._scopeIds.has(resolvedName)) {
                 scopeId = `mwi-${this._nextScopeId++}`;
                 this._scopeIds.set(resolvedName, scopeId);
@@ -127,18 +160,6 @@ class SsrRenderer {
                 scopeId = this._scopeIds.get(resolvedName);
             }
             vnode.scope = scopeId;
-        }
-
-        // Process a `content` payload by recursively rendering it.
-        if (payload.content) {
-            const resolvedContent = await this._resolveContent(payload.content, vnode);
-            const contentVNode = await this._renderNode(resolvedContent);
-            vnode.append(contentVNode);
-        }
-
-        // If the handler returned a new vnode, render that instead.
-        if (payload instanceof VirtualNode) {
-            return this._renderComponent(payload);
         }
 
         return vnode;
