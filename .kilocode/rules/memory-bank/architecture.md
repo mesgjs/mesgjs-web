@@ -20,6 +20,7 @@ graph TD
         ComponentFactory[Component Factory]
         ModuleResolution[Module Resolution]
         PageData(Page Description Data)
+        VNodeServer[VirtualNode (Server)]
     end
 
     subgraph "Shared Components"
@@ -32,7 +33,8 @@ graph TD
     UserEvents --> CSR
     CSR --> DOM
     PageData --> SSR
-    SSR --> PageTemplate
+    SSR --> VNodeServer
+    VNodeServer -- ".outerHTML" --> PageTemplate
     SSR --> ComponentFactory
     CSR --> ComponentFactory
     ComponentFactory --> ModuleResolution
@@ -49,22 +51,23 @@ graph TD
 
 *   **Event & Validation Handling:** Event handlers and validators are referenced by symbolic names (e.g., `:click`, `:validate.email`) in the page data. These are resolved at runtime by the `ComponentFactory` via a three-layer module resolution system.
 *   **Dynamic Document Schema:** The schema is not static; it's generated dynamically based on the components available to the current user. Each component declares its own schema (allowed parents, children, attributes), which is enforced by the renderers.
+*   **VirtualNode Abstraction:** To manage the complexity of the bilingual (JavaScript/Mesgjs) environment, the rendering pipeline uses a `VirtualNode` class. This class acts as a proxy, providing a unified interface for manipulating node properties (like attributes and classes) and children, regardless of whether the source data is a JS Array or a NANOS list. The server-side `VirtualNode` renders to an HTML string, while the client-side equivalent will render to a DOM element.
 
 ## Rendering Pipelines
 
-*   **Server-Side Renderer (SSR):** Takes structured page data, uses the `ComponentFactory` to get component handlers, and assembles a complete HTML document using a `PageTemplate`.
+*   **Server-Side Renderer (SSR):** Takes structured page data, converts it into a tree of `VirtualNode` objects, and then renders that tree into a complete HTML document using a `PageTemplate`.
 *   **Client-Side Renderer (CSR):** Can "hydrate" an SSR-rendered page to make it interactive, or render a page from scratch. It supports reactive content updates via the Mesgjs `@reactive` interface.
 
 ### Declarative, Single-Pass Rendering
 
-To support advanced features like multi-plane layouts (e.g., modals, panels) and resource deduplication (for CSS, JS, and reusable HTML blocks), the rendering pipeline follows a declarative, single-pass model. This is achieved through a system of structured "payload" objects returned by component handlers.
+To support advanced features like multi-plane layouts and resource deduplication, the rendering pipeline follows a declarative, single-pass model. This is achieved through a system of structured "payload" objects returned by component handlers, which are then processed into a `VirtualNode` tree.
 
-*   **Bilingual Data Handling:** The rendering system is fundamentally bilingual. The renderer and component handlers must be prepared to receive and process data structures (such as `content` payloads) in **either** native JavaScript (Arrays, Objects) **or** Mesgjs (`@list`/NANOS) format. The system will normalize these structures as needed to ensure seamless interoperability between JavaScript-based core components and Mesgjs-based user components.
-*   **Component Payloads:** Component handlers do not return HTML directly. Instead, they return a payload object that describes their output and resource needs.
-    *   **`content` Payloads:** High-level semantic components act as macros. They return a `content` property containing a new Mesgjs data structure, effectively transforming their own definition into a more primitive one.
-    *   **`html` Payloads:** Low-level `h.*` primitive components are the rendering engines. They are the only components that return a final `html` string.
-*   **Centralized Logic:** The `SsrRenderer` is responsible for traversing the page data, receiving these payloads, and centralizing all aggregation and deduplication logic. It recursively processes `content` payloads and assembles the final output from `html` payloads. This keeps the semantic component handlers pure and declarative.
-*   **Single Pass:** The renderer traverses the page data tree only once. During this pass, it collects all resources (styles, scripts, static blocks) and generates the main body HTML simultaneously. After the traversal is complete, it assembles the final `PageTemplate` with the deduplicated resources.
+*   **Bilingual Data Handling:** The `VirtualNode.fromData()` factory method is the primary mechanism for handling bilingual data. It accepts either native JavaScript (Arrays, Objects) or Mesgjs (`@list`/NANOS) format and normalizes it into a consistent `VirtualNode` instance. This abstracts the complexity away from the renderers and component handlers.
+*   **Component Payloads:** Component handlers operate on and return `VirtualNode` instances or payloads that describe their output and resource needs.
+    *   **`content` Payloads:** High-level semantic components act as macros. They return a `content` property containing a new Mesgjs data structure. The renderer recursively processes this content into child `VirtualNode`s.
+    *   **`VirtualNode` Payloads:** Low-level `h.*` primitive components are the rendering engines. Their handlers configure and return a `VirtualNode` instance. The final conversion to HTML (on the server) or a DOM element (on the client) is handled by the renderer at the end of the process.
+*   **Centralized Logic:** The `SsrRenderer` is responsible for traversing the page data, creating the `VirtualNode` tree, and centralizing all aggregation and deduplication logic. It recursively processes `content` payloads and assembles the final output from the root `VirtualNode`. This keeps the semantic component handlers pure and declarative.
+*   **Single Pass:** The renderer traverses the page data tree only once. During this pass, it collects all resources (styles, scripts, static blocks) and generates the main body `VirtualNode` tree simultaneously. After the traversal is complete, it assembles the final `PageTemplate` with the deduplicated resources.
 
 #### Advanced Payload Features
 
@@ -72,11 +75,7 @@ To further enhance component encapsulation and developer experience, the payload
 
 *   **Intrinsic Scoped CSS:** Components can provide a `scopedCss` property at the top level of their payload. This property contains a CSS template string.
     *   **Scoping Mechanism:** The renderer uses the component's unique resolved module specifier to generate a unique scope ID (e.g., `mwi-a1b2`) the first time a component of that type is rendered on a page.
-    *   **Substitution:** The renderer replaces all instances of a special marker (`@@`) within both the `scopedCss` template and the component's `content`/`html` with the generated scope ID. This allows for easy creation of scoped BEM-style class names (e.g., `class="@@-root"` becomes `class="mwi-a1b2-root"`).
-
-*   **Special Attributes (`:class`):** To improve ergonomics, the renderer supports special attributes that provide richer functionality.
-    *   The `:class` attribute accepts a Mesgjs list of class names. The renderer securely processes this list, performs any `@@` substitutions, and concatenates the values into a standard `class` attribute string.
-    *   This feature is subject to a strict security policy to prevent attribute injection. For full details, see `security.md`.
+    *   **Substitution:** The renderer replaces all instances of a special marker (`@@`) within the `scopedCss` template and assigns the scope ID to the `VirtualNode`. The `VirtualNode`'s final rendering step (`.outerHTML`) performs the substitution in the generated HTML.
 
 ## Key Interfaces
 

@@ -11,13 +11,8 @@
 import { ComponentFactory } from './ComponentFactory.esm.js';
 import { PageTemplate as DefaultPageTemplate } from './DefaultPageTemplate.esm.js';
 import { NANOS } from '../shared/vendor.esm.js';
+import { VirtualNode } from './VirtualNode.esm.js';
 // import { ConfigurationService } from '../shared/ConfigurationService.js';
-
-/**
- * A wrapper for strings that are already HTML and shouldn't be escaped.
- * @extends String
- */
-class HtmlString extends String {}
 
 /**
  * Renders a structured page description into an HTML document.
@@ -59,9 +54,9 @@ class SsrRenderer {
         this._scopeIds.clear();
         this._nextScopeId = 0;
 
-        const bodyContent = await this._renderNode(pageData);
+        const bodyVNode = await this._renderNode(pageData);
 
-        template.addContent('body', bodyContent);
+        template.addContent('body', bodyVNode.innerHTML);
 
         if (this._scopedCss.size > 0) {
             const styles = [...this._scopedCss.values()].join('\n');
@@ -76,103 +71,77 @@ class SsrRenderer {
      * main entry point for the recursive rendering process.
      *
      * @param {any} node The node to render.
-     * @returns {Promise<string>} A promise that resolves to the rendered HTML string.
+     * @returns {Promise<VirtualNode|string>} A promise that resolves to the rendered node.
      * @private
      */
-    async _renderNode(node) {
-        // Pass through HtmlStrings without modification.
-        if (node instanceof HtmlString) {
-            return node;
+    async _renderNode(nodeData) {
+        if (typeof nodeData === 'string') {
+            return nodeData; // Return strings directly, escaping happens at the end
         }
 
-        if (typeof node === 'string') {
-            // Escape HTML special characters in text nodes for security.
-            return new HtmlString(node.replace(/&/g, '&').replace(/</g, '<').replace(/>/g, '>'));
+        const vnode = VirtualNode.fromData(nodeData);
+        if (!vnode) {
+            return ''; // Not renderable
         }
 
-        // Normalize Array to NANOS for consistent processing.
-        if (Array.isArray(node)) {
-            // The NANOS constructor handles remaining array flattening.
-            node = new NANOS(...node.map(v => Array.isArray(v) ? [v] : v));
-        }
-
-        if (!(node instanceof NANOS) || node.size === 0) {
-            // Do not render other non-string, non-NANOS types.
-            return '';
-        }
-
-        // A component's final output is HTML, so it should not be escaped later.
-        const html = await this._renderComponent(node);
-        return new HtmlString(html);
+        // A component's final output is a VirtualNode
+        return this._renderComponent(vnode);
     }
 
     /**
      * Renders a component, processes its payload, and handles recursive
      * rendering of `content` payloads.
      *
-     * @param {NANOS} componentDef The component definition.
-     * @returns {Promise<string>} The rendered HTML for the component.
+     * @param {VirtualNode} vnode The virtual node to render.
+     * @returns {Promise<VirtualNode>} The rendered virtual node.
      * @private
      */
-    async _renderComponent(componentDef) {
-        const [componentName, ...children] = componentDef.values();
-        const props = new NANOS().fromEntries(componentDef.namedEntries());
-
-        const { handler, resolvedName } = await this._componentFactory.get(componentName) || {};
+    async _renderComponent(vnode) {
+        const { handler, resolvedName } = await this._componentFactory.get(vnode.type) || {};
 
         if (!handler) {
-            console.warn(`Component handler not found for "${componentName}"`);
-            return '';
+            console.warn(`Component handler not found for "${vnode.type}"`);
+            // Return a non-rendering node
+            return new VirtualNode('mwi.noop');
         }
 
-        const renderedChildren = await Promise.all(children.map(child => this._renderNode(child)));
-        const childStrings = renderedChildren.map(c => c.toString());
-        const payload = await handler(props, ...childStrings);
+        const renderedChildren = await Promise.all(vnode.rawChildren.map(child => this._renderNode(child)));
+        vnode.append(...renderedChildren);
+
+        const payload = await handler(vnode);
 
         if (!payload) {
-            return '';
+            return vnode; // Return the original node
         }
 
-        let html = payload.html || '';
         let scopeId;
 
         // Process scoped CSS if provided.
         if (payload.scopedCss) {
             if (!this._scopeIds.has(resolvedName)) {
-                // First time seeing this component type, generate a new scope ID.
                 scopeId = `mwi-${this._nextScopeId++}`;
                 this._scopeIds.set(resolvedName, scopeId);
-
-                // Substitute '@@' in the CSS and store it.
                 const css = payload.scopedCss.replace(/^\s+/g, '').replace(/@@/g, scopeId);
                 this._scopedCss.set(resolvedName, css);
             } else {
                 scopeId = this._scopeIds.get(resolvedName);
             }
-
-            // Substitute '@@' in the HTML as well.
-            if (html) {
-                html = html.replace(/@@/g, scopeId);
-            }
+            vnode.scope = scopeId;
         }
 
         // Process a `content` payload by recursively rendering it.
-         if (payload.content) {
-            const resolvedContent = await this._resolveContent(
-                payload.content, props, childStrings
-            );
-
-            const contentToRender = scopeId
-                ? this._substituteScope(resolvedContent, scopeId)
-                : resolvedContent;
-
-            // The recursive call to _renderNode will return an HtmlString.
-            // We need to get its primitive value before returning.
-            const result = await this._renderNode(contentToRender);
-            return result.toString();
+        if (payload.content) {
+            const resolvedContent = await this._resolveContent(payload.content, vnode);
+            const contentVNode = await this._renderNode(resolvedContent);
+            vnode.append(contentVNode);
         }
 
-        return html;
+        // If the handler returned a new vnode, render that instead.
+        if (payload instanceof VirtualNode) {
+            return this._renderComponent(payload);
+        }
+
+        return vnode;
     }
 
     /**
@@ -217,22 +186,19 @@ class SsrRenderer {
      * a function (JS or Mesgjs) that needs to be executed.
      *
      * @param {any} content The content to resolve.
-     * @param {NANOS} props The component's properties.
-     * @param {string[]} children The component's rendered children.
+     * @param {VirtualNode} vnode The component's virtual node.
      * @returns {Promise<any>} The resolved content.
      * @private
      */
-    async _resolveContent(content, props, children) {
+    async _resolveContent(content, vnode) {
         if (typeof content === 'function') {
             if (content.msjsType === '@function') {
                 // Mesgjs @function: send a `(call)` message.
-                // The NANOS constructor will correctly destructure the props
-                // object and index the children, preserving order.
-                const mesgParams = new NANOS(props, ...children);
+                const mesgParams = new NANOS(vnode.attributes, ...vnode.children);
                 return await content('call', mesgParams);
             } else {
                 // Standard JavaScript function
-                return await content(props, ...children);
+                return await content(vnode);
             }
         }
 

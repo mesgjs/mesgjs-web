@@ -197,7 +197,7 @@ export class VirtualNode {
             }
             if (Array.isArray(names)) {
                 for (const name of names) {
-                    this.classNames.add(name);
+                    this.classNames.delete(name);
                 }
             }
         }
@@ -219,7 +219,7 @@ export class VirtualNode {
         }
         if (value === false || value === null) {
             this.attributes.delete(name);
-        } else if (/^[a-zA-Z0-9_-]+$/.test(key)) {
+        } else if (/^[a-zA-Z0-9_-]+$/.test(name)) {
             if (value === true) {
                 this.attributes.set(name, true);
             } else {

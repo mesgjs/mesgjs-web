@@ -4,14 +4,14 @@ The foundational Server-Side Rendering (SSR) and Client-Side Rendering (CSR) pip
 
 ## Recent Changes
 
-*   **Fixed SSR Rendering:** Corrected the `SsrRenderer.esm.js` to properly handle nested components and prevent double-escaping of HTML.
-*   **Implemented CSR Foundation:** Created and implemented the `CsrRenderer.esm.js`, which can recursively render component definitions into DOM nodes.
-*   **Created Client-Side `h.*` Handlers:** Implemented a dynamic component handler (`src/client/components/h.esm.js`) using a `Proxy` to create DOM elements for any `h.*` component. This handler correctly processes attributes and children.
-*   **Created Client-Side Component Factory:** Developed a simple `ComponentFactory.esm.js` for the client-side to resolve and provide component handlers to the renderer.
-*   **Validated CSR Implementation:** Created `csr-test.html` and `csr-test.esm.js` to successfully test and verify the end-to-end client-side rendering functionality.
+*   **Architectural Refactor (SSR):** Refactored the entire server-side rendering pipeline to use a new `VirtualNode` abstraction. This change simplifies the rendering logic, centralizes bilingual data handling (JS vs. NANOS), and improves the overall maintainability of the system.
+*   **Introduced `VirtualNode`:** Created `src/server/VirtualNode.esm.js` to act as a proxy for DOM nodes, providing a unified API for manipulating attributes, classes, and children.
+*   **Updated `SsrRenderer`:** The `SsrRenderer` at `src/server/SsrRenderer.esm.js` now builds a tree of `VirtualNode` objects instead of HTML strings.
+*   **Simplified Component Handlers:** Created a new generic `h.*` handler at `src/server/components/h.esm.js` and refactored the `ComponentFactory` to use it, removing complex HTML-generation logic from the handlers.
+*   **Deprecated `:class`:** Removed the special `:class` attribute in favor of the `VirtualNode`'s built-in handling of the standard `class` attribute.
 
 ## Next Steps
 
-1.  **Implement Client-Side Event Handling:** Add support for event listeners (e.g., `:click`) within the client-side component handlers to make the rendered components interactive.
-2.  **Refine Component Architecture:** Begin developing higher-level semantic components (e.g., `button`, `textInput`) that build upon the `h.*` primitives.
+1.  **Architectural Refactor (CSR):** Replicate the `VirtualNode` architecture on the client side. This will involve creating a client-side `VirtualNode` that generates DOM elements and refactoring the `CsrRenderer` and its component handlers to use it.
+2.  **Implement Client-Side Event Handling:** Add support for event listeners (e.g., `:click`) within the new client-side `VirtualNode` architecture.
 3.  **Hydration Strategy:** Design and implement a "hydration" mechanism in the `CsrRenderer` to attach event listeners and make server-rendered HTML interactive without a full re-render.

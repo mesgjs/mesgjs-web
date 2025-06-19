@@ -1,5 +1,6 @@
 import { NANOS } from '../shared/vendor.esm.js';
 import { StringSet } from '../shared/StringSet.esm.js';
+import h from './components/h.esm.js';
 
 /**
  * @copyright 2025 Kappa Computer Solutions, LLC and Brian Katzung.
@@ -12,110 +13,38 @@ import { StringSet } from '../shared/StringSet.esm.js';
  * @license MIT
  */
 
-/**
- * Escapes a string for use in an HTML attribute value.
- * @param {any} str The value to escape.
- * @returns {string} The escaped string.
- */
-const escapeAttr = (str) => String(str)
-    .replace(/&/g, '&amp;')
-    .replace(/"/g, '&quot;');
-
-/**
- * A generic handler for creating basic HTML elements. It implements security
- * policies for attribute and class rendering and supports bilingual data sources.
- * @param {string} tag The HTML tag to create.
- * @returns {function(object, ...any): {html: string}} A function that renders the element.
- */
-const basicElementHandler = (tag) => (props, ...children) => {
-    const attributes = [];
-    // Normalize properties from either a JS object or a NANOS instance.
-    const propsSource = (props instanceof NANOS) ? props.storage : (props || {});
-    const classSet = new StringSet();
-
-    for (const [key, value] of Object.entries(propsSource)) {
-        switch (key) {
-        case ':class':
-            if (Array.isArray(value) || value instanceof NANOS) {
-                classSet.add(...value.values());
-                continue;
-            }
-            // Fall through...
-        case 'class':
-            if (typeof value === 'string') {
-                classSet.add(value);
-            }
-            continue;
-        }
-        if (!String(key).startsWith(':')) {
-            attributes.push(`${escapeAttr(key)}="${escapeAttr(value)}"`);
-        }
-    }
-
-    const classes = classSet.toArray().filter(c => typeof c === 'string' && /^-?[_a-zA-Z]+[_a-zA-Z0-9-]*$/.test(c));
-
-    if (classes.length) {
-        // Security: The final class string is also escaped as a defense-in-depth measure.
-        attributes.push(`class="${escapeAttr(classes.join(' '))}"`);
-    }
-
-    const attrs = attributes.join(' ');
-    const innerHTML = children.flat().join('');
-
-    return {
-        html: `<${tag}${attrs ? ' ' + attrs : ''}>${innerHTML}</${tag}>`
-    };
-};
-
 // A map of primitive component handlers.
 const componentHandlers = new Map([
-    ['h.div', basicElementHandler('div')],
-    ['h.p', basicElementHandler('p')],
-    ['h.h1', basicElementHandler('h1')],
-    ['h.a', basicElementHandler('a')],
-    ['h.button', basicElementHandler('button')],
-    ['h.img', basicElementHandler('img')],
-    ['h.span', basicElementHandler('span')],
-    ['h.title', basicElementHandler('title')],
-    ['h.head', basicElementHandler('head')],
-    ['h.body', basicElementHandler('body')],
-    ['h.html', basicElementHandler('html')],
-    ['button', (props, ...children) => {
+    ['button', (vnode) => {
         // If an href is provided, render a link styled as a button.
         // Otherwise, render a standard button.
-        const propsSource = (props instanceof NANOS) ? props.storage : (props || {});
-        const tag = propsSource.href ? 'h.a' : 'h.button';
+        const tag = vnode.getAttribute('href') ? 'h.a' : 'h.button';
 
         // Combine all class sources into a single set.
         const classSet = new StringSet(
             'button', // Default class
-            propsSource.class, // from a `class` attribute string
-            propsSource[':class'] // from a `:class` list/array
+            vnode.getAttribute('class') // from a `class` attribute string
         );
 
-        // Create the final props, ensuring `:class` is a NANOS list
-        // and removing the original `class` attribute.
-        const finalProps = new NANOS(props);
-        finalProps.set(':class', new NANOS(...classSet.toArray()));
-        finalProps.delete('class');
+        // Create the final props, ensuring `class` is a string
+        const finalProps = new NANOS(vnode.attributes);
+        finalProps.set('class', classSet.toString());
 
         return {
-            content: [tag, finalProps, ...children]
+            content: [tag, finalProps, ...vnode.children]
         };
     }],
-    ['card', (props, ...children) => {
-        // Normalize properties from either a JS object or a NANOS instance.
-        const propsSource = (props instanceof NANOS) ? props.storage : (props || {});
-        const title = propsSource.title || 'Default Title';
+    ['card', (vnode) => {
+        const title = vnode.getAttribute('title') || 'Default Title';
 
         return {
             scopedCss: `
                 .@@-card { border: 1px solid #ccc; border-radius: 8px; padding: 16px; }
                 .@@-title { font-size: 1.5em; margin-bottom: 8px; }
             `,
-            content: ['h.div', { ':class': ['@@-card'] },
-                ['h.h1', { ':class': ['@@-title'] }, title],
-                ...children
+            content: ['h.div', { class: '@@-card' },
+                ['h.h1', { class: '@@-title' }, title],
+                ...vnode.children
             ]
         };
     }]
@@ -134,6 +63,10 @@ class ComponentFactory {
      */
     async get(symbolicName) {
         // In the future, this will query the module resolution system.
+        if (symbolicName.startsWith('h.')) {
+            return { handler: h, resolvedName: symbolicName };
+        }
+
         if (componentHandlers.has(symbolicName)) {
             return {
                 handler: componentHandlers.get(symbolicName),
