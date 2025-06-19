@@ -12,54 +12,43 @@ import h from './components/h.esm.js';
  * @license MIT
  */
 
-// A map of primitive component handlers.
 const componentHandlers = new Map([
-    ['button', (vnode) => {
-        // If an href is provided, render a link styled as a button.
-        // Otherwise, render a standard button.
-        const tag = vnode.get('href') ? 'h.a' : 'h.button';
-
-        if (tag === 'h.a') {
+    // "Smart" handler for the button component.
+    ['button', async (vnode, renderer) => {
+        const tag = vnode.get('href') ? 'a' : 'button';
+        vnode.opts.tag = tag;
+        if (tag === 'a') {
             vnode.editClass('button');
         }
-
-        return {
-            content: [tag, vnode.attributes, ...vnode.children]
-        };
+        await vnode.renderChildren(renderer);
+        return vnode;
     }],
-    ['card', (vnode) => {
-        const title = vnode.get('title') || 'Default Title';
-
-        return {
-            scopedCss: `
-                .@@-card { border: 1px solid #ccc; border-radius: 8px; padding: 16px; }
-                .@@-title { font-size: 1.5em; margin-bottom: 8px; }
-            `,
-            content: ['h.div', { class: '@@-card' },
-                ['h.h1', { class: '@@-title' }, title],
-                ...vnode.children
+    // "Low-code" handler for the card component.
+    ['card', [
+        'h.div', { class: 'card', ':slot': 'self' },
+        ['div', { class: 'card-header' },
+            ['m.slot', { name: 'header' },
+                // Default content for the header slot
+                ['h.h1', 'Default Card Title']
             ]
-        };
-    }]
+        ],
+        ['div', { class: 'card-body' },
+            ['m.slot'] // Default slot for the main content
+        ]
+    ]]
 ]);
 
 class ComponentFactory {
     /**
      * Retrieves a component handler by its symbolic name.
-     * For this mock implementation, it resolves `h.<tagname>` components and
-     * a sample 'card' component.
      *
      * @param {string} symbolicName The name of the component to retrieve.
      * @returns {Promise<{handler: Function, resolvedName: string}|undefined>}
-     *   A promise that resolves to an object containing the handler and its
-     *   resolved name, or undefined if not found.
      */
     async get(symbolicName) {
-        // In the future, this will query the module resolution system.
         if (symbolicName.startsWith('h.')) {
             return { handler: h, resolvedName: symbolicName };
         }
-
         if (componentHandlers.has(symbolicName)) {
             return {
                 handler: componentHandlers.get(symbolicName),

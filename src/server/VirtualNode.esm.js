@@ -26,8 +26,7 @@ export class VirtualNode {
         this.opts = opts;
         this._attributes = new Map();
         this.classNames = new Set();    // Active class names
-        this.children = [];             // Rendered children
-        this.rawChildren = [];          // Unrendered children
+        this.children = [];             // Child nodes
         this.scope = undefined;         // Optional scope prefix for @@ replacements
         this.styles = new Map();        // Active styles
     }
@@ -36,11 +35,6 @@ export class VirtualNode {
     append (...children) {
         this.children.push(...children);
         return this;
-    }
-
-    // Append raw children (unrendered)
-    appendRaw (...children) {
-        this.rawChildren.push(...children);
     }
 
     // Return the internal attribute Map
@@ -123,36 +117,32 @@ export class VirtualNode {
 
     // Create a VirtualNode from structured data (JS Array or NANOS)
     static fromData (data) {
-        let node;
         if (Array.isArray(data)) {
-            // [type, {attr: val, ...}, child, child, ...]
-            // Attribute objects are optional (0+), and order-independent
-            for (const item of data) {
-                const type = typeof item, subtype = item?.constructor?.name;
-                if (type === 'string' && !node) {
-                    node = new VirtualNode(item);
-                } else if (node) {
-                    if (item instanceof Map || (type === 'object' && (!subtype || subtype === 'Object'))) {
-                        const entries = (typeof item.entries === 'function') ? item.entries() : Object.entries(item);
-                        for (const [key, value] of entries) {
-                            node.set(key, value);
-                        }
-                    } else {
-                        node.appendRaw(item);
+            const [type, ...rest] = data;
+            const node = new VirtualNode(type);
+            for (const item of rest) {
+                const itemType = typeof item;
+                const subtype = item?.constructor?.name;
+                if (itemType === 'object' && item !== null && (!subtype || subtype === 'Object' || item instanceof Map)) {
+                    const entries = (typeof item.entries === 'function') ? item.entries() : Object.entries(item);
+                    for (const [key, value] of entries) {
+                        node.set(key, value);
                     }
+                } else {
+                    node.children.push(item);
                 }
             }
+            return node;
         } else if (typeof data?.values === 'function' && typeof data?.namedEntries === 'function') {
-            // NANOS structure: values() gives [type, child, child, ...]
-            // namedEntries() gives {attr: val, ...}
-            const [type, ...rawChildren] = data.values();
-            node = new VirtualNode(type);
-            node.appendRaw(...rawChildren);
+            const [type, ...children] = data.values();
+            const node = new VirtualNode(type);
+            node.children.push(...children);
             for (const [key, value] of data.namedEntries()) {
                 node.set(key, value);
             }
+            return node;
         }
-        return node;
+        return undefined;
     }
 
     // Get an attribute ("prop") value
@@ -208,11 +198,9 @@ export class VirtualNode {
         return result;
     }
 
-    // Return a (raw) document fragment (h.FRAG) node
-    static rawFragment (...children) {
-        const node = new VirtualNode('h.FRAG', { noOpen: true, noClose: true });
-        node.appendRaw(...children);
-        return node;
+    async renderChildren(renderer) {
+        this.children = await Promise.all(this.children.map(c => renderer._renderNode(c)));
+        return this;
     }
 
     // Remove classes based on Arrays or strings of space-separated values

@@ -11,17 +11,14 @@
 
 /**
  * Generic server-side component handler for all `h.*` (HTML primitive)
- * components.
+ * components. This is a "smart" handler that modifies the vnode in place.
  *
  * @param {VirtualNode} vnode - The virtual node representing the component.
- * @returns {VirtualNode} The processed virtual node.
  */
-export default function (vnode) {
-    // For SSR, the h.* components are essentially pass-throughs.
-    // The VirtualNode and SsrRenderer handle the heavy lifting of attribute
-    // processing and HTML generation.
-    // We just need to set the tag name for the final output.
+export default async function (vnode, renderer) {
+    // Set the tag name for the final output.
     vnode.opts.tag = vnode.type.substring(2);
-
+    // Render the children.
+    await vnode.renderChildren(renderer);
     return vnode;
 }
