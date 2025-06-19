@@ -139,6 +139,10 @@ class SsrRenderer {
             const resolvedContent = await this._resolveContent(payload.content, vnode);
             const contentVNode = await this._renderNode(resolvedContent);
 
+            // The original node's children have already been rendered.
+            // Append them to the new content node.
+            contentVNode.append(...vnode.children);
+
             // Apply the scope to the new node generated from the content.
             if (scopeId && contentVNode.type) {
                 contentVNode.scope = scopeId;
