@@ -121,7 +121,6 @@ class SsrRenderer {
         const { handler, resolvedName } = await this._componentFactory.get(componentName) || {};
 
         if (!handler) {
-            console.log(componentDef)
             console.warn(`Component handler not found for "${componentName}"`);
             return '';
         }
@@ -145,7 +144,7 @@ class SsrRenderer {
                 this._scopeIds.set(resolvedName, scopeId);
 
                 // Substitute '@@' in the CSS and store it.
-                const css = payload.scopedCss.replace(/@@/g, scopeId);
+                const css = payload.scopedCss.replace(/^\s+/g, '').replace(/@@/g, scopeId);
                 this._scopedCss.set(resolvedName, css);
             } else {
                 scopeId = this._scopeIds.get(resolvedName);
