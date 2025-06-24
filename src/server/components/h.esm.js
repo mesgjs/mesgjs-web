@@ -13,7 +13,7 @@
  * Generic server-side component handler for all `h.*` (HTML primitive)
  * components. This is a "smart" handler that modifies the vnode in place.
  *
- * @param {VirtualNode} vnode - The virtual node representing the component.
+ * @param {MWISSRVNode} vnode - The virtual node representing the component.
  */
 export default async function (vnode, renderer) {
     // Set the tag name for the final output.

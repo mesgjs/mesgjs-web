@@ -7,7 +7,7 @@
  *
  * @license Apache-2.0
  */
-class PageTemplate {
+class MWIDefaultPageTemplate {
     /**
      * @type {Map<string, string[]>}
      * @private
@@ -72,4 +72,4 @@ ${bodyContent}
     }
 }
 
-export { PageTemplate };
+export { MWIDefaultPageTemplate };

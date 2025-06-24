@@ -8,18 +8,18 @@
  * @license MIT
  */
 
-import { PageTemplate as DefaultPageTemplate } from './DefaultPageTemplate.esm.js';
-import { VirtualNode } from './VirtualNode.esm.js';
+import { MWIDefaultPageTemplate } from './MWIDefaultPageTemplate.esm.js';
+import { MWISSRVNode } from './MWISSRVNode.esm.js';
 import { StringSet } from '../shared/StringSet.esm.js';
 
-class SsrRenderer {
+class MWISSR {
     _componentFactory;
 
     constructor(componentFactory) {
         this._componentFactory = componentFactory;
     }
 
-    async render(pageData, { template = new DefaultPageTemplate() } = {}) {
+    async render(pageData, { template = new MWIDefaultPageTemplate() } = {}) {
         const bodyVNode = await this._renderNode(pageData);
         if (bodyVNode) {
             template.addContent('body', bodyVNode.outerHTML);
@@ -28,16 +28,16 @@ class SsrRenderer {
     }
 
     async _renderNode(nodeData) {
-        if (nodeData instanceof VirtualNode) {
+        if (nodeData instanceof MWISSRVNode) {
             return nodeData; // It's already rendered.
         }
         if (typeof nodeData !== 'object' || nodeData === null) {
-            return VirtualNode.textNode(String(nodeData));
+            return MWISSRVNode.textNode(String(nodeData));
         }
 
-        const vnode = VirtualNode.fromData(nodeData);
+        const vnode = MWISSRVNode.fromData(nodeData);
         if (!vnode) {
-            return VirtualNode.textNode('');
+            return MWISSRVNode.textNode('');
         }
 
         const { handler } = await this._componentFactory.get(vnode.type) || {};
@@ -58,7 +58,7 @@ class SsrRenderer {
 
     _transformDeclarativeTemplate(templateData, instanceVNode) {
         const slotMap = this._buildSlotMap(instanceVNode.children);
-        const templateNode = VirtualNode.fromData(templateData);
+        const templateNode = MWISSRVNode.fromData(templateData);
         if (!templateNode) {
             return templateData; // Return unchanged if not a valid node structure
         }
@@ -71,7 +71,7 @@ class SsrRenderer {
             attrs: { default: {} }
         };
         for (const child of children) {
-            const childVNode = (typeof child === 'object' && child !== null) ? VirtualNode.fromData(child) : null;
+            const childVNode = (typeof child === 'object' && child !== null) ? MWISSRVNode.fromData(child) : null;
             if (childVNode && childVNode.type === 'm.attrs') {
                 const slotName = childVNode.get(':name') || 'default';
                 slotMap.attrs[slotName] = { ...slotMap.attrs[slotName], ...childVNode.attributes };
@@ -116,7 +116,7 @@ class SsrRenderer {
     }
 
     _substituteSlots(vnode, slotMap, instanceAttrs) {
-        if (!(vnode instanceof VirtualNode)) {
+        if (!(vnode instanceof MWISSRVNode)) {
             return vnode; // Return unchanged if not a VirtualNode
         }
 
@@ -154,7 +154,7 @@ class SsrRenderer {
         const newChildren = [];
         for (const child of vnode.children) {
             const processedChild = this._substituteSlots(
-                child instanceof VirtualNode ? child : VirtualNode.fromData(child),
+                child instanceof MWISSRVNode ? child : MWISSRVNode.fromData(child),
                 slotMap,
                 instanceAttrs
             );
@@ -170,4 +170,4 @@ class SsrRenderer {
     }
 }
 
-export { SsrRenderer };
+export { MWISSR };

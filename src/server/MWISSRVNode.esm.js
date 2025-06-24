@@ -13,11 +13,10 @@ function escapeHtml (str) {
  * pre-HTML-escaped) to potentially support other output formats in the
  * future (e.g. JSON or SLID).
  *
- * @class VirtualNode
+ * @class MWISSRVNode
  */
-export class VirtualNode {
+export class MWISSRVNode {
     constructor (type, opts = {}) {
-        // Consider h.FRAG(MENT) for fragments?
         if (typeof type === 'string' && /^[a-zA-Z0-9@:.+-]+$/.test(type)) {
             this.type = type;
         } else {

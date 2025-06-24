@@ -1,4 +1,6 @@
-# Sample Rendering Walkthrough
+# Sample Rendering Walkthrough \[OUT-OF-DATE\]
+
+NOTE: THIS DOCUMENT IS NO LONGER CURRENT
 
 This document provides a step-by-step walkthrough of the server-side rendering process, from the initial page data to the final HTML output. It illustrates how the declarative payload system, component macros, and resource aggregation work together.
 
@@ -17,7 +19,7 @@ The process begins with a user-provided Mesgjs data structure that defines the p
 
 ## 2. Component Handlers
 
-The `ComponentFactory` provides handlers for each component type.
+The `MWISSRFactory` provides handlers for each component type.
 
 ### Semantic Components (Macros)
 
@@ -66,9 +68,9 @@ return {
 }
 ```
 
-## 3. SsrRenderer Execution Trace
+## 3. MWISSR Execution Trace
 
-1.  **Start:** `SsrRenderer.render(pageData)` is called. It initializes an empty `PageTemplate` and master resource sets (e.g., `styles: new Set()`).
+1.  **Start:** `MWISSR.render(pageData)` is called. It initializes an empty `MWIDefaultPageTemplate` and master resource sets (e.g., `styles: new Set()`).
 2.  **Process `Page`:** `renderNode([Page...])` is called. The `PageHandler` is executed.
     *   It returns its `content` payload (`[h.html...]`).
     *   The renderer adds `/css/main.css` to the master `styles` set.
@@ -83,6 +85,6 @@ return {
     *   The handler assembles the final string and returns its `html` payload: `{ html: '<div class="profile">Welcome, Alice!</div>' }`.
 6.  **Unwind:** The recursion unwinds. Each `h.*` handler receives the rendered HTML from its children and assembles its own HTML string, passing it up the call stack.
 7.  **Final Assembly:** The top-level `render()` call now has the complete HTML for the page body and the deduplicated master resource sets.
-    *   The body HTML is added to the `PageTemplate`.
-    *   `<link>` tags for `/css/main.css` and `/css/profile.css` are added to the `head` position of the `PageTemplate`.
+    *   The body HTML is added to the `MWIDefaultPageTemplate`.
+    *   `<link>` tags for `/css/main.css` and `/css/profile.css` are added to the `head` position of the `MWIDefaultPageTemplate`.
 8.  **Finish:** `template.render()` is called, returning the final, complete HTML document.
