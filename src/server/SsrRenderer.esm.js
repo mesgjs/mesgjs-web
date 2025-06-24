@@ -8,10 +8,9 @@
  * @license MIT
  */
 
-import { ComponentFactory } from './ComponentFactory.esm.js';
 import { PageTemplate as DefaultPageTemplate } from './DefaultPageTemplate.esm.js';
-import { NANOS } from '../shared/vendor.esm.js';
 import { VirtualNode } from './VirtualNode.esm.js';
+import { StringSet } from '../shared/StringSet.esm.js';
 
 class SsrRenderer {
     _componentFactory;
@@ -59,98 +58,115 @@ class SsrRenderer {
 
     _transformDeclarativeTemplate(templateData, instanceVNode) {
         const slotMap = this._buildSlotMap(instanceVNode.children);
-        return this._substituteSlots(templateData, slotMap, instanceVNode.attributes);
+        const templateNode = VirtualNode.fromData(templateData);
+        if (!templateNode) {
+            return templateData; // Return unchanged if not a valid node structure
+        }
+        return this._substituteSlots(templateNode, slotMap, instanceVNode.attributes);
     }
 
     _buildSlotMap(children) {
-        const slotMap = { default: [] };
+        const slotMap = {
+            nodes: { default: [] },
+            attrs: { default: {} }
+        };
         for (const child of children) {
             const childVNode = (typeof child === 'object' && child !== null) ? VirtualNode.fromData(child) : null;
             if (childVNode && childVNode.type === 'm.attrs') {
-                const slotName = childVNode.get(':name') || 'self';
-                slotMap[slotName] = { ...slotMap[slotName], ...childVNode.attributes };
+                const slotName = childVNode.get(':name') || 'default';
+                slotMap.attrs[slotName] = { ...slotMap.attrs[slotName], ...childVNode.attributes };
             } else if (childVNode && childVNode.get(':slot')) {
                 const slotName = childVNode.get(':slot');
-                if (!slotMap[slotName]) slotMap[slotName] = [];
-                slotMap[slotName].push(child);
+                if (!slotMap.nodes[slotName]) slotMap.nodes[slotName] = [];
+                slotMap.nodes[slotName].push(child);
             } else {
-                slotMap.default.push(child);
+                slotMap.nodes.default.push(child);
             }
         }
         return slotMap;
     }
 
-    _substituteSlots(templateData, slotMap, instanceAttrs) {
-        if (typeof templateData !== 'object' || templateData === null) {
-            return templateData;
+    _mergeAttributes(targetNode, sourceAttrs, allow, deny) {
+        if (!sourceAttrs) return;
+
+        // Convert allow/deny to StringSet if they exist
+        const allowSet = allow ? new StringSet(allow) : null;
+        const denySet = deny ? new StringSet(deny) : null;
+
+        for (const [key, value] of sourceAttrs.entries()) {
+            let canOverride = true;
+            if (allowSet) canOverride = allowSet.has(key);
+            else if (denySet) canOverride = !denySet.has(key);
+
+            if (!canOverride) continue;
+
+            // Special handling for class and style
+            switch (key) {
+            case 'class':
+                targetNode.editClass(value);
+                break;
+            case 'style':
+                targetNode.editStyle(value);
+                break;
+            default:
+                targetNode.set(key, value);
+                break;
+            }
+        }
+    }
+
+    _substituteSlots(vnode, slotMap, instanceAttrs) {
+        if (!(vnode instanceof VirtualNode)) {
+            return vnode; // Return unchanged if not a VirtualNode
         }
 
-        if (Array.isArray(templateData)) {
-            const first = templateData[0];
-            if (first === 'm.slot') {
-                const slotName = templateData[1]?.name || 'default';
-                return slotMap[slotName] || templateData.slice(1);
-            }
-
-            const newTemplate = [first];
-            let attrs = {};
-            let hasAttrs = false;
-
-            for (let i = 1; i < templateData.length; i++) {
-                const item = templateData[i];
-                if (typeof item === 'object' && item !== null && !Array.isArray(item)) {
-                    attrs = { ...attrs, ...item };
-                    hasAttrs = true;
-                } else {
-                    newTemplate.push(this._substituteSlots(item, slotMap, instanceAttrs));
-                }
-            }
-
-            const attrSlotName = attrs[':slot'];
-            if (attrSlotName && slotMap[attrSlotName]) {
-                const slotAttrs = slotMap[attrSlotName];
-                const allow = attrs[':allow'];
-                const deny = attrs[':deny'];
-
-                for (const [key, value] of Object.entries(slotAttrs)) {
-                    let canOverride = true;
-                    if (allow) canOverride = allow.includes(key);
-                    else if (deny) canOverride = !deny.includes(key);
-
-                    if (canOverride) {
-                        attrs[key] = value;
-                    }
-                }
-            } else if (attrSlotName === 'self' && instanceAttrs) {
-                // Special case for merging the instance attributes
-                for (const [key, value] of instanceAttrs.entries()) {
-                    if (!attrs[key]) {
-                        attrs[key] = value;
-                    }
-                }
-            }
-
-
-            if (Object.keys(attrs).length > 0) {
-                newTemplate.splice(1, 0, attrs);
-            }
-            return newTemplate.flat();
-        } else if (typeof templateData.map === 'function') { // NANOS
-            const newNanos = new NANOS();
-            for (const [key, value] of templateData.namedEntries()) {
-                newNanos.set(key, value);
-            }
-            for (const value of templateData.values()) {
-                const substituted = this._substituteSlots(value, slotMap, instanceAttrs);
-                if (Array.isArray(substituted)) {
-                    newNanos.push(...substituted);
-                } else {
-                    newNanos.push(substituted);
-                }
-            }
-            return newNanos;
+        // Handle slot nodes
+        if (vnode.type === 'm.slot') {
+            const slotName = vnode.get('name') || 'default';
+            return slotMap.nodes[slotName] || vnode.children;
         }
-        return templateData;
+
+        // Handle attribute slots from the template node
+        const templateSlotName = vnode.get(':slot');
+        if (templateSlotName && slotMap.attrs[templateSlotName]) {
+            this._mergeAttributes(
+                vnode,
+                slotMap.attrs[templateSlotName],
+                vnode.get(':allow'),
+                vnode.get(':deny')
+            );
+        }
+
+        // Handle attribute slots from instance attributes
+        if (instanceAttrs) {
+            const instanceSlotName = instanceAttrs.get(':slot');
+            if (instanceSlotName && slotMap.attrs[instanceSlotName]) {
+                this._mergeAttributes(
+                    vnode,
+                    slotMap.attrs[instanceSlotName],
+                    instanceAttrs.get(':allow'),
+                    instanceAttrs.get(':deny')
+                );
+            }
+        }
+
+        // Process children recursively
+        const newChildren = [];
+        for (const child of vnode.children) {
+            const processedChild = this._substituteSlots(
+                child instanceof VirtualNode ? child : VirtualNode.fromData(child),
+                slotMap,
+                instanceAttrs
+            );
+            if (Array.isArray(processedChild)) {
+                newChildren.push(...processedChild);
+            } else {
+                newChildren.push(processedChild);
+            }
+        }
+        vnode.children = newChildren;
+
+        return vnode;
     }
 }
 

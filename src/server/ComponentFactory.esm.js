@@ -25,14 +25,14 @@ const componentHandlers = new Map([
     }],
     // "Low-code" handler for the card component.
     ['card', [
-        'h.div', { class: 'card', ':slot': 'self' },
-        ['div', { class: 'card-header' },
+        'h.div', { class: 'card', ':slot': 'default' },
+        ['h.div', { class: 'card-header' },
             ['m.slot', { name: 'header' },
                 // Default content for the header slot
                 ['h.h1', 'Default Card Title']
             ]
         ],
-        ['div', { class: 'card-body' },
+        ['h.div', { class: 'card-body' },
             ['m.slot'] // Default slot for the main content
         ]
     ]]

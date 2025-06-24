@@ -31,7 +31,7 @@ export class VirtualNode {
         this.styles = new Map();        // Active styles
     }
 
-    // Append children (rendered)
+    // Append children
     append (...children) {
         this.children.push(...children);
         return this;

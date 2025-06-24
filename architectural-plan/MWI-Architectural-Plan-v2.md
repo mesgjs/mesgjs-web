@@ -13,13 +13,13 @@ The architecture is built on a single, elegant, recursive rendering function: `_
 ```mermaid
 graph TD
     subgraph "Page Data"
-        A[Page Data (String, Number, Array, NANOS, or VNode)]
+        A["Page Data (String, Number, Array, NANOS, or VNode)"]
     end
 
     subgraph "SsrRenderer._renderNode(data)"
         B{Input Type?}
         B -- "Primitive" --> C[Return TextNode]
-        B -- "VirtualNode" --> D[Return as-is (Base Case)]
+        B -- "VirtualNode" --> D["Return as-is (Base Case)"]
         B -- "Array/NANOS" --> E[Process as Component]
     end
 

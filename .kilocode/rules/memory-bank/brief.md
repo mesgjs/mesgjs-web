@@ -25,3 +25,7 @@ can be caught early and without wasting a lot of resources.
 Many aspects of this project may be atypical, so please check in before making
 any decisions that might have significant consequences (including but not limited to
 requiring major code rewrites).
+
+If it is necessary to add to the src/shared/vendor.esm.js, the links in the
+src/dev-resources mirror the structor of the corresponding mesgjs github
+repos.
