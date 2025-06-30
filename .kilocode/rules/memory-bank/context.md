@@ -1,14 +1,59 @@
 # Current Context
 
-We have completed a major architectural refactoring of the Server-Side Rendering (SSR) engine, moving to an "Incremental, Single-Pass Rendering" model as defined in `architectural-plan/MWI-Architectural-Plan-v2.md`. All relevant files (`SsrRenderer`, `VirtualNode`, `ComponentFactory`, and component handlers) have been updated to align with this new architecture.
+## Architectural Documentation Plan
+
+We are breaking down the v3 architecture documentation into focused, sequential documents:
+
+1. **Core Architecture** (MWI-Architecture-v3-Core.md)
+   - High-level system overview
+   - Key architectural decisions
+   - Component relationships
+   - Basic rendering pipeline
+   - Module system requirements
+
+2. **Resource Management** (MWI-Architecture-v3-Resources.md)
+   - Class name scoping system
+   - CSS handling
+   - Script/module loading
+   - Resource deduplication
+   - Integrity checking
+
+3. **Component Lifecycle** (MWI-Architecture-v3-Components.md)
+   - Component handler structure
+   - State management
+   - Mount/unmount hooks
+   - Event system
+
+4. **SSR/CSR Bridge** (MWI-Architecture-v3-Hydration.md)
+   - Hydration process
+   - State preservation
+   - Resource activation
+   - Event reattachment
+
+5. **Reactive Architecture** (MWI-Architecture-v3-Reactive.md)
+   - Integration with fine-grained reactive library
+   - Direct DOM updates using eager reactives
+   - Field-specific state management
+   - Component-level reactive patterns
 
 ## Current Status
 
-*   **Architecture:** The new architecture is finalized and documented.
-*   **Implementation:** All code changes for the new architecture have been implemented.
-*   **Problem:** The primary rendering bug that caused an "undefined" body in the HTML output has been resolved. The issue was a missing `return` statement in the `h.*` component handler.
+- All v3 architecture documents have been created
+- MWIMUM implementation optimized for performance
+- Reactive architecture documented with:
+  - Simple approach using eager reactives for DOM updates
+  - No subscription system needed
+  - Field-specific state management pattern established
+  - Example component demonstrating reactive patterns
 
 ## Next Steps
 
-1.  **Continued Testing:** Perform more extensive testing on the SSR pipeline to ensure robustness and identify any other potential issues.
-2.  **Client-Side Integration:** Begin work on integrating the client-side renderer (CSR) to hydrate the server-rendered pages.
+1. Document form-level state and validation patterns
+2. Address inter-component communication/linking
+3. Review implementation against updated architecture
+4. Begin implementing optimizations
+5. Add performance monitoring
+6. Consider additional optimizations:
+   - Parallel module loading
+   - Selective hydration
+   - Further mutation observer improvements
