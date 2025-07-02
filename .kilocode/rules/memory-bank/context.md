@@ -1,59 +1,104 @@
 # Current Context
 
-## Architectural Documentation Plan
+## Style Property Handling Patterns
 
-We are breaking down the v3 architecture documentation into focused, sequential documents:
+Recent clarifications:
+- editStyle/editClass are accumulative operations by design
+- setAttr is for complete replacements
+- Naming convention reflects behavior:
+  - edit* methods accumulate changes
+  - set* methods replace entirely
+- Style handling options:
+  - editStyle for incremental updates
+  - setAttr('style', ...) for complete replacement
+  - editStyle with empty/null to clear specific properties
 
-1. **Core Architecture** (MWI-Architecture-v3-Core.md)
-   - High-level system overview
-   - Key architectural decisions
-   - Component relationships
-   - Basic rendering pipeline
-   - Module system requirements
+## HTML Void Element Handling
 
-2. **Resource Management** (MWI-Architecture-v3-Resources.md)
-   - Class name scoping system
-   - CSS handling
-   - Script/module loading
-   - Resource deduplication
-   - Integrity checking
+Recent clarifications:
+- noTag implies noClose (since you would never have a close without an open)
+- noClose is used independently for void elements (br, img, input, etc.)
+- Void elements should be tested for both:
+  - Base functionality (type, options, attributes)
+  - HTML rendering (verifying no closing tags)
 
-3. **Component Lifecycle** (MWI-Architecture-v3-Components.md)
-   - Component handler structure
-   - State management
-   - Mount/unmount hooks
-   - Event system
+## Style Property Handling
 
-4. **SSR/CSR Bridge** (MWI-Architecture-v3-Hydration.md)
-   - Hydration process
-   - State preservation
-   - Resource activation
-   - Event reattachment
+Recent improvements:
+- Style properties are normalized to kebab-case in HTML output
+- Tests updated to expect kebab-case format (e.g., font-size)
+- Added comprehensive vendor prefix support (-webkit-, -moz-, -ms-, -o-)
+- Implemented bidirectional case conversion:
+  - Input accepts both kebab-case and camelCase
+  - Stored internally in camelCase for consistency
+  - Rendered as kebab-case for HTML output
+- This better supports:
+  - Consistent HTML rendering
+  - Client-side DOM manipulation where camelCase is standard
+  - Vendor-prefixed properties
+  - Mixed format inputs
 
-5. **Reactive Architecture** (MWI-Architecture-v3-Reactive.md)
-   - Integration with fine-grained reactive library
-   - Direct DOM updates using eager reactives
-   - Field-specific state management
-   - Component-level reactive patterns
+## HTML Primitive Handler Insights
 
-## Current Status
+Recent clarifications:
+- Arrays in component data remain arrays until rendering phase
+- This preserves data structure integrity and proper separation of concerns
+- Storage handles attribute management (excluding arrays)
+- VNode handles core functionality
+- SSRVNode handles HTML rendering
+- Component handlers control rendering options
 
-- All v3 architecture documents have been created
-- MWIMUM implementation optimized for performance
-- Reactive architecture documented with:
-  - Simple approach using eager reactives for DOM updates
-  - No subscription system needed
-  - Field-specific state management pattern established
-  - Example component demonstrating reactive patterns
+## Recent HTML Rendering Improvements
+
+Recent progress:
+- Restored attribute-updating side effects in storage implementation
+- Introduced clearer noTag option for controlling tag rendering
+- Fixed component handler to properly set tag options
+- Maintained proper separation of concerns throughout
+
+Key lessons:
+- Carefully consider the best place to implement changes before making them
+  - Initially tried to fix tag handling in SSRVNode when it belonged in component handler
+  - Started modifying VNode when the issue was in storage implementation
+  - These missteps highlight importance of understanding responsibility boundaries
+- Follow the architecture's patterns
+  - Storage handles attribute management
+  - VNode handles core functionality
+  - SSRVNode handles HTML rendering
+  - Component handlers control rendering options
+
+## Storage and Validation Understanding
+
+Recent clarifications:
+- NANOS is a generic storage mechanism, not responsible for validation
+- Validation belongs in context-sensitive code (e.g., VNode for HTML validation)
+- Storage choices should be task-appropriate, preferring NANOS when no other factors dictate
+- Current CSR implementation is out of date and should not be used as reference
+- SSR implementation represents current design direction
+
+## Implementation Status Update
+
+The architectural design for the MWI Component System has been finalized and documented in `architectural-plan/MWI-Component-Architecture.md`. The design is centered around a secure, module-driven system that uses a multi-stage feature-promise handshake for initialization. This aligns with the core principles of the Mesgjs ecosystem.
+
+The previous focus on expanding the SSR component system has now evolved into a complete architectural definition, which is ready for implementation. The decision to solidify this architecture before proceeding with deeper implementation or SSR/CSR synchronization work has been validated.
+
+## Prioritized Implementation Plan
+
+1.  **Implement Core Component Architecture** (Current Focus)
+    -   Create the `MWIComponentRegistry` module.
+    -   Implement the four-stage feature-promise handshake.
+    -   Develop the `mwi-html-core` module to register all standard, safe HTML elements.
+    -   Create the `mwi-scripting` module as a separate, secure provider for `<script>` functionality.
+    -   Develop a new, metadata-driven generic handler for `h.*` primitives.
+
+2.  **SSR/CSR Synchronization** (On Hold)
+    -   Will be revisited after the core component system is implemented and stable.
+
+3.  **Semantic Component Library** (Future)
+    -   Design and implement a library of higher-level "smart" components (e.g., `button`, `card`, form elements).
 
 ## Next Steps
 
-1. Document form-level state and validation patterns
-2. Address inter-component communication/linking
-3. Review implementation against updated architecture
-4. Begin implementing optimizations
-5. Add performance monitoring
-6. Consider additional optimizations:
-   - Parallel module loading
-   - Selective hydration
-   - Further mutation observer improvements
+1.  Begin implementation of the `MWIComponentRegistry` as a new Mesgjs module.
+2.  Create the `mwi-html-core` module and its `registerMwiComponents` function.
+3.  Establish the initial MWI application bootstrap logic that performs the feature promise handshake.

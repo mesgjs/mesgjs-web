@@ -20,14 +20,18 @@ graph TD
 ### Smart Components
 - Full lifecycle control
 - Direct event handling
-- State management
+- Reactive state management
+- Fine-grained dependency tracking
 - Shadow DOM support
+- Direct DOM updates via eager reactives
 
 ### Declarative Components
 - Template-based rendering
 - Composition with smart components
 - Static structure
 - Resource declarations
+- Reactive value consumption
+- Automatic dependency tracking
 
 ## Mount/Unmount System
 
@@ -173,6 +177,10 @@ graph TD
 interface ComponentHandler {
     // Required: Main render function
     render(data: any): ComponentPayload | any;
+    
+    // Optional: Lifecycle hooks
+    mount?(): void;
+    unmount?(): void;
 }
 
 interface ComponentPayload {
@@ -199,6 +207,18 @@ interface ComponentPayload {
             once?: boolean;
         }>;
     };
+
+    // Reactive bindings
+    reactiveBindings?: {
+        [key: string]: Reactive;
+    };
+}
+
+// Smart component with reactive support
+interface SmartComponentHandler extends ComponentHandler {
+    defineState(key: string, options: ReactiveOptions): Reactive;
+    getState(key: string): Reactive;
+    batchUpdate(callback: () => void): void;
 }
 ```
 
@@ -206,51 +226,108 @@ interface ComponentPayload {
 
 ### Component State
 
+The SmartComponent base class provides a sophisticated reactive state management system:
+
 ```typescript
 class SmartComponent {
-    private state: any;
-    private subscribers: Set<(state: any) => void>;
+    private reactiveState: Map<string, Reactive>;
+    private domUpdaters: Set<Reactive>;
     
-    protected setState(newState: any) {
-        this.state = newState;
-        this.notifySubscribers();
+    protected defineState(key: string, options: {
+        value?: any,
+        def?: (oldValue: any) => any,
+        eager?: boolean,
+        compare?: (a: any, b: any) => boolean
+    }) {
+        const r = reactive(options);
+        this.reactiveState.set(key, r);
+        return r;
     }
-    
-    protected getState(): any {
-        return this.state;
+
+    protected getState(key: string): Reactive {
+        return this.reactiveState.get(key);
     }
-    
-    subscribe(callback: (state: any) => void): () => void {
-        this.subscribers.add(callback);
-        return () => this.subscribers.delete(callback);
+
+    // Batch multiple state updates
+    protected batchUpdate(callback: () => void) {
+        reactive.batch(callback);
     }
 }
 ```
 
-### Reactive Updates
+### Reactive Component Example
 
 ```typescript
-class ReactiveComponent extends SmartComponent {
+class UserProfileComponent extends SmartComponent {
+    constructor() {
+        super();
+        // Define reactive state
+        this.defineState('firstName', { value: '' });
+        this.defineState('lastName', { value: '' });
+        
+        // Computed values with automatic dependency tracking
+        this.defineState('fullName', {
+            def: () => {
+                const first = this.getState('firstName').rv;
+                const last = this.getState('lastName').rv;
+                return `${first} ${last}`;
+            }
+        });
+
+        // Reactive class bindings
+        this.defineState('inputClasses', {
+            def: () => ({
+                'empty': !this.getState('firstName').rv,
+                'modified': this.getState('lastName').rv !== ''
+            })
+        });
+    }
+
     render(data: any) {
+        const firstName = this.getState('firstName');
+        const lastName = this.getState('lastName');
+        const fullName = this.getState('fullName');
+        const inputClasses = this.getState('inputClasses');
+        
         return {
             content: ['h.div', {}, [
-                ['h.span', {}, this.state.value]
-            ]],
-            mount: {
-                '': [{
-                    module: 'components/reactive',
-                    interface: 'bind',
-                    message: {
-                        path: 'value',
-                        initial: data.value
-                    },
-                    type: 'mount'
-                }]
-            }
+                ['h.input', {
+                    value: firstName,  // Reactive value
+                    class: inputClasses,  // Reactive class binding
+                    onInput: (e) => firstName.wv = e.target.value
+                }],
+                ['h.input', {
+                    value: lastName,
+                    onInput: (e) => lastName.wv = e.target.value
+                }],
+                ['h.div', {}, fullName]  // Reactive content
+            ]]
         };
     }
 }
 ```
+
+### Key Features
+
+1. **Fine-grained Reactivity**
+   - Automatic dependency tracking
+   - Computed/derived values
+   - Lazy and eager evaluation options
+
+2. **Direct DOM Updates**
+   - Eager reactives for immediate DOM mutations
+   - Automatic cleanup on unmount
+   - Optimized attribute and content updates
+
+3. **Batch Operations**
+   - Group multiple state changes
+   - Prevent unnecessary re-renders
+   - Maintain consistency during updates
+
+4. **Type Safety**
+   - Clear separation between read-only (.rv) and writable (.wv) access
+   - TypeScript integration
+   - Runtime type checking
 
 ## Shadow DOM Integration
 
@@ -260,7 +337,7 @@ class ReactiveComponent extends SmartComponent {
 class PrivateFieldComponent {
     render(data: any) {
         return {
-            content: ['h.div', { attachShadow: 'open' }, [
+            content: ['h.div', { attachShadow: 'closed' }, [
                 ['h.input', {
                     type: 'text',
                     value: data.value
@@ -315,16 +392,18 @@ class MWIMUM {
 ## Future Considerations
 
 1. **Performance:**
-   - Batch state updates
-   - Optimize mount/unmount detection
-   - Lazy state initialization
+    - Further optimize reactive dependency tracking
+    - Enhance mount/unmount detection
+    - Investigate selective hydration
 
 2. **Features:**
-   - Component composition patterns
-   - Lifecycle hook expansion
-   - Enhanced state management
+    - Advanced component composition patterns
+    - Expanded lifecycle hooks
+    - Form validation integration
+    - Resource loading optimization
 
 3. **Developer Experience:**
-   - Component debugging tools
-   - State inspection
-   - Mount/unmount logging
+    - Component debugging tools
+    - Reactive state inspection
+    - Mount/unmount logging
+    - TypeScript type generation

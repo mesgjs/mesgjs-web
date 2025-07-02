@@ -82,63 +82,73 @@ To further enhance component encapsulation and developer experience, the payload
 *   **Component-Handler Factory:** A unified factory with a `get(symbolicName)` method to find and instantiate components, validators, and event handlers. It is the public interface to the module resolution system.
 *   **Page-Template Object:** Manages the overall HTML page structure. It supports a modular, position-based system (e.g., "head", "body", "sidebar") for adding content, inspired by Joomla's template positions. This allows for flexible and dynamic page composition.
 
-## Component Architecture
+## Module & Component Architecture
 
-To balance ease of use for novice users with the flexibility required by experienced developers, MWI uses a two-tier component architecture with specific naming conventions. These are conventions, not strict rules, and may be enforced with warnings during development.
+The MWI component system is designed to be modular, secure, and tightly integrated with the Mesgjs module-loading ecosystem. It uses a multi-stage feature-promise handshake for initialization, ensuring correctness and preventing race conditions.
+
+### Guiding Principles
+
+-   **Security First:** Component capabilities are defined by trusted modules, and feature readiness is signaled using a unique, runtime-provided module ID (`mid`).
+-   **Build-Time Resolution:** Component availability and versioning are resolved at build time by the `msjsload-cli` tool.
+-   **Asynchronous, Race-Free Initialization:** The system uses the Mesgjs feature-promise mechanism (`$c.fwait`/`$c.fready`) to orchestrate a safe, non-blocking startup sequence.
+-   **SSR/CSR Parity:** The client hydrates using the exact module metadata and initialization sequence as the server.
+
+### Build & Runtime Lifecycle
+
+The architecture relies on a clear separation between the build-time process and the application's synchronous runtime behavior.
 
 ```mermaid
 graph TD
-    subgraph "User's Page Data"
-        A["[h.div [MyCard]]"]
+    subgraph "Build Time"
+        A[MWI App Requirements] --> B{Linker/Loader};
+        C[Module Catalog (.msjcat with unique featpro)] --> B;
+        B --> D[Output: App.html with setModMeta(...) call];
     end
 
-    subgraph "Component Resolution"
-        B(ComponentFactory)
-    end
+    subgraph "Runtime Initialization Handshake"
+        E[1. Registry Module loaded, gets `registryMid`] -- signals --> F["`$c.fready(registryMid, 'mwi-registry:ready')`"];
+        G[2. Component Modules load, get their own `mid`] -- wait for --> F;
+        G -- then register components & signal their own readiness --> H["`$c.fready(mid, 'mwi-components:...')`"];
+        
+        I[3. Registry] -- waits for all component features --> J["`$c.fwait('mwi-components:core', ...)`"];
+        J -- then signals final readiness --> K["`$c.fready(registryMid, 'mwi-components:ready')`"];
 
-    subgraph "Tier 2: User-Defined & Semantic Components"
-        C["MyCard Handler"] -- uses --> D
+        L[4. Main App]-- waits for --> K;
+        L -- then begins --> M[Rendering];
     end
-
-    subgraph "Tier 1: Core HTML Primitives"
-        D["h.div Handler"]
-    end
-
-    subgraph "Rendering Target"
-        E["SSR -> '<div>...</div>'"]
-        F["CSR -> DOM Node"]
-    end
-
-    A --> B
-    B -- "get('MyCard')" --> C
-    B -- "get('h.div')" --> D
-    D --> E
-    D --> F
+end
 ```
 
-### Naming Conventions
+#### 1. Build Process & Feature Signaling
+The MWI application is built by `msjsload-cli`. Modules providing components must declare a **unique** feature promise in their catalog entry's `featpro` field.
 
-1.  **Core HTML Primitives (`h.<tagname>`)**
-    *   **Convention:** A short namespace followed by a dot and the HTML tag name (e.g., `h.div`, `h.p`, `h.a`).
-    *   **Purpose:** Provides direct, low-level access to HTML elements. This layer is platform-agnostic, responsible for creating either an HTML string (SSR) or a DOM element (CSR).
+-   **Convention:** `mwi-components:<unique-module-name>`
+-   **Example:** The `mwi-html-core` module declares `featpro: "mwi-components:mwi-html-core"`.
 
-2.  **Built-in Semantic Components (`camelCase`)**
-    *   **Convention:** `camelCase` or `lowercase` (e.g., `button`, `textInput`, `userProfileCard`).
-    *   **Purpose:** These are the standard, high-level building blocks provided by MWI. They are designed to be easy to use and often encapsulate accessibility (a11y) best practices.
+#### 2. The `loadMsjs(mid)` Contract
+Every Mesgjs module, when loaded by the runtime, has its exported `loadMsjs` function called with a unique `mid` (module ID). This `mid` is the authorization token required to signal readiness for features declared in that module's metadata.
 
-3.  **User-Defined Components (`PascalCase` or `Capital-Kebab-Case`)**
-    *   **Convention:** Must begin with an uppercase letter. Can use `PascalCase` (e.g., `MyButton`) or `Capital-Kebab-Case` (e.g., `My-Button`). For organization, a `Collection.Component` pattern is also valid (e.g., `SuperForm.Input`).
-    *   **Purpose:** Creates a clear distinction between built-in and user-supplied components, preventing naming collisions and improving readability.
+#### 3. Runtime Initialization Handshake
+The system uses a four-stage, promise-based handshake to initialize correctly.
 
-### The Mapping Layer
-The mapping/alias layer is the final authority for resolving component names. It can be used to resolve naming conflicts between different component libraries or to create short aliases for frequently used components, providing an extra layer of flexibility.
+##### Stage 1: Registry Becomes Ready
+The MWI application has a core "registry" module. When its `loadMsjs(mid)` function is called, it instantiates the `MWIComponentRegistry` and immediately signals that the registry is ready to accept components:
+`$c.fready(mid, 'mwi-registry:ready');`
 
-## Module & Component Management
+##### Stage 2: Component Modules Register Themselves
+The `loadMsjs(mid)` function in each component module performs the following actions:
+1.  It calls `$c.fwait('mwi-registry:ready')`.
+2.  In the `.then()` block of the returned promise, it calls a function to push its component definitions into the now-available registry.
+3.  Finally, it signals its own completion using its unique `mid`: `$c.fready(mid, 'mwi-components:<module-name>');`
 
-A three-layer module resolution system ensures security and extensibility:
-1.  **Module Catalog:** The source of truth, storing modules with metadata like version, integrity hash, and access controls.
-2.  **Mapping/Alias Layer:** Maps symbolic names to specific module versions for centralized control.
-3.  **Registry/Runtime Layer:** Resolves names, enforces security policies, and loads module code at runtime.
+##### Stage 3: Component System Becomes Ready
+After signaling its own readiness in Stage 1, the `MWIComponentRegistry` module proceeds to its next task:
+1.  It scans the runtime module metadata to get a list of all expected component feature names (i.e., all `featpro` strings starting with `mwi-components:`).
+2.  It calls `$c.fwait()` with this complete list of feature names.
+3.  When this second `fwait` promise resolves, it calls `$c.fready()` with its own `mid` to signal that the entire component system is ready: `$c.fready(registryMid, 'mwi-components:ready');`
+
+##### Stage 4: Application Renders
+The main MWI application logic is wrapped in a single, final startup call: `$c.fwait('mwi-components:ready').then(() => { /* ... start rendering ... */ });`. This ensures that rendering only begins after the entire component system has been safely and fully initialized.
 ## Configuration Service
 
 The `ConfigurationService` provides a flexible, layered system for managing system behavior, such as toggling schema validation for performance. The configuration is resolved by checking sources in a specific order of precedence.

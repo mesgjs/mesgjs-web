@@ -1,0 +1,10 @@
+- How do components communicate with other components (e.g. a form field communicating validity to the form for submission enable/disable)
+- SSR needs to pass the module scope IDs to CSR for synchronization
+- v3 Resources is still referring to VirtualNode; this should be MWICSRVNode.
+- These will be "Mesgjs-first" applications, meaning that NANOS-format data will be the primary sources, not Arrays and Objects
+  - We need to audit to make sure both formats are supported
+  - Consider whether additional NANOS methods might be indicated to facilitate common normalization cases
+    - This is going to be an incredibly common issue, and we need to be smart so as to not be constantly reimplementing normalization strategies
+- There should not be patterns of the form `['something', {}, ...]` – vnodes are supposed to normalize the format, eliminating the need for empty attribute objects. Did we lose that? I feel like we take a step or two back every time we move forward. It's disconcerting!
+- Are we missing any other SSR vnode abstractions in the CSR vnode architecture? (Like class and style handling, or is it all different because of DOM nodes vs vnodes?)
+- Looks like we need to audit for overlooked requirements!
