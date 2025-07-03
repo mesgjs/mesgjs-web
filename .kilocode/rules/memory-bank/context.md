@@ -1,104 +1,35 @@
 # Current Context
 
-## Style Property Handling Patterns
-
-Recent clarifications:
-- editStyle/editClass are accumulative operations by design
-- setAttr is for complete replacements
-- Naming convention reflects behavior:
-  - edit* methods accumulate changes
-  - set* methods replace entirely
-- Style handling options:
-  - editStyle for incremental updates
-  - setAttr('style', ...) for complete replacement
-  - editStyle with empty/null to clear specific properties
-
-## HTML Void Element Handling
-
-Recent clarifications:
-- noTag implies noClose (since you would never have a close without an open)
-- noClose is used independently for void elements (br, img, input, etc.)
-- Void elements should be tested for both:
-  - Base functionality (type, options, attributes)
-  - HTML rendering (verifying no closing tags)
-
-## Style Property Handling
-
-Recent improvements:
-- Style properties are normalized to kebab-case in HTML output
-- Tests updated to expect kebab-case format (e.g., font-size)
-- Added comprehensive vendor prefix support (-webkit-, -moz-, -ms-, -o-)
-- Implemented bidirectional case conversion:
-  - Input accepts both kebab-case and camelCase
-  - Stored internally in camelCase for consistency
-  - Rendered as kebab-case for HTML output
-- This better supports:
-  - Consistent HTML rendering
-  - Client-side DOM manipulation where camelCase is standard
-  - Vendor-prefixed properties
-  - Mixed format inputs
-
-## HTML Primitive Handler Insights
-
-Recent clarifications:
-- Arrays in component data remain arrays until rendering phase
-- This preserves data structure integrity and proper separation of concerns
-- Storage handles attribute management (excluding arrays)
-- VNode handles core functionality
-- SSRVNode handles HTML rendering
-- Component handlers control rendering options
-
-## Recent HTML Rendering Improvements
-
-Recent progress:
-- Restored attribute-updating side effects in storage implementation
-- Introduced clearer noTag option for controlling tag rendering
-- Fixed component handler to properly set tag options
-- Maintained proper separation of concerns throughout
-
-Key lessons:
-- Carefully consider the best place to implement changes before making them
-  - Initially tried to fix tag handling in SSRVNode when it belonged in component handler
-  - Started modifying VNode when the issue was in storage implementation
-  - These missteps highlight importance of understanding responsibility boundaries
-- Follow the architecture's patterns
-  - Storage handles attribute management
-  - VNode handles core functionality
-  - SSRVNode handles HTML rendering
-  - Component handlers control rendering options
-
-## Storage and Validation Understanding
-
-Recent clarifications:
-- NANOS is a generic storage mechanism, not responsible for validation
-- Validation belongs in context-sensitive code (e.g., VNode for HTML validation)
-- Storage choices should be task-appropriate, preferring NANOS when no other factors dictate
-- Current CSR implementation is out of date and should not be used as reference
-- SSR implementation represents current design direction
+The Core Component Architecture, as defined in `architectural-plan/MWI-Component-Architecture.md`, is now complete and has been significantly simplified.
 
 ## Implementation Status Update
 
-The architectural design for the MWI Component System has been finalized and documented in `architectural-plan/MWI-Component-Architecture.md`. The design is centered around a secure, module-driven system that uses a multi-stage feature-promise handshake for initialization. This aligns with the core principles of the Mesgjs ecosystem.
+The foundational component architecture is now fully implemented and secure. This includes:
+*   The `MWIComponentRegistry` a singleton service in `src/shared/MWIComponentRegistry.esm.js`.
+*   The `mwi-html-core` and `mwi-html-script` modules, which register a comprehensive set of safe HTML elements with the registry.
+*   Dedicated, secure handlers for `<script>` and `<style>` tags in `src/server/component-handlers/`. These handlers perform sanitization to prevent XSS attacks.
+*   A generic `h.*` component handler for the server-side renderer that correctly handles void tags and prevents handler bypass for sensitive elements.
 
-The previous focus on expanding the SSR component system has now evolved into a complete architectural definition, which is ready for implementation. The decision to solidify this architecture before proceeding with deeper implementation or SSR/CSR synchronization work has been validated.
+## Key Learnings & Development Patterns
+
+The development of the component architecture solidified several key patterns:
+1.  **Bilingual Service Interfaces:** Core services are built as JS classes and exposed as singleton Mesgjs interfaces using `$c.getInterface(name)` and `.set()`. The `@init` handler creates the class instance and attaches it to `d.octx.js`. Message handlers are thin wrappers that delegate to the JS instance.
+2.  **Direct Handler Registration**: Component-providing modules are responsible for importing and registering the handler *function* directly within the component's payload object (e.g., `{ handler: h }`). This eliminates the need for complex factories or handler lookups. The renderer can then find and execute the handler directly from the component's payload.
+3.  **Secure by Default:** When dealing with potentially user-provided content, especially for raw-content elements like `<script>` and `<style>`, handlers must perform aggressive sanitization (e.g., truncating at the first closing tag).
 
 ## Prioritized Implementation Plan
 
-1.  **Implement Core Component Architecture** (Current Focus)
-    -   Create the `MWIComponentRegistry` module.
-    -   Implement the four-stage feature-promise handshake.
-    -   Develop the `mwi-html-core` module to register all standard, safe HTML elements.
-    -   Create the `mwi-scripting` module as a separate, secure provider for `<script>` functionality.
-    -   Develop a new, metadata-driven generic handler for `h.*` primitives.
+1.  **Implement Core Component Architecture** (Completed)
+    *   ~~Create the `MWIComponentRegistry` module.~~ (Completed)
+    *   ~~Implement the four-stage feature-promise handshake.~~ (Completed)
+    *   ~~Develop the `mwi-html-core` and `mwi-html-script` modules to register components with direct handler references.~~ (Completed)
+    *   ~~Develop new, secure, metadata-driven component handlers.~~ (Completed)
+    *   ~~Eliminate unnecessary `ComponentFactory` and handler registration logic.~~ (Completed)
 
-2.  **SSR/CSR Synchronization** (On Hold)
-    -   Will be revisited after the core component system is implemented and stable.
+2.  **SSR/CSR Synchronization** (Next)
 
 3.  **Semantic Component Library** (Future)
-    -   Design and implement a library of higher-level "smart" components (e.g., `button`, `card`, form elements).
 
 ## Next Steps
 
-1.  Begin implementation of the `MWIComponentRegistry` as a new Mesgjs module.
-2.  Create the `mwi-html-core` module and its `registerMwiComponents` function.
-3.  Establish the initial MWI application bootstrap logic that performs the feature promise handshake.
+1.  Begin implementation of the Server-Side Rendering (SSR) pipeline, which will use the `MWIComponentRegistry` to resolve components and their handlers directly from the registered payloads.

@@ -32,7 +32,10 @@ export class MWISSRVNode extends MWIVNode {
      * @returns {string} HTML string
      */
     get innerHTML () {
-        return this.children.map(child => 
+        if (this.opts.rawContent) {
+            return this.children.join('');
+        }
+        return this.children.map(child =>
             (typeof child === 'string') ? escapeHtml(child) : child.outerHTML
         ).join('');
     }
