@@ -10,16 +10,16 @@
 
 import { MWIDefaultPageTemplate } from './MWIDefaultPageTemplate.esm.js';
 import { MWISSRVNode } from './MWISSRVNode.esm.js';
-import { StringSet } from '../shared/StringSet.esm.js';
+import { StringSet } from 'mesgjs-web/src/shared/StringSet.esm.js';
 
 class MWISSR {
     _componentFactory;
 
-    constructor(componentFactory) {
+    constructor (componentFactory) {
         this._componentFactory = componentFactory;
     }
 
-    async render(pageData, { template = new MWIDefaultPageTemplate() } = {}) {
+    async render (pageData, { template = new MWIDefaultPageTemplate() } = {}) {
         const bodyVNode = await this._renderNode(pageData);
         if (bodyVNode) {
             template.addContent('body', bodyVNode.outerHTML);
@@ -27,7 +27,7 @@ class MWISSR {
         return template.render();
     }
 
-    async _renderNode(nodeData) {
+    async _renderNode (nodeData) {
         if (nodeData instanceof MWISSRVNode) {
             return nodeData; // It's already rendered.
         }
@@ -56,7 +56,7 @@ class MWISSR {
         }
     }
 
-    _transformDeclarativeTemplate(templateData, instanceVNode) {
+    _transformDeclarativeTemplate (templateData, instanceVNode) {
         const slotMap = this._buildSlotMap(instanceVNode.children);
         const templateNode = MWISSRVNode.fromData(templateData);
         if (!templateNode) {
@@ -65,7 +65,7 @@ class MWISSR {
         return this._substituteSlots(templateNode, slotMap, instanceVNode.attributes);
     }
 
-    _buildSlotMap(children) {
+    _buildSlotMap (children) {
         const slotMap = {
             nodes: { default: [] },
             attrs: { default: {} }
@@ -86,7 +86,7 @@ class MWISSR {
         return slotMap;
     }
 
-    _mergeAttributes(targetNode, sourceAttrs, allow, deny) {
+    _mergeAttributes (targetNode, sourceAttrs, allow, deny) {
         if (!sourceAttrs) return;
 
         // Convert allow/deny to StringSet if they exist
@@ -115,7 +115,7 @@ class MWISSR {
         }
     }
 
-    _substituteSlots(vnode, slotMap, instanceAttrs) {
+    _substituteSlots (vnode, slotMap, instanceAttrs) {
         if (!(vnode instanceof MWISSRVNode)) {
             return vnode; // Return unchanged if not a VirtualNode
         }

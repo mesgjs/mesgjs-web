@@ -1,4 +1,4 @@
-import { NANOS } from '../shared/vendor.esm.js';
+import { NANOS } from 'mesgjs-web/src/shared/vendor.esm.js';
 import h from './components/h.esm.js';
 
 /**
@@ -45,7 +45,7 @@ class MWISSRFactory {
      * @param {string} symbolicName The name of the component to retrieve.
      * @returns {Promise<{handler: Function, resolvedName: string}|undefined>}
      */
-    async get(symbolicName) {
+    async get (symbolicName) {
         if (symbolicName.startsWith('h.')) {
             return { handler: h, resolvedName: symbolicName };
         }

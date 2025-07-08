@@ -15,7 +15,7 @@
  *
  * @param {MWISSRVNode} vnode - The virtual node representing the component.
  */
-export default async function (vnode, renderer) {
+export default async function h (vnode, renderer) {
     // Set the tag name for the final output.
     vnode.opts.tag = vnode.type.substring(2);
     // Render the children.

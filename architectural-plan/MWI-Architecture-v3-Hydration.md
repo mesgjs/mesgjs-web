@@ -111,7 +111,7 @@ class MWIPageTemplate {
 
         this.addToHead('script', data, {
             type: 'application/json',
-            id: 'mwi-hydration'
+            id: 'mwiHydration'
         });
     }
 }

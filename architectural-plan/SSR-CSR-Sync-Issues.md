@@ -12,7 +12,7 @@
    - Should follow MWI* prefix pattern
    - Examples:
      - CsrRenderer -> MWICSR
-     - ComponentFactory -> MWIComponentFactory
+     - ComponentFactory -> MWICSRFactory
 
 3. **Scope ID System**
    - Current simple counter approach works well

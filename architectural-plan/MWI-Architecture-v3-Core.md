@@ -96,7 +96,7 @@ Key aspects:
     if (!mid) throw new Error('Required Mesgjs module management is not active');
     
     // Component implementation
-    const interface = $c.getInterface('component-name');
+    const interface = $c.getInterface('componentName');
     interface.set({ /* implementation */ });
     
     // Feature readiness
@@ -189,7 +189,7 @@ Features:
 
 ### Reactive Binding
 ```mesgjs
-[input m.bind=some/binding/path]
+[input m.bind=some.binding.path]
 ```
 - Two-way data binding
 - Path-based binding syntax
@@ -205,7 +205,7 @@ Features:
 
 ### Internationalization
 ```mesgjs
-[component m.i18n=i18n/key/path]
+[component m.i18n=i18n.key.path]
 ```
 - Key-based translations
 - Sub-path support
@@ -230,7 +230,7 @@ Features:
 
 ### Core Classes
 - MWISSR/MWICSR: Main renderer implementations
-- MWIComponentFactory: Unified component factory
+- MWISSRFactory/MWICSRFactory: Component factories
 - MWIMUM: Mount/unmount monitor
 
 ### Component Support

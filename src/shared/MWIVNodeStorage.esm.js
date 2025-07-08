@@ -19,7 +19,7 @@ export class MWIVNodeStorage {
     #styles;
     #copied;
 
-    constructor() {
+    constructor () {
         this.#attributes = new Map();
         this.#classes = new Set();
         this.#styles = new Map();
@@ -31,7 +31,7 @@ export class MWIVNodeStorage {
      * Called before any modification operation.
      * @private
      */
-    ensureMutable() {
+    ensureMutable () {
         if (!this.#copied) {
             this.#attributes = new Map(this.#attributes);
             this.#classes = new Set(this.#classes);
@@ -47,7 +47,7 @@ export class MWIVNodeStorage {
      * @param {string} name The attribute name
      * @returns {any} The attribute value or undefined
      */
-    getAttr(name) {
+    getAttr (name) {
         return this.#attributes.get(name);
     }
 
@@ -56,7 +56,7 @@ export class MWIVNodeStorage {
      * @param {string} name The attribute name
      * @param {any} value The attribute value
      */
-    setAttr(name, value) {
+    setAttr (name, value) {
         this.ensureMutable();
         this.#attributes.set(name, value);
     }
@@ -65,7 +65,7 @@ export class MWIVNodeStorage {
      * Delete an attribute
      * @param {string} name The attribute name
      */
-    deleteAttr(name) {
+    deleteAttr (name) {
         this.ensureMutable();
         this.#attributes.delete(name);
     }
@@ -74,7 +74,7 @@ export class MWIVNodeStorage {
      * Get all attributes as entries
      * @returns {IterableIterator<[string, any]>}
      */
-    getAttributes() {
+    getAttributes () {
         return this.#attributes.entries();
     }
 
@@ -84,7 +84,7 @@ export class MWIVNodeStorage {
      * Add a class name
      * @param {string} name The class name
      */
-    addClass(name) {
+    addClass (name) {
         this.ensureMutable();
         this.#classes.add(name);
     }
@@ -93,7 +93,7 @@ export class MWIVNodeStorage {
      * Remove a class name
      * @param {string} name The class name
      */
-    removeClass(name) {
+    removeClass (name) {
         this.ensureMutable();
         this.#classes.delete(name);
     }
@@ -101,7 +101,7 @@ export class MWIVNodeStorage {
     /**
      * Clear all classes
      */
-    clearClasses() {
+    clearClasses () {
         this.ensureMutable();
         this.#classes.clear();
     }
@@ -111,7 +111,7 @@ export class MWIVNodeStorage {
      * Also updates the class attribute in the general collection
      * @returns {string}
      */
-    getClassString() {
+    getClassString () {
         const classString = Array.from(this.#classes).join(' ');
         if (classString) {
             this.setAttr('class', classString);
@@ -126,7 +126,7 @@ export class MWIVNodeStorage {
      * @param {string} name The class name
      * @returns {boolean}
      */
-    hasClass(name) {
+    hasClass (name) {
         return this.#classes.has(name);
     }
 
@@ -137,7 +137,7 @@ export class MWIVNodeStorage {
      * @param {string} property The style property
      * @param {string} value The style value
      */
-    setStyle(property, value) {
+    setStyle (property, value) {
         this.ensureMutable();
         if (value === null || value === '') {
             this.#styles.delete(property);
@@ -151,14 +151,14 @@ export class MWIVNodeStorage {
      * @param {string} property The style property
      * @returns {string|undefined}
      */
-    getStyle(property) {
+    getStyle (property) {
         return this.#styles.get(property);
     }
 
     /**
      * Clear all styles
      */
-    clearStyles() {
+    clearStyles () {
         this.ensureMutable();
         this.#styles.clear();
     }
@@ -168,7 +168,7 @@ export class MWIVNodeStorage {
      * Also updates the style attribute in the general collection
      * @returns {string}
      */
-    getStyleString() {
+    getStyleString () {
         const styleString = Array.from(this.#styles.entries())
             .map(([key, value]) => {
                 // Convert camelCase to kebab-case for output

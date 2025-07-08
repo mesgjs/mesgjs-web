@@ -240,7 +240,7 @@ class MWIPageTemplate {
         
         this.addToHead('script', moduleData, {
             type: 'application/json',
-            id: 'mwi-modules'
+            id: 'mwiModules'
         });
     }
 }
@@ -254,7 +254,7 @@ class MWIPageTemplate {
 class MWIHydration {
     async activateResources() {
         // Load module metadata
-        const meta = document.getElementById('mwi-modules');
+        const meta = document.getElementById('mwiModules');
         if (!meta) return;
         
         const { modules } = JSON.parse(meta.textContent || '{}');

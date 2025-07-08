@@ -1,12 +1,12 @@
 /* eslint-disable class-methods-use-this */
 
-import { MWI_REGISTRY_FEATURE_PROMISE } from "./constants.esm.js";
+import { MWI_REGISTRY_FEATURE_PROMISE } from "mesgjs-web/src/shared/constants.esm.js";
 
 const { getInstance, getInterface, setRO } = globalThis.$c;
 
-const MWICOMPONENTS_PREFIX = "mwi-components:";
-const COMPONENTS_READY_PROMISE = "mwi-components:ready";
-const REGISTRY_INTERFACE_NAME = "mwi-registry";
+const MWICOMPONENTS_PREFIX = "mwi.components.";
+const COMPONENTS_READY_PROMISE = "mwi.components.ready";
+const REGISTRY_INTERFACE_NAME = "mwi.registry";
 
 class MWIComponentRegistry {
     #components = new Map();
@@ -94,7 +94,9 @@ function opWaitForComponents (d) {
 
 // --- Module Entry Point ---
 
+console.log('Loading MWIComponentRegistry');
 function loadMsjs (mid) {
+    console.log('MWIComponentRegistry mid', !!mid);
     const registryInterface = getInterface(REGISTRY_INTERFACE_NAME);
     registryInterface.set({
         singleton: true,
@@ -103,15 +105,15 @@ function loadMsjs (mid) {
         handlers: {
             "@init": opInit,
             "@jsv": d => d.js,
-            "register-component": opRegisterComponent,
-            "register-validator": opRegisterValidator,
-            "get-component": opGetComponent,
-            "wait-for-components": opWaitForComponents,
+            "registerComponent": opRegisterComponent,
+            "registerValidator": opRegisterValidator,
+            "getComponent": opGetComponent,
+            "waitForComponents": opWaitForComponents,
         },
     });
 
     const registry = getInstance(REGISTRY_INTERFACE_NAME, { mid });
-    registry("wait-for-components");
+    registry("waitForComponents");
 
     globalThis.$c.fready(mid, MWI_REGISTRY_FEATURE_PROMISE);
 }

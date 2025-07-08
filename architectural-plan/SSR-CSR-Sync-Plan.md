@@ -35,8 +35,9 @@ This document outlines the plan for implementing SSR/CSR synchronization in the 
 1. **Scope ID Generation Design**
    ```typescript
    class ModuleScopeManager {
-     generateScopeId(moduleSpec: string): string {
-       return `mwi-${hash(moduleSpec).substring(0, 6)}`;
+     generateScopeId(): string {
+       // Note: This model assumes a `this.scopeCounter` property exists.
+       return `mwi-${this.scopeCounter++}`;
      }
      private usedScopeIds: Set<string> = new Set();
    }
@@ -56,14 +57,14 @@ This document outlines the plan for implementing SSR/CSR synchronization in the 
    ```typescript
    // Server-side
    embedScopeData() {
-     return `<script id="mwi-scope-data" type="application/json">
+     return `<script id="mwiScopeData" type="application/json">
        ${JSON.stringify(this.scopeRegistry)}
      </script>`;
    }
 
    // Client-side
    hydrateScopeData() {
-     const scopeData = document.getElementById('mwi-scope-data');
+     const scopeData = document.getElementById('mwiScopeData');
      this.scopeRegistry = JSON.parse(scopeData.textContent);
    }
    ```

@@ -1,5 +1,5 @@
 /**
- * @copyright 2025 Mesgjs Project.
+ * @copyright 2025 Kappa Computer Solutions, LLC and Brian Katzung.
  *
  * A modular HTML page template for server-side rendering, inspired by
  * Joomla's template module positions. This class allows for defining
@@ -24,7 +24,7 @@ class MWIDefaultPageTemplate {
      * @param {string|string[]} content The content to add.
      * @throws {Error} If the specified position does not exist.
      */
-    addContent(position, content) {
+    addContent (position, content) {
         if (!this._positions.has(position)) {
             throw new Error(`Position "${position}" does not exist in the template.`);
         }
@@ -41,7 +41,7 @@ class MWIDefaultPageTemplate {
      *
      * @returns {string[]} An array of position names.
      */
-    getAvailablePositions() {
+    getAvailablePositions () {
         return [...this._positions.keys()];
     }
 
@@ -50,7 +50,7 @@ class MWIDefaultPageTemplate {
      *
      * @returns {string} The complete HTML page as a string.
      */
-    render() {
+    render () {
         const headContent = this._positions.get('head').join('\n');
         const bodyContent = this._positions.get('body').join('\n');
 

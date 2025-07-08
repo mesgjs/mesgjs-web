@@ -23,13 +23,38 @@ This document outlines the key technologies, languages, and platforms used in th
 *   **Messaging-Based Communication:** Components and services interact via synchronous messaging.
 *   **Reactivity:** The system includes a reactive value library for creating values and data structures that can have dependencies on each other.
 
-## Reference Materials
+## Reference Materials and Project Index
 
-The following reference materials are available in the `reference-materials/` directory:
+This section provides an index of key reference materials and architectural documents to guide development. Future instances of the AI should consult this index before starting a task to gain relevant context.
 
-*   **Language Documentation:** `MWI-Training-Data.md` contains detailed Mesgjs language documentation
-*   **Interface Documentation:** Documentation for core interfaces like `@list`, `@reactive`, etc.
-*   **Implementation Details:** Source code and documentation for key system components
+### 1. Core Language and Runtime (`resources/mesgjs`)
+
+*   **Primary Documentation:** `resources/mesgjs/docs/MWI-Training-Data.md`
+    *   **Content:** The definitive language, syntax, and runtime guide for Mesgjs.
+    *   **When to Read:** Essential for any task involving writing or debugging Mesgjs code. This is the source of truth for all language features.
+
+### 2. Architectural Plans (`architectural-plan/`)
+
+This directory contains the collaborative design documents that define the MWI system.
+
+*   **Overall Architecture:**
+    *   `MWI-Architecture-v3-Core.md`: High-level system structure.
+    *   `MWI-Architecture-v3-Components.md`: How components are defined and loaded.
+    *   `Naming-Conventions.md`: Code style and naming rules.
+*   **VNode and Rendering:**
+    *   `MWI-Architecture-v3-VNode.md`: The core Virtual Node concept.
+    *   `MWI-Architecture-v3-VNode-Implementation.md`: Specific implementation details for VNodes.
+    *   `MWI-Component-Authoring-Guide.md`: The "how-to" for creating new components.
+*   **Client-Side Specifics:**
+    *   `CSR-Event-And-State-Plan.md`: **Crucial for all UI/event tasks.** Defines the event and state management patterns.
+    *   `mwi-mum-plan.md`: The definitive hybrid architecture for the Mount/Unmount Monitor.
+    *   `MWI-Architecture-v3-Hydration.md`: How client-side code takes over from SSR.
+*   **Resource Management:**
+    *   `MWI-Architecture-v3-Resources.md`: Plan for managing CSS, JS, and other assets.
+
+### 3. Quick-Reference Guides
+
+*   **Legal:** For copyright and licensing questions, see the `Legal` section at the end of this document.
 
 ## Legal
 

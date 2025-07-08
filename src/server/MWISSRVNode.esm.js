@@ -9,7 +9,7 @@
  * @license MIT
  */
 
-import { MWIVNode } from '../shared/MWIVNode.esm.js';
+import { MWIVNode } from 'mesgjs-web/src/shared/MWIVNode.esm.js';
 
 const ehMap = { '&': '&amp;', '"': '&quot;', "'": '&#39;', '<': '&lt;', '>': '&gt;' };
 
@@ -18,7 +18,7 @@ const ehMap = { '&': '&amp;', '"': '&quot;', "'": '&#39;', '<': '&lt;', '>': '&g
  * @param {string} str String to escape
  * @returns {string} Escaped string
  */
-function escapeHtml(str) {
+function escapeHtml (str) {
     return String(str).replace(/[&"'<>]/g, (match) => ehMap[match]);
 }
 

@@ -1,13 +1,13 @@
-/*
+/**
  * MWI Configuration Service
- * Copyright 2025 by Kappa Computer Solutions, LLC and Brian Katzung
- * Author: Brian Katzung <briank@kappacs.com>
+ * @copyright 2025 Kappa Computer Solutions, LLC and Brian Katzung
+ * @license MIT
  */
 
 class ConfigurationService {
     _config;
 
-    constructor(initialConfig = {}) {
+    constructor (initialConfig = {}) {
         // 1. Hardcoded defaults
         let enforceSchema = true;
 
@@ -52,7 +52,7 @@ class ConfigurationService {
      * @param {*} [defaultValue] The value to return if the key is not found.
      * @returns {*} The configuration value.
      */
-    get(key, defaultValue = undefined) {
+    get (key, defaultValue = undefined) {
         return this._config[key] ?? defaultValue;
     }
 
@@ -61,7 +61,7 @@ class ConfigurationService {
      * @param {string} key The configuration key to set.
      * @param {*} value The value to set.
      */
-    set(key, value) {
+    set (key, value) {
         this._config[key] = value;
     }
 
@@ -70,7 +70,7 @@ class ConfigurationService {
      * Used for serialization and passing to the client.
      * @returns {object} The configuration object.
      */
-    getAll() {
+    getAll () {
         return { ...this._config };
     }
 }

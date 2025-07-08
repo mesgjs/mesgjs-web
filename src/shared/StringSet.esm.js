@@ -16,7 +16,7 @@ class StringSet extends Set {
      * @param {...(string|Array|Set|undefined|null)} sources A variable list
      *   of sources to populate the set. Strings will be split by whitespace.
      */
-    constructor(...sources) {
+    constructor (...sources) {
         super();
 
         this.add(...sources);
@@ -48,7 +48,7 @@ class StringSet extends Set {
      * Returns the contents of the set as an array.
      * @returns {string[]}
      */
-    toArray() {
+    toArray () {
         return [...this];
     }
 
@@ -56,7 +56,7 @@ class StringSet extends Set {
      * Returns the contents of the set as a space-separated string.
      * @returns {string}
      */
-    toString() {
+    toString () {
         return this.toArray().join(' ');
     }
 }

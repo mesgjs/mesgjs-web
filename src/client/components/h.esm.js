@@ -1,7 +1,7 @@
 // src/client/components/h.esm.js
 
-import { NANOS } from '../../shared/vendor.esm.js';
-import { StringSet } from '../../shared/StringSet.esm.js';
+import { NANOS } from 'mesgjs-web/src/shared/vendor.esm.js';
+import { StringSet } from 'mesgjs-web/src/shared/StringSet.esm.js';
 
 /**
  * A map of lower-cased HTML tag names to their corresponding handler functions.
@@ -25,7 +25,7 @@ function createTagHandler (tag) {
      * The actual component handler.
      * @param {NANOS} props The component properties.
      * @param {Array} children The component children.
-     * @param {object} renderer The CsrRenderer instance.
+     * @param {object} renderer The MWICSR instance.
      * @returns {{dom: HTMLElement}} The payload with the created DOM element.
      */
     const handler = async (props, children, renderer) => {

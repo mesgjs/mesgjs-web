@@ -5,24 +5,24 @@
  * The MWI project is licensed under the terms of the MIT license.
  * See LICENSE.txt for more information.
  */
-import { NANOS } from "../shared/vendor.esm.js";
-import { ComponentFactory } from "./ComponentFactory.esm.js";
+import { NANOS } from "mesgjs-web/src/shared/vendor.esm.js";
+import { MWICSRFactory } from "mesgjs-web/src/client/MWICSRFactory.esm.js";
 
 /**
- * @class CsrRenderer
+ * @class MWICSR
  * @description Renders a component tree on the client-side.
  */
-class CsrRenderer {
-    /** @type {ComponentFactory} */
+class MWICSR {
+    /** @type {MWICSRFactory} */
     _componentFactory;
 
     /**
      * @param {object} [options]
-     * @param {ComponentFactory} [options.componentFactory]
+     * @param {MWICSRFactory} [options.componentFactory]
      * // @param {ConfigurationService} [options.configService]
      */
     constructor(options = {}) {
-        this._componentFactory = options.componentFactory || new ComponentFactory();
+        this._componentFactory = options.componentFactory || options.factory || new MWICSRFactory();
         // this.config = options.configService;
     }
 
@@ -119,5 +119,5 @@ class CsrRenderer {
     }
 }
 
-export { CsrRenderer };
-export default CsrRenderer;
+export { MWICSR };
+export default MWICSR;
