@@ -176,6 +176,7 @@ class MWIVNode {
    - Class and style attributes have dedicated methods
    - Boolean attributes handled specially (true = present, false/null = absent)
    - Scope replacement for @@ tokens
+   - **Text Node Normalization Guards:** To prevent the browser from automatically merging adjacent text nodes and breaking a VNode's reactive reference, reactive text content in the CSR must be anchored to non-normalizing "guard" nodes. The standard implementation is to wrap the text in DOM comment nodes: `<!--{-->` and `<!--}-->`.
 
 ## Migration Path
 

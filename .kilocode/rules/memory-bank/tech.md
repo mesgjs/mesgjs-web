@@ -23,6 +23,10 @@ This document outlines the key technologies, languages, and platforms used in th
 *   **Messaging-Based Communication:** Components and services interact via synchronous messaging.
 *   **Reactivity:** The system includes a reactive value library for creating values and data structures that can have dependencies on each other.
 
+## Tool Usage Patterns
+
+*   **Import Paths:** All JavaScript module imports must be relative to the project's import map. This means they should be prefixed with `mesgjs-web/` followed by the path from the project root (e.g., `import { X } from 'mesgjs-web/src/shared/constants.esm.js';`). Relative paths like `./` or `../` are not used.
+
 ## Reference Materials and Project Index
 
 This section provides an index of key reference materials and architectural documents to guide development. Future instances of the AI should consult this index before starting a task to gain relevant context.
@@ -39,20 +43,38 @@ This directory contains the collaborative design documents that define the MWI s
 
 *   **Overall Architecture:**
     *   `MWI-Architecture-v3-Core.md`: High-level system structure.
-    *   `MWI-Architecture-v3-Components.md`: How components are defined and loaded.
     *   `Naming-Conventions.md`: Code style and naming rules.
+    *   `Security.md`: Defines data sanitization rules and responsibilities.
+    *   `Error-Handling-Strategy.md`: Defines the unified strategy for fatal and non-fatal errors.
 *   **VNode and Rendering:**
     *   `MWI-Architecture-v3-VNode.md`: The core Virtual Node concept.
     *   `MWI-Architecture-v3-VNode-Implementation.md`: Specific implementation details for VNodes.
-    *   `MWI-Component-Authoring-Guide.md`: The "how-to" for creating new components.
-*   **Client-Side Specifics:**
-    *   `CSR-Event-And-State-Plan.md`: **Crucial for all UI/event tasks.** Defines the event and state management patterns.
-    *   `mwi-mum-plan.md`: The definitive hybrid architecture for the Mount/Unmount Monitor.
+*   **Component System:**
+    *   `MWI-Component-System.md`: The single, authoritative document for the component system architecture.
+    *   `MWI-Component-Tutorial.md`: A canonical guide with "Hello, MWI" and bilingual "Counter" examples.
+    *   `MWI-Semantic-Component-Architecture.md`: Architecture for high-level semantic components.
+    *   `Semantic-Components-Requirements.md`: Requirements for the semantic component library.
+*   **Reactivity:**
+    *   `MWI-Architecture-v3-Reactive.md`: The core reactive system design.
+*   **Client-Side, Hydration, and Synchronization:**
+    *   `MWI-Client-Side-Interaction-Architecture.md`: Authoritative guide for client-side events (direct and pub/sub).
     *   `MWI-Architecture-v3-Hydration.md`: How client-side code takes over from SSR.
-*   **Resource Management:**
+    *   `MWI-MUM-Plan.md`: The definitive hybrid architecture for the Mount/Unmount Monitor.
+    *   `SSR-CSR-Sync-Issues.md`: Known issues related to server/client state synchronization.
+*   **Resource Management & Bundling:**
     *   `MWI-Architecture-v3-Resources.md`: Plan for managing CSS, JS, and other assets.
+    *   `Bundling-Design-Proposal.md`: Proposal for the module bundling strategy.
+*   **Planning & Issue Tracking:**
+    *   `load-plans.md`: Documentation for loading strategies.
+    *   `Open-Issues.md`: A list of open architectural issues and questions.
 
-### 3. Quick-Reference Guides
+### 3. Shared Code (`src/shared/`)
+
+*   **Shared Constants:** `src/shared/constants.esm.js`
+    *   **Content:** Centralized constants to avoid magic strings (e.g., feature promise names, HTML element IDs).
+    *   **When to Read:** When you need to reference a system-wide constant.
+
+### 4. Quick-Reference Guides
 
 *   **Legal:** For copyright and licensing questions, see the `Legal` section at the end of this document.
 

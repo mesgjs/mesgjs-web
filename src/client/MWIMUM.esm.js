@@ -136,8 +136,21 @@ class MWIMUM {
 
     async init () {
         const mountPromises = [];
+
+        // Per the hydration plan, the empty ID handler MUST be processed first.
+        if (this.#subscriptions.has('')) {
+            const promise = this.#processDeclarativeHandlers(document.documentElement, 'mount', '')
+                .catch(error => {
+                    console.error('MWIMUM: Error during initial mount for empty ID:', error);
+                    return null; // Don't halt Promise.all
+                });
+            mountPromises.push(promise);
+        }
+
         for (const id of this.#subscriptions.keys()) {
-            const element = id ? document.getElementById(id) : document.documentElement;
+            if (id === '') continue; // Already processed
+
+            const element = document.getElementById(id);
             if (element) {
                 const promise = this.#processDeclarativeHandlers(element, 'mount', id)
                     .catch(error => {

@@ -14,13 +14,10 @@ The system handles input normalization following these rules:
 graph TD
     A[Input Data] --> B{Input Type?}
     B -->|Array| C[Convert to new NANOS]
-    B -->|NANOS| D{Smart Component?}
-    B -->|Other| F[Use Directly]
-    D -->|Yes| E[Create NANOS Copy]
-    D -->|No| F
-    C --> G[Component Processing]
-    E --> G
-    F --> G
+    B -->|NANOS| D[Use Directly]
+    B -->|Other| D
+    C --> E[Component Processing]
+    D --> E
 ```
 
 #### Input Processing Rules
@@ -29,21 +26,18 @@ graph TD
 if (Array.isArray(content)) {
     // Array input: Creates new NANOS automatically
     content = new NANOS(...content.map(v => ...));
-} else if (content instanceof NANOS && isSmartComponent) {
-    // NANOS input to smart component: Create copy
-    content = new NANOS(content);
 }
-// All other inputs used directly without modification
+// All NANOS and other inputs are used directly.
+// Immutability is guaranteed by the VNode's copy-on-write strategy.
 ```
 
 ### Smart Component Behavior
 
 Smart components:
-- Receive a copy of NANOS input (if input was NANOS)
-- Receive a new NANOS (if input was Array)
-- Can safely modify their input NANOS in-place
+- Receive a new NANOS if the original input was an Array.
+- Can operate on their input data with the assurance that the rendering pipeline's VNode layer will handle data immutability via its copy-on-write strategy. There is no need for the component to make its own copy.
 - Can add/remove classes, modify styles, etc.
-- May return their modified input as output
+- May return a `content` payload containing a modified or new data structure to be rendered into its slot.
 
 ### Attribute Handling
 
@@ -67,7 +61,7 @@ Smart components:
    - Take advantage of built-in normalization
 
 2. **Smart Component Design**
-   - Expect copied NANOS for modification
+   - Trust the VNode's copy-on-write mechanism to handle data immutability.
    - Use in-place modifications when appropriate
    - Document any persistent state
 

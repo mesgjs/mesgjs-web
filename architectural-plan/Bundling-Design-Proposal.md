@@ -4,34 +4,36 @@ This document outlines a design for bundling the MWI JavaScript modules into Mes
 
 ## Core Concept: In-Source Bundling with `@js`
 
-Instead of an external build tool, we will create Mesgjs source files (`.msjs`) that directly embed the necessary JavaScript code using the `@js{ @}` block. This keeps the bundling logic within the Mesgjs ecosystem itself.
+Instead of an external build tool, we will create `.msjs` Mesgjs source files (and companion `.slid` files for supplemental configuration) that directly embed the necessary JavaScript code using the `@js{ @}` block. The `msjstrans` command-line tool generates the integrity hash, module catalog entries, etc., keeping the bundling logic within the Mesgjs ecosystem itself.
 
 ## Proposed Bundle Structure
 
 The MWI application will be divided into the following granular bundles:
 
-*   **`mwi.ssr.msjs`**: The server-side rendering engine.
-*   **`mwi.csr.msjs`**: The client-side rendering and hydration engine.
-*   **`mwi.shared.msjs`**: Core shared utilities (`ConfigurationService`, `VirtualNode` base class, etc.). This will be a dependency for both SSR and CSR bundles.
-*   **`mwi.html.core.msjs`**: The foundational, low-level HTML component definitions (e.g. `h.div`, `h.span`).
-*   **`mwi.semantic.core.msjs`**: Higher-level semantic components that compose the `mwi.html.core` components (e.g. a `Card` or `Button` component).
+*   **`mwi-ssr.msjs`**: The server-side rendering engine.
+*   **`mwi-csr.msjs`**: The client-side rendering and hydration engine.
+*   **`mwi-shared.msjs`**: Core shared utilities (`MWIConfigService`, `MWIVNode` base class, etc.). This will be a dependency for both SSR and CSR bundles.
+*   **`mwi-html-core.msjs`**: The foundational, low-level HTML component definitions (e.g. `h.div`, `h.span`).
+*   **`mwi-semantic-core.msjs`**: Higher-level semantic components that compose the `mwi.html.core` components (e.g. a `card` or `button` component).
 
 ### Dependency Graph
+
+Each `.msjs` file will also have a corresponding `.slid` file (e.g. `mwi-shared.msjs` and `mwi-shared.slid`) for recording its module dependencies; these are omitted from the diagram for brevity.
 
 ```mermaid
 graph TD
     subgraph "Core Bundles"
-        Shared["mwi.shared.msjs"]
-        HTML["mwi.html.core.msjs"]
+        Shared["mwi-shared.msjs"]
+        HTML["mwi-html-core.msjs"]
     end
 
     subgraph "Application Bundles"
-        SSR["mwi.ssr.msjs"]
-        CSR["mwi.csr.msjs"]
+        SSR["mwi-ssr.msjs"]
+        CSR["mwi-csr.msjs"]
     end
 
     subgraph "Component Library"
-        Semantic["mwi.semantic.core.msjs"]
+        Semantic["mwi-semantic-core.msjs"]
     end
 
 
@@ -47,56 +49,60 @@ graph TD
 
 Each `.msjs` bundle will be structured as a Mesgjs module. The JavaScript code that is currently in separate `.esm.js` files will be consolidated and placed inside an `@js{ @}` block within the corresponding `.msjs` file.
 
-### Example: `mwi.ssr.msjs`
+### Example: `mwi-ssr.msjs`
 
 ```mesgjs
-;; mwi.ssr.msjs - Server-Side Rendering Bundle
+// mwi-ssr.msjs - Server-Side Rendering Bundle
 
-(@interface
-    (@main
-        ;; Mesgjs message handlers and initialization logic
-        ;; This is where we'll have the feature-promise handshake
-        (@on @init
-            ($c.fwait 'mwi.shared.ready' 'mwi.html.core.ready' ($c.get @js) 'getSsrApi')
-            (|>
-                ($s.log "SSR Bundle Initialized")
-                ;; Other initialization...
-            )
-        )
-    )
+[(
+  modpath = mwi/ssr
+  version = 0.1.0
+  featpro = 'mwi.ssr.bundle'
+  featreq = 'mwi.shared.bundle mwi.html.core.bundle'
+)]
 
-    ;; Embedded JavaScript Source Code
-    (@js
-        // All the code from the following files would be combined here:
-        // - src/server/MWISSR.esm.js
-        // - src/server/MWISSRVNode.esm.js
-        // - src/server/component-handlers/h.esm.js
-        // - etc...
+// Defines the public interface for the SSR bundle.
+@c(interface mwiSsrBundle)(set handlers=[
+    // The @init handler runs when an instance is created.
+    @init = {
+        // Here, the bridge to the JS API would be established.
+        // The details are TBD and part of the project's technical debt.
+        
+        // After setup, wait for dependencies to be ready.
+        // The @c(fwait) message returns a promise, so we chain (then).
+        @c(fwait 'mwi.shared.bundle' 'mwi.html.core.bundle')(then {
+             @c(log 'SSR Bundle Initialized')
+        })
+    }
+    
+    // An example public message for this interface.
+    renderPage = {
+        // This handler would use the established JS API to perform rendering.
+        // For example: %(at jsApi)(render !(at 0))
+    }
+])
 
-        class MWISSR {
-            // ... implementation ...
-        }
+// All the JavaScript source code for the SSR engine is embedded here.
+@js{
+    // All the code from the following files would be combined here:
+    // - src/server/MWISSR.esm.js
+    // - src/server/MWISSRVNode.esm.js
+    // - etc...
 
-        // ... other classes and functions ...
+    class MWISSR {
+        // ... implementation ...
+    }
 
-        // Expose a public API to the Mesgjs side
-        function getSsrApi() {
-            return {
-                MWISSR,
-                // ... other parts of the public API
-            };
-        }
-    @)
-)
+    // ... other classes and functions ...
+@}
 ```
 
 ## Proposed Development Workflow
 
-1.  Continue to develop in separate, modular `.esm.js` files for ease of organization and code navigation.
-2.  Create a script (e.g., a Deno task or a simple shell script) that concatenates the contents of the relevant `.esm.js` files.
-3.  This script would then inject the concatenated JavaScript code into a template `.msjs` file to produce the final, "bundled" Mesgjs module.
+1.  Continue to develop in separate, modular `.esm.js` files for ease of organization and code navigation, but with the realization that this results in **significant** technical debt.
+2.  After all the foundational components have been tested and are ostensibly working as desired, permanently replace the collected `.esm.js` files with proper `.msjs` + `.slid` file pairs.
 
-This provides the organizational benefits of separate files during development while achieving the goal of a single, self-contained Mesgjs module with no external build-tool dependency for the final artifact.
+This provides the organizational benefits of separate files during development (though at a not-insignificant cost) while achieving the goal of a single, self-contained Mesgjs module with no external build-tool dependency for the final artifact.
 
 ## User Updates
 

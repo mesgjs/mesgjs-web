@@ -1,75 +1,76 @@
 /**
- * @copyright 2025 Kappa Computer Solutions, LLC and Brian Katzung.
+ * @copyright 2025 Kappa Computer Solutions, LLC and Brian Katzung
  *
- * A modular HTML page template for server-side rendering, inspired by
- * Joomla's template module positions. This class allows for defining
- * content positions within a template and adding content to them dynamically.
+ * This file is part of the Mesgjs Web Interface (MWI).
  *
- * @license Apache-2.0
+ * The MWI is free software: you can redistribute it and/or modify
+ * it under the terms of the MIT License.
+ *
+ * @license MIT
  */
-class MWIDefaultPageTemplate {
-    /**
-     * @type {Map<string, string[]>}
-     * @private
-     */
-    _positions = new Map([
-        ['head', []],
-        ['body', []]
-    ]);
 
-    /**
-     * Adds content to a specified position in the template.
-     *
-     * @param {string} position The name of the position to add content to.
-     * @param {string|string[]} content The content to add.
-     * @throws {Error} If the specified position does not exist.
-     */
+export class MWIDefaultPageTemplate {
+    _head = [];
+    _body = [];
+    _bodyAttrs = {};
+    _htmlAttrs = {};
+    _title = '';
+
     addContent (position, content) {
-        if (!this._positions.has(position)) {
-            throw new Error(`Position "${position}" does not exist in the template.`);
-        }
-        const positionContent = this._positions.get(position);
-        if (Array.isArray(content)) {
-            positionContent.push(...content);
-        } else {
-            positionContent.push(content);
+        if (position === 'body') {
+            this._body.push(content);
         }
     }
 
-    /**
-     * Returns a list of available content positions.
-     *
-     * @returns {string[]} An array of position names.
-     */
-    getAvailablePositions () {
-        return [...this._positions.keys()];
+    addToHead (tag, content, attrs = {}) {
+        this._head.push({ tag, content, attrs });
     }
 
-    /**
-     * Renders the full HTML document by embedding content into the template.
-     *
-     * @returns {string} The complete HTML page as a string.
-     */
+    injectHydrationPoints (points) {
+        if (points.size === 0) return;
+
+        // Convert Map to an object for JSON serialization
+        const data = Object.fromEntries(points);
+
+        this.addToHead('script', JSON.stringify(data, null, 2), {
+            type: 'application/json',
+            id: 'mwi-hydration'
+        });
+    }
+
+    injectModMeta (modMeta) {
+        if (!modMeta) return;
+
+        this.addToHead('script', `window.msjsModMeta = ${JSON.stringify(modMeta, null, 2)};`, {
+            type: 'text/javascript',
+            id: 'mwi-mod-meta'
+        });
+    }
+
     render () {
-        const headContent = this._positions.get('head').join('\n');
-        const bodyContent = this._positions.get('body').join('\n');
+        const headContent = this._head.map(({ tag, content, attrs }) => {
+            const attrStr = Object.entries(attrs).map(([key, value]) => `${key}="${value}"`).join(' ');
+            return `<${tag} ${attrStr}>${content || ''}</${tag}>`;
+        }).join('\n');
+
+        const bodyAttrs = Object.entries(this._bodyAttrs).map(([key, value]) => `${key}="${value}"`).join(' ');
+        const htmlAttrs = Object.entries(this._htmlAttrs).map(([key, value]) => `${key}="${value}"`).join(' ');
 
         return `<!DOCTYPE html>
-<html lang="en">
+<html ${htmlAttrs}>
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>MWI Page</title>
-<style>
-body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
-</style>
-${headContent}
+    <title>${this._title}</title>
+    ${headContent}
 </head>
-<body>
-${bodyContent}
+<body ${bodyAttrs}>
+    ${this._body.join('\n')}
 </body>
 </html>`;
     }
-}
 
-export { MWIDefaultPageTemplate };
+    set (key, value) {
+        if (key === 'title') {
+            this._title = value;
+        }
+    }
+}

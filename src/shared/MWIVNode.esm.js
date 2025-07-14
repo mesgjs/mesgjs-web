@@ -9,7 +9,7 @@
  * @license MIT
  */
 
-import { MWIVNodeStorage } from './MWIVNodeStorage.esm.js';
+import { MWIVNodeStorage } from 'mesgjs-web/src/shared/MWIVNodeStorage.esm.js';
 
 /**
  * Base VNode class that provides the core virtual node functionality.
@@ -225,6 +225,47 @@ export class MWIVNode {
     }
 
     // Static Methods
+
+    /**
+     * Create a VNode from structured data
+     * @param {Array|object} data Input data
+     * @param {object} [opts={}] Node options
+     * @returns {MWIVNode|undefined}
+     */
+    static fromData (data, opts = {}) {
+        if (Array.isArray(data)) {
+            const [type, ...rest] = data;
+            if (typeof type !== 'string') return undefined;
+
+            const node = new this(type, opts);
+            for (const item of rest) {
+                if (typeof item === 'object' && item !== null && !Array.isArray(item)) {
+                    const entries = (typeof item.entries === 'function')
+                        ? item.entries()
+                        : Object.entries(item);
+                    for (const [key, value] of entries) {
+                        node.setAttr(key, value);
+                    }
+                } else {
+                    node.children.push(item);
+                }
+            }
+            return node;
+        }
+        // Handle NANOS format
+        if (typeof data?.values === 'function' && typeof data?.namedEntries === 'function') {
+            const [type, ...children] = data.values();
+            if (typeof type !== 'string') return undefined;
+
+            const node = new this(type, opts);
+            node.children.push(...children);
+            for (const [key, value] of data.namedEntries()) {
+                node.setAttr(key, value);
+            }
+            return node;
+        }
+        return undefined;
+    }
 
     /**
      * Parse a style string into a Map

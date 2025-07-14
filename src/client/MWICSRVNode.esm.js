@@ -25,17 +25,14 @@ export class MWICSRVNode extends MWIVNode {
 
     /**
      * Create a new client-side VNode
-     * @param {object} d The Mesgjs dispatch object from the @init handler
+     * @param {string} type The node type (e.g., 'h.div')
+     * @param {object} [opts={}] Additional options for the node
      */
-    constructor (d) {
-        // The node type is the first positional parameter
-        const type = String(d.mp.at(0, 'h.div'));
-        // All other named parameters are options
-        const opts = Object.fromEntries(d.mp.namedEntries());
-
+    constructor (type, opts = {}) {
         super(type, opts);
 
-        this.element = document.createElement(this.opts.tag || type.split('.').pop());
+        const tagName = this.opts.tag || type.split('.').pop() || 'div';
+        this.element = document.createElement(tagName);
         this.subscriptions = [];
         this.listeners = new Map();
     }
@@ -69,13 +66,16 @@ export class MWICSRVNode extends MWIVNode {
                 eager: true,
                 def: () => {
                     const reactiveValue = value('rv');
-                    // Get the final, non-reactive value for the attribute
                     const finalValue = reactive.fv(reactiveValue);
 
-                    if (finalValue === false || finalValue === null || finalValue === undefined) {
+                    // Let the base class handle storage and complex types
+                    super.setAttr(name, finalValue);
+                    const attrValue = this.getAttr(name); // Get the processed value
+
+                    if (attrValue === false || attrValue === null || attrValue === undefined) {
                         this.element.removeAttribute(name);
                     } else {
-                        this.element.setAttribute(name, finalValue);
+                        this.element.setAttribute(name, attrValue);
                     }
                 }
             });
@@ -176,52 +176,3 @@ export class MWICSRVNode extends MWIVNode {
         }
     }
 }
-
-// Define the Mesgjs interface for the VNode.
-// This follows the "JavaScript-Managed State" pattern, where the Mesgjs object
-// is a wrapper around a JavaScript class instance.
-
-function opInit (d) {
-    const vnode = new MWICSRVNode(d);
-    setRO(d.octx, 'js', vnode);
-    setRO(d.rr, 'jsv', vnode);
-}
-
-function opOn (d) {
-    const vnode = d.js;
-    const eventName = String(d.mp.at(0, ''));
-    if (!eventName) { return; }
-
-    const handler = d.mp.get('handler') || d.sr;
-    const bubbles = d.mp.get('bubbles');
-    const preventDefault = d.mp.get('preventDefault');
-
-    const domListener = event => {
-        if (preventDefault) { event.preventDefault(); }
-        if (!bubbles) { event.stopPropagation(); }
-        handler(d.context, event, d.lookup);
-    };
-
-    if (!vnode.listeners.has(eventName)) {
-        vnode.listeners.set(eventName, new Map());
-    }
-    vnode.listeners.get(eventName).set(handler, domListener);
-
-    vnode.element.addEventListener(eventName, domListener);
-}
-
-function opOff (d) {
-    const vnode = d.js;
-    const eventName = String(d.mp.at(0, ''));
-    const handler = d.mp.get('handler') || d.sr;
-    vnode.off(eventName, handler);
-}
-
-getInterface('MWICSRVNode').set({
-    handlers: {
-        '@init': opInit,
-        on: opOn,
-        off: opOff,
-        unmount: d => d.js.unmount()
-    }
-});

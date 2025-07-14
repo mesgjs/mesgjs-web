@@ -30,8 +30,8 @@ All MWI modules are defined in a single `.msjs` file with a specific structure t
    loadMsjs(mid) function. */
 ''
 
-/* 3. A single @js{...*...*@} embed containing all JavaScript for the module. */
-@js{*
+/* 3. A single @js{...@} embed containing all JavaScript for the module. */
+@js{
     // This code is implicitly wrapped in `export function loadMsjs (mid) { ... }`
 
     if (!mid) {
@@ -44,7 +44,7 @@ All MWI modules are defined in a single `.msjs` file with a specific structure t
         
     // `fready` uses the public, dot.separated.camelCase featpro string.
     fready(mid, 'mwi.core.myModule');
-*@}
+@}
 ```
 
 ## 3. The MWI "Import/Export" Pattern
@@ -68,13 +68,15 @@ All module interactions follow the same `fwait` -> `getInstance` flow. There is 
     1.  Define a public `featpro` in the SLID config.
     2.  Inside `@js`, get the interface with `getInterface('myUtility')`.
     3.  Define the interface as a **`singleton: true`**.
-    4.  Its `@init` handler binds the JS class definition directly to the singleton instance: `setRO(d.rr, 'MyUtilityClass', MyUtilityClass);`.
+    4.  Its `@init` handler populates a `.jsv` container object with the service's public API (classes, constants, etc.) and attaches it to the receiver: `setRO(d.rr, 'jsv', { MyUtilityClass, SOME_CONSTANT });`.
     5.  Call `fready(mid, 'mwi.services.myUtility')`.
 
 *   **Consumer Module (for Singleton Service):**
     1.  `await fwait('mwi.services.myUtility')`.
     2.  `const myUtilityService = getInstance('myUtility');`
-    3.  `const MyUtil = myUtilityService.MyUtilityClass; const u = new MyUtil();`.
+    3.  `const MyUtil = myUtilityService.jsv.MyUtilityClass;`
+    4.  `const myConstant = myUtilityService.jsv.SOME_CONSTANT;`
+    5.  `const u = new MyUtil();`
 
 ## 4. Complete "Hello, MWI" Component Example
 
@@ -89,7 +91,7 @@ All module interactions follow the same `fwait` -> `getInstance` flow. There is 
 // This empty string is CRITICAL for placing the JS inside loadMsjs.
 ''
 
-@js{*
+@js{
     // This code will be wrapped in `export function loadMsjs(mid) { ... }`
     if (!mid) {
         throw new Error('mwiHelloWorld requires Mesgjs module management to be active.');
@@ -133,5 +135,5 @@ All module interactions follow the same `fwait` -> `getInstance` flow. There is 
         // Signal that our public feature is ready.
         fready(mid, 'mwi.components.helloWorld');
     });
-*@}
+@}
 ```

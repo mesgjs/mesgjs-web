@@ -103,40 +103,4 @@ export class MWISSRVNode extends MWIVNode {
         return node;
     }
 
-    /**
-     * Create a VNode from structured data
-     * @param {Array|object} data Input data
-     * @param {object} [opts={}] Node options
-     * @returns {MWISSRVNode|undefined}
-     */
-    static fromData (data, opts = {}) {
-        if (Array.isArray(data)) {
-            const [type, ...rest] = data;
-            const node = new MWISSRVNode(type, opts);
-            for (const item of rest) {
-                if (typeof item === 'object' && item !== null && !Array.isArray(item)) {
-                    const entries = (typeof item.entries === 'function')
-                        ? item.entries()
-                        : Object.entries(item);
-                    for (const [key, value] of entries) {
-                        node.setAttr(key, value);
-                    }
-                } else {
-                    node.children.push(item);
-                }
-            }
-            return node;
-        }
-        // Handle NANOS format
-        if (typeof data?.values === 'function' && typeof data?.namedEntries === 'function') {
-            const [type, ...children] = data.values();
-            const node = new MWISSRVNode(type, opts);
-            node.children.push(...children);
-            for (const [key, value] of data.namedEntries()) {
-                node.setAttr(key, value);
-            }
-            return node;
-        }
-        return undefined;
-    }
 }

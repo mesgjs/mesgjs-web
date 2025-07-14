@@ -1,4 +1,4 @@
-import { MWISSRVNode } from "../MWISSRVNode.esm.js";
+import { MWISSRVNode } from "mesgjs-web/src/server/MWISSRVNode.esm.js";
 
 const voidTags = new Set([
     "area", "base", "br", "col", "embed", "hr", "img", "input",

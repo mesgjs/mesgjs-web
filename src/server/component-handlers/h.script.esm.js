@@ -1,4 +1,4 @@
-import { MWISSRVNode } from "../MWISSRVNode.esm.js";
+import { MWISSRVNode } from "mesgjs-web/src/server/MWISSRVNode.esm.js";
 
 function hScript (data) {
     const node = MWISSRVNode.fromData(data, {

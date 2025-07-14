@@ -1,0 +1,24 @@
+- Central theming (Material-ish)
+  - Built-in light and dark theme support
+  - Primary, secondary, and tertiary colors for buttons
+- Needs to support a11y (best effor WCAG 2.2)
+- REM-based sizing for root-based scaling
+- Semantic buttons should be able to generate button-styled links if an href attribute is provided
+- Text input fields should support "v." validation
+  - v.min, v.len, v.max - length limits
+  - v.ire - incremental input validation regex
+  - v.are - acceptance validation regex
+- Input fields should support bidirectional binding with %*MWIData at the m.bind attribute path.
+- If a text input is active, programmatic changes will be saved, but not applied unless the input is aborted by pressing the Escape key.
+- Pressing Escape in an active text input should revert to the previous value (or pending programmatic value).
+- Form fields should subscribe to the form to report whether the field is valid and hance whether the form submit should be disabled.
+- Components may start out with a JS-first (or only) design, but ultimately need to end up as Mesgjs-first modules
+  - Try to avoid generating so much technical debt that solutions have to be completely rearchitected
+- To minimize the number of files, components should be grouped together where it makes reasonable sense (such as components for form fields)
+- The msjsload command works from a single module catalog at a time (not collections of catlogs)
+- Catalog entries are generated and added from information in the module's (component's) .msjs and .slid files at msjstrans transpilation time
+- Pub/sub rendez-vous points should be efficient
+  - E.g. a form component should be able to publish to a single form path, e.g. `m.pub=forms.contactForm`
+  - All the fields in the form should be able to subscribe to that same rendez-vous point, e.g. `m.sub=forms.contactForm`
+  - Once a field has access to the publisher's receiver object, it can send messages as required
+  - As long as communications are between Mesgjs objects (using the d.sm function), the publisher can save and reply to the sender (d.sr) as necessary

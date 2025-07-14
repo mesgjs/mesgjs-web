@@ -46,6 +46,7 @@ The Memory Bank consists of core files and optional context files, all in Markdo
 ### Additional Files
 Create additional files/folders within memory-bank/ when they help organize:
 - `tasks.md` - Documentation of repetitive tasks and their workflows
+- `security.md` - Security policies and decisions.
 - Complex feature documentation
 - Integration specifications
 - API documentation
@@ -75,8 +76,9 @@ After initialization, I will ask the user to read through the memory bank files 
 Memory Bank updates occur when:
 1. Discovering new project patterns
 2. After implementing significant changes
-3. When user explicitly requests with the phrase **update memory bank** (MUST review ALL files)
-4. When context needs clarification
+3. A new architectural plan is created or an existing one is modified, which requires updating the `tech.md` index.
+4. When user explicitly requests with the phrase **update memory bank** (MUST review ALL files)
+5. When context needs clarification
 
 If I notice significant changes that should be preserved but the user hasn't explicitly requested an update, I should suggest: "Would you like me to update the memory bank to reflect these changes?"
 
@@ -147,6 +149,38 @@ If the task was repetitive and might be needed again, I should suggest: "Would y
 
 In the end of the task, when it seems to be completed, I will update `context.md` accordingly. If the change seems significant, I will suggest to the user: "Would you like me to update memory bank to reflect these changes?" I will not suggest updates for minor changes.
 
+## Guiding Principles
+
+### Core Process Mandate: AVOID ASSUMPTIONS
+
+My primary directive is to avoid making assumptions about the project's architecture. Failure to adhere to this mandate wastes significant time and resources.
+
+-   **Architectural Research is Mandatory:** Before implementing any feature, I **MUST** perform a thorough assessment of the existing architectural documents listed in `tech.md`. I must assume that a specification exists and that it is my primary job to find it.
+-   **Assumptions are Wasteful:** I must not try to "save time" by making assumptions or applying general knowledge that conflicts with the project's established, and often atypical, Mesgjs-first philosophy.
+-   **Immediately Report Gaps:** If, after a thorough search, a required architectural detail appears to be missing, I **MUST** stop and report the gap to you immediately. I will not proceed with an implementation based on incomplete architecture.
+-   **Embrace the Atypical:** This project is *guided* by Mesgjs philosophy and only *informed* by prior art. I must expect and embrace unusual or atypical approaches as part of the core design, as long as it's deliberate and doesn't represent an unreviewed risk.
+
+- This project is the Mesgjs Web Interface, so my work should be *guided* by Mesgjs paradigms and principles.
+- My work should be *informed* by prior art, such as existing web libraries and frameworks, in order to leverage their real-world experience.
+- I am expected to bring my knowledge of prior art "to the table", so that the project can leverage that information *in its own unique style and "flavor"*.
+- When applying patterns from prior art, I must consider if the pattern can be modified to be more "Mesgjs-like" in implementation or approach.
+
+## Architectural Workflow
+
+- New architectural plan documents must indicate `[DRAFT]` status unless or until they have been approved.
+- When a new architectural plan is documented and *approved*, I must offer to audit the prior active architecture documents against the new architectural requirements to determine if changes to other documents are appropriate.
+- Newly approved architectural plans must be added to the document index in the `tech.md` memory-bank file.
+- When a code fix or other change would involve an architectural change (as opposed to bringing an implementation into conformance with existing architectural plans), I must announce this and offer to switch to `architect` mode for discussion and planning before making any changes.
+
+## Testing and Debugging
+
+When tests fail, it is critically important to assess which of the following reasons apply before attempting a fix:
+1. The code being tested might be broken.
+2. The code implementing the test itself might be broken.
+3. The test's premise or underlying assumptions might be incorrect.
+
+When a command appears to fail, I must trust the raw terminal output over any summary status. I should use verification tools like `ls` to confirm the actual state of the filesystem before concluding that a command has truly failed or retrying.
+
 ## Context Window Management
 
 When the context window fills up during an extended session:
@@ -163,5 +197,7 @@ Memory Bank is built on Kilo Code's Custom Rules feature, with files stored as s
 REMEMBER: After every memory reset, I begin completely fresh. The Memory Bank is my only link to previous work. It must be maintained with precision and clarity, as my effectiveness depends entirely on its accuracy.
 
 If I detect inconsistencies between memory bank files, I should prioritize brief.md and note any discrepancies to the user.
+
+If a file referenced in an architectural document appears to be missing or renamed, I must report this to the user, as it indicates that critical context may be lost or outdated. This is crucial for avoiding wasted time and effort.
 
 IMPORTANT: I MUST read ALL memory bank files at the start of EVERY task - this is not optional. The memory bank files are located in `.kilocode/rules/memory-bank` folder.

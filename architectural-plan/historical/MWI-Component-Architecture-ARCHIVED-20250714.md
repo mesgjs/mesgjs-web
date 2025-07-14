@@ -13,33 +13,37 @@ This document specifies the definitive architecture for the MWI component system
 
 The architecture is centered around a multi-stage handshake that ensures all dependencies are met before rendering begins.
 
+### Dual-Resolution Build and Render Process
+The MWI's hybrid nature is enabled by a build and render process that leverages the `msjsload` linker/loader's dual entry-point mode. This allows for two separate dependency resolutions from a single module catalog: one for the server-side rendering (SSR) environment and one for the client-side rendering (CSR) environment.
+
+The process unfolds as follows:
+
 ```mermaid
 graph TD
     subgraph "Build Time"
-        A[MWI App Requirements] --> B{Linker/Loader};
-        C[Module Catalog (.msjcat with unique featpro)] --> B;
-        B --> D[Output: App.html with setModMeta(...) call];
+        A["Module Catalog (.msjcat)"] --> B{msjsload Linker/Loader};
+        B -- "Resolves server entry point" --> C["Server-Side Bundle (.esm.js)"];
     end
 
-    subgraph "Runtime Initialization Handshake"
-        E[1. Registry Module loaded, gets `registryMid`] -- signals --> F["`$c.fready(registryMid, 'mwi.registry.ready')`"];
-        G[2. Component Modules load, get their own `mid`] -- wait for --> F;
-        G -- then register components & signal their own readiness --> H["`$c.fready(mid, 'mwi.components....')`"];
-        
-        I[3. Registry] -- waits for all component features --> J["`$c.fwait('mwi.components.core', ...)`"];
-        J -- then signals final readiness --> K["`$c.fready(registryMid, 'mwi.components.ready')`"];
-
-        L[4. Main App]-- waits for --> K;
-        L -- then begins --> M[Rendering];
+    subgraph "Server-Side Runtime"
+        C --> D[Execute Server-Side Bundle];
+        D -- "Performs SSR" --> E[Generates Client HTML];
+        E -- "Includes client module metadata" --> F["HTML with setModMeta(...)"];
     end
-end
+
+    subgraph "Client-Side Runtime"
+        F --> G[Browser loads HTML];
+        G --> H[Initializes Client-Side Environment];
+        H --> I[Hydrates Page];
+    end
 ```
+The `msjsload-cli` tool produces a single JavaScript bundle for the server. This server-side bundle contains all the necessary logic to render a page. When executed, the server-side code performs its rendering tasks and, if the page is interactive, generates the necessary HTML and client-side module metadata for the browser. This client-side metadata is derived from the `client` top-level key of the server's own module metadata, ensuring the client has the correct information for hydration.
 
 ### 1. Build Process & Feature Signaling
 The MWI application is built by `msjsload-cli`. Modules providing components must declare a **unique** feature promise in their catalog entry's `featpro` field.
 
--   **Convention:** `mwi.components.<unique-module-name>`
--   **Example:** The `mwi.html.core` module declares `featpro: "mwi.components.mwi.html.core"`.
+-   **Convention:** `mwi.components.<unique.moduleName>`
+-   **Example:** The `mwi-html-core` module declares `featpro: "mwi.components.mwi.html.core"`.
 
 ### 2. The `loadMsjs(mid)` Contract
 Every Mesgjs module, when loaded by the runtime, has its exported `loadMsjs` function called with a unique `mid` (module ID). This `mid` is the authorization token required to signal readiness for features declared in that module's metadata.

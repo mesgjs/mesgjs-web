@@ -8,12 +8,15 @@
  * @license MIT
  */
 
-import { MWIDefaultPageTemplate } from './MWIDefaultPageTemplate.esm.js';
-import { MWISSRVNode } from './MWISSRVNode.esm.js';
+import { MWIDefaultPageTemplate } from 'mesgjs-web/src/server/MWIDefaultPageTemplate.esm.js';
+import { MWISSRVNode } from 'mesgjs-web/src/server/MWISSRVNode.esm.js';
+import { NANOS } from 'mesgjs-web/src/shared/vendor.esm.js';
 import { StringSet } from 'mesgjs-web/src/shared/StringSet.esm.js';
 
 class MWISSR {
     _componentFactory;
+    _idCounter = 0;
+    _mountPoints = new Map();
 
     constructor (componentFactory) {
         this._componentFactory = componentFactory;
@@ -21,10 +24,23 @@ class MWISSR {
 
     async render (pageData, { template = new MWIDefaultPageTemplate() } = {}) {
         const bodyVNode = await this._renderNode(pageData);
+
         if (bodyVNode) {
             template.addContent('body', bodyVNode.outerHTML);
         }
+
+        const modMeta = this._componentFactory.getModMeta();
+        const clientMeta = modMeta?.at('client');
+        if (clientMeta) {
+            template.injectModMeta(clientMeta);
+        }
+
+        template.injectHydrationPoints(this._mountPoints);
         return template.render();
+    }
+
+    generateElementId () {
+        return 'MWS$' + (this._idCounter++);
     }
 
     async _renderNode (nodeData) {
@@ -40,6 +56,10 @@ class MWISSR {
             return MWISSRVNode.textNode('');
         }
 
+        if (!vnode.get('id') && vnode.type.startsWith('h.')) {
+            vnode.set('id', this.generateElementId());
+        }
+
         const { handler } = await this._componentFactory.get(vnode.type) || {};
 
         if (!handler) {
@@ -49,11 +69,63 @@ class MWISSR {
 
         if (typeof handler === 'function') {
             const result = await handler(vnode, this);
-            return this._renderNode(result);
+            this._collectMountPoints(result);
+
+            if (result && typeof result === 'object' && !(result instanceof MWISSRVNode)) {
+                if (Reflect.has(result, 'content')) {
+                    // Macro component: render its content and return.
+                    return this._renderNode(result.content);
+                } else {
+                    // Modifier component: render the original node's children.
+                    await vnode.renderChildren(this);
+                    return vnode;
+                }
+            } else {
+                // Handler returned a new renderable value.
+                return this._renderNode(result);
+            }
         } else {
             const newVNodeData = this._transformDeclarativeTemplate(handler, vnode);
             return this._renderNode(newVNodeData);
         }
+    }
+
+    _collectMountPoints (payload) {
+        if (!payload || typeof payload !== 'object') return;
+
+        const isDefaultMessage = (msg, type) => {
+            if (!msg) return true;
+            const values = Array.isArray(msg) ? msg
+                : (typeof msg?.values === 'function' ? [...msg.values()] : null);
+            return values ? (values.length === 1 && values[0] === type) : false;
+        };
+
+        const process = (handlers, handlerType) => {
+            if (!handlers) return;
+            const messageKey = `${handlerType}Message`;
+            const entries = (handlers instanceof NANOS)
+                ? handlers.namedEntries() : Object.entries(handlers);
+
+            for (const [id, config] of entries) {
+                const subscription = this._mountPoints.get(id) || {};
+                const configObj = (typeof config === 'string')
+                    ? { interface: config } : { ...config };
+
+                if (configObj.interface) {
+                    subscription.interface = configObj.interface;
+                }
+
+                const message = configObj[messageKey];
+                if (message && !isDefaultMessage(message, handlerType)) {
+                    subscription[messageKey] = message;
+                }
+
+                this._mountPoints.set(id, subscription);
+            }
+        };
+
+        process(payload.mount, 'mount');
+        process(payload.unmount, 'unmount');
     }
 
     _transformDeclarativeTemplate (templateData, instanceVNode) {

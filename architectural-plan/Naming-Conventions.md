@@ -49,6 +49,20 @@ Mesgjs interface names, which act as identifiers for component handlers and othe
 *   **`camelCase`** is suitable for simpler, more functional, or application-specific interfaces.
     *   **Examples:** `datePicker`, `formValidator`
 
+---
+
+## Component Type Naming
+
+Component type names, as used in the first position of a NANOS structure, **are VERY STRONGLY ENCOURAGED to** follow a three-tiered convention to clarify their origin and purpose.
+
+| Convention             | Style        | Context                                                | Example(s)                          |
+| :--------------------- | :----------- | :----------------------------------------------------- | :---------------------------------- |
+| **Prefixed Collection**| `prefix.*`   | Families of primitive or related library components.   | `h.div`, `h.span`, `f.input`        |
+| **Semantic Component** | `camelCase`  | Library-supplied, high-level semantic components.      | `datePicker`, `userProfile`         |
+| **User Component**     | `PascalCase` | Application-specific components created by end-users.  | `MyCustomWidget`, `InvoiceDetail`   |
+
+This tiered system provides a clear, at-a-glance understanding of a component's role and source within the MWI ecosystem.
+
 ## Constants: `SCREAMING_SNAKE_CASE`
 
 Constants that represent fixed, unchanging values **MUST** use `SCREAMING_SNAKE_CASE`. This makes them clearly identifiable and distinguishes them from dynamic variables.
@@ -64,7 +78,7 @@ To avoid collisions with standard HTML attributes and provide a clear namespace 
 
 | Prefix | Name        | Context                                                                      | Example(s)                          |
 | :----- | :---------- | :--------------------------------------------------------------------------- | :---------------------------------- |
-| `m.`   | **M**WI     | Core MWI attributes for binding, internationalization, and other features.   | `m.bind`, `m.i18n`                  |
+| `m.`   | **M**WI     | Core MWI attributes for pub/sub, data binding, and other features.   | `m.pub`, `m.sub`, `m.bind`, `m.i18n` |
 | `v.`   | **V**alidate | Attributes related to data validation.                                       | `v.req`, `v.type=email`       |
 | `e.`   | **E**vent   | Declarative event bindings. (Note: This is for simple cases; most event logic resides in Smart Components). | `e.click`, `e.input`                |
 
@@ -104,9 +118,15 @@ graph TD
         C("<b>kebab-case</b><br/>Filenames")
 
         subgraph "MWI Attribute Namespace (`prefix.`)"
-            D("<b>m.</b><br/>Core (e.g., m.bind)")
+            D("<b>m.</b><br/>Core (e.g., m.pub, m.bind)")
             E("<b>v.</b><br/>Validation (e.g., v.req)")
             F("<b>e.</b><br/>Events (e.g., e.click)")
+        end
+
+        subgraph "Component Types"
+            I("<b>prefix.*</b><br/>Prefixed Collections")
+            J("<b>camelCase</b><br/>Semantic Components")
+            K("<b>PascalCase</b><br/>User Components")
         end
 
         subgraph "Generated Element IDs"

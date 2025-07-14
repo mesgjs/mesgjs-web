@@ -8,17 +8,16 @@
  * @license MIT
  */
 
-import hScript from "../../server/component-handlers/h.script.esm.js";
+import hScript from "mesgjs-web/src/server/component-handlers/h.script.esm.js";
+import { FEAT_REGISTRY_READY, IF_COMPONENT_REGISTRY } from 'mesgjs-web/src/shared/constants.esm.js';
 
 const { getInstance, fwait, fready } = globalThis.$c;
 
 const FEATURE_PROMISE = "mwi.components.mwi.html.script";
-const REGISTRY_READY_PROMISE = "mwi.registry.ready";
-const REGISTRY_INTERFACE_NAME = "mwi.registry";
 
 function loadMsjs (mid) {
-    fwait(REGISTRY_READY_PROMISE).then(() => {
-        const registry = getInstance(REGISTRY_INTERFACE_NAME);
+    fwait(FEAT_REGISTRY_READY).then(() => {
+        const registry = getInstance(IF_COMPONENT_REGISTRY);
         const payload = { handler: hScript };
         registry("registerComponent", ["h.script", payload]);
         fready(mid, FEATURE_PROMISE);

@@ -1,10 +1,10 @@
 /* eslint-disable class-methods-use-this */
 
+import { FEAT_REGISTRY_READY, IF_COMPONENT_REGISTRY } from 'mesgjs-web/src/shared/constants.esm.js';
+
 const { getInstance, fwait, fready } = globalThis.$c;
 
 const FEATURE_PROMISE = "mwi.components.mwiHtmlCore";
-const REGISTRY_READY_PROMISE = "mwi.registry.ready";
-const REGISTRY_INTERFACE_NAME = "mwi.registry";
 
 const CORE_HTML_MAP = {
     // Document metadata
@@ -38,11 +38,11 @@ const CORE_HTML_MAP = {
 console.log('loading module mwi-html-core');
 function loadMsjs (mid) {
     console.log('mwi-html-core mid', !!mid);
-    fwait(REGISTRY_READY_PROMISE).then(() => {
-        const registry = getInstance(REGISTRY_INTERFACE_NAME);
+    fwait(FEAT_REGISTRY_READY).then(() => {
+        const registry = getInstance(IF_COMPONENT_REGISTRY);
 
         for (const [tagName, protoPayload] of Object.entries(CORE_HTML_MAP)) {
-            registry("registerComponent", [`h.${tagName}`, protoPayload]);
+            registry('registerComponent', `h.${tagName}`, protoPayload);
         }
         fready(mid, FEATURE_PROMISE);
     });

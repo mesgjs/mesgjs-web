@@ -28,25 +28,28 @@ The `VNode`'s lifecycle is tied to the `MWIMUM` (Mount/Unmount Monitor), which m
 
 A global delegator service remains on `document.body` as a listener of last resort for events that have bubbled up completely unhandled, suitable for global UI actions.
 
-## II. State Management: Secure Pub/Sub via Handshake
+## II. State Management: The Reactive Pub/Sub Model
 
-To ensure strict component isolation, all container/sub-component communication is handled via a secure, message-passing publish/subscribe pattern.
+To ensure strict component isolation and handle lifecycle timing issues, all container/sub-component communication is handled via a secure, reactive, message-passing publish/subscribe pattern.
 
-### A. The "Handshake" Mechanism
+> **Note:** The authoritative document for this system is `MWI-PubSub-Architecture.md`. The historical "handshake" model has been archived.
 
-Components discover each other's APIs indirectly via a global service locator.
+### A. The Reactive Mechanism
 
-1.  **The Global Store:** `%*MWIData` acts as a registry for component APIs.
-2.  **Container Publishes API:** `[form m.bind=contactForm]` places its receiver API (`d.rr`) at the `contactForm` key in `%*MWIData`.
-3.  **Field Subscribes to API:** `[h.input m.form=contactForm]` looks up the `contactForm` key to find the API to message.
+The system works by using `@reactive` values as a service bus, elegantly solving discovery and timing challenges.
+
+1.  **The Central Store:** A global `NANOS` object, `%*MWIData`, holds reactive values that act as "channels."
+2.  **Container Publishes API (`m.pub`):** A container component (e.g., a `form`) uses a helper to publish its message-passing API (`d.rr`) to a reactive value at a known path (e.g., `forms.contactForm`). On unmount, the helper automatically sets this value back to `undefined`.
+3.  **Field Subscribes to API (`m.sub`):** A field component (e.g., an `input`) uses a helper to create a "follower" reactive that mirrors the value at the container's path.
+4.  **Live Binding:** Because the field's follower reactively depends on the container's published reactive, the field automatically and safely receives the container's API whenever it becomes available and sees it disappear upon unmount. This allows the publisher and subscriber to mount and unmount in any order without errors.
 
 ### B. The Communication Protocol
 
 The protocol is based on one-way state announcements from fields to the container.
 
-1.  **Field Validates:** The `h.input` component is responsible for its own validation, based on declarative `v.*` attributes.
-2.  **Field Publishes:** After validation, the field sends an `(updateFieldState)` message to the container's API with its new status.
-3.  **Container Subscribes & Updates:** The `form` receives the message, trusts the report, and updates its private `@reactive` state, which in turn updates any dependent UI elements.
+1.  **Field Validates:** An `input` component performs its own validation. For declarative components, this is handled via `v.*` attributes. Smart component authors are free to implement programmatic validation instead if they choose.
+2.  **Field Publishes:** After validation, the input sends an `(updateFieldState)` message to the container's API (which it has reactively subscribed to) with its new status.
+3.  **Container Subscribes & Updates:** The `form` receives the message, trusts the report, and updates its internal `@reactive` state. This change propagates through the reactive graph, automatically updating any dependent UI, such as enabling or disabling a submit button.
 
 ## III. Final Architecture Diagram
 
@@ -61,11 +64,11 @@ graph TD
         G -- "VNode calls (off) on self" --> H{Calls removeEventListener};
     end
 
-    subgraph "State & Validation (Pub/Sub)"
-        I(h.input) -- "Validates self with v.* attrs" --> J{Sends (updateFieldState)};
-        J -- "to formAPI discovered via handshake" --> K(form);
-        K -- "Updates private @reactive state" --> L((Form Internal State));
-        L --"Triggers reactive update"--> M[submitButton becomes enabled];
+    subgraph "State & Validation (Reactive Pub/Sub)"
+        I(h.input) -- "Performs validation" --> J{Sends (updateFieldState)};
+        J -- "to reactively subscribed formAPI" --> K(form);
+        K -- "Updates its own @reactive state" --> L((Form Internal State));
+        L --"Change propagates through reactive graph"--> M[submitButton becomes enabled];
     end
 ```
 

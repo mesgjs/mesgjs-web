@@ -52,6 +52,7 @@ graph TD
 *   **Event & Validation Handling:** Event handlers and validators are referenced by symbolic names (e.g., `:click`, `:validate.email`) in the page data. These are resolved at runtime by the `ComponentFactory` via a three-layer module resolution system.
 *   **Dynamic Document Schema:** The schema is not static; it's generated dynamically based on the components available to the current user. Each component declares its own schema (allowed parents, children, attributes), which is enforced by the renderers.
 *   **VirtualNode Abstraction:** To manage the complexity of the bilingual (JavaScript/Mesgjs) environment, the rendering pipeline uses a `VirtualNode` class. This class acts as a proxy, providing a unified interface for manipulating node properties (like attributes and classes) and children, regardless of whether the source data is a JS Array or a NANOS list. The server-side `VirtualNode` renders to an HTML string, while the client-side equivalent will render to a DOM element.
+*   **Reactive Property Parity:** The VNode implementation ensures that reactive properties (such as `class` and `style`) have full feature parity with their static counterparts. The reactive update pathway leverages the same underlying `editClass()` and `editStyle()` logic, correctly processing complex object-based values rather than simply stringifying them.
 
 ## Rendering Pipelines
 
@@ -62,7 +63,7 @@ graph TD
 
 To support advanced features like multi-plane layouts and resource deduplication, the rendering pipeline follows a declarative, single-pass model. This is achieved through a system of structured "payload" objects returned by component handlers, which are then processed into a `VirtualNode` tree.
 
-*   **Bilingual Data Handling:** The `VirtualNode.fromData()` factory method is the primary mechanism for handling bilingual data. It accepts either native JavaScript (Arrays, Objects) or Mesgjs (`@list`/NANOS) format and normalizes it into a consistent `VirtualNode` instance. This abstracts the complexity away from the renderers and component handlers.
+*   **Bilingual Data Handling:** The `VirtualNode.fromData()` static factory method on the base `MWIVNode` class is the single, unified entry point for creating VNodes. It accepts either native JavaScript Arrays or Mesgjs (`@list`/NANOS) data and normalizes it into a consistent `VirtualNode` instance. This abstracts the complexity of data parsing away from the renderers and component handlers.
 *   **Component Payloads:** Component handlers operate on and return `VirtualNode` instances or payloads that describe their output and resource needs.
     *   **`content` Payloads:** High-level semantic components act as macros. They return a `content` property containing a new Mesgjs data structure. The renderer recursively processes this content into child `VirtualNode`s.
     *   **`VirtualNode` Payloads:** Low-level `h.*` primitive components are the rendering engines. Their handlers configure and return a `VirtualNode` instance. The final conversion to HTML (on the server) or a DOM element (on the client) is handled by the renderer at the end of the process.
@@ -81,6 +82,14 @@ To further enhance component encapsulation and developer experience, the payload
 
 *   **Component-Handler Factory:** A unified factory with a `get(symbolicName)` method to find and instantiate components, validators, and event handlers. It is the public interface to the module resolution system.
 *   **Page-Template Object:** Manages the overall HTML page structure. It supports a modular, position-based system (e.g., "head", "body", "sidebar") for adding content, inspired by Joomla's template positions. This allows for flexible and dynamic page composition.
+
+## Pub/Sub Communication
+
+To facilitate loosely-coupled communication between components (e.g., a form input and its parent form), MWI implements a reactive publish-subscribe system. This system allows components to publish their interfaces to a global, path-based registry and subscribe to other interfaces.
+
+The entire mechanism is built on top of the `@reactive` interface, ensuring that timing and mount/unmount lifecycle issues are handled gracefully. Components can reactively appear and disappear without causing errors in their dependents.
+
+The full details of this system are documented in [`architectural-plan/MWI-PubSub-Architecture.md`](../../architectural-plan/MWI-PubSub-Architecture.md).
 
 ## Module & Component Architecture
 
@@ -101,8 +110,8 @@ The architecture relies on a clear separation between the build-time process and
 graph TD
     subgraph "Build Time"
         A[MWI App Requirements] --> B{Linker/Loader};
-        C[Module Catalog (.msjcat with unique featpro)] --> B;
-        B --> D[Output: App.html with setModMeta(...) call];
+        C["Module Catalog (.msjcat with unique featpro)"] --> B;
+        B --> D["Output: App.html with setModMeta(...) call"];
     end
 
     subgraph "Runtime Initialization Handshake"
@@ -116,7 +125,6 @@ graph TD
         L[4. Main App]-- waits for --> K;
         L -- then begins --> M[Rendering];
     end
-end
 ```
 
 #### 1. Build Process & Feature Signaling

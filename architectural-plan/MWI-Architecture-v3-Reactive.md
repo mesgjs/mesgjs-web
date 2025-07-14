@@ -142,12 +142,12 @@ class UserProfileComponent extends SmartComponent {
 }
 ```
 
-### VirtualNode Reactive Integration
+### MWICSRVNode Reactive Integration
 
-The VirtualNode class handles reactive content and attributes through eager reactives:
+The MWICSRVNode class handles reactive content and attributes through eager reactives:
 
 ```typescript
-class VirtualNode {
+class MWICSRVNode {
     private element: Element;
     private domUpdaters: Set<Reactive>;
 

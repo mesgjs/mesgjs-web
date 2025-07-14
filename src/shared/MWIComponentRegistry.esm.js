@@ -1,12 +1,13 @@
 /* eslint-disable class-methods-use-this */
 
-import { MWI_REGISTRY_FEATURE_PROMISE } from "mesgjs-web/src/shared/constants.esm.js";
+import {
+    FEAT_COMPONENTS_PREFIX,
+    FEAT_COMPONENTS_READY,
+    FEAT_REGISTRY_READY,
+    IF_COMPONENT_REGISTRY,
+} from "mesgjs-web/src/shared/constants.esm.js";
 
 const { getInstance, getInterface, setRO } = globalThis.$c;
-
-const MWICOMPONENTS_PREFIX = "mwi.components.";
-const COMPONENTS_READY_PROMISE = "mwi.components.ready";
-const REGISTRY_INTERFACE_NAME = "mwi.registry";
 
 class MWIComponentRegistry {
     #components = new Map();
@@ -42,7 +43,7 @@ class MWIComponentRegistry {
                 const featpro = moduleInfo.at("featpro");
                 if (featpro) {
                     for (const feature of featpro.values()) {
-                        if (typeof feature === 'string' && feature.startsWith(MWICOMPONENTS_PREFIX)) {
+                        if (typeof feature === 'string' && feature.startsWith(FEAT_COMPONENTS_PREFIX)) {
                             features.push(feature);
                         }
                     }
@@ -53,7 +54,7 @@ class MWIComponentRegistry {
         if (!features.length) {
             queueMicrotask(() => globalThis.$c.fready(
                 this.#registryMid,
-                COMPONENTS_READY_PROMISE,
+                FEAT_COMPONENTS_READY,
             ));
             return;
         }
@@ -61,7 +62,7 @@ class MWIComponentRegistry {
         globalThis.$c.fwait(...features).then(() => {
             globalThis.$c.fready(
                 this.#registryMid,
-                COMPONENTS_READY_PROMISE,
+                FEAT_COMPONENTS_READY,
             );
         });
     }
@@ -97,7 +98,7 @@ function opWaitForComponents (d) {
 console.log('Loading MWIComponentRegistry');
 function loadMsjs (mid) {
     console.log('MWIComponentRegistry mid', !!mid);
-    const registryInterface = getInterface(REGISTRY_INTERFACE_NAME);
+    const registryInterface = getInterface(IF_COMPONENT_REGISTRY);
     registryInterface.set({
         singleton: true,
         pristine: true,
@@ -112,14 +113,14 @@ function loadMsjs (mid) {
         },
     });
 
-    const registry = getInstance(REGISTRY_INTERFACE_NAME, { mid });
+    const registry = getInstance(IF_COMPONENT_REGISTRY, { mid });
     registry("waitForComponents");
 
-    globalThis.$c.fready(mid, MWI_REGISTRY_FEATURE_PROMISE);
+    globalThis.$c.fready(mid, FEAT_REGISTRY_READY);
 }
 
 function getRegistry () {
-    return getInstance(REGISTRY_INTERFACE_NAME)("@jsv");
+    return getInstance(IF_COMPONENT_REGISTRY)("@jsv");
 }
 
 export { loadMsjs, getRegistry };

@@ -1,5 +1,4 @@
-import { NANOS } from 'mesgjs-web/src/shared/vendor.esm.js';
-import h from './components/h.esm.js';
+import h from 'mesgjs-web/src/server/components/h.esm.js';
 
 /**
  * @copyright 2025 Kappa Computer Solutions, LLC and Brian Katzung.
