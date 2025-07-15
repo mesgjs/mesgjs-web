@@ -8,7 +8,8 @@ const FEATURE_PROMISE = "mwi.components.mwiHtmlCore";
 
 const CORE_HTML_MAP = {
     // Document metadata
-    "head": {}, "title": {}, "base": {}, "link": {}, "meta": {},
+    "head": {}, "title": {}, "base": {}, "link": {}, "meta": {}, "embed": {},
+    "param": {},
     "style": {},
     // Sectioning root
     "body": {},
@@ -26,7 +27,7 @@ const CORE_HTML_MAP = {
     "q": {}, "s": {}, "samp": {}, "small": {}, "span": {}, "strong": {},
     "sub": {}, "sup": {}, "time": {}, "u": {}, "var": {}, "wbr": {},
     // Image and multimedia
-    "area": {}, "audio": {}, "img": {}, "map": {}, "source": {}, "track": {},
+    "area": {}, "audio": {}, "img": {}, "map": {}, "input": {}, "source": {}, "track": {},
     "video": {},
     // Demarcating edits
     "del": {}, "ins": {},
@@ -35,13 +36,23 @@ const CORE_HTML_MAP = {
     "tfoot": {}, "th": {}, "thead": {}, "tr": {},
 };
 
+const voidTags = new Set([
+     "area", "base", "br", "col", "embed", "hr", "img", "input",
+     "link", "meta", "param", "source", "track", "wbr"
+]);
+
 console.log('loading module mwi-html-core');
 function loadMsjs (mid) {
     console.log('mwi-html-core mid', !!mid);
     fwait(FEAT_REGISTRY_READY).then(() => {
         const registry = getInstance(IF_COMPONENT_REGISTRY);
 
-        for (const [tagName, protoPayload] of Object.entries(CORE_HTML_MAP)) {
+        for (const [tagName, proto] of Object.entries(CORE_HTML_MAP)) {
+            const protoPayload = { ...proto };
+            if (voidTags.has(tagName)) {
+                protoPayload.noClose = true;
+            }
+
             registry('registerComponent', `h.${tagName}`, protoPayload);
         }
         fready(mid, FEATURE_PROMISE);

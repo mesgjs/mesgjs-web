@@ -1,5 +1,3 @@
-import h from 'mesgjs-web/src/server/components/h.esm.js';
-
 /**
  * @copyright 2025 Kappa Computer Solutions, LLC and Brian Katzung.
  *
@@ -10,6 +8,8 @@ import h from 'mesgjs-web/src/server/components/h.esm.js';
  *
  * @license MIT
  */
+
+import h from 'mesgjs-web/src/server/components/mwi-html-core-handler.esm.js';
 
 const componentHandlers = new Map([
     // "Smart" handler for the button component.

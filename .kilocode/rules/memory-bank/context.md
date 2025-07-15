@@ -5,9 +5,10 @@ An architectural audit has been completed. The process of reconciling the audit'
 ## Implementation Status Update
 
 *   **Architectural Audit Reconciliation (In Progress):**
-    *   **Sections 1-4 (VNode, Components, Client/Server Sync):** The core principles and implementation details for these areas have been clarified. Obsolete documentation has been archived, and canonical documents have been updated and correctly indexed in `tech.md`. The previously undocumented "Text Node Guard" mechanism is now also documented.
-    *   **Sections 5-11 (Naming, Syntax):** The audit's initial findings regarding naming conventions and Mesgjs syntax have been thoroughly reviewed. Several items were found to be based on misunderstandings of the runtime and were corrected within the audit document itself. All genuinely incorrect examples have been fixed in the relevant architectural plans.
-    *   **Section 12 (Follow-ups):** A shared constants module has been created, the `.jsv` pattern is standardized, and a new `Error-Handling-Strategy.md` has been written. All major documentation consolidation tasks (Item 12.4) are now complete, resulting in new canonical documents for the component system and client-side interactions.
+    *   **HTML Core Unification (Complete):** The logic for void tags has been centralized into the shared HTML core registrar module, and the server-side handler has been simplified. This resolves a key SSR/CSR parity issue.
+    *   **File Naming and Structure (Complete):** The files for the core HTML primitives have been renamed for clarity, and the server-side component handlers have been consolidated into a single `components` directory, improving structural consistency.
+    *   **Sections 1-11 (Complete):** All major findings related to VNodes, component consistency, client/server sync, naming, and syntax have been resolved, with documentation updated accordingly.
+    *   **Section 12 (Follow-ups):** A shared constants module has been created, the `.jsv` pattern is standardized, a new `Error-Handling-Strategy.md` has been written, `Security.md` has been created, and all major documentation consolidation tasks (Item 12.4) are now complete.
 
 *   **Key Architectural Decisions Clarified:**
     *   **Hydration:** The system uses a declarative, lifecycle-only map (`mwiHydration`) to connect element IDs to mount/unmount handlers, not a state-transfer system.
@@ -27,4 +28,4 @@ An architectural audit has been completed. The process of reconciling the audit'
 
 ## Next Steps
 
-Continue resolving the remaining findings documented in `architectural-audit.md`. With documentation consolidation now complete (Audit Item 12.4), the next step is to create a `Security.md` document to explicitly define data sanitization rules and responsibilities (Audit Item 12.5).
+Continue resolving the remaining findings documented in `architectural-audit.md`. The next major architectural task is to refactor the `MWIRenderer` to adhere to the Single Responsibility Principle by breaking its functionality into smaller, dedicated helper services as defined in **Audit Item 12.6**.

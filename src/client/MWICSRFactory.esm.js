@@ -1,6 +1,6 @@
-// src/client/ComponentFactory.esm.js
+// src/client/MWICSRactory.esm.js
 
-import h from 'mesgjs-web/src/client/components/h.esm.js';
+import h from 'mesgjs-web/src/client/components/mwi-html-core-handler.esm.js';
 
 /**
  * A simple component factory for the client-side.
