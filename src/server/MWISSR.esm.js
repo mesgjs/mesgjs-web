@@ -12,14 +12,25 @@ import { MWIDefaultPageTemplate } from 'mesgjs-web/src/server/MWIDefaultPageTemp
 import { MWISSRVNode } from 'mesgjs-web/src/server/MWISSRVNode.esm.js';
 import { NANOS } from 'mesgjs-web/src/shared/vendor.esm.js';
 import { StringSet } from 'mesgjs-web/src/shared/StringSet.esm.js';
+import { MWIResourceCollectorService } from 'mesgjs-web/src/server/services/MWIResourceCollectorService.esm.js';
+import { MWIScopeManagerService } from 'mesgjs-web/src/server/services/MWIScopeManagerService.esm.js';
+import { MWICssProcessorService } from 'mesgjs-web/src/server/services/MWICssProcessorService.esm.js';
+import { MWIUrlValidatorService } from 'mesgjs-web/src/server/services/MWIUrlValidatorService.esm.js';
 
 class MWISSR {
     _componentFactory;
     _idCounter = 0;
-    _mountPoints = new Map();
+    _resourceCollector;
+    _scopeManager;
+    _cssProcessor;
+    _urlValidator;
 
     constructor (componentFactory) {
         this._componentFactory = componentFactory;
+        this._resourceCollector = new MWIResourceCollectorService();
+        this._scopeManager = new MWIScopeManagerService();
+        this._cssProcessor = new MWICssProcessorService();
+        this._urlValidator = new MWIUrlValidatorService();
     }
 
     async render (pageData, { template = new MWIDefaultPageTemplate() } = {}) {
@@ -35,7 +46,14 @@ class MWISSR {
             template.injectModMeta(clientMeta);
         }
 
-        template.injectHydrationPoints(this._mountPoints);
+        const { mountPoints, css } = this._resourceCollector.getCollectedResources();
+        template.injectHydrationPoints(mountPoints);
+
+        const scopedCss = this._cssProcessor.generateScopedCss(css);
+        if (scopedCss) {
+            template.addContent('head', `<style>${scopedCss}</style>`);
+        }
+
         return template.render();
     }
 
@@ -60,7 +78,7 @@ class MWISSR {
             vnode.set('id', this.generateElementId());
         }
 
-        const { handler } = await this._componentFactory.get(vnode.type) || {};
+        const { handler, specifier } = await this._componentFactory.get(vnode.type) || {};
 
         if (!handler) {
             await vnode.renderChildren(this);
@@ -69,7 +87,14 @@ class MWISSR {
 
         if (typeof handler === 'function') {
             const result = await handler(vnode, this);
-            this._collectMountPoints(result);
+
+            let scopeId;
+            if (result?.scopedCss && specifier) {
+                scopeId = this._scopeManager.getScopeId(specifier);
+                vnode.setScopeId(scopeId);
+            }
+
+            this._resourceCollector.processPayload(result, scopeId);
 
             if (result && typeof result === 'object' && !(result instanceof MWISSRVNode)) {
                 if (Reflect.has(result, 'content')) {
@@ -90,43 +115,6 @@ class MWISSR {
         }
     }
 
-    _collectMountPoints (payload) {
-        if (!payload || typeof payload !== 'object') return;
-
-        const isDefaultMessage = (msg, type) => {
-            if (!msg) return true;
-            const values = Array.isArray(msg) ? msg
-                : (typeof msg?.values === 'function' ? [...msg.values()] : null);
-            return values ? (values.length === 1 && values[0] === type) : false;
-        };
-
-        const process = (handlers, handlerType) => {
-            if (!handlers) return;
-            const messageKey = `${handlerType}Message`;
-            const entries = (handlers instanceof NANOS)
-                ? handlers.namedEntries() : Object.entries(handlers);
-
-            for (const [id, config] of entries) {
-                const subscription = this._mountPoints.get(id) || {};
-                const configObj = (typeof config === 'string')
-                    ? { interface: config } : { ...config };
-
-                if (configObj.interface) {
-                    subscription.interface = configObj.interface;
-                }
-
-                const message = configObj[messageKey];
-                if (message && !isDefaultMessage(message, handlerType)) {
-                    subscription[messageKey] = message;
-                }
-
-                this._mountPoints.set(id, subscription);
-            }
-        };
-
-        process(payload.mount, 'mount');
-        process(payload.unmount, 'unmount');
-    }
 
     _transformDeclarativeTemplate (templateData, instanceVNode) {
         const slotMap = this._buildSlotMap(instanceVNode.children);

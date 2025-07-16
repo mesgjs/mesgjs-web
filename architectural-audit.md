@@ -217,6 +217,7 @@ The architecture mentions security, but the responsibilities could be more expli
 *   `UrlValidator`: Contains the logic for sanitizing and validating URLs.
 
 This would make the `MWIRenderer` a simpler orchestrator, delegating tasks to these focused services. The resulting code would be more modular, testable, and maintainable.
+*   **Resolution (2025-07-16):** The `MWISSR` has been refactored into a lean orchestrator that delegates to four new, single-responsibility services: `MWIResourceCollectorService`, `MWIScopeManagerService`, `MWICssProcessorService`, and `MWIUrlValidatorService`. These services have been created and unit-tested, fulfilling the recommendation. This item is now complete.
 ---
 
 ## 13. Follow-up Audit Items (New)
@@ -243,4 +244,4 @@ The remaining open items are primarily minor, "suggestion-level" observations th
 *   **Section 6, Suggestion:** A minor pass over the architectural documents to align variable names in examples with the convention would be beneficial.
 *   **Section 8, Partially Resolved Items:** The issues of component communication and SSR/CSR scope ID passing are partially resolved by the existence of the relevant architectural plans, but the implementation of those plans is a separate, larger body of work.
 
-The only remaining major, un-implemented recommendation from this audit is **Item 12.6**, the refactoring of the `MWIRenderer` to adhere to the Single Responsibility Principle. This will be tracked as the next major architectural task.
+The refactoring of the `MWIRenderer` (Item 12.6) is now complete. As such, all major action items from this audit have been resolved.
