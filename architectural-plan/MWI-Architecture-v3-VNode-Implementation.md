@@ -1,3 +1,12 @@
+---
+**Status:** ACTIVE
+**History:**
+- 2025-07-29: ACTIVE
+**Scope:** Specifies the implementation details for the enhanced MWI VNode system, including naming conventions and copy-on-write protection.
+**Replaces:**
+**Replaced by:**
+**Related:** MWI-Architecture-v3-Core.md, MWI-Architecture-v3-VNode.md
+---
 # MWI VNode Implementation Specification
 
 ## Overview
@@ -47,7 +56,13 @@ class MWIVNode {
             throw new TypeError(`Invalid virtual node name: ${type}`);
         }
         this.type = type;
-        this.opts = opts;
+        this.opts = Object.freeze({
+            close: '',
+            noClose: false,
+            openOpen: '',
+            rawContent: false,
+            ...opts
+        });
         this.#storage = new VNodeStorage();
         this.children = [];
     }

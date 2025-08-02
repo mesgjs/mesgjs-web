@@ -1,3 +1,12 @@
+---
+**Status:** ACTIVE
+**History:**
+- 2025-07-29: ACTIVE
+**Scope:** The functional and technical requirements for the MWI's semantic component library.
+**Replaces:**
+**Replaced by:**
+**Related:** MWI-Semantic-Component-Architecture.md, Semantic-Components-Review.md
+---
 - Central theming (Material-ish)
   - Built-in light and dark theme support
   - Primary, secondary, and tertiary colors for buttons
@@ -20,24 +29,7 @@
 - Catalog entries are generated and added from information in the module's (component's) `.msjs` and `.slid` files at `msjstrans` transpilation time
 - Let's switch to using a `d.` ("data") prefix for values bound to `%*MWIData` paths.
   - This provides a clean separation from `v.*` (for validation), and things like `m.attr` (slotted attributes).
-- Important note: We need to restore the accidentally-dropped content (node) and attribute slotting support, but let's take the opportunity to re-specify this:
-  - `[m.slot name=cs.default default content]` - a content slot in a declarative template (default slot name is `cs.default`)
-    - Gets replaced by either matching content (by attribute name) or its default content
-    - Since Mesgjs named-values support compound values, there's no need to scan children for a `slot` attribute; just fill the slot from the matching attribute.
-    - By *convention*, content slot names should use a `cs.` prefix; attribute slot names should use an `as.` prefix.
-  - `[component cs.header=[header content] cs.footer=[footer content] cs.default default slot content]`
-    - `[m.slot name=cs.header slot default content]` will be populated from the `cs.header` attribute (falling back to `slot default content`)
-    - `[m.slot name=cs.footer slot default content]` will be populated from the `cs.footer` attribute (falling back to `slot default content`)
-    - `[m.slot slot default content]` or `[m.slot name=cs.default slot default content]` will be populated from either the `cs.default` attribute (if present, like normal) **or (special case) the parent's positional parameters 1-n (if present)** (falling back to `slot default content`)
-  - `[component as.name=[attr=value ...]]` - attribute/value pairs for attribute-slotting (positional values are ignored)
-    - `as.` prefix-convention suggests intent to use for attribute slotting.
-  - `[tagOrComponent m.attr=as.name;attrList ...]` - merge attributes from attribute `as.name`
-    - The comma-separated attribute list specifies which attributes are allowed to be (or prohibited from being, in the case of a `@not:` prefix) merged.
-    - Classes and styles are merged (when allowed/not prohibited) using the `editClass` and `editStyle` mechanisms, respectively
-  - Slotting substitutions should happen automatically for declarative components.
-  - Smart components should have access to helper functions/methods for merging attribute slot content.
-    - The helper should accept a vnode attribute value (NANOS), a `m.attr`-ish allow/prohibit list (comma-separated, but without a leading attribute name + `;`, as the smart component just picks the desired attribute from its vnode), and a target vnode to merge the allowed/non-prohibited attributes into.
-    - The helper should also understand the `@not:` prefix for the allow-to-prohibit change in interpretation of subsequent attribute names.
+- The content and attribute slotting system is a critical requirement. The definitive technical specification for this feature is documented in `architectural-plan/MWI-Slot-System.md`. All implementation work must adhere to that document.
 - Pub/sub rendez-vous points should be efficient
   - E.g. a form component should be able to publish to a single form path, e.g. `d.pub=forms.contactForm`
   - All the fields in the form should be able to subscribe to that same rendez-vous point, e.g. `d.sub=forms.contactForm`

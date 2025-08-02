@@ -1,3 +1,12 @@
+---
+**Status:** ACTIVE
+**History:**
+- 2025-07-29: ACTIVE
+**Scope:** Outlines the architecture for the MWI's foundational semantic component library, including theming, state management, and data binding.
+**Replaces:**
+**Replaced by:**
+**Related:** Semantic-Components-Requirements.md, Semantic-Components-Review.md
+---
 # MWI Semantic Component Architecture
 
 This document outlines the architecture for the MWI's foundational semantic component library. It builds upon the initial requirements and integrates with the core MWI framework, including theming, state management, and rendering pipelines.
@@ -88,30 +97,37 @@ sequenceDiagram
 
 While an initial implementation may use JavaScript-based Pub/Sub for rapid prototyping, the definitive, primary interface for form communication **must** be a Mesgjs interface. This ensures the communication adheres to the security and structural guarantees of the MWI ecosystem. JS-only implementations should be considered temporary shims.
 
-## 4. Validation Mechanism
+## 4. Data Binding and Validation
 
-The `v.*` validation attributes provide a declarative interface for input validation.
+The `d.*` and `v.*` attribute prefixes provide a declarative and expressive interface for data binding and validation, replacing the legacy `m.bind` attribute. This approach offers better separation of concerns and scalability.
 
-1.  A component handler (e.g., for `text-input`) will parse attributes like `v.min`, `v.len`, `v.ire`, and `v.are`.
-2.  It will instantiate corresponding reactive validators that take the field's value as input.
-3.  The collective state of these validators determines the field's overall `valid` property, which is then published via the Pub/Sub system.
+### 4.1. Data Binding (`d.*`)
 
-## 5. Bidirectional Data Binding (`m.bind`)
+-   **`d.value`**: The primary attribute for creating a two-way binding between a component's value and a shared `@reactive` data source.
+    1.  **Read (Source -> Input):** The component handler interprets `d.value="path.to.data"` as a subscription request to a reactive value. When the source data changes, the component's internal value is updated.
+    2.  **Write (Input -> Source):** The handler also establishes a publisher. When the user modifies the input, the new value is written back to the reactive data source at `path.to.data`.
+-   **`d.disabled`, `d.readonly`, etc.**: These attributes create a one-way binding from a reactive source to a component's boolean attributes, allowing the UI to reactively enable or disable elements based on application state.
 
-The `m.bind` attribute is the declarative syntax for creating a two-way binding between a component and a shared `@reactive` data source.
+### 4.2. Validation (`v.*`)
 
-1.  **Read (Source -> Input):** The component handler interprets `m.bind="path.to.data"` as a subscription request. It subscribes to the reactive value at that path. When the source data changes, the component's internal value is updated.
-2.  **Write (Input -> Source):** The handler also establishes a publisher. When the user modifies the input and the change is committed (e.g., on a `blur` event), the new value is written back to the reactive data source at `path.to.data`.
+-   Validation attributes like `v.min` and `v.len` define basic constraints.
+-   **`v.ire` (Incremental Regular Expression):** This regex defines which characters are allowed *during* input. For example, in a numeric field, it would allow digits but reject letters.
+-   **`v.are` (Acceptance Regular Expression):** This regex defines what constitutes a complete, valid value. For example, a US phone number field might accept `^\d{10}$` for its final validation.
+-   Component handlers parse these attributes and instantiate reactive validators that observe the field's value. The collective state of these validators determines the field's overall `valid` property, which is then communicated via the Pub/Sub system.
 
-### Handling Concurrent Edits
+### 4.3. Deprecation of `m.bind`
+
+The `m.bind` attribute is officially deprecated in favor of the more specific `d.*` and `v.*` prefixes. All new development must use the new prefixes. Existing components should be migrated as part of routine maintenance.
+
+### 4.4. Handling Concurrent Edits
 
 To address the requirement that programmatic changes are deferred while a user is actively editing a field:
-- The component will maintain two internal states: a "live value" (from user input) and a "pending value" (from the `m.bind` subscription).
-- If the `m.bind` subscription fires while the user is editing, the new value is stored as the "pending value" but not rendered in the input.
+- The component will maintain two internal states: a "live value" (from user input) and a "pending value" (from the `d.value` subscription).
+- If the `d.value` subscription fires while the user is editing, the new value is stored as the "pending value" but not rendered in the input.
 - If the user commits their changes, the "live value" is written to the source, overwriting the "pending value".
 - If the user presses `Escape`, the "live value" is discarded, and the "pending value" is applied to the input, reverting the field to the latest programmatic state.
 
-## 6. Button-to-Link Transformation
+## 5. Button-to-Link Transformation
 
 The semantic `button` component will support rendering as either a `<button>` or an `<a>` tag based on the presence of an `href` attribute.
 

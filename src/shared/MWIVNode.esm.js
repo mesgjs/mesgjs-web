@@ -309,4 +309,31 @@ export class MWIVNode {
     static toKebabCase (str) {
         return str.replace(/[A-Z]/g, c => '-' + c.toLowerCase());
     }
+
+    /**
+     * Merge attributes from a source to a target VNode based on a policy.
+     * @param {object|Map} sourceAttrs The attributes to merge from.
+     * @param {string} policyString The policy for merging (e.g., "id,class", "@not:style").
+     * @param {MWIVNode} targetVNode The VNode to merge attributes onto.
+     */
+    static mergeAttributes (sourceAttrs, policyString, targetVNode) {
+        const deny = policyString.startsWith('@not:');
+        const policySet = new Set((deny ? policyString.slice(5) : policyString).split(',').map(s => s.trim()).filter(Boolean));
+        const entries = (typeof sourceAttrs?.entries === 'function')
+            ? sourceAttrs.entries()
+            : Object.entries(sourceAttrs);
+
+        for (const [key, value] of entries) {
+            const isAllowed = deny ? !policySet.has(key) : policySet.has(key);
+            if (!isAllowed) continue;
+
+            if (key === 'class') {
+                targetVNode.editClass(value);
+            } else if (key === 'style') {
+                targetVNode.editStyle(value);
+            } else {
+                targetVNode.setAttr(key, value);
+            }
+        }
+    }
 }

@@ -1,3 +1,12 @@
+---
+**Status:** STANDARD
+**History:**
+- 2025-07-29: STANDARD
+**Scope:** Outlines the explicit security policies and responsibilities for the MWI to ensure data is handled safely.
+**Replaces:**
+**Replaced by:**
+**Related:**
+---
 # MWI Security and Sanitization Policy
 
 This document outlines the explicit security policies and responsibilities for the Mesgjs Web Interface (MWI) to ensure data is handled safely at all stages of the rendering pipeline.

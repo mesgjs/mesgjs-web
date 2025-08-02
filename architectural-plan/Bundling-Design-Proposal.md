@@ -1,4 +1,15 @@
-# MWI Bundling Design Proposal (Work-in-Progress)
+---
+**Status:** ACTIVE
+**History:**
+- 2025-07-29: ACTIVE
+- 2025-07-29: DRAFT
+**Scope:** This document proposes a Mesgjs-native approach to bundling MWI JavaScript modules, avoiding external build tools.
+**Replaces:** 
+**Replaced by:** 
+**Related:** 
+---
+
+# MWI Bundling Design Proposal
 
 This document outlines a design for bundling the MWI JavaScript modules into Mesgjs modules. This approach avoids an external build step (like Rollup or Webpack) in favor of a more integrated, Mesgjs-native solution.
 
@@ -15,6 +26,7 @@ The MWI application will be divided into the following granular bundles:
 *   **`mwi-shared.msjs`**: Core shared utilities (`MWIConfigService`, `MWIVNode` base class, etc.). This will be a dependency for both SSR and CSR bundles.
 *   **`mwi-html-core.msjs`**: The foundational, low-level HTML component definitions (e.g. `h.div`, `h.span`).
 *   **`mwi-semantic-core.msjs`**: Higher-level semantic components that compose the `mwi.html.core` components (e.g. a `card` or `button` component).
+*   **`mwi-forms.msjs`**: Contains all form-related components (e.g. `form`, `input`, `label`).
 
 ### Dependency Graph
 
@@ -34,6 +46,7 @@ graph TD
 
     subgraph "Component Library"
         Semantic["mwi-semantic-core.msjs"]
+        Forms["mwi-forms.msjs"]
     end
 
 
@@ -42,6 +55,7 @@ graph TD
     CSR --> Shared
     CSR --> HTML
     Semantic --> HTML
+    Forms --> Semantic
 ```
 
 

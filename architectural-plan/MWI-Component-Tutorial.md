@@ -1,3 +1,12 @@
+---
+**Status:** STANDARD
+**History:**
+- 2025-07-29: STANDARD
+**Scope:** The canonical, step-by-step guide to authoring components for the MWI.
+**Replaces:**
+**Replaced by:**
+**Related:** MWI-Component-System.md
+---
 # MWI Component Tutorial
 
 This document provides a canonical, step-by-step guide to authoring components for the Mesgjs Web Interface (MWI). It covers a basic content component and a more advanced "bilingual" component that can be controlled from both Mesgjs and JavaScript.

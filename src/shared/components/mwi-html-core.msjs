@@ -1,0 +1,102 @@
+[(
+    modpath = mwi/mwi-html-core
+    version = 0.0.1
+    featpro = 'mwi.components.mwiHtmlCore'
+    featreq = 'mwi.componentRegistryReady'
+)]
+
+'' @js{
+    /*
+        This file is transpiled from an msjs file.
+        It consolidates the logic from the old mwi-html-core-registrar.esm.js
+        and page.esm.js files into a single, canonical MWI component module.
+    */
+    if (!mid) throw new Error('Cannot load mwiHtmlCore without module management');
+
+    const { getInstance, fwait, fready } = globalThis.$c;
+
+    const CORE_HTML_MAP = {
+        // Document metadata
+        "head": {}, "title": {}, "base": {}, "link": {}, "meta": {}, "embed": {},
+        "param": {},
+        "style": {},
+        // Sectioning root
+        "body": {},
+        // Content sectioning
+        "address": {}, "article": {}, "aside": {}, "footer": {}, "header": {},
+        "h1": {}, "h2": {}, "h3": {}, "h4": {}, "h5": {}, "h6": {}, "main": {},
+        "nav": {}, "section": {},
+        // Text content
+        "blockquote": {}, "dd": {}, "div": {}, "dl": {}, "dt": {},
+        "figcaption": {}, "figure": {}, "hr": {}, "li": {}, "ol": {}, "p": {},
+        "pre": {}, "ul": {},
+        // Inline text semantics
+        "a": {}, "abbr": {}, "b": {}, "bdi": {}, "bdo": {}, "br": {}, "cite": {},
+        "code": {}, "data": {}, "dfn": {}, "em": {}, "i": {}, "kbd": {}, "mark": {},
+        "q": {}, "s": {}, "samp": {}, "small": {}, "span": {}, "strong": {},
+        "sub": {}, "sup": {}, "time": {}, "u": {}, "var": {}, "wbr": {},
+        // Image and multimedia
+        "area": {}, "audio": {}, "img": {}, "map": {}, "input": {}, "source": {}, "track": {},
+        "video": {},
+        // Demarcating edits
+        "del": {}, "ins": {},
+        // Table content
+        "caption": {}, "col": {}, "colgroup": {}, "table": {}, "tbody": {}, "td": {},
+        "tfoot": {}, "th": {}, "thead": {}, "tr": {},
+    };
+
+    const SPECIAL_COMPONENTS = {
+        'h.FRAG': { noTag: true },
+        'h.TEXT': { noTag: true },
+        'h.COMMENT': { noTag: true, openOpen: '<!--', close: '-->' },
+        'h.doctype': { noTag: true, openOpen: '<!doctype ', close: '>' },
+    };
+
+    const voidTags = new Set([
+         "area", "base", "br", "col", "embed", "hr", "img", "input",
+         "link", "meta", "param", "source", "track", "wbr"
+    ]);
+
+    const PAGE_TEMPLATE_CONTENT = [
+        'h.FRAG',
+        ['h.doctype', 'html' ],
+        ['h.html', { 'm.attr': 'as.html' },
+            ['h.head',
+                ['h.title',
+                    ['m.slot', { name: 'as.pageTitle' }, 'MWI Page']
+                ],
+                ['m.slot', { name: 'cs.head' }]
+            ],
+            ['h.body', { 'm.attr': 'as.body' },
+                ['m.slot', { name: 'cs.default' }]
+            ]
+        ]
+    ];
+
+    fwait('mwi.componentRegistryReady').then(() => {
+        const registry = getInstance('MWIComponentRegistry')?.jsv;
+        console.log('mwi-html-core registry', registry);
+
+        // Register all the h.* primitives
+        for (const [tagName, proto] of Object.entries(CORE_HTML_MAP)) {
+            const protoPayload = { ...proto };
+            if (voidTags.has(tagName)) {
+                protoPayload.noClose = true;
+            }
+            registry.registerComponent(`h.${tagName}`, protoPayload);
+        }
+
+        // Register special components
+        for (const [name, proto] of Object.entries(SPECIAL_COMPONENTS)) {
+            registry.registerComponent(name, proto);
+        }
+
+        // Register the basic page component
+        registry.registerComponent('mwi.html.core.basicPage', {
+            type: 'page',
+            content: PAGE_TEMPLATE_CONTENT
+        });
+
+        fready(mid, 'mwi.components.mwiHtmlCore');
+    });
+@}

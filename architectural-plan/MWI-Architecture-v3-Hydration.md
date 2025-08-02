@@ -1,3 +1,12 @@
+---
+**Status:** ACTIVE
+**History:**
+- 2025-07-29: ACTIVE
+**Scope:** Details the hydration system that bridges server-side rendering (SSR) and client-side rendering (CSR) in the MWI.
+**Replaces:**
+**Replaced by:**
+**Related:** MWI-Architecture-v3-Core.md, MWI-MUM-Plan.md
+---
 # MWI SSR/CSR Bridge
 
 This document details the hydration system that bridges server-side rendering (SSR) and client-side rendering (CSR) in the Mesgjs Web Interface (MWI).

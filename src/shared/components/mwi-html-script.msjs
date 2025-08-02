@@ -1,0 +1,55 @@
+[(
+    modpath = mwi/mwi-html-script
+    version = 0.1.0
+    featpro = "mwi.components.mwiHtmlScript"
+    featreq = "mwi.componentRegistryReady"
+)]
+
+'' @js{
+    /**
+     * @copyright 2025 Kappa Computer Solutions, LLC and Brian Katzung
+     * @license MIT
+     *
+     * This code will be placed inside the auto-generated loadMsjs(mid)
+     * function by the msjstrans tool.
+     */
+    if (!mid) throw new Error('Cannot load mwiHtmlScript without module management');
+
+    const { getInstance, fwait, fready } = globalThis.$c;
+
+    fwait('mwi.componentRegistryReady').then(() => {
+        const registry = getInstance('MWIComponentRegistry')?.jsv;
+        console.log('mwi-html-script registry', registry);
+
+        /**
+         * The handler for h.script. It receives a pre-constructed VNode
+         * and enforces security constraints by sanitizing its content.
+         */
+        const hScriptHandler = (vnode, context) => {
+            if (Array.isArray(vnode.children)) {
+                let content = vnode.children.join('');
+                const closeTagIndex = content.search(/<\/script\s*>/i);
+
+                if (closeTagIndex !== -1) {
+                    content = content.slice(0, closeTagIndex);
+                }
+                // Replace children with the single sanitized string.
+                vnode.children = [ content ];
+            }
+            return vnode;
+        };
+
+        // Register the full component specification. The `options` will
+        // be used by MWISSRVNode.fromData() before the handler is called.
+        const componentSpec = {
+            handler: hScriptHandler,
+            options: {
+                rawContent: true, // Prevents the renderer from HTML-escaping the content.
+                tag: 'script' // Ensures the correct tag is used, overriding the type.
+            }
+        };
+
+        registry.registerComponent("h.script", componentSpec);
+        fready(mid, "mwi.components.mwiHtmlScript");
+    });
+@}

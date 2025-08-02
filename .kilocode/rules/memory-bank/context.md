@@ -1,23 +1,25 @@
 # Current Context
 
-The architectural audit has been fully reconciled. The final major action item, the refactoring of the `MWISSR` renderer, is now complete.
+**SUBTASK:** Architect a proper workflow for testing `.msjs` files. This will likely involve updating `test.esm.js` to support a transpiler function that returns data URLs for modules without directly importing them. This will be implemented in a new task.
 
-## Implementation Status Update
+**CHECKPOINT:** The current testing approach for `.msjs` files is flawed. The work on this has been stopped, and the next step is to revert the testing files to a stable state.
 
-*   **Architectural Audit Reconciliation (Complete):**
-    *   **MWISSR Refactor (Complete):** The monolithic `MWISSR` class has been successfully refactored into a lean orchestrator and four dedicated, single-responsibility services (`MWIResourceCollectorService`, `MWIScopeManagerService`, `MWICssProcessorService`, `MWIUrlValidatorService`). This resolves the final major action item from the audit (Item 12.6). All new services are unit-tested and integrated.
-    *   **All Other Items (Complete):** All previous audit items, including component architecture unification, naming conventions, and documentation consolidation, were resolved prior to this final refactoring.
+---
 
-## Key Learnings & Development Patterns
+**BLOCKED:** The architectural simplification task is currently blocked by an issue in the `msjstrans` tool. The tool is failing to resolve its internal dependencies when run from outside its own directory, which prevents the successful transpilation of the new `mwi-component-registry.msjs` module.
 
-1.  **Architectural Diligence:** Assuming architectural details are missing before conducting an exhaustive search of all indexed documentation (`tech.md`) is a procedural failure. The first step must always be to find the existing specification.
-2.  **Architectural Hygiene:** Outdated architectural plans must be archived to the `historical/` sub-directory to keep active documents clean and focused.
+This issue must be resolved in the upstream Mesgjs project before testing and final validation of the architectural changes can proceed.
 
-## Prioritized Implementation Plan
+## Key Outcomes (So Far)
 
-1.  **Reconcile Architectural Audit** (Complete)
-2.  **Implement Semantic Component Library** (Next)
+*   `MWIComponentFactory.esm.js` has been removed.
+*   `MWIComponentRegistry.esm.js` has been refactored into a canonical Mesgjs module: `mwi-component-registry.msjs`.
+*   `MWISSR.esm.js` has been updated to use the component registry directly.
+*   A new test file, `test/server/MWISSR.test.js`, has been created.
+*   The `architecture.md` file has been updated to reflect the removal of the factory and the streamlined component resolution process.
 
-## Next Steps
+## Next Steps (When Unblocked)
 
-With the architectural reconciliation complete, the next major phase of the project is to begin implementation of the foundational semantic component library, as outlined in `Semantic-Components-Requirements.md`.
+1.  Transpile the new `mwi-component-registry.msjs` and `mwi-html-script.msjs` modules using the fixed `msjstrans` tool.
+2.  Run the tests in `test/server/MWISSR.test.js` to validate the entire refactored component resolution flow.
+3.  Once tests are passing, this preempting task will be complete, and the original `h.script` refactor follow-on task can be resumed.

@@ -72,11 +72,12 @@ export class MWISSRVNode extends MWIVNode {
     /**
      * Render children using the provided renderer
      * @param {object} renderer The renderer instance
+     * @param {object} context The rendering context
      * @returns {Promise<this>}
      */
-    async renderChildren (renderer) {
+    async renderChildren (renderer, context) {
         this.children = await Promise.all(
-            this.children.map(c => renderer._renderNode(c))
+            this.children.map(c => renderer._renderNode(c, context))
         );
         return this;
     }

@@ -57,15 +57,30 @@ export async function testAsync (label, fn) {
     }
 }
 
-export async function testModule (label, source, expectFn) {
+// Transpile a Mesgjs source file, returning the generated JavaScript code string
+// (The config SLID is never returned)
+export function transpileMesgjs (source) {
+    const { tree, errors: parseErrs } = parse(lex(source).tokens);
+    if (parseErrs.length) throw new Error('Mesgjs parsing failed');
+    const { code, errors: transpErrs } = transpileTree(tree, { debugBlocks: true, enableJS: true });
+    if (transpErrs.length) throw new Error('Mesgjs transpilation failed');
+    return code;
+}
+
+// Test a Mesgjs module (supplied as source text)
+export async function testModule (label, source, expectFn = undefined, autoLoad = true) {
+    const code = transpileMesgjs(source);
     return testAsync(label, async () => {
-	const { tree, errors: parseErrs } = parse(lex(source).tokens);
-	if (parseErrs.length) throw new Error('Mesgjs parsing failed');
-	const { code, errors: transpErrs } = transpileTree(tree, { debugBlocks: true, enableJS: true });
-	if (transpErrs.length) throw new Error('Mesgjs transpilation failed');
 	const mod = await loadModuleCode(code);
-	await expectFn(mod);
+        if (autoLoad && globalThis.msjsNoSelfLoad && typeof mod?.loadMsjs === 'function') mod.loadMsjs('test');
+	if (typeof expectFn === 'function') await expectFn(mod);
     });
+}
+
+// Test a Mesgjs module (supplied as a local file path)
+export async function testExternalModule (label, path, expectFn = undefined, autoLoad = true) {
+    const source = await Deno.readTextFile(path);
+    return testModule(label, source, expectFn, autoLoad);
 }
 
 export function testRejects (label, fn, expect) {

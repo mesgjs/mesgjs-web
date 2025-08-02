@@ -1,3 +1,14 @@
+---
+**Status:** SUPERSEDED, REQUIRES ATTENTION
+**History:**
+- 2025-07-29: SUPERSEDED, REQUIRES ATTENTION
+- 2025-07-29: ACTIVE
+**Scope:** Details the resource management system for the MWI, covering CSS, modules, and other resources.
+**Replaces:**
+**Replaced by:** [Accurate, up-to-date documentation needs to be created]
+**Related:** MWI-Architecture-v3-Core.md, Bundling-Design-Proposal.md
+---
+
 # MWI Resource Management
 
 This document details the resource management system for the Mesgjs Web Interface (MWI), focusing on how CSS, modules, and other resources are handled across SSR and CSR contexts.

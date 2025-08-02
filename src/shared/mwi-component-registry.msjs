@@ -1,0 +1,106 @@
+[(
+    modpath = mwi/mwi-component-registry
+    version = 0.1.0
+    featpro = "mwi.componentRegistryReady"
+    featreq = "mwi.constantsReady"
+)]
+
+'' @js{
+    /**
+     * @copyright 2025 Kappa Computer Solutions, LLC and Brian Katzung
+     * @license MIT
+     */
+    if (!mid) throw new Error('Cannot load mwiRegistry without module management');
+
+    const { fwait, fready, getInstance, getInterface, getModMeta, setRO } = globalThis.$c;
+    const IF_COMPONENT_REGISTRY = 'MWIComponentRegistry';
+
+    fwait("mwi.constantsReady").then(() => {
+        const {
+            FEAT_COMPONENTS_PREFIX,
+            FEAT_COMPONENTS_READY,
+            FEAT_REGISTRY_READY,
+        } = getInstance('MWIConstants');
+
+        class MWIComponentRegistry {
+            #components = new Map();
+            #registryMid = null;
+
+            constructor(mid) {
+                this.#registryMid = mid;
+            }
+
+            getComponent (name) {
+                return this.#components.get(name);
+            }
+
+            registerComponent (name, spec) {
+                if (!name || !spec) return false;
+                this.#components.set(name, spec);
+                return true;
+            }
+
+            async waitForComponents () {
+                const modMeta = getModMeta();
+                const modules = modMeta?.at("modules");
+                const features = [];
+
+                if (modules) {
+                    for (const [modName, moduleInfo] of modules.entries()) {
+                        const featpro = moduleInfo.at("featpro");
+                        if (!featpro) continue;
+
+                        const processFeature = (feature) => {
+                            if (typeof feature === 'string' && feature.startsWith(FEAT_COMPONENTS_PREFIX)) {
+                                features.push(feature);
+                            }
+                        };
+
+                        if (typeof featpro === 'string') {
+                            processFeature(featpro);
+                        } else if (featpro.values) {
+                            for (const feature of featpro.values()) {
+                                processFeature(feature);
+                            }
+                        }
+                    }
+                }
+
+                if (features.length) {
+                    await fwait(...features);
+                }
+
+                fready(this.#registryMid, FEAT_COMPONENTS_READY);
+            }
+        }
+
+        // --- Module Entry Point ---
+
+        let registryInstance;
+
+        function opInit (d) {
+            setRO(d.octx, 'js', registryInstance);
+            setRO(d.rr, 'jsv', registryInstance);
+        }
+
+        if (registryInstance) return;
+
+        registryInstance = new MWIComponentRegistry(mid);
+
+        const registryInterface = getInterface(IF_COMPONENT_REGISTRY);
+        registryInterface.set({
+            singleton: true,
+            pristine: true,
+            lock: true,
+            handlers: {
+                "@init": opInit,
+                "@jsv": d => d.js,
+                "registerComponent": d => registryInstance.registerComponent(d.mp.at(0), d.mp.at(1)),
+                "getComponent": d => registryInstance.getComponent(d.mp.at(0)),
+            },
+        });
+
+        fready(mid, FEAT_REGISTRY_READY);
+        registryInstance.waitForComponents();
+    });
+@}

@@ -1,3 +1,12 @@
+---
+**Status:** ACTIVE
+**History:**
+- 2025-07-29: ACTIVE
+**Scope:** Specifies the definitive architecture for the MWI component system, including its lifecycle, types, and state management.
+**Replaces:**
+**Replaced by:**
+**Related:** MWI-Component-Tutorial.md, MWI-Architecture-v3-Core.md
+---
 # MWI Component System Architecture
 
 This document specifies the definitive architecture for the MWI component system. It is designed to be modular, secure, and tightly integrated with the Mesgjs module-loading ecosystem, using a multi-stage feature-promise handshake for initialization.

@@ -4,46 +4,36 @@
  * @license MIT
  */
 
-class ConfigurationService {
+import { MWIError } from 'mesgjs-web/src/shared/errors/MWIError.esm.js';
+
+export class ConfigurationService {
     _config;
 
-    constructor (initialConfig = {}) {
-        // 1. Hardcoded defaults
-        let enforceSchema = true;
+    constructor (config = {}) {
+        this._config = config;
+    }
 
-        // 2. Environment Context (MWI_ENV)
-        // This check ensures 'Deno' is not accessed in a browser environment
-        if (typeof Deno !== 'undefined' && Deno.env) {
-            const env = Deno.env.get('MWI_ENV');
-            if (env === 'production') {
-                enforceSchema = false;
-            } else if (env === 'development') {
-                enforceSchema = true;
-            }
+    /**
+     * Check if the MWI environment is set to 'development'.
+     * @returns {boolean} True if in development mode.
+     */
+    isDevelopment() {
+        return this.get('MWI_ENV') === 'development';
+    }
+
+    /**
+     * Handles error reporting based on the current environment.
+     * In development, it logs the full error. In production, it remains silent
+     * (but could be configured to send to a remote service).
+     * @param {Error|MWIError} err - The error to report.
+     * @param {string} [context] - An optional string providing context for the error.
+     */
+    reportError(err, context) {
+        if (this.isDevelopment()) {
+            console.error(`[MWI Error]${context ? ` ${context}` : ''}:`, err);
         }
-
-        // 3. Environment Variable Override (MWI_ENFORCE_SCHEMA)
-        if (typeof Deno !== 'undefined' && Deno.env) {
-            const envOverride = Deno.env.get('MWI_ENFORCE_SCHEMA');
-            if (envOverride) {
-                enforceSchema = !(envOverride === 'false' || envOverride === '0');
-            }
-        }
-
-        // 4. Runtime Override (URL Query Parameter)
-        // This check ensures 'location' is available, for browser environments
-        if (typeof location !== 'undefined' && location.search) {
-            const params = new URLSearchParams(location.search);
-            const urlOverride = params.get('mwi_enforce_schema');
-            if (urlOverride) {
-                enforceSchema = !(urlOverride === 'false' || urlOverride === '0');
-            }
-        }
-
-        this._config = {
-            enforceSchema,
-            ...initialConfig
-        };
+        // In a production environment, this is where we would send
+        // the error to a remote logging service.
     }
 
     /**
@@ -74,5 +64,3 @@ class ConfigurationService {
         return { ...this._config };
     }
 }
-
-export const configService = new ConfigurationService();

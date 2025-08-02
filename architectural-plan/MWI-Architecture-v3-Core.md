@@ -1,3 +1,12 @@
+---
+**Status:** ACTIVE
+**History:**
+- 2025-07-29: ACTIVE
+**Scope:** The core system architecture for the Mesgjs Web Interface (MWI), covering rendering, components, hydration, and security.
+**Replaces:**
+**Replaced by:**
+**Related:** MWI-Architecture-v3-VNode.md, MWI-Architecture-v3-Hydration.md, MWI-Architecture-v3-Reactive.md, MWI-Architecture-v3-Resources.md
+---
 # MWI System Architecture v3
 
 The Mesgjs Web Interface (MWI) is a bilingual JavaScript-and-Mesgjs system for rendering web interfaces from structured data, supporting both server-side (SSR) and client-side (CSR) rendering through a unified payload-based architecture.
@@ -189,7 +198,7 @@ Features:
 
 ### Reactive Binding
 ```mesgjs
-[input m.bind=some.binding.path]
+[input d.value=some.binding.path]
 ```
 - Two-way data binding
 - Path-based binding syntax

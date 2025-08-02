@@ -1,3 +1,12 @@
+---
+**Status:** ACTIVE
+**History:**
+- 2025-07-29: ACTIVE
+**Scope:** Details the integration of the fine-grained reactive library into the MWI architecture.
+**Replaces:**
+**Replaced by:**
+**Related:** MWI-Architecture-v3-Core.md
+---
 # MWI Reactive Architecture
 
 This document details the integration of the fine-grained reactive library into the Mesgjs Web Interface (MWI) architecture.

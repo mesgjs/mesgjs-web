@@ -1,3 +1,12 @@
+---
+**Status:** ACTIVE
+**History:**
+- 2025-07-29: ACTIVE
+**Scope:** Outlines the final hybrid architecture for the MWIMUM (Mount/Unmount Monitor), responsible for managing component lifecycle events.
+**Replaces:**
+**Replaced by:**
+**Related:** MWI-Architecture-v3-Hydration.md
+---
 # MWI Mount/Unmount Monitor (MWIMUM) Architectural Plan
 
 This document outlines the final hybrid architecture for the `MWIMUM`, which is responsible for managing component lifecycle events.

@@ -1,3 +1,12 @@
+---
+**Status:** ACTIVE
+**History:**
+- 2025-07-29: ACTIVE
+**Scope:** Outlines the architecture for client-side component interaction, covering both pub/sub and direct event handling.
+**Replaces:**
+**Replaced by:**
+**Related:** MWI-Architecture-v3-Core.md, MWI-Architecture-v3-Hydration.md, MWI-Architecture-v3-Reactive.md
+---
 # MWI Client-Side Interaction Architecture
 
 This document outlines the architecture for client-side component interaction within the MWI environment. It covers two primary mechanisms:

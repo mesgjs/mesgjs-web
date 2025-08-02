@@ -17,39 +17,31 @@ graph TD
     subgraph "Server-Side (Deno)"
         SSR[Server-Side Renderer]
         PageTemplate[Page Template]
-        ComponentFactory[Component Factory]
         ModuleResolution[Module Resolution]
         PageData(Page Description Data)
         VNodeServer[VirtualNode (Server)]
     end
 
     subgraph "Shared Components"
+        ComponentRegistry[Component Registry]
         ModuleCatalog[Module Catalog]
         ComponentHandlers(Component Handlers)
-        Validators(Validators)
-        EventHandlers(Event Handlers)
     end
 
     UserEvents --> CSR
     CSR --> DOM
     PageData --> SSR
+    SSR --> ComponentRegistry
     SSR --> VNodeServer
     VNodeServer -- ".outerHTML" --> PageTemplate
-    SSR --> ComponentFactory
-    CSR --> ComponentFactory
-    ComponentFactory --> ModuleResolution
+    ComponentRegistry --> ModuleResolution
     ModuleResolution --> ModuleCatalog
     ModuleCatalog --> ComponentHandlers
-    ModuleCatalog --> Validators
-    ModuleCatalog --> EventHandlers
-    ComponentFactory --> ComponentHandlers
-    ComponentFactory --> Validators
-    ComponentFactory --> EventHandlers
 ```
 
 ## Core Mechanisms
 
-*   **Event & Validation Handling:** Event handlers and validators are referenced by symbolic names (e.g., `:click`, `:validate.email`) in the page data. These are resolved at runtime by the `ComponentFactory` via a three-layer module resolution system.
+*   **Event & Validation Handling:** Event handling and validation logic are implemented by "smart" components. This logic can then be exposed declaratively (e.g., via `v.*` attributes for validation on an input field component), allowing simpler, declarative components to leverage the underlying smart-component functionality.
 *   **Dynamic Document Schema:** The schema is not static; it's generated dynamically based on the components available to the current user. Each component declares its own schema (allowed parents, children, attributes), which is enforced by the renderers.
 *   **VirtualNode Abstraction:** To manage the complexity of the bilingual (JavaScript/Mesgjs) environment, the rendering pipeline uses a `VirtualNode` class. This class acts as a proxy, providing a unified interface for manipulating node properties (like attributes and classes) and children, regardless of whether the source data is a JS Array or a NANOS list. The server-side `VirtualNode` renders to an HTML string, while the client-side equivalent will render to a DOM element.
 *   **Reactive Property Parity:** The VNode implementation ensures that reactive properties (such as `class` and `style`) have full feature parity with their static counterparts. The reactive update pathway leverages the same underlying `editClass()` and `editStyle()` logic, correctly processing complex object-based values rather than simply stringifying them.
@@ -67,7 +59,7 @@ To support advanced features like multi-plane layouts and resource deduplication
 *   **Component Payloads:** Component handlers operate on and return `VirtualNode` instances or payloads that describe their output and resource needs.
     *   **`content` Payloads:** High-level semantic components act as macros. They return a `content` property containing a new Mesgjs data structure. The renderer recursively processes this content into child `VirtualNode`s.
     *   **`VirtualNode` Payloads:** Low-level `h.*` primitive components are the rendering engines. Their handlers configure and return a `VirtualNode` instance. The final conversion to HTML (on the server) or a DOM element (on the client) is handled by the renderer at the end of the process.
-*   **Centralized Logic:** The `SsrRenderer` is responsible for traversing the page data, creating the `VirtualNode` tree, and centralizing all aggregation and deduplication logic. It recursively processes `content` payloads and assembles the final output from the root `VirtualNode`. This keeps the semantic component handlers pure and declarative.
+*   **Centralized Logic:** The `MWISSR` is responsible for traversing the page data, creating the `VirtualNode` tree, and centralizing all aggregation and deduplication logic. It recursively processes `content` payloads and assembles the final output from the root `VirtualNode`. This keeps the semantic component handlers pure and declarative.
 *   **Single Pass:** The renderer traverses the page data tree only once. During this pass, it collects all resources (styles, scripts, static blocks) and generates the main body `VirtualNode` tree simultaneously. After the traversal is complete, it assembles the final `PageTemplate` with the deduplicated resources.
 
 #### Advanced Payload Features
@@ -75,12 +67,12 @@ To support advanced features like multi-plane layouts and resource deduplication
 To further enhance component encapsulation and developer experience, the payload system supports several advanced features:
 
 *   **Intrinsic Scoped CSS:** Components can provide a `scopedCss` property at the top level of their payload. This property contains a CSS template string.
-    *   **Scoping Mechanism:** The renderer uses the component's unique resolved module specifier to generate a unique scope ID (e.g., `mwi-a1b2`) the first time a component of that type is rendered on a page.
+    *   **Scoping Mechanism:** For each page render, the renderer generates a unique scope ID (e.g., `mwi-a1b2`, likely from a hex-based counter) for each component *type* that provides scoped CSS. This ID works in conjunction with the element instance ID system (see [`Naming-Conventions.md`](../../architectural-plan/Naming-Conventions.md)) to ensure proper style encapsulation.
     *   **Substitution:** The renderer replaces all instances of a special marker (`@@`) within the `scopedCss` template and assigns the scope ID to the `VirtualNode`. The `VirtualNode`'s final rendering step (`.outerHTML`) performs the substitution in the generated HTML.
 
 ## Key Interfaces
 
-*   **Component-Handler Factory:** A unified factory with a `get(symbolicName)` method to find and instantiate components, validators, and event handlers. It is the public interface to the module resolution system.
+*   **Component Registry:** A unified registry for component specifications. The renderer queries this registry directly to retrieve the `componentSpec` (handler and options) needed to render a given component type.
 *   **Page-Template Object:** Manages the overall HTML page structure. It supports a modular, position-based system (e.g., "head", "body", "sidebar") for adding content, inspired by Joomla's template positions. This allows for flexible and dynamic page composition.
 
 ## Pub/Sub Communication
@@ -218,3 +210,16 @@ graph TD
     DOM -- "Reads config from <script> tag" --> ConfigServiceClient
     ConfigServiceClient --> CSR
 ```
+
+## Architectural Integrity
+
+It is a core principle of this project that the architectural documentation is as critical as the source code itself. **Any code change that impacts the system's architecture is incomplete until the corresponding architectural documents have been updated.**
+
+Failure to keep the architectural documentation synchronized with the implementation is a significant risk to the project. It introduces architectural drift, makes onboarding new developers difficult, and complicates future maintenance and development efforts. It is a process failure equivalent to not updating other source code files that are impacted by a change.
+
+Ideally, non-trivial changes (of more than a few lines, or more than one file) should be implemented in an interruptible-and-restartable process, i.e.:
+- The changes to be made, in sufficient detail to implement in a different task, should be described in the architecture documentation (potentially as a referenced external file if substantial) before code changes begin.
+- The code changes should be implemented.
+- The documentation should be updated to cleanly reflect the modified architecture.
+- If changes will be significant, consider archiving the existing architecture and creating a new architecture document.
+- If there is any doubt as to whether changes warrant this approach, check with the user before proceding.

@@ -1,3 +1,12 @@
+---
+**Status:** ACTIVE
+**History:**
+- 2025-07-29: ACTIVE
+**Scope:** Defines the unified error handling strategy for the Mesgjs Web Interface (MWI).
+**Replaces:** 
+**Replaced by:** 
+**Related:** 
+---
 # MWI Error Handling Strategy
 
 This document defines the unified error handling strategy for the Mesgjs Web Interface (MWI). Its purpose is to ensure that errors are handled consistently, predictably, and safely across both server-side and client-side components.

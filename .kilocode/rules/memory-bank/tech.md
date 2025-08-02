@@ -33,40 +33,166 @@ This section provides an index of key reference materials and architectural docu
 
 ### 1. Core Language and Runtime (`resources/mesgjs`)
 
-*   **Primary Documentation:** `resources/mesgjs/docs/MWI-Training-Data.md`
-    *   **Content:** The definitive language, syntax, and runtime guide for Mesgjs.
-    *   **When to Read:** Essential for any task involving writing or debugging Mesgjs code. This is the source of truth for all language features.
+*   **MANDATORY: Mesgjs Language & Runtime Bible:** `resources/mesgjs/docs/MWI-Training-Data.md`
+    *   **Content:** This is the **ABSOLUTE SOURCE OF TRUTH** for the Mesgjs language, syntax, runtime, and core interaction patterns. It is not optional.
+    *   **When to Read:** **MUST READ an APPROPRIATE SECTION of THIS DOCUMENT BEFORE EVERY TASK that involves writing or debugging Mesgjs or JavaScript that interoperates with it.** Failure to do so will result in incorrect code and wasted time.
 
 ### 2. Architectural Plans (`architectural-plan/`)
 
 This directory contains the collaborative design documents that define the MWI system.
 
-*   **Overall Architecture:**
-    *   `MWI-Architecture-v3-Core.md`: High-level system structure.
-    *   `Naming-Conventions.md`: Code style and naming rules.
-    *   `Security.md`: Defines data sanitization rules and responsibilities.
-    *   `Error-Handling-Strategy.md`: Defines the unified strategy for fatal and non-fatal errors.
-*   **VNode and Rendering:**
-    *   `MWI-Architecture-v3-VNode.md`: The core Virtual Node concept.
-    *   `MWI-Architecture-v3-VNode-Implementation.md`: Specific implementation details for VNodes.
-*   **Component System:**
-    *   `MWI-Component-System.md`: The single, authoritative document for the component system architecture.
-    *   `MWI-Component-Tutorial.md`: A canonical guide with "Hello, MWI" and bilingual "Counter" examples.
-    *   `MWI-Semantic-Component-Architecture.md`: Architecture for high-level semantic components.
-    *   `Semantic-Components-Requirements.md`: Requirements for the semantic component library.
-*   **Reactivity:**
-    *   `MWI-Architecture-v3-Reactive.md`: The core reactive system design.
-*   **Client-Side, Hydration, and Synchronization:**
-    *   `MWI-Client-Side-Interaction-Architecture.md`: Authoritative guide for client-side events (direct and pub/sub).
-    *   `MWI-Architecture-v3-Hydration.md`: How client-side code takes over from SSR.
-    *   `MWI-MUM-Plan.md`: The definitive hybrid architecture for the Mount/Unmount Monitor.
-    *   `SSR-CSR-Sync-Issues.md`: Known issues related to server/client state synchronization.
-*   **Resource Management & Bundling:**
-    *   `MWI-Architecture-v3-Resources.md`: Plan for managing CSS, JS, and other assets.
-    *   `Bundling-Design-Proposal.md`: Proposal for the module bundling strategy.
-*   **Planning & Issue Tracking:**
-    *   `load-plans.md`: Documentation for loading strategies.
-    *   `Open-Issues.md`: A list of open architectural issues and questions.
+#### Overall Architecture & Process
+
+*   **Document:** `architectural-plan/MWI-Architecture-v3-Core.md`
+    *   **Status:** ACTIVE
+    *   **Scope:** The core system architecture for the Mesgjs Web Interface (MWI), covering rendering, components, hydration, and security.
+    *   **Relationships:** `MWI-Architecture-v3-VNode.md`, `MWI-Architecture-v3-Hydration.md`, `MWI-Architecture-v3-Reactive.md`, `MWI-Architecture-v3-Resources.md`
+
+*   **Document:** `architectural-plan/Naming-Conventions.md`
+    *   **Status:** STANDARD
+    *   **Scope:** The official naming conventions for the MWI project, covering identifiers, files, classes, components, and attributes.
+    *   **Relationships:**
+
+*   **Document:** `architectural-plan/Security.md`
+    *   **Status:** STANDARD
+    *   **Scope:** Outlines the explicit security policies and responsibilities for the MWI to ensure data is handled safely.
+    *   **Relationships:**
+
+*   **Document:** `architectural-plan/Error-Handling-Strategy.md`
+    *   **Status:** ACTIVE
+    *   **Scope:** Defines the unified error handling strategy for the Mesgjs Web Interface (MWI).
+    *   **Relationships:**
+
+*   **Document:** `architectural-plan/decision-log.md`
+    *   **Status:** STANDARD
+    *   **Scope:** An immutable log of architecturally significant decisions.
+    *   **Relationships:**
+
+*   **Document:** `architectural-plan/Documentation-Process.md`
+    *   **Status:** STANDARD
+    *   **Scope:** A one-sentence summary of the document's purpose.
+    *   **Relationships:**
+
+*   **Document:** `architectural-plan/Implementation-Status.md`
+    *   **Status:** REVIEW
+    *   **Scope:** A dashboard tracking the implementation status of all ACTIVE architectural documents. This should be updated whenever a major feature system is completed or requires significant re-architecture.
+    *   **Relationships:**
+
+#### VNode and Rendering
+
+*   **Document:** `architectural-plan/MWI-Architecture-v3-VNode.md`
+    *   **Status:** ACTIVE
+    *   **Scope:** Describes the high-level architecture of the MWI VNode system, including the decision to use a purpose-built VNode over a NANOS-centric approach.
+    *   **Relationships:** `MWI-Architecture-v3-Core.md`, `MWI-Architecture-v3-VNode-Implementation.md`
+
+*   **Document:** `architectural-plan/MWI-Architecture-v3-VNode-Implementation.md`
+    *   **Status:** ACTIVE
+    *   **Scope:** Specifies the implementation details for the enhanced MWI VNode system, including naming conventions and copy-on-write protection.
+    *   **Relationships:** `MWI-Architecture-v3-Core.md`, `MWI-Architecture-v3-VNode.md`
+
+#### Component System
+
+*   **Document:** `architectural-plan/Core-Components-Requirements.md`
+    *   **Status:** ACTIVE
+    *   **Scope:** Defines the requirements for the foundational `h.*` primitive components.
+    *   **Relationships:** `MWI-Component-Tutorial.md`, `decision-log.md`, `MWI-Architecture-v3-VNode-Implementation.md`
+
+*   **Document:** `architectural-plan/MWI-Component-System.md`
+    *   **Status:** ACTIVE
+    *   **Scope:** Specifies the definitive architecture for the MWI component system, including its lifecycle, types, and state management.
+    *   **Relationships:** `MWI-Component-Tutorial.md`, `MWI-Architecture-v3-Core.md`
+
+*   **Document:** `architectural-plan/MWI-Component-Tutorial.md`
+    *   **Status:** STANDARD
+    *   **Scope:** The canonical, step-by-step guide to authoring components for the MWI.
+    *   **Relationships:** `MWI-Component-System.md`
+    
+*   **Document:** `architectural-plan/MWI-Component-Authoring-Guide.md`
+    *   **Status:** STANDARD
+    *   **Scope:** The canonical, step-by-step guide to authoring components for the MWI.
+    *   **Relationships:** `MWI-Component-System.md`
+*   **Document:** `architectural-plan/MWI-Semantic-Component-Architecture.md`
+    *   **Status:** ACTIVE
+    *   **Scope:** Outlines the architecture for the MWI's foundational semantic component library, including theming, state management, and data binding.
+    *   **Relationships:** `Semantic-Components-Requirements.md`, `Semantic-Components-Review.md`
+
+*   **Document:** `architectural-plan/Semantic-Components-Requirements.md`
+    *   **Status:** ACTIVE
+    *   **Scope:** The functional and technical requirements for the MWI's semantic component library.
+    *   **Relationships:** `MWI-Semantic-Component-Architecture.md`, `Semantic-Components-Review.md`
+
+*   **Document:** `architectural-plan/Semantic-Components-Review.md`
+    *   **Status:** REVIEW
+    *   **Scope:** A review of the `Semantic-Components-Requirements.md` document, identifying architectural inconsistencies and providing recommendations.
+    *   **Relationships:** `Semantic-Components-Requirements.md`, `MWI-Semantic-Component-Architecture.md`, `MWI-Slot-System.md`
+
+*   **Document:** `architectural-plan/MWI-Slot-System.md`
+    *   **Status:** ACTIVE
+    *   **Scope:** The detailed technical specification for the MWI Slotting System for content and attribute projection.
+    *   **Relationships:** `MWI-Page-Template-Component-Architecture.md`
+
+*   **Document:** `architectural-plan/component-hygiene.md`
+    *   **Status:** SUPERSEDED by `MWI-Component-Authoring-Guide.md`
+    *   **Scope:** A plan to refactor MWI components into canonical, secure, and logical packages.
+    *   **Relationships:** `MWI-Component-Tutorial.md`
+
+*   **Document:** `architectural-plan/MWI-Private-Component-Communication.md`
+    *   **Status:** INCOMPLETE, DEFERRED
+    *   **Scope:** Outlines the architecture for private communication between a component and its creator, which is now deferred.
+    *   **Relationships:** `Semantic-Components-Requirements.md`, `Semantic-Components-Review.md`
+
+#### Reactivity
+
+*   **Document:** `architectural-plan/MWI-Architecture-v3-Reactive.md`
+    *   **Status:** ACTIVE
+    *   **Scope:** Details the integration of the fine-grained reactive library into the MWI architecture.
+    *   **Relationships:** `MWI-Architecture-v3-Core.md`
+
+#### Client-Side, Hydration, and Synchronization
+
+*   **Document:** `architectural-plan/MWI-Client-Side-Interaction-Architecture.md`
+    *   **Status:** ACTIVE
+    *   **Scope:** Outlines the architecture for client-side component interaction, covering both pub/sub and direct event handling.
+    *   **Relationships:** `MWI-Architecture-v3-Core.md`, `MWI-Architecture-v3-Hydration.md`, `MWI-Architecture-v3-Reactive.md`
+
+*   **Document:** `architectural-plan/MWI-Architecture-v3-Hydration.md`
+    *   **Status:** ACTIVE
+    *   **Scope:** Details the hydration system that bridges server-side rendering (SSR) and client-side rendering (CSR) in the MWI.
+    *   **Relationships:** `MWI-Architecture-v3-Core.md`, `MWI-MUM-Plan.md`
+
+*   **Document:** `architectural-plan/MWI-MUM-Plan.md`
+    *   **Status:** ACTIVE
+    *   **Scope:** Outlines the final hybrid architecture for the MWIMUM (Mount/Unmount Monitor), responsible for managing component lifecycle events.
+    *   **Relationships:** `MWI-Architecture-v3-Hydration.md`
+
+*   **Document:** `architectural-plan/SSR-CSR-Sync-Issues.md`
+    *   **Status:** REVIEW
+    *   **Scope:** An audit of open issues and considerations for synchronizing the Server-Side and Client-Side Renderers.
+    *   **Relationships:** `MWI-Architecture-v3-Hydration.md`
+
+#### Resource Management & Bundling
+
+*   **Document:** `architectural-plan/MWI-Architecture-v3-Resources.md`
+    *   **Status:** SUPERSEDED, REQUIRES ATTENTION
+    *   **Scope:** Details the resource management system for the MWI, covering CSS, modules, and other resources.
+    *   **Relationships:** `MWI-Architecture-v3-Core.md`, `Bundling-Design-Proposal.md`
+
+*   **Document:** `architectural-plan/Bundling-Design-Proposal.md`
+    *   **Status:** ACTIVE
+    *   **Scope:** This document proposes a Mesgjs-native approach to bundling MWI JavaScript modules, avoiding external build tools.
+    *   **Relationships:**
+
+#### Testing
+
+*   **Document:** `architectural-plan/MWI-Test-Runtime.md`
+    *   **Status:** ACTIVE
+    *   **Scope:** Outlines the architecture for a "test mode" and integrated test harness for the MWI system.
+    *   **Relationships:**
+
+*   **Document:** `architectural-plan/MWI-Testability-Audit-Recommendations.md`
+    *   **Status:** REVIEW
+    *   **Scope:** A system-wide audit of testability issues, with recommendations to refactor key services using Dependency Injection.
+    *   **Relationships:** `MWI-Test-Runtime.md`
 
 ### 3. Shared Code (`src/shared/`)
 
@@ -74,7 +200,13 @@ This directory contains the collaborative design documents that define the MWI s
     *   **Content:** Centralized constants to avoid magic strings (e.g., feature promise names, HTML element IDs).
     *   **When to Read:** When you need to reference a system-wide constant.
 
-### 4. Quick-Reference Guides
+### 4. Process & Meta-Documents
+
+*   **Process Lessons:** `.kilocode/rules/memory-bank/lessons-learned.md`
+    *   **Content:** Accumulates lessons learned about our development process and collaboration.
+    *   **When to Read:** To understand the "soft" rules and established patterns of our workflow.
+
+### 5. Quick-Reference Guides
 
 *   **Legal:** For copyright and licensing questions, see the `Legal` section at the end of this document.
 
