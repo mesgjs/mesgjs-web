@@ -23,3 +23,7 @@ This issue must be resolved in the upstream Mesgjs project before testing and fi
 1.  Transpile the new `mwi-component-registry.msjs` and `mwi-html-script.msjs` modules using the fixed `msjstrans` tool.
 2.  Run the tests in `test/server/MWISSR.test.js` to validate the entire refactored component resolution flow.
 3.  Once tests are passing, this preempting task will be complete, and the original `h.script` refactor follow-on task can be resumed.
+
+**CURRENT DEBUGGING SESSION:**
+The `MWISSR.test.js` test is failing. The renderer is producing raw VNode output instead of HTML, indicating a problem in the `MWISSRVNode`'s `outerHTML` implementation. Additionally, the feature promise `mwi.components.ready` was renamed to `mwi.componentsReady` to avoid a prefix collision. The next step is to fix the `outerHTML` getter and update the test to reflect the correct output.
+[User note: I think it's actually significantly more likely that the VNode tag formatting options (e.g. `noTag`, `openOpen`) aren't making it through and that the VNode is just falling back to its default formatting. We should check that first.]

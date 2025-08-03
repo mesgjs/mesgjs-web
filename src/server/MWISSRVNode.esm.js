@@ -45,27 +45,29 @@ export class MWISSRVNode extends MWIVNode {
      * @returns {string} HTML string
      */
     get outerHTML () {
-        if (this.opts.noTag) {
-            return this.innerHTML;
-        }
-
-        // Access class and style to trigger attribute updates
-        this.getAttr('class');
-        this.getAttr('style');
-
+        const { close, noClose, noTag, open } = this.opts;
         const tag = this.opts.tag || this.type;
+        const prefix = open || (noTag ? '' : ('<' + tag));
+        const infix = (!open && !noTag) ? '>' : '';
+        const suffix = close || ((noTag || noClose) ? '' : `</${tag}>`);
         const attrs = [];
 
-        // Process all attributes
-        for (const [key, value] of this.attributes.entries()) {
-            if (value === true) {
-                attrs.push(' ', escapeHtml(key));
-            } else if (value !== false && value != null) {
-                attrs.push(` ${escapeHtml(key)}="${escapeHtml(value)}"`);
+        if (!open && !noTag) {
+            // Access class and style to trigger attribute updates
+            this.getAttr('class');
+            this.getAttr('style');
+
+            // Process all attributes
+            for (const [key, value] of this.attributes.entries()) {
+                if (value === true) {
+                    attrs.push(' ', escapeHtml(key));
+                } else if (value !== false && value != null) {
+                    attrs.push(` ${escapeHtml(key)}="${escapeHtml(value)}"`);
+                }
             }
         }
 
-        const html = `<${tag}${attrs.join('')}>${this.innerHTML}${this.opts.noClose ? '' : `</${tag}>`}`;
+        const html = `${prefix}${attrs.join('')}${infix}${this.innerHTML}${suffix}`;
         return (this.scope ? html.replace(/@@/g, this.scope) : html);
     }
 

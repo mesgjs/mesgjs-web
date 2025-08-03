@@ -17,45 +17,29 @@
 
     const CORE_HTML_MAP = {
         // Document metadata
-        "head": {}, "title": {}, "base": {}, "link": {}, "meta": {}, "embed": {},
-        "param": {},
-        "style": {},
+        "head": {}, /* "title": {}, */ "base": { noClose: true }, "link": { noClose: true }, "meta": { noClose: true }, "embed": { noClose: true }, "param": { noClose: true }, "style": {},
         // Sectioning root
         "body": {},
         // Content sectioning
-        "address": {}, "article": {}, "aside": {}, "footer": {}, "header": {},
-        "h1": {}, "h2": {}, "h3": {}, "h4": {}, "h5": {}, "h6": {}, "main": {},
-        "nav": {}, "section": {},
+        "address": {}, "article": {}, "aside": {}, "footer": {}, "header": {}, "h1": {}, "h2": {}, "h3": {}, "h4": {}, "h5": {}, "h6": {}, "main": {}, "nav": {}, "section": {},
         // Text content
-        "blockquote": {}, "dd": {}, "div": {}, "dl": {}, "dt": {},
-        "figcaption": {}, "figure": {}, "hr": {}, "li": {}, "ol": {}, "p": {},
-        "pre": {}, "ul": {},
+        "blockquote": {}, "dd": {}, "div": {}, "dl": {}, "dt": {}, "figcaption": {}, "figure": {}, "hr": { noClose: true }, "li": {}, "ol": {}, "p": {}, "pre": {}, "ul": {},
         // Inline text semantics
-        "a": {}, "abbr": {}, "b": {}, "bdi": {}, "bdo": {}, "br": {}, "cite": {},
-        "code": {}, "data": {}, "dfn": {}, "em": {}, "i": {}, "kbd": {}, "mark": {},
-        "q": {}, "s": {}, "samp": {}, "small": {}, "span": {}, "strong": {},
-        "sub": {}, "sup": {}, "time": {}, "u": {}, "var": {}, "wbr": {},
+        "a": {}, "abbr": {}, "b": {}, "bdi": {}, "bdo": {}, "br": { noClose: true }, "cite": {}, "code": {}, "data": {}, "dfn": {}, "em": {}, "i": {}, "kbd": {}, "mark": {}, "q": {}, "s": {}, "samp": {}, "small": {}, "span": {}, "strong": {}, "sub": {}, "sup": {}, "time": {}, "u": {}, "var": {}, "wbr": { noClose: true },
         // Image and multimedia
-        "area": {}, "audio": {}, "img": {}, "map": {}, "input": {}, "source": {}, "track": {},
-        "video": {},
+        "area": { noClose: true }, "audio": {}, "img": { noClose: true }, "map": {}, "input": { noClose: true }, "source": { noClose: true }, "track": { noClose: true }, "video": {},
         // Demarcating edits
         "del": {}, "ins": {},
         // Table content
-        "caption": {}, "col": {}, "colgroup": {}, "table": {}, "tbody": {}, "td": {},
-        "tfoot": {}, "th": {}, "thead": {}, "tr": {},
+        "caption": {}, "col": { noClose: true }, "colgroup": {}, "table": {}, "tbody": {}, "td": {}, "tfoot": {}, "th": {}, "thead": {}, "tr": {},
     };
 
     const SPECIAL_COMPONENTS = {
         'h.FRAG': { noTag: true },
         'h.TEXT': { noTag: true },
-        'h.COMMENT': { noTag: true, openOpen: '<!--', close: '-->' },
-        'h.doctype': { noTag: true, openOpen: '<!doctype ', close: '>' },
+        'h.COMMENT': { open: '<!--', close: '-->' },
+        'h.doctype': { open: '<!doctype ', close: '>' },
     };
-
-    const voidTags = new Set([
-         "area", "base", "br", "col", "embed", "hr", "img", "input",
-         "link", "meta", "param", "source", "track", "wbr"
-    ]);
 
     const PAGE_TEMPLATE_CONTENT = [
         'h.FRAG',
@@ -78,12 +62,8 @@
         console.log('mwi-html-core registry', registry);
 
         // Register all the h.* primitives
-        for (const [tagName, proto] of Object.entries(CORE_HTML_MAP)) {
-            const protoPayload = { ...proto };
-            if (voidTags.has(tagName)) {
-                protoPayload.noClose = true;
-            }
-            registry.registerComponent(`h.${tagName}`, protoPayload);
+        for (const [tagName, payload] of Object.entries(CORE_HTML_MAP)) {
+            registry.registerComponent(`h.${tagName}`, payload);
         }
 
         // Register special components
