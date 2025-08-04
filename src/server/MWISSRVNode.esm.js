@@ -32,6 +32,9 @@ export class MWISSRVNode extends MWIVNode {
      * @returns {string} HTML string
      */
     get innerHTML () {
+        const { noClose, renderChildren } = this.opts;
+        const renderInner = renderChildren ?? !noClose;
+        if (!renderInner) return '';
         if (this.opts.rawContent) {
             return this.children.join('');
         }

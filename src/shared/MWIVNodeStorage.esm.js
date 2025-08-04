@@ -48,6 +48,10 @@ export class MWIVNodeStorage {
      * @returns {any} The attribute value or undefined
      */
     getAttr (name) {
+        switch (name) {
+        case 'class': this.getClassString(); break;
+        case 'style': this.getStyleString(); break;
+        }
         return this.#attributes.get(name);
     }
 
@@ -75,7 +79,22 @@ export class MWIVNodeStorage {
      * @returns {IterableIterator<[string, any]>}
      */
     getAttributes () {
+        this.getClassString();
+        this.getStyleString();
         return this.#attributes.entries();
+    }
+
+    /**
+     * Check if an attribute exists and its value is not undefined.
+     * @param {string} name The attribute name
+     * @returns {boolean}
+     */
+    has (name) {
+        switch (name) {
+        case 'class': this.getClassString(); break;
+        case 'style': this.getStyleString(); break;
+        }
+        return this.#attributes.has(name) && this.#attributes.get(name) !== undefined;
     }
 
     // Class Methods

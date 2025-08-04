@@ -11,6 +11,9 @@
 
 import { MWIVNodeStorage } from 'mesgjs-web/src/shared/MWIVNodeStorage.esm.js';
 
+let fromDataCalls = 0;
+const FROM_DATA_MAX_CALLS = 100;
+
 /**
  * Base VNode class that provides the core virtual node functionality.
  * Handles attribute management, class manipulation, and style handling
@@ -60,6 +63,13 @@ export class MWIVNode {
         return this.#opts;
     }
 
+    setOptions (opts) {
+        if (opts && typeof opts === 'object') {
+            this.#opts = Object.freeze({ ...this.#opts, ...opts });
+        }
+        return this;
+    }
+
     /**
      * Get the attributes Map
      * @returns {Map}
@@ -70,6 +80,15 @@ export class MWIVNode {
         };
     }
 
+    /**
+     * Check if an attribute is set
+     * @param {string} name The attribute name
+     * @returns {any}
+     */
+    hasAttr (name) {
+        return this.#storage.has(name);
+    }
+
     // Attribute Methods
 
     /**
@@ -78,14 +97,7 @@ export class MWIVNode {
      * @returns {any} The attribute value
      */
     getAttr (name) {
-        switch (name) {
-        case 'class':
-            return this.#storage.getClassString() || undefined;
-        case 'style':
-            return this.#storage.getStyleString() || undefined;
-        default:
-            return this.#storage.getAttr(name);
-        }
+        return this.#storage.getAttr(name);
     }
 
     /**
@@ -233,38 +245,77 @@ export class MWIVNode {
      * @returns {MWIVNode|undefined}
      */
     static fromData (data, opts = {}) {
-        if (Array.isArray(data)) {
-            const [type, ...rest] = data;
-            if (typeof type !== 'string') return undefined;
+        if (fromDataCalls < FROM_DATA_MAX_CALLS) {
+            console.log('fromData processing:', data);
+            fromDataCalls++;
+        } else Deno.exit(100);
+        if (data instanceof this) return data;
+        if (data === null) return this.fragment();
+        if (typeof data !== 'object') {
+            return this.textNode(String(data));
+        }
 
-            const node = new this(type, opts);
+        const isNanos = typeof data.namedEntries === 'function';
+        if (!Array.isArray(data) && !isNanos) {
+            return this.textNode(''); // Fallback for unknown object types
+        }
+
+        const values = isNanos ? [...data.values()] : data;
+        if (values.length === 0) return this.fragment();
+
+        if (typeof values[0] !== 'string') {
+            // This is a list of children, e.g., [['h.p'], ['h.p']].
+            return this.fragment(...values);
+        }
+
+        // This is a single node definition, e.g., ['h.div', ...].
+        const [type, ...rest] = values;
+        const node = new this(type, opts);
+
+        const children = isNanos ? rest : [];
+        const attributes = isNanos ? data.namedEntries() : [];
+
+        if (!isNanos) {
             for (const item of rest) {
                 if (typeof item === 'object' && item !== null && !Array.isArray(item)) {
-                    const entries = (typeof item.entries === 'function')
-                        ? item.entries()
-                        : Object.entries(item);
-                    for (const [key, value] of entries) {
-                        node.setAttr(key, value);
-                    }
+                    attributes.push(...Object.entries(item));
                 } else {
-                    node.children.push(item);
+                    children.push(item);
                 }
             }
-            return node;
         }
-        // Handle NANOS format
-        if (typeof data?.values === 'function' && typeof data?.namedEntries === 'function') {
-            const [type, ...children] = data.values();
-            if (typeof type !== 'string') return undefined;
 
-            const node = new this(type, opts);
-            node.children.push(...children);
-            for (const [key, value] of data.namedEntries()) {
-                node.setAttr(key, value);
-            }
-            return node;
+        for (const [key, value] of attributes) {
+            node.setAttr(key, value);
         }
-        return undefined;
+
+        node.children.push(...children);
+        if (fromDataCalls < FROM_DATA_MAX_CALLS) {
+            console.log('fromData returning:', node);
+        }
+        return node;
+    }
+
+    /**
+     * Create a text node
+     * @param {string} text The text content
+     * @returns {MWIVNode}
+     */
+    static textNode (text) {
+        const node = new this('h.TEXT', { noTag: true });
+        node.children = [text];
+        return node;
+    }
+
+    /**
+     * Create a document fragment
+     * @param {...(MWIVNode|string)} children Child nodes
+     * @returns {MWIVNode}
+     */
+    static fragment (...children) {
+        const node = new this('h.FRAG', { noTag: true });
+        node.append(...children);
+        return node;
     }
 
     /**

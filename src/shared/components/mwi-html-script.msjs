@@ -36,7 +36,8 @@
                 // Replace children with the single sanitized string.
                 vnode.children = [ content ];
             }
-            return vnode;
+            // Signal to the renderer that it should not process the children.
+            return { renderChildren: false };
         };
 
         // Register the full component specification. The `options` will

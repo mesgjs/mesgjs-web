@@ -17,7 +17,7 @@
 
     const CORE_HTML_MAP = {
         // Document metadata
-        "head": {}, /* "title": {}, */ "base": { noClose: true }, "link": { noClose: true }, "meta": { noClose: true }, "embed": { noClose: true }, "param": { noClose: true }, "style": {},
+        "head": {}, "html": {}, "base": { noClose: true }, "link": { noClose: true }, "meta": { noClose: true }, "embed": { noClose: true }, "param": { noClose: true }, "style": {},
         // Sectioning root
         "body": {},
         // Content sectioning
@@ -36,7 +36,7 @@
 
     const SPECIAL_COMPONENTS = {
         'h.FRAG': { noTag: true },
-        'h.TEXT': { noTag: true },
+        'h.TEXT': { noTag: true, renderChildren: false },
         'h.COMMENT': { open: '<!--', close: '-->' },
         'h.doctype': { open: '<!doctype ', close: '>' },
     };
@@ -57,19 +57,51 @@
         ]
     ];
 
+    const mSlotHandler = (vnode, context) => {
+        const consumerVNode = context?.consumerVNode;
+        if (!consumerVNode) return { content: vnode.children };
+
+        const slotName = vnode.getAttr('name') || 'cs.default';
+
+        if (consumerVNode.hasAttr(slotName)) {
+            return { content: consumerVNode.getAttr(slotName) };
+        }
+
+        if (slotName === 'cs.default' && consumerVNode.children.length > 0) {
+            return { content: consumerVNode.children };
+        }
+
+        return { content: vnode.children };
+    };
+
+    const hTitleHandler = (vnode, context) => {
+        const pageContext = context?.pageContext;
+        const text = vnode.getAttr('text');
+
+        if (pageContext && text) {
+            pageContext.setTitle(text);
+        }
+
+        return { content: null, renderChildren: false };
+    };
+
     fwait('mwi.componentRegistryReady').then(() => {
         const registry = getInstance('MWIComponentRegistry')?.jsv;
         console.log('mwi-html-core registry', registry);
 
         // Register all the h.* primitives
-        for (const [tagName, payload] of Object.entries(CORE_HTML_MAP)) {
-            registry.registerComponent(`h.${tagName}`, payload);
+        for (const [tag, payload] of Object.entries(CORE_HTML_MAP)) {
+            registry.registerComponent(`h.${tag}`, { options: { ...payload, tag } });
         }
 
         // Register special components
         for (const [name, proto] of Object.entries(SPECIAL_COMPONENTS)) {
-            registry.registerComponent(name, proto);
+            registry.registerComponent(name, { options: proto });
         }
+
+        // Register components with custom handlers
+        registry.registerComponent('h.title', { handler: hTitleHandler });
+        registry.registerComponent('m.slot', { handler: mSlotHandler });
 
         // Register the basic page component
         registry.registerComponent('mwi.html.core.basicPage', {
