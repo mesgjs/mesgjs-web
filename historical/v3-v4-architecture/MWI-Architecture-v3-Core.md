@@ -1,10 +1,11 @@
 ---
-**Status:** ACTIVE
+**Status:** SUPERSEDED
 **History:**
+- 2025-08-04: SUPERSEDED
 - 2025-07-29: ACTIVE
 **Scope:** The core system architecture for the Mesgjs Web Interface (MWI), covering rendering, components, hydration, and security.
 **Replaces:**
-**Replaced by:**
+**Replaced by:** `MWI-V4-Core-Architecture.md`
 **Related:** MWI-Architecture-v3-VNode.md, MWI-Architecture-v3-Hydration.md, MWI-Architecture-v3-Reactive.md, MWI-Architecture-v3-Resources.md
 ---
 # MWI System Architecture v3

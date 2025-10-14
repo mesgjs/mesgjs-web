@@ -71,12 +71,17 @@ The system uses a four-stage, promise-based handshake to initialize correctly.
 
 **Stage 1: Registry Becomes Ready**
 The core "registry" module instantiates the `MWIComponentRegistry` and immediately signals that the registry is ready to accept components:
-`$c.fready(mid, 'mwi.registry.ready');`
+`$c.fready(mid, 'mwi.componentRegistryReady');`
 
 **Stage 2: Component Modules Register Themselves**
 The `loadMsjs(mid)` function in each component module:
-1.  Calls `$c.fwait('mwi.registry.ready')`.
-2.  In the `.then()` block, registers its component definitions.
+1.  Calls `$c.fwait('mwi.componentRegistryReady')`.
+2.  In the `.then()` block, it sends a module-signed message to the registry to register its component generators. This is a secure operation that cannot be forged.
+    ```javascript
+    // Example from within a component module's loadMsjs
+    const registry = await $c.fwait('mwi.componentRegistryReady');
+    registry({ op: 'registerHtmlGenerator', mid }, [ 'my-component', myGeneratorFn ]);
+    ```
 3.  Signals its own completion: `$c.fready(mid, 'mwi.components.<unique-module-name>');`
 
 **Stage 3: Component System Becomes Ready**

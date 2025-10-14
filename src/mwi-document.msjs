@@ -1,0 +1,106 @@
+[(
+modpath='mwi/mwi-document'
+version='0.5.0'
+featreq='mwi.compRegReady MWIDocNode MWITemplate'
+featpro='MWIDocument'
+modcaps=''
+)]
+
+/*
+ * MWIDocument - MWI Document Rendering Coordinator
+ * Copyright 2025 by Kappa Computer Solutions, LLC and Brian Katzung
+ */
+
+@e @js{
+	if (!mid) throw new Error('MWIDocument requires Mesgjs module management to be active');
+
+	const IF_NAME = 'MWIDocument';
+	const READY_FT = IF_NAME;
+	const REG_IF = 'MWIRegistry';
+	const REG_READY_FT = 'mwi.compRegReady';
+	const NODE_IF = 'MWIDocNode';
+	const NODE_READY_FT = NODE_IF;
+	const TPL_IF = 'MWITemplate';
+	const TPL_READY_FT = 'MWICore';
+
+	const { fready, fwait, getInstance, getInterface, setRO } = globalThis.$c;
+
+	await fwait(REG_READY_FT, NODE_READY_FT, TPL_READY_FT);
+
+	// JS interface prototype
+	const docProto = Object.setPrototypeOf({
+		compIdStr (id) { return '_MC_' + id.toString(36); },
+		createNode (type) { return this('createNode', [type]); },
+		getId () { return this('getElemId'); },
+		get jsv () { return this; },
+		registry () { return this('registry'); },
+		valueOf () { return this; },
+	}, Function.prototype);
+
+	function opInit (d) {
+		const p = d.p;
+		const registry = getInstance(REGISTRY_IF);
+		p.push({ registry });
+		// Add JS interface
+		Object.setPrototypeOf(d.rr, docProto);
+	}
+
+	// Create a new document node
+	async function opCreateNode (d) {
+		const p = d.p, m = d.mp;
+		const type = m.at(0);
+		const registry = p.at('registry');
+		const entry = await registry.get(type);
+		const nodeIfName = entry.at('interface', TPL_IF);
+		const config = new NANOS(entry, { document: d.rr });
+		// Use attributed message (via interface) to get doc node instance
+		const nodeIf = getInterface(nodeIfName);
+		const node = d.sm(nodeIf, 'instance', config);
+		return node;
+	}
+
+	// Return document nodes from a spec item or list
+	function opFrom (d) {
+		const m = d.mp;
+		const fromItem = async (spec) => {
+			if (typeof spec === 'string') {
+				const node = await d.sm(d.rr, 'createNode', [ 'h.Text' ]);
+				node.setAttr('text', spec);
+				return node;
+			}
+			if (spec instanceof NANOS) {
+				const type = spec.at(0), node = await d.sm(d.rr, 'createNode', [ type ]);
+				d.sm(node, 'spec', spec);
+				return node;
+			}
+		};
+		if (m.has('item')) return fromItem(m.at('item'));
+		const list = m.at('list');
+		if (typeof list?.values === 'function') {
+			const items = [], collect = getInstance('@promise');
+			for (const item of list.values()) {
+				items.push(fromItem(item));
+			}
+			return collect.all(items);
+		}
+	}
+
+	// With dependencies loaded, configure *my* module interface
+	getInterface(IF_NAME).set({
+		pristine: true, // Anti-tamper: no configuration before
+		lock: true,		// ... or after
+		final: true,
+		// singleton: true,
+		// abstract, chain, once, private, etc.
+		handlers: {
+			'@init': opInit,
+			'@jsv': (d) => d.rr,
+			createNode: opCreateNode,
+			from: opFrom,
+			nextId: (d) => d.p.at('registry')('nextId'),
+			registry: (d) => d.p.at('registry'),
+		}
+	});
+
+	fready(mid, READY_FT);
+@}

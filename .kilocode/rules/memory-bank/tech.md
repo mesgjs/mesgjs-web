@@ -44,9 +44,14 @@ This directory contains the collaborative design documents that define the MWI s
 #### Overall Architecture & Process
 
 *   **Document:** `architectural-plan/MWI-Architecture-v3-Core.md`
-    *   **Status:** ACTIVE
+    *   **Status:** SUPERSEDED by `architectural-plan/MWI-V4-Core-Architecture.md`
     *   **Scope:** The core system architecture for the Mesgjs Web Interface (MWI), covering rendering, components, hydration, and security.
     *   **Related:** `MWI-Architecture-v3-VNode.md`, `MWI-Architecture-v3-Hydration.md`, `MWI-Architecture-v3-Reactive.md`, `MWI-Architecture-v3-Resources.md`
+
+*   **Document:** `architectural-plan/MWI-V4-Core-Architecture.md`
+    *   **Status:** ACTIVE
+    *   **Scope:** The core system architecture for the Mesgjs Web Interface (MWI), addressing new requirements and enhancements.
+    *   **Related:**
 
 *   **Document:** `architectural-plan/Naming-Conventions.md`
     *   **Status:** STANDARD
@@ -86,12 +91,12 @@ This directory contains the collaborative design documents that define the MWI s
 #### VNode and Rendering
 
 *   **Document:** `architectural-plan/MWI-Architecture-v3-VNode.md`
-    *   **Status:** ACTIVE
+    *   **Status:** SUPERSEDED by `architectural-plan/MWI-V4-Core-Architecture.md`
     *   **Scope:** Describes the high-level architecture of the MWI VNode system, including the decision to use a purpose-built VNode over a NANOS-centric approach.
     *   **Related:** `MWI-Architecture-v3-Core.md`, `MWI-Architecture-v3-VNode-Implementation.md`
 
 *   **Document:** `architectural-plan/MWI-Architecture-v3-VNode-Implementation.md`
-    *   **Status:** ACTIVE
+    *   **Status:** SUPERSEDED by `architectural-plan/MWI-V4-Core-Architecture.md`
     *   **Scope:** Specifies the implementation details for the enhanced MWI VNode system, including naming conventions and copy-on-write protection.
     *   **Related:** `MWI-Architecture-v3-Core.md`, `MWI-Architecture-v3-VNode.md`
 
@@ -204,11 +209,16 @@ This directory contains the collaborative design documents that define the MWI s
     *   **Scope:** A system-wide audit of testability issues, with recommendations to refactor key services using Dependency Injection.
     *   **Related:** `MWI-Test-Runtime.md`
 
-### 3. Shared Code (`src/shared/`)
+### 3. Source Code Paths (`src/`)
 
-*   **Shared Constants:** `src/shared/constants.esm.js`
-    *   **Content:** Centralized constants to avoid magic strings (e.g., feature promise names, HTML element IDs).
-    *   **When to Read:** When you need to reference a system-wide constant.
+*   **V4 Source Root:** `src/`
+    *   **Content:** This directory is the root for all V4 MWI source code.
+    *   **Structure:** It will contain `client/`, `server/`, and `shared/` subdirectories, similar to the V3 structure.
+    *   **When to Read:** When developing or modifying any V4 MWI component or service.
+
+*   **V3 Source Reference (Archived):** `src-v3/`
+    *   **Content:** This directory contains the archived V3 MWI source code. It is provided for reference only and should not be modified.
+    *   **When to Read:** When referencing previous implementations or debugging V3-related issues.
 
 ### 4. Process & Meta-Documents
 

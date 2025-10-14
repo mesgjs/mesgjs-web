@@ -1,0 +1,69 @@
+[(
+modpath=mwi/mwi-template
+version=0.5.0
+featreq='mwi.compRegReady'
+featpro='mwi.comp.MWICore'
+modcaps=''
+)]
+
+/*
+ * MWICore - MWI Core Handlers
+ * Copyright 2025 by Kappa Computer Solutions, LLC and Brian Katzung
+ */
+
+@e @js{
+	if (!mid) throw new Error('MWITemplate requires Mesgjs module management to be active');
+
+	const REGISTRY_READY_FT = 'mwi.compRegReady';
+	const REGISTRY_IF = 'MWIRegistry';
+
+	const SLOT_NAME = 'm.slot';
+	const SLOT_IF = 'MWISlot';
+
+	const TPL_IF = 'MWITemplate';
+
+	const READY_FT = 'mwi.comp.MWICore';
+
+	await fwait(REGISTRY_READY_FT);
+	const registry = getInstance(REGISTRY_IF);
+
+	// m.slot Interface
+	(() => {
+		function opInit (d) {
+		}
+		
+		getInterface(SLOT_IF).set({
+			pristine: true, // Anti-tamper: no configuration before
+			lock: true,		// ... or after
+			// singleton: true,
+			// abstract, chains, final, once, private, etc.
+			handlers: {
+				'@init': opInit,
+				// toDOM:
+				// toHTML:
+			}
+		});
+
+		registry('register', ls([, SLOT_NAME, 'interface', SLOT_IF]));
+	})();
+
+	// Template Component Interface
+	(() => {
+		function opInit (d) {
+		}
+		
+		getInterface(TPL_IF).set({
+			pristine: true, // Anti-tamper: no configuration before
+			lock: true,		// ... or after
+			// singleton: true,
+			// abstract, chains, final, once, private, etc.
+			handlers: {
+				'@init': opInit,
+				// toDOM:
+				// toHTML:
+			}
+		});
+	})();
+
+	fready(mid, READY_FT);
+@}

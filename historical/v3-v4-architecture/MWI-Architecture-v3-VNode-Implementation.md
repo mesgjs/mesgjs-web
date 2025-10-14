@@ -1,10 +1,11 @@
 ---
-**Status:** ACTIVE
+**Status:** SUPERSEDED
 **History:**
+- 2025-08-04: SUPERSEDED
 - 2025-07-29: ACTIVE
 **Scope:** Specifies the implementation details for the enhanced MWI VNode system, including naming conventions and copy-on-write protection.
 **Replaces:**
-**Replaced by:**
+**Replaced by:** `MWI-V4-Core-Architecture.md`
 **Related:** MWI-Architecture-v3-Core.md, MWI-Architecture-v3-VNode.md
 ---
 # MWI VNode Implementation Specification

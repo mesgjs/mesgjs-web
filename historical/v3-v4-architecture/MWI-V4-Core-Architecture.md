@@ -100,3 +100,27 @@ class MWIRenderer {
     readonly context: RenderContext;
 }
 ```
+
+## 6. Component Architecture
+
+### 6.1. HTML Component Generators
+
+In MWI v4, the rendering of non-primitive components (i.e., those not in the `h.*` namespace) is managed by **HTML Component Generators**. These are specialized, trusted functions responsible for taking a component's data and transforming it into a primitive `MWISSRInfo` structure that the renderer can understand.
+
+This generator-based approach allows for a clean separation of concerns:
+-   **Component Definition:** The component itself is a declarative data structure.
+-   **Rendering Logic:** The generator encapsulates the complex logic required to render that component.
+
+#### 6.1.1. Secure Registration
+
+To maintain the security and integrity of the rendering process, the registration of HTML generators is a privileged operation, enforced by the Mesgjs runtime's module security features.
+
+1.  **Module-Signed Messages:** A component module registers its generator by sending a module-signed message to the central `MWIComponentRegistry` service. This is done via a Mesgjs interface call from JavaScript:
+   ```javascript
+   registryInstance({ op: 'registerHtmlGenerator', mid }, [ name, handlerFn ]);
+   ```
+   -   Passing the `mid` (module ID) allows the Mesgjs runtime to securely identify the calling module.
+
+2.  **Interface-Only Registration:** Generator registration is **only** permitted through a Mesgjs interface handler. The registry does not expose a direct JavaScript method for registration. This prevents message forgery and ensures that only loaded, trusted modules can register generators.
+
+3.  **Module-Scoped Data:** As a consequence of the interface-based registration, the generator's handler function and associated data must be defined at the module scope, not as private class fields, to be accessible to the registration message payload.

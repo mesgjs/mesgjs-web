@@ -1,0 +1,134 @@
+[(
+modpath='mwi/mwi-registry'
+version='0.5.0'
+featreq=''
+featpro='mwi.compRegOpen mwi.compRegReady'
+modcaps=''
+)]
+
+/*
+ * MWIRegistry - MWI Component registry
+ * Copyright 2025 by Kappa Computer Solutions, LLC and Brian Katzung
+ */
+
+@e @js{
+	if (!mid) throw new Error('MWIRegistry requires Mesgjs module management to be active');
+
+	const IF_NAME = 'MWIRegistry';
+	const COMP_PRE = 'mwi.comp.';
+	const REG_OPEN_FT = 'mwi.compRegOpen';
+	const REG_READY_FT = 'mwi.compRegReady';
+
+	const SERVER_ID_PRE = '_MS_';
+	const CLIENT_ID_PRE = '_ML_';
+	const COMP_ID_PRE = '_MO_';
+
+	const { fready, fwait, getInstance, getInterface, getModMeta, setRO, modHasCap } = globalThis.$c;
+
+	function opInit (d) {
+		const g = globalThis, p = d.p;
+		p.push({
+			isBrowser: typeof g.document === 'object' && typeof g.window === 'object',
+			components: new NANOS(),
+			compId: 0, // next component ID
+			instId: 0, // next instance ID
+			isReady: false,
+		});
+		if (g.mwiServer) {
+			loadServerComps(d, g.mwiServer.at('components'));
+		}
+
+		// Add JS-level interface
+		Object.setPrototypeOf(d.rr, Object.setPrototypeOf({
+			get (name) { return this('get', [name]); },
+			get jsv () { return this; },
+			nextId () { return this('nextId'); },
+			register (name, entry) { return this('register', new NANOS([name, entry])); },
+			valueOf () { return this; },
+		}, Function.prototype));
+
+		// The registry is now open for registrations. Mark the registry ready
+		// for use as soon as all pre-load component features are ready.
+		fready(mid, REG_OPEN_FT);
+		// Note: defer-load-component features MUST be registered by pre-load features!!!
+		const allFtInfo = [...getModMeta().at('allFeatures').namedEntries()];
+		const preloadInfo = allFtInfo.filter(([k, v]) => k.startsWith(COMP_PRE) && v.has('preload'));
+		const preloadFt = [...preloadInfo.values()].map(([k]) => k); // Array of features
+		fwait(preloadFt).then(() => {
+			// Registration is closed. The registry is now ready for use.
+			p.set('isReady', true);
+			fready(mid, REG_READY_FT);
+		});
+	}
+
+	// Return the registration details for a specific component
+	async function opGet (d) {
+		const name = d.mp.at(0), p = d.p;
+		if (!p.at('isReady')) await fwait(REG_READY_FT);
+		const comp = p.at(['components', name]);
+		if (comp && !comp.has('interface') && !comp.has('template')) {
+			// If the component definition was deferred, load it now
+			const feature = comp.at('feature');
+			if (feature) await fwait(feature);
+		}
+		return comp;
+	}
+
+	// Return the next sequential instance ID
+	function opNextId (d) {
+		const p = d.p;
+		const isBrowser = p.at('isBrowser'), instId = p.at('instId');
+		p.set('instId', elemId + 1);
+		return ((isBrowser ? CLIENT_ID_PRE : SERVER_ID_PRE) + elemId.toString(36));
+	}
+
+	// Preload server component names to match server-assigned component IDs
+	function loadServerComps(d, comps) {
+		if (!comps) return;
+		const p = d.p, c = p.at('components');
+		let maxId = -1;
+		for (const [idNum, name] of comps.entries()) {
+			const id = COMP_ID_PRE + idNum.toString(36);
+			c.set(name, new NANOS({ id }));
+			maxId = idNum;
+		}
+		p.set('compId', maxId + 1);
+	}
+
+	// Register (or update) a component entry
+	// (register name [param=value ...])
+	function opRegister (d) {
+		const mp = d.mp, name = mp.at(0), p = d.p;
+		const comps = p.at('components');
+		let entry = comps.at(name);
+		if (p.at('ready') && !entry) {
+			throw new Error(`${IF_NAME}: Late "${name}" component registration prohibited`);
+		}
+		if (!entry) {
+			const idNum = p.at('compId'), id = COMP_ID_PRE + idNum.toString(36);
+			entry = new NANOS({ id });
+			p.set('compId', idNum + 1);
+			comps.set(name, entry);
+		}
+		entry.fromEntries(mp.at(1)?.namedEntries() || []);
+		return d.rr; // Chainable
+	}
+
+	// With dependencies loaded, configure *my* module interface and instantiate the singleton instance
+	getInterface(IF_NAME).set({
+		pristine: true, // Anti-tamper: no configuration before
+		lock: true,		// ... or after
+		singleton: true,
+		final: true,
+		// abstract, chain, once, private, etc.
+		handlers: {
+			'@init': opInit,
+			'@jsv': (d) => d.rr,
+			dump: (d) => console.log(d.p.toSLID({ compact: true })),
+			dumpJSON: (d) => console.log(JSON.stringify(d.p)),
+			get: opGet,
+			nextId: opNextId,
+			register: opRegister,
+		}
+	}).instance();
+@}

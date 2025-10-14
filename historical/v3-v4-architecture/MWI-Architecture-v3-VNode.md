@@ -1,10 +1,11 @@
 ---
-**Status:** ACTIVE
+**Status:** SUPERSEDED
 **History:**
+- 2025-08-04: SUPERSEDED
 - 2025-07-29: ACTIVE
 **Scope:** Describes the high-level architecture of the MWI VNode system, including the decision to use a purpose-built VNode over a NANOS-centric approach.
 **Replaces:**
-**Replaced by:**
+**Replaced by:** `MWI-V4-Core-Architecture.md`
 **Related:** MWI-Architecture-v3-Core.md, MWI-Architecture-v3-VNode-Implementation.md
 ---
 # MWI VNode Architecture

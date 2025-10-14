@@ -31,7 +31,7 @@ This block is mandatory and contains the module's identity.
 *   `modpath`: A unique, slash-separated path for the component package (e.g., `mwi/html/core`).
 *   `version`: The semantic version of the package.
 *   `featpro`: The feature promise this module provides (e.g., `'mwi.components.mwi.html.core'`).
-*   `featreq`: A space-separated list of feature promises this module requires (e.g., `'mwi.registry.ready'`).
+*   `featreq`: A space-separated list of feature promises this module requires (e.g., `'mwi.componentRegistryReady'`).
 
 #### 2.1.2. Embedded JavaScript Block (`@js{...@}`)
 
@@ -66,7 +66,7 @@ This file contains the implementation and references the features it provides an
     modpath = mwi/html/script
     version = 0.1.0
     featpro = "mwi.components.mwi.html.script"
-    featreq = "mwi.registry.ready"
+    featreq = "mwi.componentRegistryReady"
 )]
 
 '' @js{
@@ -81,7 +81,7 @@ This file contains the implementation and references the features it provides an
 
     const { getInstance, fwait, fready } = globalThis.$c;
 
-    fwait('mwi.registry.ready').then(() => {
+    fwait('mwi.componentRegistryReady').then(() => {
         const registry = getInstance('MWIComponentRegistry');
 
         const hScriptHandler = (vnode, context) => {

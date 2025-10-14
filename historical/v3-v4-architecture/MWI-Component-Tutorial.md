@@ -69,7 +69,7 @@ All component logic resides in a single `.msjs` file.
     };
     
     // Register the component with the MWI System
-    fwait('mwi.registry.ready').then(() => {
+    fwait('mwi.componentRegistryReady').then(() => {
         const registry = getInstance('MWIComponentRegistry');
         registry('register', { component: mwiComponentHelloWorld, init: opInit });
         fready(mid, 'mwi.components.mwi.helloWorld');

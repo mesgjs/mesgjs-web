@@ -1,0 +1,294 @@
+[(
+modpath='mwi/mwi-doc-node'
+version='0.5.0'
+featreq='MWIDocument'
+featpro='MWIDocNode'
+modcaps=''
+)]
+
+/*
+ * MWIDocNode - MWI Document Node Base Interface
+ * Copyright 2025 by Kappa Computer Solutions, LLC and Brian Katzung
+ */
+
+@e @js{
+	if (!mid) throw new Error('MWIDocNode requires Mesgjs module management to be active');
+
+	const IF_NAME = 'MWIDocNode';
+	const READY_FT = IF_NAME;
+	const DOC_IF = 'MWIDocument';
+
+	const { fready, fwait, getInstance, getInterface, getModMeta, setRO, modHasCap } = globalThis.$c;
+
+	const ehMap = { '&': '&amp;', '"': '&quot;', '<': '&lt;', '>': '&gt;' };
+
+	function escapeHTMLAttr (str) {
+		return String(str).replace(/[\x00-\x1f&"<>\\\x7f-\uffff]/g, (match) => ehMap[match] || `&#x${match.charCodeAt().toString(16)};`);
+	}
+
+	// JS interface prototype
+	const docNodeProto = Object.setPrototypeOf({
+		delAttr (name) { return this('delAttr', [name]); },
+		get document () { return this('document'); },
+		getAttr (name) { return this('getAttr', [name]); },
+		hasAttr (name) { return this('hasAttr', [name]); },
+		hasClass (name) { return this('hasClass', [name]); },
+		get jsv () { return this; },
+		setAttr (name, value) { return this('setAttr', [name, value]); },
+		get type () { return this('type'); },
+		valueOf () { return this; },
+	}, Function.prototype);
+	docNodeProto[globalThis.$c.symbols.convert] = function () { return this; };
+
+	// Initialize the new doc node
+	function opInit (d) {
+		if (typeof d.sr !== 'function' || d.st !== DOC_IF) throw new Error(`Use ${DOC_IF}(createNode) to create a new ${IF_NAME}`);
+		const p = d.p, m = d.mp;
+		p.push(m, {
+			document: d.sr, // document that created this node
+			attrs: new NANOS(),
+			permClasses: new Set(),
+			classes: new Set(),
+			// slotSrc
+			// subdoc
+			// subnodes
+		});
+		if (!p.has('type')) throw new RangeError(`${IF_NAME} requires a node type`);
+		// Add JS interface
+		Object.setPrototypeOf(d.rr, docNodeProto);
+	}
+
+	// Delete attribute
+	function opDelAttr (d) {
+		const p = d.p, m = d.mp;
+		const name = m.at(0);
+		switch (name) {
+		case 'm.percl':
+			p.at('permClasses').clear();
+			setClass(d, '+');
+			break;
+		case 'class':
+			p.at('classes').clear();
+			setClass(d, '+');
+			break;
+		case 'style':
+			p.at('styles').clear();
+			setStyle(d, '+');
+			break;
+		default:
+			{
+			const attrs = p.at('attrs');
+			p.remove(name);
+			}
+			break;
+		}
+	}
+
+	// Get attribute value
+	function opGetAttr (d) {
+		const p = d.p, m = d.mp;
+		const name = m.at(0), attrs = p.at('attrs');
+		switch (name) {
+		case 'm.id': // Mandatory id value
+			if (!attrs.has('id')) {
+				// There's no user-assigned id, so auto-assign one
+				const doc = p.at('document'), mid = doc('nextId');
+				attrs.set('id', mid);
+				return mid;
+			}
+			return attrs.at('id');
+		}
+		return attrs.at(name);
+	}
+
+	// Return the HTML encoding of string- and true-valued, HTML, "non-dot" attributes
+	function opGetAttrHTML (d) {
+		const p = d.p, HTML = [];
+		for (const [key, value] of p.at('attrs').namedValues()) {
+			if (!/^[0-9a-z:_-]*$/.test(key)) continue; // Only HTML attributes
+			if (value === true) HTML.push(` ${key}`);
+			else if (typeof value === 'string') {
+				HTML.push(` ${key}="${escapeHTMLAttr(value)}"`);
+			}
+		}
+		return HTML.join('');
+	}
+
+	// Base behavior: just recursively gather HTML from sub-doc-nodes
+	function opGetHTML (d) {
+		const p = d.p, m = d.mp;
+		const hasIn = m.has('in'), html = m.at('in', []);
+		for (const node of p.at('subDoc', []).values()) {
+			d.sm(node, 'getHTML', { in: html });
+		}
+		if (!hasIn) return html.join('');
+	}
+
+	// Return this node's doc-spec (`[type attr=value... children...]`)
+	function opGetSpec (d) {
+		const p = d.p, spec = new NANOS(p.at('type'));
+		spec.fromEntries(p.at('attrs').namedEntries());
+		spec.push(d.sm(d.rr, 'getSubSpec'));
+		return spec;
+	}
+
+	// Do we have a particular attribute value?
+	function opHasAttr (d) {
+		const p = d.p, m = d.mp, attrs = p.at('attrs');
+		return attrs.has(m.at(0));
+	}
+
+	// Have we been assigned a particular class?
+	function opHasClass (d) {
+		const p = d.p, m = d.mp, classes = p.at('classes');
+		return classes.has(m.at(0));
+	}
+
+	// Convert a style-map into a `name:value;...` string
+	function joinStyles (styleMap) {
+		return [...styleMap.entries()].map(([name, value]) => name + ':' + value).join(';');
+	}
+
+	// Set attribute value
+	function opSetAttr (d) {
+		const p = d.p, m = d.mp;
+		const name = m.at(0), value = m.at(1);
+		switch (name) {
+		case 'm.percl':
+			setPermClass(d, value);
+			setClass(d, '+');
+			break;
+		case 'class':
+			setClass(d, value);
+			break;
+		case 'style':
+			setStyle(d, value);
+			break;
+		default:
+			{
+			const attrs = p.at('attrs');
+			attrs.set(name, value);
+			}
+			break;
+		}
+		return d.rr; // Allow chaining
+	}
+
+	// Set/edit the `class` attribute
+	// `==` / empty / white-space-only unconditionally clears previous classes
+	// `=` conditionally clears previous classes (if classes (but no `+`) follow)
+	// `+` supplements (instead of replacing) existing classes
+	// !class removes the class
+	// ~class toggles the class
+	function setClass (d, classStr) {
+		if (typeof classStr !== 'string') return;
+		const p = d.p, attrs = p.at('attrs'), classes = p.at('classes');
+		classStr = trim(classStr);
+
+		// Add (uniquely), remove, or toggle classes listed in the value
+		let condClear = true; // Start from empty by default
+		if (/^\s*$/.test(classStr)) classes.clear();
+		else for (const [, token, mod, cls] of classStr.matchAll(/([+]|={1,2})|([!~]?)\s*([-_a-z][-_a-z0-9]*)/gi)) {
+			if (token === '=') condClear = true; // Conditional clear
+			else if (token === '+') condClear = false; // Update, don't clear
+			else if (token === '==' || condClear) {
+				condClear = false;
+				classes.clear();
+			}
+			if (cls) {
+				if (mod === '!' || (mod === '~' && this.hasClass(cls))) classes.delete(cls);
+				else classes.add(cls);
+			}
+		}
+		
+		// Guarantee permanent classes
+		const permClasses = p.at('permClasses');
+		for (const cls of permClasses.values()) classes.add(cls);
+
+		// Update (or remove) the class attribute value
+		if (classes.size) {
+			attrs.set('class', [...classes.values()].join(' '));
+		} else if (attrs.has('class')) {
+			attrs.set('class', undefined);
+		}
+	}
+
+	// Set "permanent" classes to always be included in the `class` attribute
+	function setPermClass (d, classStr) {
+		const p = d.p, attrs = p.at('attrs'), classes = new Set();
+		if (typeof classStr === 'string') for (const [cls] of classStr.matchAll(/[-_a-z][-_a-z0-9]*/gi)) classes.add(cls);
+		p.set('permClasses', classes);
+		if (classes.size) attrs.set('m.percl', [...classes.values()].join(''));
+		else attrs.set('m.percl', undefined);
+	}
+
+	// Set/edit the `style` attribute
+	// `==` / empty / white-space-only unconditionally clears previous styles
+	// `=` conditionally clears previous styles (if additional styles (but not `+`) follow)
+	// `+` supplements (instead of replacing) existing styles
+	// Name with empty value (`name: ;`) removes the style.
+	function setStyle (d, styleStr) {
+		if (typeof styleStr !== 'string') return;
+		const p = d.p, attrs = p.get('attrs'), styles = new Map();
+		styleStr = trim(styleStr);
+
+		// Start with current styles, in case updating
+		const current = attrs.get('style', '');
+		if (typeof current === 'string') {
+			for (const [name, value] of splitStyles(current)) styles.set(name, value);
+		}
+
+		let condClear = true; // Start from empty by default
+		if (/^\s*$/.test(styleStr)) styles.clear();
+		else for (const [name, value, token] of splitStyles(styleStr)) {
+			if (token === '=') condClear = true; // Conditional clear
+			else if (token === '+') condClear = false; // Update, don't clear
+			else if (token === '==' || condClear) {
+				condClear = false;
+				styles.clear();
+			}
+			if (name) {
+				if (value) styles.set(name, value);
+				else styles.delete(name);
+			}
+		}
+
+		// Update (or remove) the style attribute value
+		if (styles.size) {
+			attrs.set('style', joinStyles(styles));
+		} else if (attrs.has('style')) {
+			attrs.set('style', undefined);
+		}
+	}
+
+	// Iterate over style-string [name, value, token] parts
+	function* splitStyles (styleStr) {
+		for (const [, token, name, value] of styleStr.matchAll(/([+]|={1,2})|([-_a-z][-_a-z0-9]*)\s*:\s*((?:'(?:\\'|[^'])*'|"(?:\\"|[^"])*"|[^;])*?)\s*(?:;|$)/gi)) yield [name, value, token];
+	}
+
+	// With dependencies loaded, configure *my* module interface
+	getInterface(IF_NAME).set({
+		pristine: true, // Anti-tamper: no configuration before
+		lock: true,		// ... or after
+		abstract: true,
+		// singleton: true,
+		// chain, final, once, private, etc.
+		handlers: {
+			'@init': opInit,
+			delAttr: opDelAttr,
+			document: (d) => d.p.at('document'),
+			getAttr: opGetAttr,
+			getAttrHTML: opGetAttrHTML,
+			hasAttr: opHasAttr,
+			hasClass: opHasClass,
+			setAttr: opSetAttr,
+			getDOM: (_d) => undefined,
+			getHTML: opGetHTML,
+			getSpec: opGetSpec,
+			// (getSubSpec) must be supplied in derived interfaces
+			type: (d) => d.p.at('type'),
+		}
+	});
+
+	fready(mid, READY_FT);
+@}

@@ -1,0 +1,179 @@
+[(
+modpath='mwi/mwi-html-comp'
+version='0.5.0'
+featreq='MWIDocNode mwi.compRegOpen'
+featpro='mwi.comp.html'
+modcaps=''
+)]
+
+/*
+ * MWIHTML - MWI HTML Handlers
+ * Copyright 2025 by Kappa Computer Solutions, LLC and Brian Katzung
+ */
+
+@e @js{
+	if (!mid) throw new Error('MWIHTML requires Mesgjs module management to be active');
+
+	const REG_IF = 'MWIRegistry';
+	const REG_OPEN_FT = 'mwi.compRegOpen';
+	const SUPER_IF = 'MWIDocNode';
+	const SUPER_FT = SUPER_IF;
+	const BASE_IF = 'MWIHTML';
+	const BASE_FT = 'mwi.comp.html';
+
+	const { fready, fwait, getInstance, getInterface, getModMeta, setRO, modHasCap } = globalThis.$c;
+
+	const html5config = {
+		'h.a': ls(['interface', BASE_IF]),
+		'h.abbr': ls(['interface', BASE_IF]),
+		'h.address': ls(['interface', BASE_IF]),
+		'h.area': ls(['interface', BASE_IF, 'schema', ls(['void', true])]),
+		'h.article': ls(['interface', BASE_IF]),
+		'h.aside': ls(['interface', BASE_IF]),
+		'h.b': ls(['interface', BASE_IF]),
+		'h.base': ls(['interface', BASE_IF, 'schema', ls(['void', true])]),
+		'h.bdi': ls(['interface', BASE_IF]),
+		'h.bdo': ls(['interface', BASE_IF]),
+		'h.big': ls(['interface', BASE_IF]),
+		'h.blockquote': ls(['interface', BASE_IF]),
+		'h.body': ls(['interface', BASE_IF]),
+		'h.br': ls(['interface', BASE_IF, 'schema', ls(['void', true])]),
+		'h.button': ls(['interface', BASE_IF]),
+		'h.canvas': ls(['interface', BASE_IF]),
+		'h.caption': ls(['interface', BASE_IF]),
+		'h.cite': ls(['interface', BASE_IF]),
+		'h.code': ls(['interface', BASE_IF]),
+		'h.col': ls(['interface', BASE_IF, 'schema', ls(['void', true])]),
+		'h.colgroup': ls(['interface', BASE_IF]),
+		'h.data': ls(['interface', BASE_IF]),
+		'h.datalist': ls(['interface', BASE_IF]),
+		'h.dd': ls(['interface', BASE_IF]),
+		'h.del': ls(['interface', BASE_IF]),
+		'h.details': ls(['interface', BASE_IF]),
+		'h.dfn': ls(['interface', BASE_IF]),
+		'h.dialog': ls(['interface', BASE_IF]),
+		'h.div': ls(['interface', BASE_IF]),
+		'h.dl': ls(['interface', BASE_IF]),
+		'h.doctype': ls(['interface', 'TBA']),
+		'h.dt': ls(['interface', BASE_IF]),
+		'h.em': ls(['interface', BASE_IF]),
+		'h.embed': ls(['interface', BASE_IF, 'schema', ls(['void', true])]),
+		'h.fieldset': ls(['interface', BASE_IF]),
+		'h.figcaption': ls(['interface', BASE_IF]),
+		'h.figure': ls(['interface', BASE_IF]),
+		'h.footer': ls(['interface', BASE_IF]),
+		'h.form': ls(['interface', BASE_IF]),
+		'h.head': ls(['interface', BASE_IF]),
+		'h.header': ls(['interface', BASE_IF]),
+		'h.html': ls(['interface', BASE_IF]),
+		'h.hr': ls(['interface', BASE_IF, 'schema', ls(['void', true])]),
+		'h.i': ls(['interface', BASE_IF]),
+		'h.iframe': ls(['interface', BASE_IF]),
+		'h.img': ls(['interface', BASE_IF, 'schema', ls(['void', true])]),
+		'h.input': ls(['interface', BASE_IF, 'schema', ls(['void', true])]),
+		'h.ins': ls(['interface', BASE_IF]),
+		'h.kbd': ls(['interface', BASE_IF]),
+		'h.label': ls(['interface', BASE_IF]),
+		'h.legend': ls(['interface', BASE_IF]),
+		'h.li': ls(['interface', BASE_IF]),
+		'h.link': ls(['interface', BASE_IF, 'schema', ls(['void', true])]),
+		'h.main': ls(['interface', BASE_IF]),
+		'h.map': ls(['interface', BASE_IF]),
+		'h.mark': ls(['interface', BASE_IF]),
+		'h.menu': ls(['interface', BASE_IF]),
+		'h.meta': ls(['interface', BASE_IF, 'schema', ls(['void', true])]),
+		'h.meter': ls(['interface', BASE_IF]),
+		'h.nav': ls(['interface', BASE_IF]),
+		'h.noscript': ls(['interface', BASE_IF]),
+		'h.object': ls(['interface', BASE_IF]),
+		'h.ol': ls(['interface', BASE_IF]),
+		'h.optgroup': ls(['interface', BASE_IF]),
+		'h.option': ls(['interface', BASE_IF]),
+		'h.output': ls(['interface', BASE_IF]),
+		'h.p': ls(['interface', BASE_IF]),
+		'h.param': ls(['interface', BASE_IF, 'schema', ls(['void', true])]),
+		'h.picture': ls(['interface', BASE_IF]),
+		'h.pre': ls(['interface', BASE_IF]),
+		'h.progress': ls(['interface', BASE_IF]),
+		'h.q': ls(['interface', BASE_IF]),
+		'h.rp': ls(['interface', BASE_IF]),
+		'h.rt': ls(['interface', BASE_IF]),
+		'h.ruby': ls(['interface', BASE_IF]),
+		'h.s': ls(['interface', BASE_IF]),
+		'h.samp': ls(['interface', BASE_IF]),
+		'h.script': ls(['interface', 'TBA']),
+		'h.section': ls(['interface', BASE_IF]),
+		'h.select': ls(['interface', BASE_IF]),
+		'h.small': ls(['interface', BASE_IF]),
+		'h.source': ls(['interface', BASE_IF, 'schema', ls(['void', true])]),
+		'h.span': ls(['interface', BASE_IF]),
+		'h.strong': ls(['interface', BASE_IF]),
+		'h.style': ls(['interface', 'TBA']),
+		'h.sub': ls(['interface', BASE_IF]),
+		'h.summary': ls(['interface', BASE_IF]),
+		'h.sup': ls(['interface', BASE_IF]),
+		'h.table': ls(['interface', BASE_IF]),
+		'h.tbody': ls(['interface', BASE_IF]),
+		'h.td': ls(['interface', BASE_IF]),
+		'h.textarea': ls(['interface', BASE_IF]),
+		'h.tfoot': ls(['interface', BASE_IF]),
+		'h.th': ls(['interface', BASE_IF]),
+		'h.thead': ls(['interface', BASE_IF]),
+		'h.time': ls(['interface', BASE_IF]),
+		'h.title': ls(['interface', 'TBA']),
+		'h.tr': ls(['interface', BASE_IF]),
+		'h.track': ls(['interface', BASE_IF, 'schema', ls(['void', true])]),
+		'h.u': ls(['interface', BASE_IF]),
+		'h.ul': ls(['interface', BASE_IF]),
+		'h.var': ls(['interface', BASE_IF]),
+		'h.video': ls(['interface', BASE_IF]),
+		'h.wbr': ls(['interface', BASE_IF, 'schema', ls(['void', true])]),
+	};
+
+	// Make sure the doc-node super-interface is available before chaining from any sub-interfaces
+	await fwait(SUPER_FT);
+
+	// Standard `h.` HTML tag interface (`MWIHTML`)
+	(() => {
+		// Return HTML for standard (or void) HTML tags
+		function opGetHTML (d) {
+			const p = d.p, type = p.at('type').replace(/^h\./, '');
+			const m = d.mp, hasIn = m.has('in'), html = m.at('in', []);
+			// Opening (or void) tag with optional (HTML) attributes
+			html.push(`<${type}${d.rr('getAttrHTML')}>`);
+			if (!p.at('schema', 'void')) {
+				// Collect inner HTML
+				for (const node of p.at('subDoc', []).values()) {
+					d.sm(node, 'getHTML', { in: html });
+				}
+				// Closing tag
+				html.push(`</${type}>`);
+			}
+			if (!hasIn) return html.join('');
+		}
+
+		getInterface(BASE_IF).set({
+			pristine: true, // Anti-tamper: no configuration before
+			lock: true,		// ... or after
+			// singleton: true,
+			// abstract, final, once, private, etc.
+			chain: [ SUPER_IF ],
+			handlers: {
+				// '@init': opInit,
+				// '@jsv': (d) => d.rr,
+				getHTML: opGetHTML,
+				// getDOM: opGetDOM,
+			}
+		});
+	})();
+
+	// When the registry is *open*, register all our components
+	await fwait(REG_OPEN_FT);
+	const registry = getInstance(REG_IF);
+	for (const [name, entry] of Object.entries(html5config)) {
+		registry.register(name, entry);
+	}
+
+	// The HTML "building blocks" are now ready
+	fready(mid, BASE_FT);
+@}

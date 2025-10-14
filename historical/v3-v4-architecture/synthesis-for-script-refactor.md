@@ -48,7 +48,7 @@ The implementation will register the full component spec.
     modpath = mwi/html/script
     version = 0.1.0
     featpro = "mwi.components.mwi.html.script"
-    featreq = "mwi.registry.ready"
+    featreq = "mwi.componentRegistryReady"
 )]
 
 @js{
@@ -61,7 +61,7 @@ The implementation will register the full component spec.
     function loadMsjs(mid) {
         if (!mid) throw new Error('Cannot load mwiHtmlScript without module management');
 
-        fwait('mwi.registry.ready').then(() => {
+        fwait('mwi.componentRegistryReady').then(() => {
             const registry = getInstance('MWIComponentRegistry');
 
             /**

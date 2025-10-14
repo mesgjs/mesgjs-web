@@ -1,0 +1,47 @@
+[(
+modpath=mwi/mwi-vendor
+version=0.5.0
+featreq=''
+featpro='MWIVendor'
+modcaps=''
+)]
+
+/*
+ * ** NOT SURE IF WE'RE GOING TO NEED THIS FILE **
+ * MWIVendor - MWI External Resource Vendoring Interface
+ * Copyright 2025 by Kappa Computer Solutions, LLC and Brian Katzung
+ */
+
+@js{
+	import * as escape from 'escape-js/src/escape.esm.js';
+@}
+
+@js{
+	if (!mid) throw new Error('MWIVendor requires Mesgjs module management to be active');
+
+	const IF_NAME = 'MWIVendor';
+	const READY_FT = IF_NAME;
+
+	const { fready, fwait, getInstance, getInterface, getModMeta, setRO, modHasCap } = globalThis.$c;
+
+	function opInit (d) {
+		setRO(d.rr, {
+			get jsv () { return d. rr; },
+			valueOf () { return d. rr; },
+			escape,
+		});
+		fready(mid, READY_FT);
+	}
+
+	// Configure the interface, and instantiate the singleton instance
+	getInterface(IF_NAME).set({
+		pristine: true, // Anti-tamper: no configuration before
+		lock: true,		// ... or after
+		singleton: true,
+		// abstract, chain, final, once, private, etc.
+		handlers: {
+			'@init': opInit,
+			'@jsv': (d) => d.rr,
+		}
+	}).instance();
+@}
