@@ -2,12 +2,12 @@
 modpath='mwi/mwi-html-comp'
 version='0.5.0'
 featreq='MWIDocNode mwi.compRegOpen'
-featpro='mwi.comp.html'
+featpro='mwi.comp.MWIHTML'
 modcaps=''
 )]
 
 /*
- * MWIHTML - MWI HTML Handlers
+ * mwi-html-comp - MWI HTML Components
  * Copyright 2025 by Kappa Computer Solutions, LLC and Brian Katzung
  */
 
@@ -23,29 +23,26 @@ modcaps=''
 	const SUPER_IF = 'MWIDocNode';
 	const SUPER_FT = SUPER_IF;
 	const BASE_IF = 'MWIHTML';
-	const BASE_FT = 'mwi.comp.html';
+	const READY_FT = 'mwi.comp.' + BASE_IF;
 
-	const COM_IF = BASE_IF + 'Com';
 	const DOCTYPE_IF = BASE_IF + 'DocType';
-	const FRAG_IF = BASE_IF + 'Frag';
 	const SCRIPT_IF = BASE_IF + 'Script';
-	const TEXT_IF = BASE_IF + 'Text';
 	const TITLE_IF = BASE_IF + 'Text';
 
 	const { fready, fwait, getInstance, getInterface, getModMeta, setRO, modHasCap } = globalThis.$c;
 
-	const html5config = {
+	const html5Config = {
 		'h.a': ls([INTERFACE, BASE_IF]),
 		'h.abbr': ls([INTERFACE, BASE_IF]),
 		'h.address': ls([INTERFACE, BASE_IF]),
 		'h.area': ls([INTERFACE, BASE_IF, SCHEMA, ls([VOID, true])]),
 		'h.article': ls([INTERFACE, BASE_IF]),
 		'h.aside': ls([INTERFACE, BASE_IF]),
+		'h.audio': ls([INTERFACE, BASE_IF]),
 		'h.b': ls([INTERFACE, BASE_IF]),
 		'h.base': ls([INTERFACE, BASE_IF, SCHEMA, ls([VOID, true])]),
 		'h.bdi': ls([INTERFACE, BASE_IF]),
 		'h.bdo': ls([INTERFACE, BASE_IF]),
-		'h.big': ls([INTERFACE, BASE_IF]),
 		'h.blockquote': ls([INTERFACE, BASE_IF]),
 		'h.body': ls([INTERFACE, BASE_IF]),
 		'h.br': ls([INTERFACE, BASE_IF, SCHEMA, ls([VOID, true])]),
@@ -74,10 +71,17 @@ modcaps=''
 		'h.figure': ls([INTERFACE, BASE_IF]),
 		'h.footer': ls([INTERFACE, BASE_IF]),
 		'h.form': ls([INTERFACE, BASE_IF]),
+		'h.h1': ls([INTERFACE, BASE_IF]),
+		'h.h2': ls([INTERFACE, BASE_IF]),
+		'h.h3': ls([INTERFACE, BASE_IF]),
+		'h.h4': ls([INTERFACE, BASE_IF]),
+		'h.h5': ls([INTERFACE, BASE_IF]),
+		'h.h6': ls([INTERFACE, BASE_IF]),
 		'h.head': ls([INTERFACE, BASE_IF]),
 		'h.header': ls([INTERFACE, BASE_IF]),
-		'h.html': ls([INTERFACE, BASE_IF]),
+		'h.hgroup': ls([INTERFACE, BASE_IF]),
 		'h.hr': ls([INTERFACE, BASE_IF, SCHEMA, ls([VOID, true])]),
+		'h.html': ls([INTERFACE, BASE_IF]),
 		'h.i': ls([INTERFACE, BASE_IF]),
 		'h.iframe': ls([INTERFACE, BASE_IF]),
 		'h.img': ls([INTERFACE, BASE_IF, SCHEMA, ls([VOID, true])]),
@@ -102,7 +106,6 @@ modcaps=''
 		'h.option': ls([INTERFACE, BASE_IF]),
 		'h.output': ls([INTERFACE, BASE_IF]),
 		'h.p': ls([INTERFACE, BASE_IF]),
-		'h.param': ls([INTERFACE, BASE_IF, SCHEMA, ls([VOID, true])]),
 		'h.picture': ls([INTERFACE, BASE_IF]),
 		'h.pre': ls([INTERFACE, BASE_IF]),
 		'h.progress': ls([INTERFACE, BASE_IF]),
@@ -113,8 +116,10 @@ modcaps=''
 		'h.s': ls([INTERFACE, BASE_IF]),
 		'h.samp': ls([INTERFACE, BASE_IF]),
 		'h.script': ls([INTERFACE, SCRIPT_IF]),
+		'h.search': ls([INTERFACE, BASE_IF]),
 		'h.section': ls([INTERFACE, BASE_IF]),
 		'h.select': ls([INTERFACE, BASE_IF]),
+		'h.slot': ls([INTERFACE, BASE_IF]),
 		'h.small': ls([INTERFACE, BASE_IF]),
 		'h.source': ls([INTERFACE, BASE_IF, SCHEMA, ls([VOID, true])]),
 		'h.span': ls([INTERFACE, BASE_IF]),
@@ -126,6 +131,7 @@ modcaps=''
 		'h.table': ls([INTERFACE, BASE_IF]),
 		'h.tbody': ls([INTERFACE, BASE_IF]),
 		'h.td': ls([INTERFACE, BASE_IF]),
+		'h.template': ls([INTERFACE, BASE_IF]),
 		'h.textarea': ls([INTERFACE, BASE_IF]),
 		'h.tfoot': ls([INTERFACE, BASE_IF]),
 		'h.th': ls([INTERFACE, BASE_IF]),
@@ -196,48 +202,6 @@ modcaps=''
 		});
 	})();
 
-	// MWIHTMLCom (comment) interface
-	// `[h.Com m.text=comment?]`
-	(() => {
-		// Specialized HTML escape for comment content
-		function escapeComment (d, text) {
-			const comment = text.
-			  replace(/&/g, '&amp;').
-			  replace(/^>/, '&gt;').
-			  replace(/^->/, '-&gt;').
-			  replace(/--/g, '-&#45;').
-			  replace(/-$/, '&#45;');
-			return d.rr.textToHTML(comment, { lt: false, amp: false, gt: false, sq: false, dq: false });
-		}
-
-		function opGetDOM (d) {
-			if (typeof document === 'object' && typeof document.createComment === 'function') {
-				const text = d.sm(d.rr, 'getAttr', [ 'm.text' ]) || '';
-				return [ document.createComment(text) ];
-			}
-			return [];
-		}
-
-		function opGetHTML (d) {
-			const m = d.mp, output = m.at('in');;
-			const text = d.sm(d.rr, 'getAttr', [ 'm.text' ]) || '';
-			const html = `<!--${comToHTML(d, text)}-->`;
-			if (output) output.push(html);
-			return html;
-		}
-
-		getInterface(COM_IF).set({
-			pristine: true, lock: true,
-			chain: [ BASE_IF ],
-			handlers: {
-				getDOM: opGetDOM,
-				getHTML: opGetHTML,
-				getSubSpec: (_d) => [],
-				setSubSpec: (_d) => {},
-			}
-		});
-	})();
-
 	// MWIHTMLDocType (doctype) interface
 	// `[h.doctype]`
 	(() => {
@@ -258,11 +222,6 @@ modcaps=''
 				setSubSpec: (_d) => {},
 			}
 		});
-	})();
-
-	// MWIHTMLFrag interface: h.Frag (fragment)
-	(() => {
-		//
 	})();
 
 	// MWIHTMLScript (script and style) interface
@@ -290,38 +249,6 @@ modcaps=''
 			const sanzd = raw.replace(re, ''); // Sanitize e.g. </script>... within content
 			const html = `<${type}${d.sm(d.rr, 'getAttrHTML')}>${sanzd}</${type}>`;
 			if (output) output.push(html);
-			return html;
-		}
-
-		getInterface(TEXT_IF).set({
-			pristine: true, lock: true,
-			chain: [ BASE_IF ],
-			handlers: {
-				getDOM: opGetDOM,
-				getHTML: opGetHTML,
-				getSubSpec: (_d) => [],
-				setSubSpec: (_d) => {},
-			}
-		});
-	})();
-
-	// MWIHTMLText (text) interface
-	// `text` or `[h.Text m.text=text?]`
-	(() => {
-		function opGetDOM (d) {
-			if (typeof document === 'object' && typeof document.createTextNode === 'function') {
-				const text = d.sm(d.rr, 'getAttr', [ 'm.text' ]) || '';
-				// Will need <output> or guard comments for reactive values to prevent normalization
-				if (text !== '') return [ document.createTextNode(text) ];
-			}
-			return [];
-		}
-
-		function opGetHTML (d) {
-			const m = d.mp, output = m.at('in');;
-			const text = d.sm(d.rr, 'getAttr', [ 'm.text' ]) || '';
-			const html = d.rr.textToHTML(text);
-			if (html !== '' && output) output.push(html);
 			return html;
 		}
 
@@ -373,10 +300,10 @@ modcaps=''
 	// When the registry is *open*, register all our components
 	await fwait(REG_OPEN_FT);
 	const registry = getInstance(REG_IF);
-	for (const [name, entry] of Object.entries(html5config)) {
+	for (const [name, entry] of Object.entries(html5Config)) {
 		registry.register(name, entry);
 	}
 
 	// The HTML "building blocks" are now ready
-	fready(mid, BASE_FT);
+	fready(mid, READY_FT);
 @}

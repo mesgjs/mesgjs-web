@@ -1,0 +1,168 @@
+[(
+modpath='mwi/mwi-core-comp'
+version='0.5.0'
+featreq='MWIDocNode mwi.compRegOpen'
+featpro='mwi.comp.MWICore'
+modcaps=''
+)]
+
+/*
+ * mwi-core-comp - MWI Core Components
+ * Copyright 2025 by Kappa Computer Solutions, LLC and Brian Katzung
+ */
+
+@e @js{
+	if (!mid) throw new Error('MWICore requires Mesgjs module management to be active');
+
+	const INTERFACE = 'if';
+	const SCHEMA = 'schema';
+	const VOID = 'void';
+
+	const REG_IF = 'MWIRegistry';
+	const REG_OPEN_FT = 'mwi.compRegOpen';
+	const BASE_IF = 'MWIDocNode';
+	const BASE_FT = BASE_IF;
+	const CORE_IF = 'MWICore';
+	const READY_FT = 'mwi.comp.' + CORE_IF;
+
+	const COM_IF = CORE_IF + 'Com';
+	const COM_TYPE = 'm.com';
+	const FRAG_IF = CORE_IF + 'Frag';
+	const FRAG_TYPE = 'm.frg';
+	const TEXT_IF = CORE_IF + 'Text';
+	const TEXT_TYPE = 'm.t';
+	const TPL_IF = CORE_IF + 'Tpl';
+	const SLOT_IF = CORE_IF + 'Slot';
+	const SLOT_TYPE = 'm.slot';
+
+	const coreConfig = {
+		[COM_TYPE]: ls([INTERFACE, COM_IF, SCHEMA, ls([VOID, true])]),
+		[FRAG_TYPE]: ls([INTERFACE, FRAG_IF]),
+		[SLOT_TYPE]: ls([INTERFACE, SLOT_IF]),
+		[TEXT_TYPE]: ls([INTERFACE, TEXT_IF, SCHEMA, ls([VOID, true])]),
+	}
+
+	await fwait(BASE_FT); // For interface chaining
+
+	// MWICoreCom (comment) interface
+	// `[m.com t=comment?]`
+	(() => {
+		// Specialized HTML escape for comment content
+		function escapeComment (d, text) {
+			const comment = text.
+			  replace(/&/g, '&amp;').
+			  replace(/^>/, '&gt;').
+			  replace(/^->/, '-&gt;').
+			  replace(/--/g, '-&#45;').
+			  replace(/-$/, '&#45;');
+			return d.rr.textToHTML(comment, { lt: false, amp: false, gt: false, sq: false, dq: false });
+		}
+
+		function opGetDOM (d) {
+			if (typeof document === 'object' && typeof document.createComment === 'function') {
+				const text = d.sm(d.rr, 'getAttr', [ 't' ]) || '';
+				return [ document.createComment(text) ];
+			}
+			return [];
+		}
+
+		function opGetHTML (d) {
+			const m = d.mp, output = m.at('in');;
+			const text = d.sm(d.rr, 'getAttr', [ 'm.text' ]) || '';
+			const html = `<!--${comToHTML(d, text)}-->`;
+			if (output) output.push(html);
+			return html;
+		}
+
+		getInterface(COM_IF).set({
+			pristine: true, lock: true,
+			chain: [ BASE_IF ],
+			handlers: {
+				getDOM: opGetDOM,
+				getHTML: opGetHTML,
+				getSubSpec: (_d) => [],
+				setSubSpec: (_d) => {},
+			}
+		});
+	})();
+
+	// MWICoreFrag (fragment) interface
+	// `[m.frg text|[node]...]`
+	(() => {
+		// Pretty much just a vanilla doc-node
+		getInterface(FRAG_IF).set({
+			pristine: true, lock: true,
+			chain: [ BASE_IF ],
+		});
+	})();
+
+	// MWICoreSlot (slot) interface
+	// `[m.slot name=slotName? defCon...]`
+	(() => {
+		// TO BE COMPLETED
+		function opGetDOM (d) {}
+
+		function opGetHTML (d) {}
+
+		getInterface(SLOT_IF).set({
+			pristine: true, lock: true,
+			handlers: {
+				getDOM: opGetDOM,
+				getHTML: opGetHTML,
+			}
+		});
+	})();
+
+	// MWICoreText (text) interface
+	// `text` or `[m.t t=text?]`
+	(() => {
+		function opGetDOM (d) {
+			if (typeof document === 'object' && typeof document.createTextNode === 'function') {
+				const text = d.sm(d.rr, 'getAttr', [ 't' ]) || '';
+				// Will need <output> or guard comments for reactive values to prevent normalization
+				if (text !== '') return [ document.createTextNode(text) ];
+			}
+			return [];
+		}
+
+		function opGetHTML (d) {
+			const m = d.mp, output = m.at('in');;
+			const text = d.sm(d.rr, 'getAttr', [ 'm.text' ]) || '';
+			const html = d.rr.textToHTML(text);
+			if (html !== '' && output) output.push(html);
+			return html;
+		}
+
+		getInterface(TEXT_IF).set({
+			pristine: true, lock: true,
+			chain: [ BASE_IF ],
+			handlers: {
+				getDOM: opGetDOM,
+				getHTML: opGetHTML,
+				getSubSpec: (_d) => [],
+				setSubSpec: (_d) => {},
+			}
+		});
+	})();
+
+	// Template Component Interface
+	(() => {
+		// TO BE COMPLETED
+		getInterface(TPL_IF).set({
+			pristine: true, lock: true,
+			chain: [ BASE_IF ],
+			handlers: {
+				// toDOM:
+				// toHTML:
+			}
+		});
+	})();
+
+	await fwait(REG_OPEN_FT); // For component registration
+	const registry = getInstance(REG_IF);
+	for (const [name, entry] of Object.entries(coreConfig)) {
+		registry.register(name, entry);
+	}
+
+	fready(mid, READY_FT);
+@}

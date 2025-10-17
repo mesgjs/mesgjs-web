@@ -20,8 +20,8 @@ modcaps=''
 	const REG_READY_FT = 'mwi.compRegReady';
 	const NODE_IF = 'MWIDocNode';
 	const NODE_READY_FT = NODE_IF;
-	const TPL_IF = 'MWITemplate';
-	const TPL_READY_FT = 'MWICore';
+	const TPL_IF = 'MWICoreTpl';
+	const TPL_READY_FT = 'mwi.comp.MWICore';
 
 	const INTERFACE = 'if';
 
@@ -68,8 +68,8 @@ modcaps=''
 		const m = d.mp, slotSrc = m.at('slotSrc');
 		const fromItem = async (spec) => {
 			if (typeof spec === 'string') {
-				const node = await d.sm(d.rr, 'createNode', [ 'h.Text' ]);
-				node.setAttr('text', spec);
+				const node = await d.sm(d.rr, 'createNode', [ 'm.t' ]);
+				d.sm(node, 'setAttr', [ 't', spec ]);
 				return node;
 			}
 			if (spec instanceof NANOS) {
