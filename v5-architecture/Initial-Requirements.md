@@ -227,17 +227,47 @@ Template computed-attributes provide a mechanism for rudimentary assembly of str
 
 - Computed attributes are controlled by an optional `m.coat` *attribute*:\
 `[... m.coat=[target=expr...] ...]`
-- Each `expr` may contain any number of any of the following, in any order:
-  - Plain text
-  - `<name>` - The value of slot-source attribute `name`
-  - `<name|elseExpr>` - The value of the named slot-source attribute if set and not undefined, otherwise the value of the `elseExpr` sub-expression
-  - `<name?mainExpr>` - The value of the `mainExpr` sub-expression if the named slot-source attribute is set and not undefined
-  - `<name?mainExpr|elseExpr>` - The value of the `mainExpr` sub-expression if the named slot-source attribute is set and not undefined, otherwise the value of the `elseExpr` sub-expression
-  - Special names:
-    - `<.lt>`: `<` ("less-than")
-	- `<.gt>`: `>` ("greater-than")
-	- `<.qm>`: `?` ("question mark")
-	- `<.vl>`: `|` ("vertical line")
+- Each `expr` is a string that may contain any number of the following, in any order:
+  - **Plain text:** Included literally in the output.
+  - **Substitution expressions:** `<-expr->`
+- The `name` part of an expression is always a literal identifier and cannot be a nested expression.
+- The grammar supports two types of checks:
+  - **Presence Check:** Considers an attribute valid if it exists on the slot source (i.e., is not `undefined`).
+  - **Value Check:** Considers an attribute valid if it exists *and* is not an empty string (`""`).
+- **Expression Syntax:**
+  - `<name>`: Simple substitution. Evaluates to the attribute value or an empty string.
+  - Presence-Based Fallback (`|`):
+    - `<name|elseExpr>`: Evaluates to the value of `name` if it is present, otherwise recursively evaluates `elseExpr`.
+  - Value-Based Fallback (`||`):
+    - `<name||elseExpr>`: Evaluates to the value of `name` if it has a value, otherwise recursively evaluates `elseExpr`.
+  - Presence-Based Conditional (`?`):
+    - `<name?mainExpr>`: Evaluates `mainExpr` if `name` is present.
+    - `<name?mainExpr|elseExpr>` / `<name?mainExpr||elseExpr>`: Evaluates `mainExpr` if `name` is present, otherwise evaluates `elseExpr`. The type of fallback operator (`|` or `||`) does not alter the primary conditional logic.
+  - Value-Based Conditional (`??`):
+    - `<name??mainExpr>`: Evaluates `mainExpr` if `name` has a value.
+    - `<name??mainExpr|elseExpr>` / `<name??mainExpr||elseExpr>`: Evaluates `mainExpr` if `name` has a value, otherwise evaluates `elseExpr`.
+- **Special Escapes:**
+  - `<.lt>`: `<` ("less-than")
+  - `<.gt>`: `>` ("greater-than")
+  - `<.qm>`: `?` ("question mark")
+  - `<.vb>`: `|` ("vertical bar")
+
+## Sub-Spec And Slotting
+
+Void HTML Components
+- Slot the current doc-node against the slot-source, if provided
+- No children; discard sub-spec, if any
+
+Container HTML Components
+- Slot the current doc-node against the slot-source, if provided
+- Add the top level of the sub-spec as doc-node children
+  - Pass the current slot-source, if provided, to the children
+
+Template (Non-HTML) Components
+- Slot the current doc-node against the slot-source, if provided
+- Any sub-spec is stored (as-is) for possible unnamed-content-slotting in the template
+- The current doc-node becomes the slot-source for the template
+- Add the top level of the template as doc-node children
 
 ## Special Nodes And Attributes
 

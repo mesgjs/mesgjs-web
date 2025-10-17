@@ -19,6 +19,10 @@ modcaps=''
 	const REG_OPEN_FT = 'mwi.compRegOpen';
 	const REG_READY_FT = 'mwi.compRegReady';
 
+	const INTERFACE = 'if';
+	const TEMPLATE = 'tpl';
+	const FEATURE = 'ftr';
+
 	const SERVER_ID_PRE = '_MS_';
 	const CLIENT_ID_PRE = '_ML_';
 	const COMP_ID_PRE = '_MO_';
@@ -40,10 +44,10 @@ modcaps=''
 
 		// Add JS-level interface
 		Object.setPrototypeOf(d.rr, Object.setPrototypeOf({
-			get (name) { return this('get', [name]); },
+			get (name) { return this('get', [ name ]); },
 			get jsv () { return this; },
 			nextId () { return this('nextId'); },
-			register (name, entry) { return this('register', new NANOS([name, entry])); },
+			register (name, entry) { return this('register', new NANOS([ name, entry ])); },
 			valueOf () { return this; },
 		}, Function.prototype));
 
@@ -66,9 +70,9 @@ modcaps=''
 		const name = d.mp.at(0), p = d.p;
 		if (!p.at('isReady')) await fwait(REG_READY_FT);
 		const comp = p.at(['components', name]);
-		if (comp && !comp.has('interface') && !comp.has('template')) {
+		if (comp && !comp.has(INTERFACE) && !comp.has(TEMPLATE)) {
 			// If the component definition was deferred, load it now
-			const feature = comp.at('feature');
+			const feature = comp.at(FEATURE);
 			if (feature) await fwait(feature);
 		}
 		return comp;
@@ -125,7 +129,7 @@ modcaps=''
 			'@init': opInit,
 			'@jsv': (d) => d.rr,
 			dump: (d) => console.log(d.p.toSLID({ compact: true })),
-			dumpJSON: (d) => console.log(JSON.stringify(d.p)),
+			// dumpJSON: (d) => console.log(JSON.stringify(d.p)),
 			get: opGet,
 			nextId: opNextId,
 			register: opRegister,

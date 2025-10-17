@@ -20,21 +20,50 @@ modcaps=''
 
 	const { fready, fwait, getInstance, getInterface, getModMeta, setRO, modHasCap } = globalThis.$c;
 
-	const ehMap = { '&': '&amp;', '"': '&quot;', '<': '&lt;', '>': '&gt;' };
+	function setDOMAttrs (node, attrs) {
+		for (const [name, value] of attrs.namedEntries()) {
+			// Only HTML attributes
+			if (/^[0-9a-z:_-]*$/.test(name)) node.setAttribute(name, value);
+		}
+	}
 
-	function escapeHTMLAttr (str) {
-		return String(str).replace(/[\x00-\x1f&"<>\\\x7f-\uffff]/g, (match) => ehMap[match] || `&#x${match.charCodeAt().toString(16)};`);
+	function textToHTML (str, { lt = true, amp = true, gt = true, sq = false, dq = false } = {}) {
+		if (typeof str === 'function') {
+			// Hack to double as message handler
+			const d = str, m = d.mp;
+			str = m.at(0);
+			lt = m.at('lt', true);
+			amp = m.at('amp', true);
+			gt = m.at('gt', true);
+			sq = m.at('sq', false);
+			dq = m.at('dq', false);
+		}
+		// deno-lint-ignore no-control-regex
+		return String(str).replace(/[\x00-\x1f&'"<>\\\x7f-\uffff]/g, (match) => {
+			switch (match) {
+			case '<': return (lt ? '&lt;' : '<');
+			case '&': return (amp ? '&amp;' : '&');
+			case '>': return (gt ? '&gt;' : '>');
+			case "'": return (sq ? '&#39;' : "'");
+			case '"': return (dq ? '&quot;' : '"');
+			default:
+				// &#x length >= &# length for all UTF-16
+				return `&#${match.charCodeAt()};`;
+			}
+		});
 	}
 
 	// JS interface prototype
 	const docNodeProto = Object.setPrototypeOf({
-		delAttr (name) { return this('delAttr', [name]); },
+		delAttr (name) { return this('delAttr', [ name ]); },
 		get document () { return this('document'); },
-		getAttr (name) { return this('getAttr', [name]); },
-		hasAttr (name) { return this('hasAttr', [name]); },
-		hasClass (name) { return this('hasClass', [name]); },
+		getAttr (name) { return this('getAttr', [ name ]); },
+		hasAttr (name) { return this('hasAttr', [ name ]); },
+		hasClass (name) { return this('hasClass', [ name ]); },
 		get jsv () { return this; },
-		setAttr (name, value) { return this('setAttr', [name, value]); },
+		setAttr (name, value) { return this('setAttr', [ name, value ]); },
+		setDOMAttrs,
+		textToHTML,
 		get type () { return this('type'); },
 		valueOf () { return this; },
 	}, Function.prototype);
@@ -42,20 +71,75 @@ modcaps=''
 
 	// Initialize the new doc node
 	function opInit (d) {
-		if (typeof d.sr !== 'function' || d.st !== DOC_IF) throw new Error(`Use ${DOC_IF}(createNode) to create a new ${IF_NAME}`);
 		const p = d.p, m = d.mp;
+		if (typeof d.sr !== 'function' || d.st !== DOC_IF) {
+			const type = m.at('type', d.rt);
+			throw new Error(`Use ${DOC_IF}(createNode) to create a new ${type} node`);
+		}
 		p.push(m, {
 			document: d.sr, // document that created this node
 			attrs: new NANOS(),
 			permClasses: new Set(),
 			classes: new Set(),
-			// slotSrc
-			// subdoc
-			// subnodes
+			// slotSrc (passed from (createNode), if active)
+			// subDoc
+			// subSpec
 		});
 		if (!p.has('type')) throw new RangeError(`${IF_NAME} requires a node type`);
 		// Add JS interface
 		Object.setPrototypeOf(d.rr, docNodeProto);
+	}
+
+	// Return the final (string) value for a computed (m.coat) attribute
+	function computeAttr (d, spec) {
+		const slotSrc = d.p.at('slotSrc');
+		const getVal = (name) => {
+			switch (name) { // Handle escapes, e.g. <.lt>
+			case '.lt': return '<';
+			case '.gt': return '>';
+			case '.qm': return '?';
+			case '.vb': return '|';
+			}
+			if (slotSrc) return d.sm(slotSrc, 'getAttr', [ name ]);
+		};
+		const isUns = (v) => v === undefined; // unset
+		const isUOE = (v) => v === undefined || v === ""; // unset or empty
+		// Tokenize into a flat array of operators and literals
+		const tokens = String(spec).match(/<|>|\?\??|\|\|?|[^<>?|]+/g) || [];
+		const output = [];
+		let token;
+		const parseExpr = () => { // Parse a (sub-)expression
+			const name = tokens.shift(), value = getVal(name);
+			const then = tokens.shift();
+			if (then === '>') { // Simple interpolations
+				if (typeof value === 'string' && value) output.push(value);
+				return;
+			}
+			let copy = false;
+			switch (then) {
+			// Conditionals
+			case '?': copy = !isUns(value); break;
+			case '??': copy = !isUOE(value); break;
+			// Defaults
+			case '|': copy = isUns(value); break;
+			case '||': copy = isUOE(value); break;
+			}
+			// deno-lint-ignore no-cond-assign
+			while (token = tokens.shift()) {
+				switch (token) {
+				case '<': parseExpr(); break; // Start sub-expression
+				case '>': return; // End current expression
+				case '|': case '||': copy = !copy; break; // Toggle copy mode
+				default: if (copy) output.push(token); break; // Literal
+				}
+			}
+		};
+		// deno-lint-ignore no-cond-assign
+		while (token = tokens.shift()) {
+			if (token === '<') parseExpr(); // Expression
+			else output.push(token); // Literal
+		}
+		return output.join('');
 	}
 
 	// Delete attribute
@@ -92,7 +176,7 @@ modcaps=''
 		case 'm.id': // Mandatory id value
 			if (!attrs.has('id')) {
 				// There's no user-assigned id, so auto-assign one
-				const doc = p.at('document'), mid = doc('nextId');
+				const doc = p.at('document'), mid = d.sm(doc, 'nextId');
 				attrs.set('id', mid);
 				return mid;
 			}
@@ -104,17 +188,23 @@ modcaps=''
 	// Return the HTML encoding of string- and true-valued, HTML, "non-dot" attributes
 	function opGetAttrHTML (d) {
 		const p = d.p, HTML = [];
-		for (const [key, value] of p.at('attrs').namedValues()) {
-			if (!/^[0-9a-z:_-]*$/.test(key)) continue; // Only HTML attributes
-			if (value === true) HTML.push(` ${key}`);
+		for (const [name, value] of p.at('attrs').namedValues()) {
+			if (!/^[0-9a-z:_-]*$/.test(name)) continue; // Only HTML attributes
+			if (value === true) HTML.push(` ${name}`);
 			else if (typeof value === 'string') {
-				HTML.push(` ${key}="${escapeHTMLAttr(value)}"`);
+				HTML.push(` ${name}="${textToHTML(value, { dq: true })}"`);
 			}
 		}
 		return HTML.join('');
 	}
 
-	// Base behavior: just recursively gather HTML from sub-doc-nodes
+	// Get DOM node(s)
+	function opGetDOM (d) {
+		// Typically equivalent to `(getSubDOM)`
+		return d.sm(d, 'redis', { op: 'getSubDOM' });
+	}
+
+	// Typically just recursively gather HTML from sub-doc-nodes
 	function opGetHTML (d) {
 		const p = d.p, m = d.mp;
 		const hasIn = m.has('in'), html = m.at('in', []);
@@ -130,6 +220,16 @@ modcaps=''
 		spec.fromEntries(p.at('attrs').namedEntries());
 		spec.push(d.sm(d.rr, 'getSubSpec'));
 		return spec;
+	}
+
+	// Get sub-doc DOM nodes
+	function opGetSubDOM (d) {
+		const p = d.p, m = d.mp;
+		const nodes = m.at('in', []);
+		for (const node of p.at('subDoc', []).values()) {
+			d.sm(node, 'getDOM', { in: nodes });
+		}
+		return nodes;
 	}
 
 	// Do we have a particular attribute value?
@@ -222,6 +322,30 @@ modcaps=''
 		else attrs.set('m.percl', undefined);
 	}
 
+	function opSetSpec (d) {
+		const m = d.mp, spec = m.at(0);
+		// Apply attributes from doc-spec
+		for (const attr of spec.namedEntries()) d.sm(d.rr, 'setAttr', attr);
+		d.sm(d.rr, 'slotAttrs');
+		// Process sub-spec
+		d.sm(d.rr, 'setSubSpec', { spec });
+		return d.rr;
+	}
+
+	// Default behavior: just save sub-spec for template-component content-slotting
+	function opSetSubSpec (d) {
+		const m = d.mp, p = d.p;
+		const subList = m.at(0), spec = m.at('spec');
+		if (subList instanceof NANOS) {
+			p.set('subSpec', subList);
+		} else if (spec instanceof NANOS) {
+			const copy = new NANOS([...spec.values()]);
+			copy.shift();
+			p.set('subSpec', copy);
+		}
+		return d.rr;
+	}
+
 	// Set/edit the `style` attribute
 	// `==` / empty / white-space-only unconditionally clears previous styles
 	// `=` conditionally clears previous styles (if additional styles (but not `+`) follow)
@@ -261,10 +385,30 @@ modcaps=''
 		}
 	}
 
+	function opSlotAttrs (d) {
+		const p = d.p, slotSrc = p.at('slotSrc');
+		if (!slotSrc) return d.rr;
+		const attrs = p.get('attrs');
+		// m.slat attribute slotting
+		for (const [target, spec] of attrs.get('m.slat', [])) {
+			const source = spec.at(0, target);
+			const value = d.sm(slotSrc, 'getAttr', [ source ]) ?? spec.at('else');
+			d.sm(d.rr, 'setAttr', [ target, value ]);
+		}
+		// m.coat (computed) attribute slotting
+		for (const [target, spec] of attrs.get('m.coat', [])) {
+			const value = computeAttr(d, spec);
+			d.sm(d.rr, 'setAttr', [ target, value ]);
+		}
+		return d.rr;
+	}
+
 	// Iterate over style-string [name, value, token] parts
 	function* splitStyles (styleStr) {
 		for (const [, token, name, value] of styleStr.matchAll(/([+]|={1,2})|([-_a-z][-_a-z0-9]*)\s*:\s*((?:'(?:\\'|[^'])*'|"(?:\\"|[^"])*"|[^;])*?)\s*(?:;|$)/gi)) yield [name, value, token];
 	}
+
+	const emptyList = (new NANOS()).freeze();
 
 	// With dependencies loaded, configure *my* module interface
 	getInterface(IF_NAME).set({
@@ -279,13 +423,15 @@ modcaps=''
 			document: (d) => d.p.at('document'),
 			getAttr: opGetAttr,
 			getAttrHTML: opGetAttrHTML,
-			hasAttr: opHasAttr,
-			hasClass: opHasClass,
-			setAttr: opSetAttr,
 			getDOM: (_d) => undefined,
 			getHTML: opGetHTML,
 			getSpec: opGetSpec,
-			// (getSubSpec) must be supplied in derived interfaces
+			getSubSpec: (d) => d.p.at('subSpec', emptyList),
+			hasAttr: opHasAttr,
+			hasClass: opHasClass,
+			setAttr: opSetAttr,
+			textToHTML,
+			slotAttrs: opSlotAttrs,
 			type: (d) => d.p.at('type'),
 		}
 	});
