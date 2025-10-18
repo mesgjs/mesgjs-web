@@ -1,7 +1,7 @@
 [(
 modpath='mwi/mwi-document'
 version='0.5.0'
-featreq='mwi.compRegReady MWIDocNode MWITemplate'
+featreq='mwi.compRegReady MWIDocNode MWICoreFrag MWICoreTpl'
 featpro='MWIDocument'
 modcaps=''
 )]
@@ -114,8 +114,8 @@ modcaps=''
 			append: opAppend,
 			createNode: opCreateNode,
 			from: opFrom,
-			getDOM: opGetDOM,
-			getHTML: opGetHTML,
+			getDOM: d => d.sm(d.p.at('root'), 'getDOM'),
+			getHTML: d => d.sm(d.p.at('root'), 'getHTML'),
 			nextId: (d) => d.p.at('registry')('nextId'),
 			registry: (d) => d.p.at('registry'),
 			root: (d) => d.p.at('root'),

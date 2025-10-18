@@ -252,7 +252,7 @@ modcaps=''
 			return html;
 		}
 
-		getInterface(TEXT_IF).set({
+		getInterface(SCRIPT_IF).set({
 			pristine: true, lock: true,
 			chain: [ BASE_IF ],
 			handlers: {
@@ -285,7 +285,7 @@ modcaps=''
 			return html;
 		}
 
-		getInterface(TEXT_IF).set({
+		getInterface(TITLE_IF).set({
 			pristine: true, lock: true,
 			chain: [ BASE_IF ],
 			handlers: {

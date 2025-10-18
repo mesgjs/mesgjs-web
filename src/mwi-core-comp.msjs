@@ -35,6 +35,8 @@ modcaps=''
 	const SLOT_IF = CORE_IF + 'Slot';
 	const SLOT_TYPE = 'm.slot';
 
+	const { fready, fwait, getInstance, getInterface, getModMeta, setRO, modHasCap } = globalThis.$c;
+
 	const coreConfig = {
 		[COM_TYPE]: ls([INTERFACE, COM_IF, SCHEMA, ls([VOID, true])]),
 		[FRAG_TYPE]: ls([INTERFACE, FRAG_IF]),

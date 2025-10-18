@@ -30,7 +30,6 @@ let deferLoaded = false;
 await import('./runtime-loader.esm.js');
 
 const { fcheck, fready, fwait, getInterface, getInstance } = globalThis.$c;
-const ls = (pairs) => (new NANOS()).fromPairs(pairs);
 
 // Preloaded component portion
 globalThis.preloaded = async () => {
@@ -52,18 +51,6 @@ globalThis.deferred = async () => {
 
 await setupRuntime({
 	modules: {
-		'mwi/mwi-registry': {
-			url: './src/mwi-registry.msjs',
-			featpro: 'mwi.compRegOpen mwi.compRegReady',
-		},
-		'mwi/mwi-document': {
-			url: './src/mwi-document.msjs',
-			featpro: 'MWIDocument',
-		},
-		'mwi/mwi-doc-node': {
-			url: './src/mwi-doc-node.msjs',
-			featpro: 'MWIDocNode',
-		},
 		preload: {
 			url: preloadURL,
 			integrity: 'DISABLED',

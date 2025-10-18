@@ -7,32 +7,33 @@ import { transpileTree } from "mesgjs/src/transpile.esm.js";
 export async function setupRuntime ({ modules, standard = true } = {}) {
 	await import('./runtime-loader.esm.js');
 	const { fwait, getModMeta, setModMeta } = globalThis.$c;
+	globalThis.ls = (pairs) => (new NANOS()).fromPairs(pairs);
 	if (getModMeta()) throw new Error('setupRuntime: The Mesgjs runtime is not reconfigurable');
 	const stdMods = {
 		'mwi/mwi-registry': {
-			url: '../src/mwi-registry.msjs',
+			url: './src/mwi-registry.msjs',
 			featpro: 'mwi.compRegOpen mwi.compRegReady',
 		},
 		'mwi/mwi-document': {
-			url: '../src/mwi-document.msjs',
+			url: './src/mwi-document.msjs',
 			featpro: 'MWIDocument',
 		},
 		'mwi/mwi-doc-node': {
-			url: '../src/mwi-doc-node.msjs',
+			url: './src/mwi-doc-node.msjs',
 			featpro: 'MWIDocNode',
 		},
 		'mwi/mwi-html-comp': {
-			url: '../src/mwi-html-comp.msjs',
+			url: './src/mwi-html-comp.msjs',
 			featpro: 'mwi.comp.MWIHTML',
 		},
 		'mwi/mwi-core-comp': {
-			url: '../src/mwi-core-comp.msjs',
+			url: './src/mwi-core-comp.msjs',
 			featpro: 'mwi.comp.MWICore',
 		},
 	};
+	if (standard) modules = Object.assign({}, stdMods, modules);
 	const modMeta = {
 		testMode: true,
-		...(standard ? stdMods : {}),
 		modules
 	};
 	const mesgjsModURLs = {};
@@ -63,7 +64,8 @@ export async function setupRuntime ({ modules, standard = true } = {}) {
 // Render a new MWIDocument with the specified parameters (e.g. spec)
 export async function renderHTML (params) {
 	const doc = getInstance('MWIDocument');
-	await doc('from', params);
+	await doc('append', params);
+	return doc('getHTML');
 }
 
 // Transpile a Mesgjs source file, returning the generated JavaScript code string.
