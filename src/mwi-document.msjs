@@ -20,14 +20,15 @@ modcaps=''
 	const REG_READY_FT = 'mwi.compRegReady';
 	const NODE_IF = 'MWIDocNode';
 	const NODE_READY_FT = NODE_IF;
+	const CORE_READY_FT = 'mwi.comp.MWICore'
+	const FRAG_IF = 'MWICoreFrag';
 	const TPL_IF = 'MWICoreTpl';
-	const TPL_READY_FT = 'mwi.comp.MWICore';
 
 	const INTERFACE = 'if';
 
-	const { fready, fwait, getInstance, getInterface, setRO } = globalThis.$c;
+	const { fready, fwait, getInstance, getInterface, setRO, typeChains } = globalThis.$c;
 
-	await fwait(REG_READY_FT, NODE_READY_FT, TPL_READY_FT);
+	await fwait(REG_READY_FT, NODE_READY_FT, CORE_READY_FT);
 
 	// JS interface prototype
 	const docProto = Object.setPrototypeOf({
@@ -42,9 +43,19 @@ modcaps=''
 	function opInit (d) {
 		const p = d.p;
 		const registry = getInstance(REGISTRY_IF);
-		p.push({ registry });
+		const root = getInstance(FRAG_IF);
+		p.push({ registry, root });
 		// Add JS interface
 		Object.setPrototypeOf(d.rr, docProto);
+	}
+
+	// Append doc-nodes to the document root
+	// (append doc-node...)
+	// (append from='[(SLID spec)]'|[[node]...])
+	async function opAppend (d) {
+		const p = d.p, root = p.at('root'), m = d.mp;
+		d.sm(root, 'append', d.mp);
+		return d.rr;
 	}
 
 	// Create a new document node
@@ -63,7 +74,7 @@ modcaps=''
 	}
 
 	// Return a promise for document node(s) from a doc-spec item or list
-	// (from item=[node]? list=[[node] ...]?)
+	// (from item=text|[node]? list='[(SLID string)]'|[[node] ...]?)
 	function opFrom (d) {
 		const m = d.mp, slotSrc = m.at('slotSrc');
 		const fromItem = async (spec) => {
@@ -79,7 +90,8 @@ modcaps=''
 			}
 		};
 		if (m.has('item')) return fromItem(m.at('item'));
-		const list = m.at('list');
+		const rawList = m.at('list');
+		const list = (typeof rawList === 'string') ? NANOS.parseSLID(rawList) : rawList;
 		if (typeof list?.values === 'function') {
 			const items = [], collect = getInstance('@promise');
 			for (const item of list.values()) {
@@ -99,10 +111,14 @@ modcaps=''
 		handlers: {
 			'@init': opInit,
 			'@jsv': (d) => d.rr,
+			append: opAppend,
 			createNode: opCreateNode,
 			from: opFrom,
+			getDOM: opGetDOM,
+			getHTML: opGetHTML,
 			nextId: (d) => d.p.at('registry')('nextId'),
 			registry: (d) => d.p.at('registry'),
+			root: (d) => d.p.at('root'),
 		}
 	});
 

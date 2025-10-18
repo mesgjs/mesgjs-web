@@ -168,7 +168,7 @@ modcaps=''
 			const m = d.mp, hasIn = m.has('in'), html = m.at('in', []);
 			// Opening (or void) tag with optional (HTML) attributes
 			html.push(`<${type}${d.rr('getAttrHTML')}>`);
-			if (!p.at([ SCHEMA, VOID ])) {
+			if (!p.at(VOID)) {
 				// Collect inner HTML
 				for (const node of p.at('subDoc', []).values()) {
 					d.sm(node, 'getHTML', { in: html });

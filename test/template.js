@@ -22,9 +22,13 @@ await setupRuntime({
 			url: './src/mwi-doc-node.msjs',
 			featpro: 'MWIDocNode',
 		},
+		'mwi/mwi-core-comp': {
+			url: './src/mwi-core-comp.msjs',
+			featpro: 'mwi.comp.MWICore',
+		},
 		'mwi/mwi-html-comp': {
 			url: './src/mwi-html-comp.msjs',
-			featpro: 'mwi.comp.html',
+			featpro: 'mwi.comp.MWIHTML',
 		},
 		/* */
 	}

@@ -14,6 +14,9 @@ modcaps=''
 @e @js{
 	if (!mid) throw new Error('MWIDocNode requires Mesgjs module management to be active');
 
+	const SCHEMA = 'schema';
+	const VOID = 'void';
+
 	const IF_NAME = 'MWIDocNode';
 	const READY_FT = IF_NAME;
 	const DOC_IF = 'MWIDocument';
@@ -88,6 +91,25 @@ modcaps=''
 		if (!p.has('type')) throw new RangeError(`${IF_NAME} requires a node type`);
 		// Add JS interface
 		Object.setPrototypeOf(d.rr, docNodeProto);
+	}
+
+	// Append doc-nodes to sub-doc
+	// (append doc-node...)
+	// (append spec='[(SLID spec)]'|[[node]...])
+	async function opAppend (d) {
+		const p = d.p;
+		if (p.at([ SCHEMA, VOID ])) return;
+		const m = d.mp, spec = m.at('spec');
+		if (!p.has('subDoc')) p.set('subDoc', new NANOS());
+		const subDoc = p.at('subDoc');
+		if (spec) {
+			const doc = p.at('document');
+			const nodes = await d.sm(doc, 'from', { list: spec }); // array
+			subDoc.push(nodes);
+		} else {
+			subDoc.push([...mp.values()].filter((n) => typeChains(n?.msjsType, NODE_IF)));
+		}
+		return d.rr;
 	}
 
 	// Return the final (string) value for a computed (m.coat) attribute
@@ -419,6 +441,7 @@ modcaps=''
 		// chain, final, once, private, etc.
 		handlers: {
 			'@init': opInit,
+			append: opAppend,
 			delAttr: opDelAttr,
 			document: (d) => d.p.at('document'),
 			getAttr: opGetAttr,

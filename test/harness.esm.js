@@ -4,12 +4,35 @@ import { transpileTree } from "mesgjs/src/transpile.esm.js";
 // Set up the Mesgjs runtime. May only be called once per process.
 // Previously transpiled modules will be loaded normally by the runtime.
 // Mesgjs source modules will be transpiled and side-loaded.
-export async function setupRuntime ({ modules } = {}) {
+export async function setupRuntime ({ modules, standard = true } = {}) {
 	await import('./runtime-loader.esm.js');
 	const { fwait, getModMeta, setModMeta } = globalThis.$c;
 	if (getModMeta()) throw new Error('setupRuntime: The Mesgjs runtime is not reconfigurable');
+	const stdMods = {
+		'mwi/mwi-registry': {
+			url: '../src/mwi-registry.msjs',
+			featpro: 'mwi.compRegOpen mwi.compRegReady',
+		},
+		'mwi/mwi-document': {
+			url: '../src/mwi-document.msjs',
+			featpro: 'MWIDocument',
+		},
+		'mwi/mwi-doc-node': {
+			url: '../src/mwi-doc-node.msjs',
+			featpro: 'MWIDocNode',
+		},
+		'mwi/mwi-html-comp': {
+			url: '../src/mwi-html-comp.msjs',
+			featpro: 'mwi.comp.MWIHTML',
+		},
+		'mwi/mwi-core-comp': {
+			url: '../src/mwi-core-comp.msjs',
+			featpro: 'mwi.comp.MWICore',
+		},
+	};
 	const modMeta = {
 		testMode: true,
+		...(standard ? stdMods : {}),
 		modules
 	};
 	const mesgjsModURLs = {};
@@ -35,6 +58,12 @@ export async function setupRuntime ({ modules } = {}) {
 
 	// Make sure any modules auto-loaded per modMeta are also ready.
 	await fwait('@loaded');
+}
+
+// Render a new MWIDocument with the specified parameters (e.g. spec)
+export async function renderHTML (params) {
+	const doc = getInstance('MWIDocument');
+	await doc('from', params);
 }
 
 // Transpile a Mesgjs source file, returning the generated JavaScript code string.

@@ -55,9 +55,17 @@ modcaps=''
 		// for use as soon as all pre-load component features are ready.
 		fready(mid, REG_OPEN_FT);
 		// Note: defer-load-component features MUST be registered by pre-load features!!!
-		const allFtInfo = [...getModMeta().at('allFeatures').namedEntries()];
-		const preloadInfo = allFtInfo.filter(([k, v]) => k.startsWith(COMP_PRE) && v.has('preload'));
-		const preloadFt = [...preloadInfo.values()].map(([k]) => k); // Array of features
+		const modMeta = getModMeta(), allFt = modMeta.at('allFeatures'), testMode = modMeta.at('testMode');
+		const preloadFt = (testMode ?
+		  () => {
+			// Test mode: deferred side-loading is common for JIT-transpilation, so treat everything as preload
+			return [...allFt.values()].filter((k) => k.startsWith(COMP_PRE));
+		  } :
+		  () => {
+			// Standard mode: use preload/defer determination from mod meta
+			const preload = [...allFt.namedEntries()].filter(([k, v]) => k.startsWith(COMP_PRE) && v.has('preload'));
+			return preload.map(([k]) => k);
+		  })();
 		fwait(preloadFt).then(() => {
 			// Registration is closed. The registry is now ready for use.
 			p.set('isReady', true);
