@@ -16,12 +16,13 @@ modcaps=''
 
 	const SCHEMA = 'schema';
 	const VOID = 'void';
+	const AUTO_DOC = 'autoDoc';
 
 	const IF_NAME = 'MWIDocNode';
 	const READY_FT = IF_NAME;
 	const DOC_IF = 'MWIDocument';
 
-	const { fready, fwait, getInstance, getInterface, getModMeta, setRO, modHasCap } = globalThis.$c;
+	const { fready, fwait, getInstance, getInterface, getModMeta, setRO, typeChains } = globalThis.$c;
 
 	function setDOMAttrs (node, attrs) {
 		for (const [name, value] of attrs.namedEntries()) {
@@ -61,6 +62,7 @@ modcaps=''
 		delAttr (name) { return this('delAttr', [ name ]); },
 		get document () { return this('document'); },
 		getAttr (name) { return this('getAttr', [ name ]); },
+		getHTML () { return this('getHTML'); },
 		hasAttr (name) { return this('hasAttr', [ name ]); },
 		hasClass (name) { return this('hasClass', [ name ]); },
 		get jsv () { return this; },
@@ -76,6 +78,7 @@ modcaps=''
 	function opInit (d) {
 		const p = d.p, m = d.mp;
 		if (typeof d.sr !== 'function' || d.st !== DOC_IF) {
+			d.sm(d, 'log');
 			const type = m.at('type', d.rt);
 			throw new Error(`Use ${DOC_IF}(createNode) to create a new ${type} node`);
 		}
@@ -95,19 +98,14 @@ modcaps=''
 
 	// Append doc-nodes to sub-doc
 	// (append doc-node...)
-	// (append spec='[(SLID spec)]'|[[node]...])
-	async function opAppend (d) {
+	function opAppend (d) {
 		const p = d.p;
 		if (p.at([ SCHEMA, VOID ])) return;
-		const m = d.mp, spec = m.at('spec');
-		if (!p.has('subDoc')) p.set('subDoc', new NANOS());
-		const subDoc = p.at('subDoc');
-		if (spec) {
-			const doc = p.at('document');
-			const nodes = await d.sm(doc, 'from', { list: spec }); // array
-			subDoc.push(nodes);
-		} else {
-			subDoc.push([...mp.values()].filter((n) => typeChains(n?.msjsType, NODE_IF)));
+		const m = d.mp;
+		const docNodes = [...m.values()].filter((n) => typeChains(n?.msjsType, IF_NAME));
+		if (docNodes.length) {
+			if (!p.has('subDoc')) p.set('subDoc', new NANOS());
+			p.at('subDoc').push(docNodes);
 		}
 		return d.rr;
 	}
@@ -184,7 +182,7 @@ modcaps=''
 		default:
 			{
 			const attrs = p.at('attrs');
-			p.remove(name);
+			attrs.delete(name);
 			}
 			break;
 		}
@@ -230,7 +228,9 @@ modcaps=''
 	function opGetHTML (d) {
 		const p = d.p, m = d.mp;
 		const hasIn = m.has('in'), html = m.at('in', []);
-		for (const node of p.at('subDoc', []).values()) {
+		const type = p.at('type');
+		const subDoc = p.at('subDoc') || new NANOS();
+		for (const node of subDoc.values()) {
 			d.sm(node, 'getHTML', { in: html });
 		}
 		if (!hasIn) return html.join('');
@@ -252,6 +252,18 @@ modcaps=''
 			d.sm(node, 'getDOM', { in: nodes });
 		}
 		return nodes;
+	}
+
+	const emptySpec = (new NANOS()).freeze();
+
+	function opGetSubSpec (d) {
+		const p = d.p, subDoc = p.at('subDoc');
+		if (!subDoc) return p.at('subSpec', emptySpec);
+		const subSpec = [];
+		for (const node of subDoc.values()) {
+			subSpec.push(d.sm(node, 'getSpec'));
+		}
+		return subSpec;
 	}
 
 	// Do we have a particular attribute value?
@@ -305,7 +317,6 @@ modcaps=''
 	function setClass (d, classStr) {
 		if (typeof classStr !== 'string') return;
 		const p = d.p, attrs = p.at('attrs'), classes = p.at('classes');
-		classStr = trim(classStr);
 
 		// Add (uniquely), remove, or toggle classes listed in the value
 		let condClear = true; // Start from empty by default
@@ -344,18 +355,19 @@ modcaps=''
 		else attrs.set('m.percl', undefined);
 	}
 
-	function opSetSpec (d) {
+	async function opSetSpec (d) {
 		const m = d.mp, spec = m.at(0);
 		// Apply attributes from doc-spec
 		for (const attr of spec.namedEntries()) d.sm(d.rr, 'setAttr', attr);
 		d.sm(d.rr, 'slotAttrs');
 		// Process sub-spec
-		d.sm(d.rr, 'setSubSpec', { spec });
+		await d.sm(d.rr, 'setSubSpec', { spec });
 		return d.rr;
 	}
 
-	// Default behavior: just save sub-spec for template-component content-slotting
-	function opSetSubSpec (d) {
+	// (setSubSpec [subspec...])
+	// (setSubSpec spec=[type attr=value... subspec...])
+	async function opSetSubSpec (d) {
 		const m = d.mp, p = d.p;
 		const subList = m.at(0), spec = m.at('spec');
 		if (subList instanceof NANOS) {
@@ -365,7 +377,14 @@ modcaps=''
 			copy.shift();
 			p.set('subSpec', copy);
 		}
-		return d.rr;
+		const schema = p.at(SCHEMA);
+		if (!schema?.at(VOID) && schema?.at(AUTO_DOC) !== false) {
+			const doc = p.at('document'), subSpec = p.at('subSpec');
+			if (subSpec?.size) {
+				const subDoc = await d.sm(doc, 'from', { list: subSpec });
+				d.sm(d.rr, 'append', subDoc);
+			}
+		}
 	}
 
 	// Set/edit the `style` attribute
@@ -449,11 +468,13 @@ modcaps=''
 			getDOM: (_d) => undefined,
 			getHTML: opGetHTML,
 			getSpec: opGetSpec,
-			getSubSpec: (d) => d.p.at('subSpec', emptyList),
+			getSubSpec: opGetSubSpec,
 			hasAttr: opHasAttr,
 			hasClass: opHasClass,
 			setAttr: opSetAttr,
 			textToHTML,
+			setSpec: opSetSpec,
+			setSubSpec: opSetSubSpec,
 			slotAttrs: opSlotAttrs,
 			type: (d) => d.p.at('type'),
 		}

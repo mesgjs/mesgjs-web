@@ -16,6 +16,7 @@ modcaps=''
 
 	const INTERFACE = 'if';
 	const SCHEMA = 'schema';
+	const AUTO_DOC = 'autoDoc';
 	const VOID = 'void';
 
 	const REG_IF = 'MWIRegistry';
@@ -40,7 +41,7 @@ modcaps=''
 	const coreConfig = {
 		[COM_TYPE]: ls([INTERFACE, COM_IF, SCHEMA, ls([VOID, true])]),
 		[FRAG_TYPE]: ls([INTERFACE, FRAG_IF]),
-		[SLOT_TYPE]: ls([INTERFACE, SLOT_IF]),
+		[SLOT_TYPE]: ls([INTERFACE, SLOT_IF, SCHEMA, ls([AUTO_DOC, false])]),
 		[TEXT_TYPE]: ls([INTERFACE, TEXT_IF, SCHEMA, ls([VOID, true])]),
 	}
 
@@ -70,8 +71,8 @@ modcaps=''
 
 		function opGetHTML (d) {
 			const m = d.mp, output = m.at('in');;
-			const text = d.sm(d.rr, 'getAttr', [ 'm.text' ]) || '';
-			const html = `<!--${comToHTML(d, text)}-->`;
+			const text = d.sm(d.rr, 'getAttr', [ 't' ]) || '';
+			const html = `<!--${escapeComment(d, text)}-->`;
 			if (output) output.push(html);
 			return html;
 		}
@@ -100,17 +101,30 @@ modcaps=''
 
 	// MWICoreSlot (slot) interface
 	// `[m.slot name=slotName? defCon...]`
+	// This is basically just a fragment with a computed sub-doc.
 	(() => {
-		// TO BE COMPLETED
-		function opGetDOM (d) {}
+		const emptyList = (new NANOS()).freeze();
 
-		function opGetHTML (d) {}
+		async function opSetSubSpec (d) {
+			const p = d.p, m = d.mp;
+			d.sm(d, 'redis'); // super-setSubSpec first to generate fall-back subSpec
+			const doc = p.at('document'), slotSrc = p.at('slotSrc'), name = m.at('name');
+			const slotAttr = slotSrc && name && slotSrc.getAttr(name), attrOK = slotAttr instanceof NANOS;
+			const slotSub = slotSrc && !attrION && d.sm(slotSrc, 'getSubSpec'), subOK = slotSub instanceof NANOS && slotSub.next;
+			const genDoc = async (list) => {
+				const nodes = await doc('from', { list, slotSrc });
+				d.p.set('subDoc', new NANOS(nodes));
+			};
+			// Generate our sub-doc nodes
+			if (attrOK) await genDoc(slotAttr); // Slot from source's list-valued named attribute
+			else if (subOK) await genDoc(slotSub); // Or slot from source's natural children
+			else await genDoc(p.at('subSpec', emptyList)); // Or fall back to our natural children
+		}
 
 		getInterface(SLOT_IF).set({
 			pristine: true, lock: true,
 			handlers: {
-				getDOM: opGetDOM,
-				getHTML: opGetHTML,
+				setSubSpec: opSetSubSpec,
 			}
 		});
 	})();
@@ -129,7 +143,7 @@ modcaps=''
 
 		function opGetHTML (d) {
 			const m = d.mp, output = m.at('in');;
-			const text = d.sm(d.rr, 'getAttr', [ 'm.text' ]) || '';
+			const text = d.sm(d.rr, 'getAttr', [ 't' ]) || '';
 			const html = d.rr.textToHTML(text);
 			if (html !== '' && output) output.push(html);
 			return html;
@@ -147,15 +161,31 @@ modcaps=''
 		});
 	})();
 
-	// Template Component Interface
+	// MWICoreTpl (template) interface
+	// (this handler is assigned to template components by the registry)
 	(() => {
-		// TO BE COMPLETED
+		function opInit (d) {
+			const p = d.p;
+			d.sm(d, 'redis'); // super-@init first
+			// This is not a registered component, so manually turn off autoDoc in the schema
+			if (!p.has(SCHEMA)) p.set(SCHEMA, new NANOS());
+			const schema = p.at(SCHEMA);
+			schema.set(AUTO_DOC, false);
+		}
+
+		async function opSetSubSpec (d) {
+			const p = d.p, doc = p.at('document'), list = p.at('tpl'), slotSrc = d.rr;
+			d.sm(d, 'redis'); // super-setSubSpec first
+			const nodes = await doc('from', { list, slotSrc });
+			p.set('subDoc', new NANOS(nodes));
+		}
+
 		getInterface(TPL_IF).set({
 			pristine: true, lock: true,
 			chain: [ BASE_IF ],
 			handlers: {
-				// toDOM:
-				// toHTML:
+				'@init': opInit,
+				setSubSpec: opSetSubSpec,
 			}
 		});
 	})();

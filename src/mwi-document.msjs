@@ -21,7 +21,7 @@ modcaps=''
 	const NODE_IF = 'MWIDocNode';
 	const NODE_READY_FT = NODE_IF;
 	const CORE_READY_FT = 'mwi.comp.MWICore'
-	const FRAG_IF = 'MWICoreFrag';
+	const FRAG_TYPE = 'm.frg';
 	const TPL_IF = 'MWICoreTpl';
 
 	const INTERFACE = 'if';
@@ -33,28 +33,44 @@ modcaps=''
 	// JS interface prototype
 	const docProto = Object.setPrototypeOf({
 		compIdStr (id) { return '_MC_' + id.toString(36); },
-		createNode (type) { return this('createNode', [type]); },
+		/* async */ createNode (type, { slotSrc } = {}) { return this('createNode', { 0: type, slotSrc }); },
 		getId () { return this('getElemId'); },
 		get jsv () { return this; },
 		registry () { return this('registry'); },
+		async root () { return await this('root'); },
 		valueOf () { return this; },
 	}, Function.prototype);
 
 	function opInit (d) {
 		const p = d.p;
-		const registry = getInstance(REGISTRY_IF);
-		const root = getInstance(FRAG_IF);
-		p.push({ registry, root });
+		const registry = getInstance(REG_IF);
+		p.set('registry', registry);
 		// Add JS interface
 		Object.setPrototypeOf(d.rr, docProto);
+		// Add document root (m.frg fragment)
+		const entry = registry.getSync(FRAG_TYPE);
+		const config = new NANOS({ type: FRAG_TYPE }, entry);
+		const ifName = entry.at('if');
+		const rootIf = getInterface(ifName);
+		const root = d.sm(rootIf, 'instance', config);
+		root.setAttr('id', 'root'); // ** for debugging **
+		p.set('root', root);
 	}
 
-	// Append doc-nodes to the document root
+	// Append to the document root, optionally creating nodes
+	// NB: Unlike node(append), document(append) is async!
 	// (append doc-node...)
-	// (append from='[(SLID spec)]'|[[node]...])
+	// (append item=text|[node]? list='[(SLID spec)]':[[node]...])
 	async function opAppend (d) {
 		const p = d.p, root = p.at('root'), m = d.mp;
-		d.sm(root, 'append', d.mp);
+		const item = m.has('item'), list = m.has('list');
+		let content = m;
+		if (item) {
+			content = [ await d.sm(d.rr, 'from', m) ];
+		} else if (list) {
+			content = await d.sm(d.rr, 'from', m);
+		}
+		d.sm(root, 'append', content);
 		return d.rr;
 	}
 
@@ -65,6 +81,7 @@ modcaps=''
 		const type = m.at(0), slotSrc = m.at('slotSrc');
 		const registry = p.at('registry');
 		const entry = await registry.get(type);
+		if (!entry) throw new TypeError(`No MWI registry entry found for component type "${type}"`);
 		const nodeIfName = entry.at(INTERFACE, TPL_IF);
 		const config = new NANOS({ type, slotSrc }, entry);
 		// Use attributed message (via interface) to get doc node instance
@@ -75,7 +92,7 @@ modcaps=''
 
 	// Return a promise for document node(s) from a doc-spec item or list
 	// (from item=text|[node]? list='[(SLID string)]'|[[node] ...]?)
-	function opFrom (d) {
+	async function opFrom (d) {
 		const m = d.mp, slotSrc = m.at('slotSrc');
 		const fromItem = async (spec) => {
 			if (typeof spec === 'string') {
@@ -84,12 +101,16 @@ modcaps=''
 				return node;
 			}
 			if (spec instanceof NANOS) {
-				const type = spec.at(0), node = await d.sm(d.rr, 'createNode', { 0: type, slotSrc });
-				d.sm(node, 'setSpec', [ spec ]);
+				const type = spec.at(0);
+				const node = await d.sm(d.rr, 'createNode', { 0: type, slotSrc });
+				await d.sm(node, 'setSpec', [ spec ]);
 				return node;
 			}
 		};
-		if (m.has('item')) return fromItem(m.at('item'));
+		const item = m.at('item');
+		if (item) {
+			return fromItem(item);
+		}
 		const rawList = m.at('list');
 		const list = (typeof rawList === 'string') ? NANOS.parseSLID(rawList) : rawList;
 		if (typeof list?.values === 'function') {
@@ -97,25 +118,25 @@ modcaps=''
 			for (const item of list.values()) {
 				items.push(fromItem(item));
 			}
-			return collect.all(items);
+			const res = await collect.all(items);
+			return res;
 		}
+		throw new TypeError(`${IF_NAME}(from) without "item" or "list"`);
 	}
 
 	// With dependencies loaded, configure *my* module interface
 	getInterface(IF_NAME).set({
-		pristine: true, // Anti-tamper: no configuration before
-		lock: true,		// ... or after
-		final: true,
+		pristine: true, lock: true, final: true,
 		// singleton: true,
 		// abstract, chain, once, private, etc.
 		handlers: {
 			'@init': opInit,
 			'@jsv': (d) => d.rr,
 			append: opAppend,
-			createNode: opCreateNode,
-			from: opFrom,
-			getDOM: d => d.sm(d.p.at('root'), 'getDOM'),
-			getHTML: d => d.sm(d.p.at('root'), 'getHTML'),
+			/* async */ createNode: opCreateNode,
+			/* async */ from: opFrom,
+			getDOM: (d) => d.sm(d.p.at('root'), 'getDOM'),
+			getHTML: (d) => d.sm(d.p.at('root'), 'getHTML'),
 			nextId: (d) => d.p.at('registry')('nextId'),
 			registry: (d) => d.p.at('registry'),
 			root: (d) => d.p.at('root'),

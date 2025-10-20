@@ -8,6 +8,7 @@ export async function setupRuntime ({ modules, standard = true } = {}) {
 	await import('./runtime-loader.esm.js');
 	const { fwait, getModMeta, setModMeta } = globalThis.$c;
 	globalThis.ls = (pairs) => (new NANOS()).fromPairs(pairs);
+	globalThis.ps = (str) => NANOS.parseSLID(str);
 	if (getModMeta()) throw new Error('setupRuntime: The Mesgjs runtime is not reconfigurable');
 	const stdMods = {
 		'mwi/mwi-registry': {
@@ -61,11 +62,21 @@ export async function setupRuntime ({ modules, standard = true } = {}) {
 	await fwait('@loaded');
 }
 
-// Render a new MWIDocument with the specified parameters (e.g. spec)
-export async function renderHTML (params) {
+// Render a new MWIDocument with the specified content (doc-nodes, spec-item, or spec-list)
+export async function renderHTML (content) {
+	const { fwait, getInstance } = globalThis.$c;
 	const doc = getInstance('MWIDocument');
-	await doc('append', params);
+	const nodes = await doc('from', content);
+	await doc('append', nodes);
 	return doc('getHTML');
+}
+
+// Use JSDOM to simulate browser-like environment
+let jsdom;
+export async function simulateBrowser () {
+	if (!jsdom) jsdom = await import('npm:jsdom');
+	globalThis.window = (new jsdom.JSDOM('')).window;
+	globalThis.document = window.document;
 }
 
 // Transpile a Mesgjs source file, returning the generated JavaScript code string.

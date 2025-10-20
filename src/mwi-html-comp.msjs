@@ -179,15 +179,6 @@ modcaps=''
 			if (!hasIn) return html.join('');
 		}
 
-		function opSetSubSpec (d) {
-			d.sm(d, 'redis');
-			const p = d.p, slotSrc = p.at('slotSrc');
-			const doc = d.sm(d.rr, 'document');
-			// **** TO DO: Need to pass slotSrc through the node generation pipeline ****
-			d.sm(doc, 'from', { list: p.at('subSpec'), slotSrc }).then((nodes) => p.set('subDoc', nodes));
-			return d.rr;
-		}
-
 		getInterface(BASE_IF).set({
 			pristine: true, // Anti-tamper: no configuration before
 			lock: true,		// ... or after
@@ -197,7 +188,6 @@ modcaps=''
 			handlers: {
 				getDOM: opGetDOM,
 				getHTML: opGetHTML,
-				setSubSpec: opSetSubSpec,
 			}
 		});
 	})();
