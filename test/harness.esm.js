@@ -72,6 +72,7 @@ export async function renderHTML (content) {
 }
 
 // Use JSDOM to simulate browser-like environment
+// Note: this will rebind window and document on each call!
 let jsdom;
 export async function simulateBrowser () {
 	if (!jsdom) jsdom = await import('npm:jsdom');

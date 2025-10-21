@@ -4,7 +4,7 @@ import {
 	assertStrictEquals,
 } from "https://deno.land/std@0.152.0/testing/asserts.ts";
 
-import { setupRuntime } from './harness.esm.js';
+import { setupRuntime } from '../harness.esm.js';
 
 const REG_OPEN_FT = 'mwi.compRegOpen';
 const REG_READY_FT = 'mwi.compRegReady';

@@ -34,6 +34,7 @@ modcaps=''
 	const docProto = Object.setPrototypeOf({
 		compIdStr (id) { return '_MC_' + id.toString(36); },
 		/* async */ createNode (type, { slotSrc } = {}) { return this('createNode', { 0: type, slotSrc }); },
+		createNodeSync (type, { slotSrc } = {}) { return this('createNodeSync', { 0: type, slotSrc }); },
 		getId () { return this('getElemId'); },
 		get jsv () { return this; },
 		registry () { return this('registry'); },
@@ -53,7 +54,6 @@ modcaps=''
 		const ifName = entry.at('if');
 		const rootIf = getInterface(ifName);
 		const root = d.sm(rootIf, 'instance', config);
-		root.setAttr('id', 'root'); // ** for debugging **
 		p.set('root', root);
 	}
 
@@ -76,18 +76,32 @@ modcaps=''
 
 	// Create a new document node
 	// (createNode type slotSrc=node?)
-	async function opCreateNode (d) {
+	function createNodeCommon (d, entry) {
 		const p = d.p, m = d.mp;
 		const type = m.at(0), slotSrc = m.at('slotSrc');
-		const registry = p.at('registry');
-		const entry = await registry.get(type);
-		if (!entry) throw new TypeError(`No MWI registry entry found for component type "${type}"`);
 		const nodeIfName = entry.at(INTERFACE, TPL_IF);
 		const config = new NANOS({ type, slotSrc }, entry);
 		// Use attributed message (via interface) to get doc node instance
 		const nodeIf = getInterface(nodeIfName);
 		const node = d.sm(nodeIf, 'instance', config);
 		return node;
+	}
+	async function opCreateNode (d) {
+		const p = d.p, m = d.mp;
+		const type = m.at(0);
+		const registry = p.at('registry');
+		const entry = await registry.get(type);
+		if (!entry) throw new TypeError(`No MWI registry entry found for component type "${type}"`);
+		return createNodeCommon(d, entry);
+	}
+
+	function opCreateNodeSync (d) {
+		const p = d.p, m = d.mp;
+		const type = m.at(0);
+		const registry = p.at('registry');
+		const entry = registry.getSync(type);
+		if (!entry) throw new TypeError(`No MWI registry entry found for component type "${type}"`);
+		return createNodeCommon(d, entry);
 	}
 
 	// Return a promise for document node(s) from a doc-spec item or list
@@ -134,6 +148,7 @@ modcaps=''
 			'@jsv': (d) => d.rr,
 			append: opAppend,
 			/* async */ createNode: opCreateNode,
+			createNodeSync: opCreateNodeSync,
 			/* async */ from: opFrom,
 			getDOM: (d) => d.sm(d.p.at('root'), 'getDOM'),
 			getHTML: (d) => d.sm(d.p.at('root'), 'getHTML'),

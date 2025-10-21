@@ -1,5 +1,8 @@
 import { setupRuntime } from './harness.esm.js';
 
+// Note: this REPL setup file is currently unnecessary, as setupRuntime
+// now includes standard MWI modules by default
+
 await setupRuntime({
 	modules: {
 		'mwi/mwi-registry': {

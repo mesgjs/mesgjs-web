@@ -27,7 +27,7 @@ modcaps=''
 
 	const DOCTYPE_IF = BASE_IF + 'DocType';
 	const SCRIPT_IF = BASE_IF + 'Script';
-	const TITLE_IF = BASE_IF + 'Text';
+	const TITLE_IF = BASE_IF + 'Title';
 
 	const { fready, fwait, getInstance, getInterface, getModMeta, setRO, modHasCap } = globalThis.$c;
 
@@ -168,7 +168,7 @@ modcaps=''
 			const m = d.mp, hasIn = m.has('in'), html = m.at('in', []);
 			// Opening (or void) tag with optional (HTML) attributes
 			html.push(`<${type}${d.rr('getAttrHTML')}>`);
-			if (!p.at(VOID)) {
+			if (!p.at([SCHEMA, VOID])) {
 				// Collect inner HTML
 				for (const node of p.at('subDoc', []).values()) {
 					d.sm(node, 'getHTML', { in: html });
