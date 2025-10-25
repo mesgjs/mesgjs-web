@@ -24,6 +24,7 @@ modcaps=''
 
 	const { fready, fwait, getInstance, getInterface, getModMeta, setRO, typeChains } = globalThis.$c;
 
+	// Set DOM node attributes from HTML subset of doc-node attributes
 	function setDOMAttrs (node, attrs) {
 		for (const [name, value] of attrs.namedEntries()) {
 			// Only HTML attributes
@@ -31,6 +32,7 @@ modcaps=''
 		}
 	}
 
+	// HTML-escape text, with options for different contexts
 	function textToHTML (str, { lt = true, amp = true, gt = true, sq = false, dq = false } = {}) {
 		if (typeof str === 'function') {
 			// Hack to double as message handler
@@ -63,12 +65,19 @@ modcaps=''
 		delAttr (name) { return this('delAttr', [ name ]); },
 		get document () { return this('document'); },
 		getAttr (name) { return this('getAttr', [ name ]); },
-		getHTML () { return this('getHTML'); },
+		/* async */ getHTML () { return this('getHTML'); },
+		getSpec () { return this('getSpec'); },
+		getSubDoc () { return this('getSubDoc'); },
+		getSubSpec () { return this('getSubSpec'); },
 		hasAttr (name) { return this('hasAttr', [ name ]); },
 		hasClass (name) { return this('hasClass', [ name ]); },
 		get jsv () { return this; },
 		setAttr (name, value) { return this('setAttr', [ name, value ]); },
 		setDOMAttrs,
+		/* async */ setSpec (spec) { return this('setSpec', [ spec ]); },
+		/* async */ setSubSpec (params) { return this('setSubSpec', params); },
+		get slotSrc () { return this('slotSrc'); }, // (intended for testing)
+		get subSlotSrc () { return this('subSlotSrc'); },
 		textToHTML,
 		get type () { return this('type'); },
 		valueOf () { return this; },
@@ -79,22 +88,46 @@ modcaps=''
 	function opInit (d) {
 		const p = d.p, m = d.mp;
 		if (typeof d.sr !== 'function' || d.st !== DOC_IF) {
-			d.sm(d, 'log');
 			const type = m.at('type', d.rt);
 			throw new Error(`Use ${DOC_IF}(createNode) to create a new ${type} node`);
 		}
-		p.push(m, {
+		p.push({
+			slotSrc: undefined, // (passed from (createNode), if active)
+			}, m, {
 			document: d.sr, // document that created this node
 			attrs: new NANOS(),
 			permClasses: new Set(),
 			classes: new Set(),
-			// slotSrc (passed from (createNode), if active)
-			// subDoc
-			// subSpec
+			subDoc: new NANOS(), // "live" doc-node children
+			subSpec: undefined, // sub-content template (a "live" sub-doc overrides)
 		});
-		if (!p.has('type')) throw new RangeError(`${IF_NAME} requires a node type`);
+		if (!p.has('type')) throw new TypeError(`${IF_NAME} requires a node type`);
 		// Add JS interface
 		Object.setPrototypeOf(d.rr, docNodeProto);
+	}
+
+	// m.coat (computed) attribute slotting
+	function applyCoat (d, value) {
+		if (!(value instanceof NANOS)) return;
+		const p = d.p, attrs = p.at('attrs'), slotSrc = p.at('slotSrc');
+		attrs.set('m.coat', value);
+		if (slotSrc) for (const [target, spec] of value.namedEntries()) {
+			const value = computeAttr(d, spec);
+			d.rr('setAttr', [ target, value ]);
+		}
+	}
+
+	// m.slat attribute slotting
+	// [... m.slat=[target=[source? else=default?]...] ...]
+	function applySlat (d, value) {
+		if (!(value instanceof NANOS)) return;
+		const p = d.p, attrs = p.at('attrs'), slotSrc = p.at('slotSrc');
+		attrs.set('m.slat', value);
+		if (slotSrc) for (const [target, spec] of value.namedEntries()) {
+			const source = spec.at(0, target);
+			const value = slotSrc('getAttr', [ source ]) ?? spec.at('else');
+			d.rr('setAttr', [ target, value ]);
+		}
 	}
 
 	// Append doc-nodes to sub-doc
@@ -102,17 +135,17 @@ modcaps=''
 	function opAppend (d) {
 		const p = d.p;
 		if (p.at([ SCHEMA, VOID ])) return;
+		p.set('subSpec', undefined); // officially active; sub-doc is source of sub-spec truth
 		const m = d.mp;
 		const docNodes = [...m.values()].filter((n) => typeof n === 'string' || typeChains(n?.msjsType, IF_NAME));
 		if (docNodes.length) {
 			const doc = p.at('document');
-			if (!p.has('subDoc')) p.set('subDoc', new NANOS());
-			p.at('subDoc').push(docNodes.map(orig => {
+			p.at('subDoc').push([...docNodes.map(orig => {
 				if (typeof orig !== 'string') return orig;
 				const node = doc.createNodeSync('m.t');
 				node.setAttr('t', orig);
 				return node;
-			}));
+			})]);
 		}
 		return d.rr;
 	}
@@ -127,7 +160,7 @@ modcaps=''
 			case '.qm': return '?';
 			case '.vb': return '|';
 			}
-			if (slotSrc) return d.sm(slotSrc, 'getAttr', [ name ]);
+			if (slotSrc) return slotSrc('getAttr', [ name ]);
 		};
 		const isUns = (v) => v === undefined; // unset
 		const isUOE = (v) => v === undefined || v === ""; // unset or empty
@@ -183,8 +216,7 @@ modcaps=''
 			setClass(d, '+');
 			break;
 		case 'style':
-			p.at('styles').clear();
-			setStyle(d, '+');
+			setStyle(d, '==');
 			break;
 		default:
 			{
@@ -203,7 +235,7 @@ modcaps=''
 		case 'm.id': // Mandatory id value
 			if (!attrs.has('id')) {
 				// There's no user-assigned id, so auto-assign one
-				const doc = p.at('document'), mid = d.sm(doc, 'nextId');
+				const doc = p.at('document'), mid = doc('nextId');
 				attrs.set('id', mid);
 				return mid;
 			}
@@ -226,19 +258,18 @@ modcaps=''
 	}
 
 	// Get DOM node(s)
-	function opGetDOM (d) {
+	/* async */ function getDOM (d) {
 		// Typically equivalent to `(getSubDOM)`
-		return d.sm(d, 'redis', { op: 'getSubDOM' });
+		return d.rr('getSubDOM');
 	}
 
 	// Typically just recursively gather HTML from sub-doc-nodes
-	function opGetHTML (d) {
+	async function opGetHTML (d) {
 		const p = d.p, m = d.mp;
 		const hasIn = m.has('in'), html = m.at('in', []);
-		const type = p.at('type');
-		const subDoc = p.at('subDoc') || new NANOS();
+		const subDoc = p.at('subDoc');
 		for (const node of subDoc.values()) {
-			d.sm(node, 'getHTML', { in: html });
+			await node('getHTML', { in: html });
 		}
 		if (!hasIn) return html.join('');
 	}
@@ -247,30 +278,29 @@ modcaps=''
 	function opGetSpec (d) {
 		const p = d.p, spec = new NANOS(p.at('type'));
 		spec.fromEntries(p.at('attrs').namedEntries());
-		spec.push(d.sm(d.rr, 'getSubSpec'));
+		spec.push(d.rr('getSubSpec'));
 		return spec;
 	}
 
 	// Get sub-doc DOM nodes
-	function opGetSubDOM (d) {
-		const p = d.p, m = d.mp;
-		const nodes = m.at('in', []);
-		for (const node of p.at('subDoc', []).values()) {
-			d.sm(node, 'getDOM', { in: nodes });
+	async function opGetSubDOM (d) {
+		const p = d.p, nodes = [];
+		for (const node of p.at('subDoc').values()) {
+			const subNodes = await node('getDOM');
+			nodes.push(...subNodes);
 		}
 		return nodes;
 	}
 
-	const emptySpec = (new NANOS()).freeze();
-
 	function opGetSubSpec (d) {
-		const p = d.p, subDoc = p.at('subDoc');
-		if (!subDoc) return p.at('subSpec', emptySpec);
-		const subSpec = [];
+		const p = d.p, curSpec = p.at('subSpec');
+		// If we've retained a sub-spec, return it. Otherwise, construct it from the sub-doc.
+		if (curSpec) return curSpec;
+		const subDoc = p.at('subDoc'), newSpec = new NANOS();
 		for (const node of subDoc.values()) {
-			subSpec.push(d.sm(node, 'getSpec'));
+			newSpec.push([node('getSpec')]);
 		}
-		return subSpec;
+		return newSpec;
 	}
 
 	// Do we have a particular attribute value?
@@ -295,9 +325,15 @@ modcaps=''
 		const p = d.p, m = d.mp;
 		const name = m.at(0), value = m.at(1);
 		switch (name) {
+		case 'm.coat':
+			applyCoat(d, value);
+			break;
 		case 'm.percl':
 			setPermClass(d, value);
 			setClass(d, '+');
+			break;
+		case 'm.slat':
+			applySlat(d, value);
 			break;
 		case 'class':
 			setClass(d, value);
@@ -336,7 +372,7 @@ modcaps=''
 				classes.clear();
 			}
 			if (cls) {
-				if (mod === '!' || (mod === '~' && this.hasClass(cls))) classes.delete(cls);
+				if (mod === '!' || (mod === '~' && classes.has(cls))) classes.delete(cls);
 				else classes.add(cls);
 			}
 		}
@@ -362,20 +398,21 @@ modcaps=''
 		else attrs.set('m.percl', undefined);
 	}
 
+	// (setSpec [spec])
 	async function opSetSpec (d) {
-		const m = d.mp, spec = m.at(0);
+		const p = d.p, m = d.mp, spec = m.at(0);
 		// Apply attributes from doc-spec
-		for (const attr of spec.namedEntries()) d.sm(d.rr, 'setAttr', attr);
-		d.sm(d.rr, 'slotAttrs');
+		for (const attr of spec.namedEntries()) d.rr('setAttr', attr);
 		// Process sub-spec
-		await d.sm(d.rr, 'setSubSpec', { spec });
+		await d.rr('setSubSpec', { spec });
 		return d.rr;
 	}
 
-	// (setSubSpec [subspec...])
-	// (setSubSpec spec=[type attr=value... subspec...])
+	// (setSubSpec [subspec...]) (a single, list-valued, positional parameter)
+	// (setSubSpec spec=[type attr=value... subspec...]) (a single, list-valued parameter named spec)
 	async function opSetSubSpec (d) {
-		const m = d.mp, p = d.p;
+		const m = d.mp, p = d.p, schema = p.at(SCHEMA);
+		if (schema?.at(VOID)) return;
 		const subList = m.at(0), spec = m.at('spec');
 		if (subList instanceof NANOS) {
 			p.set('subSpec', subList);
@@ -384,13 +421,16 @@ modcaps=''
 			copy.shift();
 			p.set('subSpec', copy);
 		}
-		const schema = p.at(SCHEMA);
-		if (!schema?.at(VOID) && schema?.at(AUTO_DOC) !== false) {
+		if (schema?.at(AUTO_DOC) !== false) {
 			const doc = p.at('document'), subSpec = p.at('subSpec');
+			p.at('subDoc').clear();
 			if (subSpec?.size) {
-				const subDoc = await d.sm(doc, 'from', { list: subSpec });
-				d.sm(d.rr, 'append', subDoc);
+				const slotSrc = d.rr('subSlotSrc');
+				const subDoc = await doc('from', { list: subSpec, slotSrc });
+				d.rr('append', subDoc);
 			}
+			// For this component, the sub-doc will be the source of sub-spec truth
+			p.set('subSpec', undefined);
 		}
 	}
 
@@ -402,7 +442,6 @@ modcaps=''
 	function setStyle (d, styleStr) {
 		if (typeof styleStr !== 'string') return;
 		const p = d.p, attrs = p.get('attrs'), styles = new Map();
-		styleStr = trim(styleStr);
 
 		// Start with current styles, in case updating
 		const current = attrs.get('style', '');
@@ -433,24 +472,6 @@ modcaps=''
 		}
 	}
 
-	function opSlotAttrs (d) {
-		const p = d.p, slotSrc = p.at('slotSrc');
-		if (!slotSrc) return d.rr;
-		const attrs = p.get('attrs');
-		// m.slat attribute slotting
-		for (const [target, spec] of attrs.get('m.slat', [])) {
-			const source = spec.at(0, target);
-			const value = d.sm(slotSrc, 'getAttr', [ source ]) ?? spec.at('else');
-			d.sm(d.rr, 'setAttr', [ target, value ]);
-		}
-		// m.coat (computed) attribute slotting
-		for (const [target, spec] of attrs.get('m.coat', [])) {
-			const value = computeAttr(d, spec);
-			d.sm(d.rr, 'setAttr', [ target, value ]);
-		}
-		return d.rr;
-	}
-
 	// Iterate over style-string [name, value, token] parts
 	function* splitStyles (styleStr) {
 		for (const [, token, name, value] of styleStr.matchAll(/([+]|={1,2})|([-_a-z][-_a-z0-9]*)\s*:\s*((?:'(?:\\'|[^'])*'|"(?:\\"|[^"])*"|[^;])*?)\s*(?:;|$)/gi)) yield [name, value, token];
@@ -460,9 +481,7 @@ modcaps=''
 
 	// With dependencies loaded, configure *my* module interface
 	getInterface(IF_NAME).set({
-		pristine: true, // Anti-tamper: no configuration before
-		lock: true,		// ... or after
-		abstract: true,
+		pristine: true, lock: true, abstract: true,
 		// singleton: true,
 		// chain, final, once, private, etc.
 		handlers: {
@@ -472,17 +491,20 @@ modcaps=''
 			document: (d) => d.p.at('document'),
 			getAttr: opGetAttr,
 			getAttrHTML: opGetAttrHTML,
-			getDOM: (_d) => undefined,
-			getHTML: opGetHTML,
+			/* async */ getDOM: (_d) => undefined,
+			/* async */ getHTML: opGetHTML,
 			getSpec: opGetSpec,
+			getSubDoc: (d) => d.p.at('subDoc'),
 			getSubSpec: opGetSubSpec,
 			hasAttr: opHasAttr,
 			hasClass: opHasClass,
 			setAttr: opSetAttr,
+			slotSrc: (d) => d.p.at('slotSrc'), // (intended for testing)
+			// typically, this doc-node is the new sub-doc slot-source
+			subSlotSrc: (d) => d.rr,
 			textToHTML,
-			setSpec: opSetSpec,
-			setSubSpec: opSetSubSpec,
-			slotAttrs: opSlotAttrs,
+			/* async */ setSpec: opSetSpec,
+			/* async */ setSubSpec: opSetSubSpec,
 			type: (d) => d.p.at('type'),
 		}
 	});

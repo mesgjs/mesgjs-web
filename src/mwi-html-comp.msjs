@@ -152,18 +152,18 @@ modcaps=''
 
 	// MWIHTML (base) interface (standard `h.` HTML tags)
 	(() => {
-		function opGetDOM (d) {
+		async function opGetDOM (d) {
 			if (typeof document !== 'object' || typeof document.createElement !== 'function') return [];
 			const p = d.p, type = p.at('type').replace(/^h\./, '');
 			const node = document.createElement(type);
 			d.rr.setDOMAttrs(node, p.at('attrs'));
-			const children = d.sm(d.rr, 'getSubDOM');
+			const children = d.rr('getSubDOM');
 			if (children.length) node.append(...children);
 			return [ node ];
 		}
 
 		// Return HTML for standard (or void) HTML tags
-		function opGetHTML (d) {
+		async function opGetHTML (d) {
 			const p = d.p, type = p.at('type').replace(/^h\./, '');
 			const m = d.mp, hasIn = m.has('in'), html = m.at('in', []);
 			// Opening (or void) tag with optional (HTML) attributes
@@ -171,7 +171,7 @@ modcaps=''
 			if (!p.at([SCHEMA, VOID])) {
 				// Collect inner HTML
 				for (const node of p.at('subDoc', []).values()) {
-					d.sm(node, 'getHTML', { in: html });
+					await node('getHTML', { in: html });
 				}
 				// Closing tag
 				html.push(`</${type}>`);
@@ -186,8 +186,9 @@ modcaps=''
 			// abstract, final, once, private, etc.
 			chain: [ SUPER_IF ],
 			handlers: {
-				getDOM: opGetDOM,
-				getHTML: opGetHTML,
+				/* async */ getDOM: opGetDOM,
+				/* async */ getHTML: opGetHTML,
+				subSlotSrc: (d) => d.p.at('slotSrc'), // HTML nodes are pass-through
 			}
 		});
 	})();
@@ -195,7 +196,7 @@ modcaps=''
 	// MWIHTMLDocType (doctype) interface
 	// `[h.doctype]`
 	(() => {
-		function opGetHTML (d) {
+		/* async */ function opGetHTML (d) {
 			const m = d.mp, output = m.at('in');;
 			const html = `<!DOCTYPE html>`; // Fixed type for now
 			if (output) output.push(html);
@@ -206,9 +207,9 @@ modcaps=''
 			pristine: true, lock: true,
 			chain: [ BASE_IF ],
 			handlers: {
-				getDOM: (_d) => [],
-				getHTML: opGetHTML,
-				getSubSpec: (_d) => [],
+				/* async */ getDOM: (_d) => [],
+				/* async */ getHTML: opGetHTML,
+				getSubSpec: (_d) => new NANOS(),
 				setSubSpec: (_d) => {},
 			}
 		});
@@ -218,11 +219,11 @@ modcaps=''
 	// `[h.script m.text=script?]`
 	// `[h.style m.text=style?]`
 	(() => {
-		function opGetDOM (d) {
+		/* async */ function opGetDOM (d) {
 			const p = d.p, type = p.at('type').replace(/^h\./, '');
 			if (typeof document === 'object' && typeof document.createNode === 'function') {
-				const text = d.sm(d.rr, 'getAttr', [ 'm.text' ]) || '';
-				const node = document.createNode('type');
+				const text = d.rr('getAttr', [ 'm.text' ]) || '';
+				const node = document.createElement(type);
 				d.rr.setDOMAttrs(node, p.at('attrs'));
 				if (text !== '') node.innerHTML = text;
 				return [ node ];
@@ -230,14 +231,23 @@ modcaps=''
 			return [];
 		}
 
-		function opGetHTML (d) {
+		/* async */ function opGetHTML (d) {
 			const p = d.p, type = p.at('type').replace(/^h\./, '');
 			const m = d.mp, output = m.at('in');;
-			const raw = d.sm(d.rr, 'getAttr', [ 'm.text' ]) || '';
+			const raw = d.rr('getAttr', [ 'm.text' ]) || '';
+			let sanzd = '';
 			// Match an embedded closing tag with pathological generosity for safety
-			const re = new RegExp(`<\\s*/\\s*${type}.*$`, 'is');
-			const sanzd = raw.replace(re, ''); // Sanitize e.g. </script>... within content
-			const html = `<${type}${d.sm(d.rr, 'getAttrHTML')}>${sanzd}</${type}>`;
+			switch (type) {
+			case 'script':
+				// escape </script> as \x3c/script> (based on JS string syntax)
+				sanzd = raw.replace(/<(?=\s*\/\s*script)/g, '\\x3c');
+				break;
+			case 'style':
+				// escape </style> as \3c /style> (based on CSS string syntax)
+				sanzd = raw.replace(/<(?=\s*\/\s*style)/g, '\\3c ');
+				break;
+			}
+			const html = `<${type}${d.rr('getAttrHTML')}>${sanzd}</${type}>`;
 			if (output) output.push(html);
 			return html;
 		}
@@ -246,9 +256,9 @@ modcaps=''
 			pristine: true, lock: true,
 			chain: [ BASE_IF ],
 			handlers: {
-				getDOM: opGetDOM,
-				getHTML: opGetHTML,
-				getSubSpec: (_d) => [],
+				/* async */ getDOM: opGetDOM,
+				/* async */ getHTML: opGetHTML,
+				getSubSpec: (_d) => new NANOS(),
 				setSubSpec: (_d) => {},
 			}
 		});
@@ -257,9 +267,9 @@ modcaps=''
 	// MWIHTMLTitle (title) interface
 	// `[h.title m.text=title?]`
 	(() => {
-		function opGetDOM (d) {
+		/* async */ function opGetDOM (d) {
 			if (typeof document === 'object' && typeof document.createNode === 'function') {
-				const text = d.sm(d.rr, 'getAttr', [ 'm.text' ]) || '';
+				const text = d.rr('getAttr', [ 'm.text' ]) || '';
 				const node = document.createNode('title');
 				node.textContent = text;
 				return [ node ];
@@ -267,10 +277,10 @@ modcaps=''
 			return [];
 		}
 
-		function opGetHTML (d) {
+		/* async */ function opGetHTML (d) {
 			const m = d.mp, output = m.at('in');;
-			const text = d.sm(d.rr, 'getAttr', [ 'm.text' ]) || '';
-			const html = `<title${d.sm(d.rr, 'getAttrHTML')}>${d.rr.textToHTML(text)}</title>`;
+			const text = d.rr('getAttr', [ 'm.text' ]) || '';
+			const html = `<title${d.rr('getAttrHTML')}>${d.rr.textToHTML(text)}</title>`;
 			if (output) output.push(html);
 			return html;
 		}
@@ -279,9 +289,9 @@ modcaps=''
 			pristine: true, lock: true,
 			chain: [ BASE_IF ],
 			handlers: {
-				getDOM: opGetDOM,
-				getHTML: opGetHTML,
-				getSubSpec: (_d) => [],
+				/* async */ getDOM: opGetDOM,
+				/* async */ getHTML: opGetHTML,
+				getSubSpec: (_d) => new NANOS(),
 				setSubSpec: (_d) => {},
 			}
 		});

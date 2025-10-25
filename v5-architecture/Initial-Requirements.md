@@ -5,12 +5,18 @@
 - This is a SSR/CSR hybrid rendering library for the Mesgjs language.
 - It supports static SSR rendering, SSR with client-side hydration, and pure CSR rendering.
 - The system is built on the following core interfaces:
-  - `MWIVendor` - a vendoring interface for providing access to external resources
   - `MWIRegistry` - a singleton registry for components and their associated interfaces and scoped CSS
   - `MWIDocument` - a resource coordinator for a single document
   - `MWIDocNode` - the base interface for document nodes
-  - `MWICore` - MWI core components (e.g. `m.slot`)
-  - `MWIHTMLCore` - MWI HTML core components (e.g. `h.div`, `h.span`, etc.)
+  - `MWICore` - Prefix for MWI core components
+    - `MWICoreText` / `m.t` (text node)
+	- `MWICoreCom` / `m.com` (comment node)
+	- `MWICoreFrag` / `m.frg` (fragment node)
+	- `MWICoreSlot` / `m.slot` (content slotting node/component)
+  - `MWIHTML` - Prefix and interface for MWI HTML core components (e.g. `h.div`, `h.span`, etc.)
+    - `MWIHTMLDocType` for `h.doctype`
+	- `MWIHTMLScript` for `h.script` and `h.style`
+	- `MWIHTMLTitle` for `h.title`
   - `MWIMUM` - the "Mount/Unmount Monitor" handles mounting and unmounting of components
     - This also triggers the initial client-side hydration of server-rendered content as needed
   - Various component handler (Mesgjs) interfaces
@@ -195,7 +201,7 @@ MWIDocNode represents content in the document tree.
 
 Template content-slotting allows portions of default template content to be replaced with content from the attributes or natural children of the invoking node ("slot source").
 
-- Content slotting uses a custom `m.slot` *component*: `[m.slot name=slotName? default content?]`
+- Content slotting uses a custom `m.slot` *component*: `[m.slot name=slotName? default-content?]`
   - For an "unnamed" slot (`name` attribute is absent or empty):
     - If the slot source has natural children, they are rendered
     - Otherwise, if the `m.slot` node has natural children, they are rendered
@@ -256,12 +262,13 @@ Template computed-attributes provide a mechanism for rudimentary assembly of str
 
 Void HTML Components
 - Slot the current doc-node against the slot-source, if provided
-- No children; discard sub-spec, if any
+- No children/sub-doc; discard sub-spec, if any
 
 Container HTML Components
 - Slot the current doc-node against the slot-source, if provided
 - Add the top level of the sub-spec as doc-node children
   - Pass the current slot-source, if provided, to the children
+  - Slot-wise, HTML components are "pass-through", not slot sources
 
 Template (Non-HTML) Components
 - Slot the current doc-node against the slot-source, if provided
@@ -276,23 +283,20 @@ Template (Non-HTML) Components
 These represent standard HTML tag and non-tag elements.
 
 - `[h.br]`, `[h.div]`, etc. - corresponding to standard, tagged HTML nodes (these will all be "generator" components)
-- `[h.doctype type=text]`
-- `[h.title title=text]`
-- `[h.script m.body=content? children...]`
-- `[h.style m.body=CSS? children...]`
-- `[h.Com text=text? children...]` - a comment node (generator)
-  - Renders its `text` attribute or string-valued natural children as `<!--content-->`
-    - Any occurences of `&` or `-->` in the content shall be encoded `&amp;` or `--&gt;`, respectively.
-- `[h.Frag children...]` - a document fragment (generator)
-  - Renders its content, if any
-- `[h.Text text=text children...]` - a text node (generator)
-  - Renders its `text` attribute or string-valued natural children as escaped text
+- `[h.doctype]`
+- `[h.title m.text=text]`
+- `[h.script m.text=content?]`
+- `[h.style m.text=CSS?]`
 
 ### `m.` Component Collection
 
 These represent MWI-supplied special-purpose core components.
 
-- `[m.slot name=slotName default content]` - handles content slotting
+- `[m.t t=text]` - a text node (generator)
+- `[m.com t=text?]` - a comment node (generator)
+- `[m.frag children...]` - a document fragment (generator)
+  - Renders its content, if any
+- `[m.slot name=slotName default-content]` - handles content slotting
   - If the component's slot-source has a list-valued attribute `slotName`, it's value is used as the slot content. Otherwise, the default content is used.
   - If the `name=slotName` attribute is absent, the slot-source's natural children are used if there are any. Otherwise, the default content is used.
   - By convention, content slot names should begin with `cs.` to indicate that they are being used for content slotting.
@@ -351,12 +355,7 @@ These represent MWI-supplied special-purpose core components.
 ## Sample Page Description
 
 ```
-[H.frag
-    [c1 [c2]]
-    [c3 [c4]]
-]
-c1:
-[H.frag
+[m.frag
     [h.h1 header]
     [h.div [h.span class='something' 'span text']]
 ]

@@ -58,24 +58,25 @@ modcaps=''
 	}
 
 	// Append to the document root, optionally creating nodes
-	// NB: Unlike node(append), document(append) is async!
+	// Note: Unlike node(append), document(append) is async!
 	// (append doc-node...)
-	// (append item=text|[node]? list='[(SLID spec)]':[[node]...])
+	// (append item=text|[node]? list='[(SLID spec)]':[[node]...] slotSrc=source?)
 	async function opAppend (d) {
 		const p = d.p, root = p.at('root'), m = d.mp;
 		const item = m.has('item'), list = m.has('list');
 		let content = m;
 		if (item) {
-			content = [ await d.sm(d.rr, 'from', m) ];
+			content = [ await d.rr('from', m) ];
 		} else if (list) {
-			content = await d.sm(d.rr, 'from', m);
+			content = await d.rr('from', m);
 		}
-		d.sm(root, 'append', content);
+		root('append', content);
 		return d.rr;
 	}
 
 	// Create a new document node
-	// (createNode type slotSrc=node?)
+	// (createNode type slotSrc=node?) (async; will trigger load and wait for deferred components)
+	// (createNodeSync type slotSrc=node?) (fails if deferred)
 	function createNodeCommon (d, entry) {
 		const p = d.p, m = d.mp;
 		const type = m.at(0), slotSrc = m.at('slotSrc');
@@ -86,10 +87,10 @@ modcaps=''
 		const node = d.sm(nodeIf, 'instance', config);
 		return node;
 	}
+
 	async function opCreateNode (d) {
 		const p = d.p, m = d.mp;
-		const type = m.at(0);
-		const registry = p.at('registry');
+		const registry = p.at('registry'), type = m.at(0);
 		const entry = await registry.get(type);
 		if (!entry) throw new TypeError(`No MWI registry entry found for component type "${type}"`);
 		return createNodeCommon(d, entry);
@@ -97,27 +98,26 @@ modcaps=''
 
 	function opCreateNodeSync (d) {
 		const p = d.p, m = d.mp;
-		const type = m.at(0);
-		const registry = p.at('registry');
+		const registry = p.at('registry'), type = m.at(0);
 		const entry = registry.getSync(type);
 		if (!entry) throw new TypeError(`No MWI registry entry found for component type "${type}"`);
 		return createNodeCommon(d, entry);
 	}
 
 	// Return a promise for document node(s) from a doc-spec item or list
-	// (from item=text|[node]? list='[(SLID string)]'|[[node] ...]?)
+	// (from item=text|[node]? list='[(SLID string)]'|[[node] ...]? slotSrc=source?)
 	async function opFrom (d) {
 		const m = d.mp, slotSrc = m.at('slotSrc');
 		const fromItem = async (spec) => {
 			if (typeof spec === 'string') {
 				const node = await d.sm(d.rr, 'createNode', [ 'm.t' ]);
-				d.sm(node, 'setAttr', [ 't', spec ]);
+				node('setAttr', [ 't', spec ]);
 				return node;
 			}
 			if (spec instanceof NANOS) {
 				const type = spec.at(0);
 				const node = await d.sm(d.rr, 'createNode', { 0: type, slotSrc });
-				await d.sm(node, 'setSpec', [ spec ]);
+				await node('setSpec', [ spec ]);
 				return node;
 			}
 		};
@@ -150,8 +150,8 @@ modcaps=''
 			/* async */ createNode: opCreateNode,
 			createNodeSync: opCreateNodeSync,
 			/* async */ from: opFrom,
-			getDOM: (d) => d.sm(d.p.at('root'), 'getDOM'),
-			getHTML: (d) => d.sm(d.p.at('root'), 'getHTML'),
+			/* async */ getDOM: (d) => d.p.at('root')('getDOM'),
+			/* async */ getHTML: (d) => d.p.at('root')('getHTML'),
 			nextId: (d) => d.p.at('registry')('nextId'),
 			registry: (d) => d.p.at('registry'),
 			root: (d) => d.p.at('root'),

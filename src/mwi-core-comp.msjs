@@ -41,7 +41,7 @@ modcaps=''
 	const coreConfig = {
 		[COM_TYPE]: ls([INTERFACE, COM_IF, SCHEMA, ls([VOID, true])]),
 		[FRAG_TYPE]: ls([INTERFACE, FRAG_IF]),
-		[SLOT_TYPE]: ls([INTERFACE, SLOT_IF, SCHEMA, ls([AUTO_DOC, false])]),
+		[SLOT_TYPE]: ls([INTERFACE, SLOT_IF]),
 		[TEXT_TYPE]: ls([INTERFACE, TEXT_IF, SCHEMA, ls([VOID, true])]),
 	}
 
@@ -50,20 +50,23 @@ modcaps=''
 	// MWICoreCom (comment) interface
 	// `[m.com t=comment?]`
 	(() => {
-		// Specialized HTML escape for comment content
+		// Custom, reversible, HTML escape for comment content
+		// https://html.spec.whatwg.org/multipage/syntax.html#comments
 		function escapeComment (d, text) {
 			const comment = text.
 			  replace(/&/g, '&amp;').
 			  replace(/^>/, '&gt;').
 			  replace(/^->/, '-&gt;').
-			  replace(/--/g, '-&#45;').
-			  replace(/-$/, '&#45;');
+			  replace(/<!--(!?)>/g, '<!-&#45;$1>').
+			  replace(/--(!?)>/g, '--$1&gt;').
+			  replace(/<!--/g, '&lt;!--').
+			  replace(/<!-$/, '&lt;!-');
 			return d.rr.textToHTML(comment, { lt: false, amp: false, gt: false, sq: false, dq: false });
 		}
 
 		function opGetDOM (d) {
 			if (typeof document === 'object' && typeof document.createComment === 'function') {
-				const text = d.sm(d.rr, 'getAttr', [ 't' ]) || '';
+				const text = d.rr('getAttr', [ 't' ]) || '';
 				return [ document.createComment(text) ];
 			}
 			return [];
@@ -71,7 +74,7 @@ modcaps=''
 
 		function opGetHTML (d) {
 			const m = d.mp, output = m.at('in');;
-			const text = d.sm(d.rr, 'getAttr', [ 't' ]) || '';
+			const text = d.rr('getAttr', [ 't' ]) || '';
 			const html = `<!--${escapeComment(d, text)}-->`;
 			if (output) output.push(html);
 			return html;
@@ -83,7 +86,7 @@ modcaps=''
 			handlers: {
 				getDOM: opGetDOM,
 				getHTML: opGetHTML,
-				getSubSpec: (_d) => [],
+				getSubSpec: (_d) => new NANOS(),
 				setSubSpec: (_d) => {},
 			}
 		});
@@ -91,11 +94,15 @@ modcaps=''
 
 	// MWICoreFrag (fragment) interface
 	// `[m.frg text|[node]...]`
+	// Fragments are "transparent containers" (the aggregate of their contents, and nothing more).
 	(() => {
 		// Pretty much just a vanilla doc-node
 		getInterface(FRAG_IF).set({
 			pristine: true, lock: true,
 			chain: [ BASE_IF ],
+			handlers: {
+				subSlotSrc: (d) => d.p.at('slotSrc'), // non-source; pass through
+			}
 		});
 	})();
 
@@ -103,28 +110,37 @@ modcaps=''
 	// `[m.slot name=slotName? defCon...]`
 	// This is basically just a fragment with a computed sub-doc.
 	(() => {
-		const emptyList = (new NANOS()).freeze();
+		/* async */ function opGetDOM (d) {
+			//
+		}
 
-		async function opSetSubSpec (d) {
+		/* async */ function opGetHTML (d) {
 			const p = d.p, m = d.mp;
-			d.sm(d, 'redis'); // super-setSubSpec first to generate fall-back subSpec
-			const doc = p.at('document'), slotSrc = p.at('slotSrc'), name = m.at('name');
-			const slotAttr = slotSrc && name && slotSrc.getAttr(name), attrOK = slotAttr instanceof NANOS;
-			const slotSub = slotSrc && !attrION && d.sm(slotSrc, 'getSubSpec'), subOK = slotSub instanceof NANOS && slotSub.next;
-			const genDoc = async (list) => {
-				const nodes = await doc('from', { list, slotSrc });
-				d.p.set('subDoc', new NANOS(nodes));
+			const slotSrc = p.at('slotSrc'), name = d.rr('getAttr', [ 'name' ]);
+			const hasIn = m.has('in'), html = m.at('in', []);
+			// Named slot: check the slot-source for a list-valued attribute with the specified name
+			const slotAttr = slotSrc && name && slotSrc('getAttr', [name]), attrOK = slotAttr instanceof NANOS;
+			// Unnamed slot: check the slot-source for non-empty list of natural children
+			const slotSub = slotSrc && !name && slotSrc('getSubSpec'), subOK = (slotSub instanceof NANOS) && slotSub.next;
+			const specHTML = async (spec) => {
+				const doc = p.at('document');
+				if (!p.has('frag')) p.set('frag', doc.createNodeSync('m.frg', { slotSrc: d.rr }));
+				const frag = p.at('frag');
+				await frag('setSubSpec', [ spec ]);
+				await frag('getHTML', { in: html });
+				if (!hasIn) return html.join('');
 			};
-			// Generate our sub-doc nodes
-			if (attrOK) await genDoc(slotAttr); // Slot from source's list-valued named attribute
-			else if (subOK) await genDoc(slotSub); // Or slot from source's natural children
-			else await genDoc(p.at('subSpec', emptyList)); // Or fall back to our natural children
+			if (attrOK) return specHTML(slotAttr);
+			if (subOK) return specHTML(slotSub);
+			return d.sm(d, 'redis'); // Fall back to rendering m.slot's natural children
 		}
 
 		getInterface(SLOT_IF).set({
 			pristine: true, lock: true,
+			chain: [ BASE_IF ],
 			handlers: {
-				setSubSpec: opSetSubSpec,
+				getDOM: opGetDOM,
+				getHTML: opGetHTML,
 			}
 		});
 	})();
@@ -134,7 +150,7 @@ modcaps=''
 	(() => {
 		function opGetDOM (d) {
 			if (typeof document === 'object' && typeof document.createTextNode === 'function') {
-				const text = d.sm(d.rr, 'getAttr', [ 't' ]) || '';
+				const text = d.rr('getAttr', [ 't' ]) || '';
 				// Will need <output> or guard comments for reactive values to prevent normalization
 				if (text !== '') return [ document.createTextNode(text) ];
 			}
@@ -143,7 +159,7 @@ modcaps=''
 
 		function opGetHTML (d) {
 			const m = d.mp, output = m.at('in');;
-			const text = d.sm(d.rr, 'getAttr', [ 't' ]) || '';
+			const text = d.rr('getAttr', [ 't' ]) || '';
 			const html = d.rr.textToHTML(text);
 			if (html !== '' && output) output.push(html);
 			return html;
@@ -155,7 +171,7 @@ modcaps=''
 			handlers: {
 				getDOM: opGetDOM,
 				getHTML: opGetHTML,
-				getSubSpec: (_d) => [],
+				getSubSpec: (_d) => new NANOS(),
 				setSubSpec: (_d) => {},
 			}
 		});

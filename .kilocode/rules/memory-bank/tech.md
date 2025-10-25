@@ -40,9 +40,10 @@ This directory contains the active design and requirements documents for the MWI
 
 *   **MANDATORY: Mesgjs Language & Runtime Bible:** `resources/Mesgjs-Training-Data.md`
     *   **Content:** This is the **ABSOLUTE SOURCE OF TRUTH** for the Mesgjs language, syntax, runtime, and core interaction patterns. It is not optional.
-    *   **When to Read:** **MUST READ an APPROPRIATE SECTION of THIS DOCUMENT BEFORE EVERY TASK that involves writing or debugging Mesgjs or JavaScript that interoperates with it.**
+    *   **When to Read:** **THIS DOCUMENT MUST BE READ BEFORE EVERY TASK that involves writing or debugging Mesgjs or JavaScript that interoperates with it.**
 *   **NANOS Reference Material:** `resources/NANOS-Training-Data.md`
-    *   **Content:** Detailed information about the `NANOS` JavaScript class (used extensively throughout Mesgjs, including the Mesgjs `@list` interface, and MWI).
+    *   **Content:** Detailed information about the `NANOS` JavaScript class (used extensively throughout Mesgjs, including the Mesgjs `@list` interface, and MWI) and the `SLID` (static list data) format.
+	*   NANOS is the basis for the commonly-used `ls` and `ps` helper functions. This documentation will help you understand how to pass the correct parameters.
 
 ---
 *All prior architectural documents (V3, V4, etc.) have been archived under `historical/`; they are considered SUPERSEDED and should not be consulted for new development.*

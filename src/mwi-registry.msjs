@@ -99,8 +99,8 @@ modcaps=''
 	function opNextId (d) {
 		const p = d.p;
 		const isBrowser = p.at('isBrowser'), instId = p.at('instId');
-		p.set('instId', elemId + 1);
-		return ((isBrowser ? CLIENT_ID_PRE : SERVER_ID_PRE) + elemId.toString(36));
+		p.set('instId', instId + 1);
+		return ((isBrowser ? CLIENT_ID_PRE : SERVER_ID_PRE) + instId.toString(36));
 	}
 
 	// Preload server component names to match server-assigned component IDs
