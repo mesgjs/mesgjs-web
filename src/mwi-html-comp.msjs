@@ -29,7 +29,7 @@ modcaps=''
 	const SCRIPT_IF = BASE_IF + 'Script';
 	const TITLE_IF = BASE_IF + 'Title';
 
-	const { fready, fwait, getInstance, getInterface, getModMeta, setRO, modHasCap } = globalThis.$c;
+	const { fready, fwait, getInstance, getInterface } = globalThis.$c;
 
 	const html5Config = {
 		'h.a': ls([INTERFACE, BASE_IF]),
@@ -210,7 +210,7 @@ modcaps=''
 				/* async */ getDOM: (_d) => [],
 				/* async */ getHTML: opGetHTML,
 				getSubSpec: (_d) => new NANOS(),
-				setSubSpec: (_d) => {},
+				/* async */ setSubSpec: (_d) => {},
 			}
 		});
 	})();
@@ -259,7 +259,7 @@ modcaps=''
 				/* async */ getDOM: opGetDOM,
 				/* async */ getHTML: opGetHTML,
 				getSubSpec: (_d) => new NANOS(),
-				setSubSpec: (_d) => {},
+				/* async */ setSubSpec: (_d) => {},
 			}
 		});
 	})();
@@ -292,7 +292,7 @@ modcaps=''
 				/* async */ getDOM: opGetDOM,
 				/* async */ getHTML: opGetHTML,
 				getSubSpec: (_d) => new NANOS(),
-				setSubSpec: (_d) => {},
+				/* async */ setSubSpec: (_d) => {},
 			}
 		});
 	})();

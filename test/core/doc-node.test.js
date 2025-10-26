@@ -727,60 +727,60 @@ Deno.test("MWIDocNode - Attribute Slotting: m.slat", async (t) => {
 	await t.step("(setAttr) - Default source (empty spec)", async () => {
 		const fragNode = await doc.createNode('m.frg');
 		fragNode('setAttr', ls([, 'title', , 'Source Title']));
-		
+
 		const divNode = await doc.createNode('h.div', { slotSrc: fragNode });
 		divNode('setAttr', ls([, 'm.slat', , ps('[(title=[])]')]));
-		
+
 		assertEquals(divNode('getAttr', ls([, 'title'])), 'Source Title');
 	});
 
 	await t.step(".setAttr() - Default source (empty spec) via JS", async () => {
 		const fragNode = await doc.createNode('m.frg');
 		fragNode.setAttr('title', 'JS Source Title');
-		
+
 		const divNode = await doc.createNode('h.div', { slotSrc: fragNode });
 		divNode.setAttr('m.slat', ps('[(title=[])]'));
-		
+
 		assertEquals(divNode.getAttr('title'), 'JS Source Title');
 	});
 
 	await t.step("(setAttr) - Explicit source", async () => {
 		const fragNode = await doc.createNode('m.frg');
 		fragNode('setAttr', ls([, 'data-source', , 'Source Value']));
-		
+
 		const divNode = await doc.createNode('h.div', { slotSrc: fragNode });
 		divNode('setAttr', ls([, 'm.slat', , ps('[(title=[data-source])]')]));
-		
+
 		assertEquals(divNode('getAttr', ls([, 'title'])), 'Source Value');
 	});
 
 	await t.step(".setAttr() - Explicit source via JS", async () => {
 		const fragNode = await doc.createNode('m.frg');
 		fragNode.setAttr('data-source', 'JS Source Value');
-		
+
 		const divNode = await doc.createNode('h.div', { slotSrc: fragNode });
 		divNode.setAttr('m.slat', ps('[(title=[data-source])]'));
-		
+
 		assertEquals(divNode.getAttr('title'), 'JS Source Value');
 	});
 
 	await t.step("(setAttr) - With else fallback", async () => {
 		const fragNode = await doc.createNode('m.frg');
 		// Don't set the source attribute
-		
+
 		const divNode = await doc.createNode('h.div', { slotSrc: fragNode });
 		divNode('setAttr', ls([, 'm.slat', , ps('[(title=[missing else=Default])]')]));
-		
+
 		assertEquals(divNode('getAttr', ls([, 'title'])), 'Default');
 	});
 
 	await t.step(".setAttr() - With else fallback via JS", async () => {
 		const fragNode = await doc.createNode('m.frg');
 		// Don't set the source attribute
-		
+
 		const divNode = await doc.createNode('h.div', { slotSrc: fragNode });
 		divNode.setAttr('m.slat', ps('[(title=[missing else="JS Default"])]'));
-		
+
 		assertEquals(divNode.getAttr('title'), 'JS Default');
 	});
 
@@ -788,10 +788,10 @@ Deno.test("MWIDocNode - Attribute Slotting: m.slat", async (t) => {
 		const fragNode = await doc.createNode('m.frg');
 		fragNode('setAttr', ls([, 'src1', , 'Value1']));
 		fragNode('setAttr', ls([, 'src2', , 'Value2']));
-		
+
 		const divNode = await doc.createNode('h.div', { slotSrc: fragNode });
 		divNode('setAttr', ls([, 'm.slat', , ps('[(title=[src1] data-info=[src2])]')]));
-		
+
 		assertEquals(divNode('getAttr', ls([, 'title'])), 'Value1');
 		assertEquals(divNode('getAttr', ls([, 'data-info'])), 'Value2');
 	});
@@ -800,10 +800,10 @@ Deno.test("MWIDocNode - Attribute Slotting: m.slat", async (t) => {
 		const fragNode = await doc.createNode('m.frg');
 		fragNode.setAttr('src1', 'JS Value1');
 		fragNode.setAttr('src2', 'JS Value2');
-		
+
 		const divNode = await doc.createNode('h.div', { slotSrc: fragNode });
 		divNode.setAttr('m.slat', ps('[(title=[src1] data-info=[src2])]'));
-		
+
 		assertEquals(divNode.getAttr('title'), 'JS Value1');
 		assertEquals(divNode.getAttr('data-info'), 'JS Value2');
 	});
@@ -812,10 +812,10 @@ Deno.test("MWIDocNode - Attribute Slotting: m.slat", async (t) => {
 		const fragNode = await doc.createNode('m.frg');
 		const listVal = ps('[(item1 item2 item3)]');
 		fragNode('setAttr', ls([, 'c.items', , listVal]));
-		
+
 		const divNode = await doc.createNode('h.div', { slotSrc: fragNode });
 		divNode('setAttr', ls([, 'm.slat', , ps('[(c.data=[c.items])]')]));
-		
+
 		const retrieved = divNode('getAttr', ls([, 'c.data']));
 		assertEquals(retrieved.at(0), 'item1');
 		assertEquals(retrieved.at(1), 'item2');
@@ -826,10 +826,10 @@ Deno.test("MWIDocNode - Attribute Slotting: m.slat", async (t) => {
 		const fragNode = await doc.createNode('m.frg');
 		const listVal = ps('[(alpha beta gamma)]');
 		fragNode.setAttr('c.items', listVal);
-		
+
 		const divNode = await doc.createNode('h.div', { slotSrc: fragNode });
 		divNode.setAttr('m.slat', ps('[(c.data=[c.items])]'));
-		
+
 		const retrieved = divNode.getAttr('c.data');
 		assertEquals(retrieved.at(0), 'alpha');
 		assertEquals(retrieved.at(1), 'beta');
@@ -840,7 +840,7 @@ Deno.test("MWIDocNode - Attribute Slotting: m.slat", async (t) => {
 		const divNode = await doc.createNode('h.div');
 		const slatVal = ps('[(title=[])]');
 		divNode('setAttr', ls([, 'm.slat', , slatVal]));
-		
+
 		const retrieved = divNode('getAttr', ls([, 'm.slat']));
 		assert(retrieved !== undefined);
 	});
@@ -849,7 +849,7 @@ Deno.test("MWIDocNode - Attribute Slotting: m.slat", async (t) => {
 		const divNode = await doc.createNode('h.div');
 		const slatVal = ps('[(title=[])]');
 		divNode.setAttr('m.slat', slatVal);
-		
+
 		const retrieved = divNode.getAttr('m.slat');
 		assert(retrieved !== undefined);
 	});
@@ -857,12 +857,12 @@ Deno.test("MWIDocNode - Attribute Slotting: m.slat", async (t) => {
 	await t.step("(setAttr) - Triggers slotting immediately", async () => {
 		const fragNode = await doc.createNode('m.frg');
 		fragNode('setAttr', ls([, 'title', , 'Slotted']));
-		
+
 		const divNode = await doc.createNode('h.div', { slotSrc: fragNode });
-		
+
 		// Slotting happens immediately when m.slat is set
 		divNode('setAttr', ls([, 'm.slat', , ps('[(title=[])]')]));
-		
+
 		// Verify slotting occurred immediately
 		assertEquals(divNode('getAttr', ls([, 'title'])), 'Slotted');
 	});
@@ -870,12 +870,12 @@ Deno.test("MWIDocNode - Attribute Slotting: m.slat", async (t) => {
 	await t.step(".setAttr() - Triggers slotting immediately via JS", async () => {
 		const fragNode = await doc.createNode('m.frg');
 		fragNode.setAttr('title', 'JS Slotted');
-		
+
 		const divNode = await doc.createNode('h.div', { slotSrc: fragNode });
-		
+
 		// Slotting happens immediately when m.slat is set
 		divNode.setAttr('m.slat', ps('[(title=[])]'));
-		
+
 		// Verify slotting occurred immediately
 		assertEquals(divNode.getAttr('title'), 'JS Slotted');
 	});
@@ -885,120 +885,120 @@ Deno.test("MWIDocNode - Computed Attributes: m.coat", async (t) => {
 	await t.step("(setAttr) - Simple interpolation", async () => {
 		const fragNode = await doc.createNode('m.frg');
 		fragNode('setAttr', ls([, 'name', , 'World']));
-		
+
 		const divNode = await doc.createNode('h.div', { slotSrc: fragNode });
 		divNode('setAttr', ls([, 'm.coat', , ps('[(title="<name>")]')]));
-		
+
 		assertEquals(divNode('getAttr', ls([, 'title'])), 'World');
 	});
 
 	await t.step(".setAttr() - Simple interpolation via JS", async () => {
 		const fragNode = await doc.createNode('m.frg');
 		fragNode.setAttr('name', 'JS World');
-		
+
 		const divNode = await doc.createNode('h.div', { slotSrc: fragNode });
 		divNode.setAttr('m.coat', ps('[(title="<name>")]'));
-		
+
 		assertEquals(divNode.getAttr('title'), 'JS World');
 	});
 
 	await t.step("(setAttr) - Conditional (?)", async () => {
 		const fragNode = await doc.createNode('m.frg');
 		fragNode('setAttr', ls([, 'name', , 'Test']));
-		
+
 		const divNode = await doc.createNode('h.div', { slotSrc: fragNode });
 		divNode('setAttr', ls([, 'm.coat', , ps('[(title="<name?Hello >")]')]));
-		
+
 		assertEquals(divNode('getAttr', ls([, 'title'])), 'Hello ');
 	});
 
 	await t.step(".setAttr() - Conditional (?) via JS", async () => {
 		const fragNode = await doc.createNode('m.frg');
 		fragNode.setAttr('name', 'JS Test');
-		
+
 		const divNode = await doc.createNode('h.div', { slotSrc: fragNode });
 		divNode.setAttr('m.coat', ps('[(title="<name?Hello >")]'));
-		
+
 		assertEquals(divNode.getAttr('title'), 'Hello ');
 	});
 
 	await t.step("(setAttr) - Conditional (??)", async () => {
 		const fragNode = await doc.createNode('m.frg');
 		fragNode('setAttr', ls([, 'name', , 'Test']));
-		
+
 		const divNode = await doc.createNode('h.div', { slotSrc: fragNode });
 		divNode('setAttr', ls([, 'm.coat', , ps('[(title="<name??Hello >")]')]));
-		
+
 		assertEquals(divNode('getAttr', ls([, 'title'])), 'Hello ');
 	});
 
 	await t.step(".setAttr() - Conditional (??) via JS", async () => {
 		const fragNode = await doc.createNode('m.frg');
 		fragNode.setAttr('name', 'JS Test');
-		
+
 		const divNode = await doc.createNode('h.div', { slotSrc: fragNode });
 		divNode.setAttr('m.coat', ps('[(title="<name??Hello >")]'));
-		
+
 		assertEquals(divNode.getAttr('title'), 'Hello ');
 	});
 
 	await t.step("(setAttr) - Default (|)", async () => {
 		const fragNode = await doc.createNode('m.frg');
 		// Don't set name
-		
+
 		const divNode = await doc.createNode('h.div', { slotSrc: fragNode });
 		divNode('setAttr', ls([, 'm.coat', , ps('[(title="<name|Default>")]')]));
-		
+
 		assertEquals(divNode('getAttr', ls([, 'title'])), 'Default');
 	});
 
 	await t.step(".setAttr() - Default (|) via JS", async () => {
 		const fragNode = await doc.createNode('m.frg');
 		// Don't set name
-		
+
 		const divNode = await doc.createNode('h.div', { slotSrc: fragNode });
 		divNode.setAttr('m.coat', ps('[(title="<name|JS Default>")]'));
-		
+
 		assertEquals(divNode.getAttr('title'), 'JS Default');
 	});
 
 	await t.step("(setAttr) - Default (||)", async () => {
 		const fragNode = await doc.createNode('m.frg');
 		fragNode('setAttr', ls([, 'name', , ''])); // Empty string
-		
+
 		const divNode = await doc.createNode('h.div', { slotSrc: fragNode });
 		divNode('setAttr', ls([, 'm.coat', , ps('[(title="<name||Default>")]')]));
-		
+
 		assertEquals(divNode('getAttr', ls([, 'title'])), 'Default');
 	});
 
 	await t.step(".setAttr() - Default (||) via JS", async () => {
 		const fragNode = await doc.createNode('m.frg');
 		fragNode.setAttr('name', ''); // Empty string
-		
+
 		const divNode = await doc.createNode('h.div', { slotSrc: fragNode });
 		divNode.setAttr('m.coat', ps('[(title="<name||JS Default>")]'));
-		
+
 		assertEquals(divNode.getAttr('title'), 'JS Default');
 	});
 
 	await t.step("(setAttr) - Literal text", async () => {
 		const fragNode = await doc.createNode('m.frg');
 		fragNode('setAttr', ls([, 'name', , 'World']));
-		
+
 		const divNode = await doc.createNode('h.div', { slotSrc: fragNode });
 		divNode('setAttr', ls([, 'm.coat', , ps('[(title="Prefix <name> Suffix")]')]));
-		
+
 		assertEquals(divNode('getAttr', ls([, 'title'])), 'Prefix World Suffix');
 	});
 
 	await t.step(".setAttr() - Literal text via JS", async () => {
 		const fragNode = await doc.createNode('m.frg');
 		fragNode.setAttr('name', 'JS World');
-		
+
 		const divNode = await doc.createNode('h.div', { slotSrc: fragNode });
 		divNode.setAttr('m.coat', ps('[(title="Prefix <name> Suffix")]'));
-		
+
 		assertEquals(divNode.getAttr('title'), 'Prefix JS World Suffix');
 	});
 
@@ -1006,10 +1006,10 @@ Deno.test("MWIDocNode - Computed Attributes: m.coat", async (t) => {
 		const fragNode = await doc.createNode('m.frg');
 		fragNode('setAttr', ls([, 'name', , 'Test']));
 		fragNode('setAttr', ls([, 'cls', , 'my-class']));
-		
+
 		const divNode = await doc.createNode('h.div', { slotSrc: fragNode });
 		divNode('setAttr', ls([, 'm.coat', , ps('[(title=<name> class=<cls>)]')]));
-		
+
 		assertEquals(divNode('getAttr', ls([, 'title'])), 'Test');
 		assertEquals(divNode('getAttr', ls([, 'class'])), 'my-class');
 	});
@@ -1018,29 +1018,29 @@ Deno.test("MWIDocNode - Computed Attributes: m.coat", async (t) => {
 		const fragNode = await doc.createNode('m.frg');
 		fragNode.setAttr('name', 'JS Test');
 		fragNode.setAttr('cls', 'js-class');
-		
+
 		const divNode = await doc.createNode('h.div', { slotSrc: fragNode });
 		divNode.setAttr('m.coat', ps('[(title=<name> class=<cls>)]'));
-		
+
 		assertEquals(divNode.getAttr('title'), 'JS Test');
 		assertEquals(divNode.getAttr('class'), 'js-class');
 	});
 
 	await t.step("(setAttr) - Escapes", async () => {
 		const fragNode = await doc.createNode('m.frg');
-		
+
 		const divNode = await doc.createNode('h.div', { slotSrc: fragNode });
 		divNode('setAttr', ls([, 'm.coat', , ps('[(title=<.lt>tag<.gt>)]')]));
-		
+
 		assertEquals(divNode('getAttr', ls([, 'title'])), '<tag>');
 	});
 
 	await t.step(".setAttr() - Escapes via JS", async () => {
 		const fragNode = await doc.createNode('m.frg');
-		
+
 		const divNode = await doc.createNode('h.div', { slotSrc: fragNode });
 		divNode.setAttr('m.coat', ps('[(title=<.lt>tag<.gt>)]'));
-		
+
 		assertEquals(divNode.getAttr('title'), '<tag>');
 	});
 
@@ -1048,7 +1048,7 @@ Deno.test("MWIDocNode - Computed Attributes: m.coat", async (t) => {
 		const divNode = await doc.createNode('h.div');
 		const coatVal = ps('[(title=<name>)]');
 		divNode('setAttr', ls([, 'm.coat', , coatVal]));
-		
+
 		const retrieved = divNode('getAttr', ls([, 'm.coat']));
 		assert(retrieved !== undefined);
 	});
@@ -1057,7 +1057,7 @@ Deno.test("MWIDocNode - Computed Attributes: m.coat", async (t) => {
 		const divNode = await doc.createNode('h.div');
 		const coatVal = ps('[(title=<name>)]');
 		divNode.setAttr('m.coat', coatVal);
-		
+
 		const retrieved = divNode.getAttr('m.coat');
 		assert(retrieved !== undefined);
 	});
@@ -1065,12 +1065,12 @@ Deno.test("MWIDocNode - Computed Attributes: m.coat", async (t) => {
 	await t.step("(setAttr) - Triggers computation immediately", async () => {
 		const fragNode = await doc.createNode('m.frg');
 		fragNode('setAttr', ls([, 'name', , 'Computed']));
-		
+
 		const divNode = await doc.createNode('h.div', { slotSrc: fragNode });
-		
+
 		// Computation happens immediately when m.coat is set
 		divNode('setAttr', ls([, 'm.coat', , ps('[(title=<name>)]')]));
-		
+
 		// Verify computation occurred immediately
 		assertEquals(divNode('getAttr', ls([, 'title'])), 'Computed');
 	});
@@ -1078,12 +1078,12 @@ Deno.test("MWIDocNode - Computed Attributes: m.coat", async (t) => {
 	await t.step(".setAttr() - Triggers computation immediately via JS", async () => {
 		const fragNode = await doc.createNode('m.frg');
 		fragNode.setAttr('name', 'JS Computed');
-		
+
 		const divNode = await doc.createNode('h.div', { slotSrc: fragNode });
-		
+
 		// Computation happens immediately when m.coat is set
 		divNode.setAttr('m.coat', ps('[(title=<name>)]'));
-		
+
 		// Verify computation occurred immediately
 		assertEquals(divNode.getAttr('title'), 'JS Computed');
 	});
@@ -1096,11 +1096,11 @@ Deno.test("MWIDocNode - Combined m.slat and m.coat", async (t) => {
 		fragNode('setAttr', ls([, 'name', , 'Computed']));
 		const listVal = ps('[(a b c)]');
 		fragNode('setAttr', ls([, 'c.items', , listVal]));
-		
+
 		const divNode = await doc.createNode('h.div', { slotSrc: fragNode });
 		divNode('setAttr', ls([, 'm.slat', , ps('[(title=[src-title] c.data=[c.items])]')]));
 		divNode('setAttr', ls([, 'm.coat', , ps('[(data-name=<name>)]')]));
-		
+
 		assertEquals(divNode('getAttr', ls([, 'title'])), 'Slotted');
 		assertEquals(divNode('getAttr', ls([, 'data-name'])), 'Computed');
 		const retrieved = divNode('getAttr', ls([, 'c.data']));
@@ -1113,11 +1113,11 @@ Deno.test("MWIDocNode - Combined m.slat and m.coat", async (t) => {
 		fragNode.setAttr('name', 'JS Computed');
 		const listVal = ps('[(x y z)]');
 		fragNode.setAttr('c.items', listVal);
-		
+
 		const divNode = await doc.createNode('h.div', { slotSrc: fragNode });
 		divNode.setAttr('m.slat', ps('[(title=[src-title] c.data=[c.items])]'));
 		divNode.setAttr('m.coat', ps('[(data-name=<name>)]'));
-		
+
 		assertEquals(divNode.getAttr('title'), 'JS Slotted');
 		assertEquals(divNode.getAttr('data-name'), 'JS Computed');
 		const retrieved = divNode.getAttr('c.data');

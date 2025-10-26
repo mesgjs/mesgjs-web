@@ -133,7 +133,7 @@ Deno.test("MWICoreFrag (m.frg) - No Wrapper Element", async (t) => {
 		fragNode.setAttr('data-test', 'test-value');
 		fragNode.append('Content');
 		const html = await fragNode.getHTML();
-		
+
 		// HTML should only contain the content
 		assertEquals(html, 'Content');
 		// Verify no attributes appear
@@ -152,7 +152,7 @@ Deno.test("MWICoreFrag (m.frg) - No Wrapper Element", async (t) => {
 		textNode.setAttr('t', 'Visible Content');
 		fragNode.append(textNode);
 		const html = await fragNode.getHTML();
-		
+
 		assertEquals(html, 'Visible Content');
 		assert(!html.includes('invisible'), 'Fragment attributes not in output');
 		assert(!html.includes('Invisible'), 'Fragment attributes not in output');
@@ -173,11 +173,11 @@ Deno.test("MWICoreFrag (m.frg) - Nested Fragments", async (t) => {
 		const frag1 = await doc.createNode('m.frg');
 		const frag2 = await doc.createNode('m.frg');
 		const frag3 = await doc.createNode('m.frg');
-		
+
 		frag3.append('Deepest');
 		frag2.append(frag3);
 		frag1.append(frag2);
-		
+
 		const html = await frag1.getHTML();
 		assertEquals(html, 'Deepest');
 	});
@@ -187,15 +187,15 @@ Deno.test("MWICoreFrag (m.frg) - Nested Fragments", async (t) => {
 		for (let i = 0; i < 5; i++) {
 			levels.push(await doc.createNode('m.frg'));
 		}
-		
+
 		// Add content to deepest level
 		levels[4].append('Deep content');
-		
+
 		// Nest them
 		for (let i = 3; i >= 0; i--) {
 			levels[i].append(levels[i + 1]);
 		}
-		
+
 		const html = await levels[0].getHTML();
 		assertEquals(html, 'Deep content');
 	});
@@ -204,11 +204,11 @@ Deno.test("MWICoreFrag (m.frg) - Nested Fragments", async (t) => {
 		const outer = await doc.createNode('m.frg');
 		const inner1 = await doc.createNode('m.frg');
 		const inner2 = await doc.createNode('m.frg');
-		
+
 		inner1.append('First');
 		inner2.append('Second');
 		outer.append(inner1, 'Middle', inner2);
-		
+
 		const html = await outer.getHTML();
 		assertEquals(html, 'FirstMiddleSecond');
 	});
@@ -254,14 +254,14 @@ Deno.test("MWICoreFrag (m.frg) - Content Aggregation in HTML", async (t) => {
 		const fragNode = await doc.createNode('m.frg');
 		const nodes = [];
 		const expected = [];
-		
+
 		for (let i = 1; i <= 10; i++) {
 			const textNode = await doc.createNode('m.t');
 			textNode.setAttr('t', `Item${i}`);
 			nodes.push(textNode);
 			expected.push(`Item${i}`);
 		}
-		
+
 		fragNode.append(...nodes);
 		const html = await fragNode.getHTML();
 		assertEquals(html, expected.join(''));
@@ -313,13 +313,13 @@ Deno.test("MWICoreFrag (m.frg) - Edge Cases", async (t) => {
 		const frag1 = await doc.createNode('m.frg');
 		const emptyFrag = await doc.createNode('m.frg');
 		const frag2 = await doc.createNode('m.frg');
-		
+
 		frag1.append('Before');
 		frag2.append('After');
-		
+
 		const container = await doc.createNode('m.frg');
 		container.append(frag1, emptyFrag, frag2);
-		
+
 		const html = await container.getHTML();
 		assertEquals(html, 'BeforeAfter');
 	});
@@ -346,11 +346,11 @@ Deno.test("MWICoreFrag (m.frg) - Edge Cases", async (t) => {
 		const frag1 = await doc.createNode('m.frg');
 		const frag2 = await doc.createNode('m.frg');
 		const frag3 = await doc.createNode('m.frg');
-		
+
 		frag1.append('A');
 		frag2.append('B');
 		frag3.append('C');
-		
+
 		container.append(frag1, frag2, frag3);
 		const html = await container.getHTML();
 		assertEquals(html, 'ABC');

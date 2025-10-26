@@ -22,14 +22,43 @@ modcaps=''
 	const READY_FT = IF_NAME;
 	const DOC_IF = 'MWIDocument';
 
+	const ATTR_LOW_FLUX = 3; // # of attribute changes before individual tracking
+
 	const { fready, fwait, getInstance, getInterface, getModMeta, setRO, typeChains } = globalThis.$c;
 
-	// Set DOM node attributes from HTML subset of doc-node attributes
+	// Set (sync) DOM node attributes from HTML subset of doc-node attributes
 	function setDOMAttrs (node, attrs) {
-		for (const [name, value] of attrs.namedEntries()) {
-			// Only HTML attributes
-			if (/^[0-9a-z:_-]*$/.test(name)) node.setAttribute(name, value);
-		}
+		const flux = {};
+		getInstance('@reactive')('set', {
+			eager: true,
+			def: () => {
+				// Main-group reactor
+				// Start with all current DOM-node attributes.
+				const extra = new Set(node.getAttributeNames());
+				for (const name of attrs.namedKeys()) {
+					// Only HTML attributes
+					if (!/^[0-9a-z:_-]*$/.test(name)) continue;
+					flux[name] ||= 0; // Track attribute activity
+					extra.remove(name); // Handled attributes are not "extra"
+					const update = (_, chg = 0) => { // Common update code
+						const curValue = node.getAttribute(name), newValue = attrs.at(name);
+						if (curValue !== newValue) {
+							flux[name] += chg;
+							if (newValue === undefined) node.removeAttribute(name);
+							else node.setAttribute(name, newValue);
+						}
+					};
+					// Attributes that have changed several times track individually.
+					// Less-active attributes track together in the main group.
+					if (flux[name] > ATTR_LOW_FLUX) getInstance('@reactive')('set', {
+						eager: true, def: update, // Individual attribute reactor
+					})('rv');
+					else update(0, 1);
+				}
+				// Remove any extra DOM attributes to affect a full sync.
+				for (const name of extra.values()) node.removeAttribute(name);
+			},
+		})('rv'); // Synchronous first execution
 	}
 
 	// HTML-escape text, with options for different contexts
@@ -62,9 +91,11 @@ modcaps=''
 	// JS interface prototype
 	const docNodeProto = Object.setPrototypeOf({
 		append (...content) { return this('append', content); },
+		[globalThis.$c.symbols.convert] () { return this; },
 		delAttr (name) { return this('delAttr', [ name ]); },
 		get document () { return this('document'); },
 		getAttr (name) { return this('getAttr', [ name ]); },
+		/* async */ getDOM () { return this('getDOM'); },
 		/* async */ getHTML () { return this('getHTML'); },
 		getSpec () { return this('getSpec'); },
 		getSubDoc () { return this('getSubDoc'); },
@@ -82,7 +113,6 @@ modcaps=''
 		get type () { return this('type'); },
 		valueOf () { return this; },
 	}, Function.prototype);
-	docNodeProto[globalThis.$c.symbols.convert] = function () { return this; };
 
 	// Initialize the new doc node
 	function opInit (d) {

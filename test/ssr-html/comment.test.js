@@ -32,7 +32,7 @@ Deno.test("MWICoreCom (m.com) - SSR-HTML Tests", async (t) => {
 		const comNode = await doc.createNode('m.com');
 		const commentContent = '-> & <!-- <!--!> crazy comment <!--> --!> --> <!-';
 		const expectedHTML = '<!---&gt; &amp; &lt;!-- <!-&#45;!> crazy comment <!-&#45;> --!&gt; --&gt; &lt;!--->';
-		
+
 		comNode.setAttr('t', commentContent);
 		const html = await comNode.getHTML();
 		assertEquals(html, expectedHTML);
