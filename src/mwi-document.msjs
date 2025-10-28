@@ -30,6 +30,14 @@ modcaps=''
 
 	await fwait(REG_READY_FT, NODE_READY_FT, CORE_READY_FT);
 
+	function rxNANOS (...args) {
+		const rxn = new NANOS();
+		rxn.setOpts({ autoReactive: true });
+		rxn.rio = getInstance('@reactive')('rio');
+		if (args.length) rxn.push(...args);
+		return rxn;
+	}
+
 	// JS interface prototype
 	const docProto = Object.setPrototypeOf({
 		compIdStr (id) { return '_MC_' + id.toString(36); },
@@ -39,6 +47,7 @@ modcaps=''
 		get jsv () { return this; },
 		registry () { return this('registry'); },
 		async root () { return await this('root'); },
+		rxNANOS,
 		valueOf () { return this; },
 	}, Function.prototype);
 
@@ -155,6 +164,7 @@ modcaps=''
 			nextId: (d) => d.p.at('registry')('nextId'),
 			registry: (d) => d.p.at('registry'),
 			root: (d) => d.p.at('root'),
+			rxNANOS: (_d) => rxNANOS().fromEntries(d.mp.entries()),
 		}
 	});
 

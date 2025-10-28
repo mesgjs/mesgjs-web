@@ -85,7 +85,7 @@ export async function simulateBrowser () {
 export function transpileMesgjs (source, module = 'anonymous') {
 	const { tree, errors: parseErrs } = parse(lex(source).tokens);
 	if (parseErrs.length) throw new Error(`${module}: Mesgjs parsing failed`);
-	const { code, errors: transpErrs, fatal } = transpileTree(tree, { debugBlocks: true, enableJS: true });
+	const { code, errors: transpErrs, fatal } = transpileTree(tree, { debugBlocks: true, enableJS: true, stripJSEC: false });
 	if (transpErrs.length) throw new Error(`${module}: Mesgjs transpilation failed`);
 	if (fatal) throw new Error(`${module}: Mesgjs transpilation fatal error`);
 	return code;

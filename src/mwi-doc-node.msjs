@@ -26,7 +26,38 @@ modcaps=''
 
 	const { fready, fwait, getInstance, getInterface, getModMeta, setRO, typeChains } = globalThis.$c;
 
-	// Set (sync) DOM node attributes from HTML subset of doc-node attributes
+	// Append a new child node after some other child node
+	// (Does nothing if the node is already in the proper position; this
+	// is an "append" version of parent.insertBefore(node, beforeNode))
+	function domAppendAfter (parent, node, after = null) {
+		if (!after && (node.parentNode !== parent || node.previousSibling)) {
+			// Node should be the first child
+			const curFirst = parent.firstChild;
+			if (curFirst) parent.insertBefore(node, curFirst);
+			else parent.append(node);
+		} else if (after && (node.parentNode !== parent || node.previousSibling !== after)) {
+			// Node should be after the reference node
+			const next = after.nextSibling;
+			if (next) parent.insertBefore(node, next);
+			else parent.append(node);
+		}
+	}
+
+	// Update/synchronize a DOM node's children (shuffling in place when possible)
+	function domSyncChildren (parent, children) {
+		let prev = null, child = null;
+		for (child of children.values()) {
+			domAppendAfter(parent, child, prev);
+			prev = child;
+		}
+		// Remove any "extra nodes left over" after the last child
+		// deno-lint-ignore no-cond-assign
+		if (prev) while (child = prev.nextSibling) parent.removeChild(child);
+		// deno-lint-ignore no-cond-assign
+		else while (child = parent.firstChild) parent.removeChild(child);
+	}
+
+	// Set/sync DOM node attributes from HTML subset of doc-node attributes
 	function setDOMAttrs (node, attrs) {
 		const flux = {};
 		getInstance('@reactive')('set', {
@@ -52,7 +83,7 @@ modcaps=''
 					// Less-active attributes track together in the main group.
 					if (flux[name] > ATTR_LOW_FLUX) getInstance('@reactive')('set', {
 						eager: true, def: update, // Individual attribute reactor
-					})('rv');
+					})('rv'); // Synchronous first execution
 					else update(0, 1);
 				}
 				// Remove any extra DOM attributes to affect a full sync.
@@ -94,6 +125,8 @@ modcaps=''
 		[globalThis.$c.symbols.convert] () { return this; },
 		delAttr (name) { return this('delAttr', [ name ]); },
 		get document () { return this('document'); },
+		domAppendAfter,
+		domSyncChildren,
 		getAttr (name) { return this('getAttr', [ name ]); },
 		/* async */ getDOM () { return this('getDOM'); },
 		/* async */ getHTML () { return this('getHTML'); },
@@ -116,20 +149,20 @@ modcaps=''
 
 	// Initialize the new doc node
 	function opInit (d) {
-		const p = d.p, m = d.mp;
-		if (typeof d.sr !== 'function' || d.st !== DOC_IF) {
+		const p = d.p, m = d.mp, doc = d.sr;
+		if (typeof doc !== 'function' || d.st !== DOC_IF) {
 			const type = m.at('type', d.rt);
 			throw new Error(`Use ${DOC_IF}(createNode) to create a new ${type} node`);
 		}
 		p.push({
-			slotSrc: undefined, // (passed from (createNode), if active)
+			slotSrc: undefined, // slotting source (overridden by (createNode), if active)
 			}, m, {
-			document: d.sr, // document that created this node
-			attrs: new NANOS(),
-			permClasses: new Set(),
-			classes: new Set(),
-			subDoc: new NANOS(), // "live" doc-node children
-			subSpec: undefined, // sub-content template (a "live" sub-doc overrides)
+			doc, // document that created this node
+			attrs: doc.rxNANOS(), // attributes
+			permClasses: new Set(), // permanent classes
+			classes: new Set(), // all current classes
+			subDoc: doc.rxNANOS(), // "live" doc-node children
+			subSpec: doc.rxNANOS(), // sub-content template (a "live" sub-doc overrides)
 		});
 		if (!p.has('type')) throw new TypeError(`${IF_NAME} requires a node type`);
 		// Add JS interface
@@ -169,7 +202,7 @@ modcaps=''
 		const m = d.mp;
 		const docNodes = [...m.values()].filter((n) => typeof n === 'string' || typeChains(n?.msjsType, IF_NAME));
 		if (docNodes.length) {
-			const doc = p.at('document');
+			const doc = p.at('doc');
 			p.at('subDoc').push([...docNodes.map(orig => {
 				if (typeof orig !== 'string') return orig;
 				const node = doc.createNodeSync('m.t');
@@ -265,7 +298,7 @@ modcaps=''
 		case 'm.id': // Mandatory id value
 			if (!attrs.has('id')) {
 				// There's no user-assigned id, so auto-assign one
-				const doc = p.at('document'), mid = doc('nextId');
+				const doc = p.at('doc'), mid = doc('nextId');
 				attrs.set('id', mid);
 				return mid;
 			}
@@ -312,13 +345,32 @@ modcaps=''
 		return spec;
 	}
 
-	// Get sub-doc DOM nodes
+	// Get reactive @list of sub-doc DOM nodes
 	async function opGetSubDOM (d) {
-		const p = d.p, nodes = [];
-		for (const node of p.at('subDoc').values()) {
-			const subNodes = await node('getDOM');
-			nodes.push(...subNodes);
-		}
+		const p = d.p, nodes = getInstance('@list');
+		nodes('rio', true)('setOpts', { autoReactive: true });
+		const track = getInstance('@reactive');
+		let curIter = 0;
+		await track('set', {
+			eager: true, def: async () => {
+				const myIter = ++curIter;
+				const collect = async () => {
+					const nodes = [];
+					for (const node of p.at('subDoc').values()) {
+						if (myIter !== curIter) break; // abort if a new iteration started
+						const subNodes = await node('getDOM');
+						nodes.push(...[...subNodes.values()]);
+					}
+					return nodes;
+				};
+				await collect.then(newNodes => track('batch', () => {
+					if (myIter === curIter) { // only update if latest iteration
+						nodes.clear();
+						nodes.push(newNodes);
+					}
+				}));
+			}
+		})('rv');
 		return nodes;
 	}
 
@@ -452,7 +504,7 @@ modcaps=''
 			p.set('subSpec', copy);
 		}
 		if (schema?.at(AUTO_DOC) !== false) {
-			const doc = p.at('document'), subSpec = p.at('subSpec');
+			const doc = p.at('doc'), subSpec = p.at('subSpec');
 			p.at('subDoc').clear();
 			if (subSpec?.size) {
 				const slotSrc = d.rr('subSlotSrc');
@@ -518,7 +570,7 @@ modcaps=''
 			'@init': opInit,
 			append: opAppend,
 			delAttr: opDelAttr,
-			document: (d) => d.p.at('document'),
+			document: (d) => d.p.at('doc'),
 			getAttr: opGetAttr,
 			getAttrHTML: opGetAttrHTML,
 			/* async */ getDOM: (_d) => undefined,

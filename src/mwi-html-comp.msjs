@@ -152,13 +152,19 @@ modcaps=''
 
 	// MWIHTML (base) interface (standard `h.` HTML tags)
 	(() => {
-		async function opGetDOM (d) {
+		/* async */ function opGetDOM (d) {
 			if (typeof document !== 'object' || typeof document.createElement !== 'function') return [];
 			const p = d.p, type = p.at('type').replace(/^h\./, '');
 			const node = document.createElement(type);
 			d.rr.setDOMAttrs(node, p.at('attrs'));
-			const children = d.rr('getSubDOM');
-			if (children.length) node.append(...children);
+			let curIter = 0;
+			getInstance('@reactive')('set', {
+				eager: true, def: async () => {
+					const myIter = ++curIter;
+					const children = await d.rr('getSubDOM');
+					if (myIter === curIter) d.rr.domSyncChildren(node, ...[...children.values()]);
+				}
+			});
 			return [ node ];
 		}
 

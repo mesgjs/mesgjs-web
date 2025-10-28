@@ -118,7 +118,7 @@ modcaps=''
 			// Unnamed slot: check the slot-source for non-empty list of natural children
 			const slotSub = slotSrc && !name && slotSrc('getSubSpec'), subOK = (slotSub instanceof NANOS) && slotSub.next;
 			const specDOM = async (spec) => {
-				const doc = p.at('document');
+				const doc = p.at('doc');
 				if (!p.has('frag')) p.set('frag', doc.createNodeSync('m.frg', { slotSrc: d.rr }));
 				const frag = p.at('frag');
 				await frag('setSubSpec', [ spec ]);
@@ -138,7 +138,7 @@ modcaps=''
 			// Unnamed slot: check the slot-source for non-empty list of natural children
 			const slotSub = slotSrc && !name && slotSrc('getSubSpec'), subOK = (slotSub instanceof NANOS) && slotSub.next;
 			const specHTML = async (spec) => {
-				const doc = p.at('document');
+				const doc = p.at('doc');
 				if (!p.has('frag')) p.set('frag', doc.createNodeSync('m.frg', { slotSrc: d.rr }));
 				const frag = p.at('frag');
 				await frag('setSubSpec', [ spec ]);
@@ -163,11 +163,23 @@ modcaps=''
 	// MWICoreText (text) interface
 	// `text` or `[m.t t=text?]`
 	(() => {
-		function opGetDOM (d) {
-			if (typeof document === 'object' && typeof document.createTextNode === 'function') {
-				const text = d.rr('getAttr', [ 't' ]) || '';
-				// Will need <output> or guard comments for reactive values to prevent normalization
-				if (text !== '') return [ document.createTextNode(text) ];
+		async function opGetDOM (d) {
+			if (typeof document === 'object' && typeof document.createElement === 'function') {
+				const p = d.p, doc = p.at('document');
+				const nodes = getInstance('@list'), output = document.createElement('output');
+				nodes('setOpts', { autoReactive: true })('rio', true);
+				getInstance('@reactive')('set', {
+					eager: true, def: () => {
+						const text = d.rr('getAttr', [ 't' ]) || '';
+						if (text !== '') {
+							output.textContent = text;
+							nodes('set', new NANOS(0, { to: output }));
+						} else {
+							nodes('clear');
+						}
+					}
+				})('rv');
+				return nodes;
 			}
 			return [];
 		}
@@ -202,13 +214,27 @@ modcaps=''
 			if (!p.has(SCHEMA)) p.set(SCHEMA, new NANOS());
 			const schema = p.at(SCHEMA);
 			schema.set(AUTO_DOC, false);
+			const doc = p.at('doc'), frag = doc('createNodeSync', { 0: 'm.frg', slotSrc: d.rr }), list = p.at('tpl');
+			p.set('frag', frag);
+			frag('setSubSpec', [ list ]);
 		}
 
-		async function opSetSubSpec (d) {
-			const p = d.p, doc = p.at('document'), list = p.at('tpl'), slotSrc = d.rr;
-			d.sm(d, 'redis'); // super-setSubSpec first
-			const nodes = await doc('from', { list, slotSrc });
-			p.set('subDoc', new NANOS(nodes));
+		async function opGetDOM (d) {
+			const frag = await tplFrag(d);
+			return frag('getDOM');
+		}
+
+		async function opGetHTML (d) {
+			const frag = await tplFrag(d);
+			return frag('getHTML');
+		}
+
+		async function tplFrag (d) {
+			const slotSrc = d.rr, p = d.p, doc = p.at('doc');
+			if (!p.has('frag')) p.set('frag', await doc('createNode', { 0: 'm.frg', slotSrc} ));
+			const frag = p.at('frag'), list = p.at('tpl');
+			await frag('setSubSpec', [ list ]);
+			return frag;
 		}
 
 		getInterface(TPL_IF).set({
@@ -216,7 +242,8 @@ modcaps=''
 			chain: [ BASE_IF ],
 			handlers: {
 				'@init': opInit,
-				/* async */ setSubSpec: opSetSubSpec,
+				/* async */ getDOM: opGetDOM,
+				/* async */ getHTML: opGetHTML,
 			}
 		});
 	})();
