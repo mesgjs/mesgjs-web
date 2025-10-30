@@ -197,13 +197,13 @@ modcaps=''
 	// (append doc-node|text...)
 	function opAppend (d) {
 		const p = d.p;
-		if (p.at([ SCHEMA, VOID ])) return;
-		p.set('subSpec', undefined); // officially active; sub-doc is source of sub-spec truth
-		const m = d.mp;
+		if (p.at([ SCHEMA, VOID ])) return d.rr;
+		const m = d.mp, subDoc = p.at('subDoc');
 		const docNodes = [...m.values()].filter((n) => typeof n === 'string' || typeChains(n?.msjsType, IF_NAME));
+		subDoc.set('live', true); // officially active; sub-doc is source of sub-spec truth
 		if (docNodes.length) {
 			const doc = p.at('doc');
-			p.at('subDoc').push([...docNodes.map(orig => {
+			subDoc.push([...docNodes.map(orig => {
 				if (typeof orig !== 'string') return orig;
 				const node = doc.createNodeSync('m.t');
 				node.setAttr('t', orig);
@@ -357,8 +357,8 @@ modcaps=''
 				const collect = async () => {
 					const nodes = [];
 					for (const node of p.at('subDoc').values()) {
-						if (myIter !== curIter) break; // abort if a new iteration started
 						const subNodes = await node('getDOM');
+						if (myIter !== curIter) break; // abort if a new iteration started
 						nodes.push(...[...subNodes.values()]);
 					}
 					return nodes;
@@ -374,11 +374,12 @@ modcaps=''
 		return nodes;
 	}
 
+	// Return the node's sub-spec list
 	function opGetSubSpec (d) {
-		const p = d.p, curSpec = p.at('subSpec');
-		// If we've retained a sub-spec, return it. Otherwise, construct it from the sub-doc.
-		if (curSpec) return curSpec;
-		const subDoc = p.at('subDoc'), newSpec = new NANOS();
+		const p = d.p, subDoc = p.at('subDoc'), curSpec = p.at('subSpec');
+		// Live (porentially modified) sub-doc overrides original sub-spec
+		if (!subDoc.at('live')) return curSpec;
+		const newSpec = new NANOS();
 		for (const node of subDoc.values()) {
 			newSpec.push([node('getSpec')]);
 		}
@@ -504,15 +505,17 @@ modcaps=''
 			p.set('subSpec', copy);
 		}
 		if (schema?.at(AUTO_DOC) !== false) {
-			const doc = p.at('doc'), subSpec = p.at('subSpec');
-			p.at('subDoc').clear();
+			// Template sub-specs are only for (unnamed) content slotting and therefore disable auto-doc.
+			// (Their actual content is managed in an internal fragment.)
+			const doc = p.at('doc'), subDoc = p.at('subDoc'), subSpec = p.at('subSpec');
+			subDoc.clear();
 			if (subSpec?.size) {
 				const slotSrc = d.rr('subSlotSrc');
-				const subDoc = await doc('from', { list: subSpec, slotSrc });
-				d.rr('append', subDoc);
+				const nodes = await doc('from', { list: subSpec, slotSrc });
+				d.rr('append', nodes);
 			}
 			// For this component, the sub-doc will be the source of sub-spec truth
-			p.set('subSpec', undefined);
+			subDoc.set('live', true);
 		}
 	}
 

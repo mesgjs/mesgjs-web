@@ -166,8 +166,7 @@ modcaps=''
 		async function opGetDOM (d) {
 			if (typeof document === 'object' && typeof document.createElement === 'function') {
 				const p = d.p, doc = p.at('document');
-				const nodes = getInstance('@list'), output = document.createElement('output');
-				nodes('setOpts', { autoReactive: true })('rio', true);
+				const nodes = getInstance('@list', [ doc.rxNANOS() ]), output = document.createElement('output');
 				getInstance('@reactive')('set', {
 					eager: true, def: () => {
 						const text = d.rr('getAttr', [ 't' ]) || '';
@@ -214,19 +213,16 @@ modcaps=''
 			if (!p.has(SCHEMA)) p.set(SCHEMA, new NANOS());
 			const schema = p.at(SCHEMA);
 			schema.set(AUTO_DOC, false);
-			const doc = p.at('doc'), frag = doc('createNodeSync', { 0: 'm.frg', slotSrc: d.rr }), list = p.at('tpl');
-			p.set('frag', frag);
-			frag('setSubSpec', [ list ]);
 		}
 
 		async function opGetDOM (d) {
 			const frag = await tplFrag(d);
-			return frag('getDOM');
+			return frag('getDOM', d.mp);
 		}
 
 		async function opGetHTML (d) {
 			const frag = await tplFrag(d);
-			return frag('getHTML');
+			return frag('getHTML', d.mp);
 		}
 
 		async function tplFrag (d) {

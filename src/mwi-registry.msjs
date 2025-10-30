@@ -123,7 +123,8 @@ modcaps=''
 		const comps = p.at('components');
 		let entry = comps.at(name);
 		if (p.at('ready') && !entry) {
-			throw new Error(`${IF_NAME}: Late "${name}" component registration prohibited`);
+			const meta = getModMeta();
+			if (!meta?.at('testMode') || !entry.at('allowLate')) throw new Error(`${IF_NAME}: Late "${name}" component registration prohibited`);
 		}
 		if (!entry) {
 			const idNum = p.at('compId'), id = COMP_ID_PRE + idNum.toString(36);

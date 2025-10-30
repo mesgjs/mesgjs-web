@@ -162,7 +162,7 @@ modcaps=''
 				eager: true, def: async () => {
 					const myIter = ++curIter;
 					const children = await d.rr('getSubDOM');
-					if (myIter === curIter) d.rr.domSyncChildren(node, ...[...children.values()]);
+					if (myIter === curIter) d.rr.domSyncChildren(node, children);
 				}
 			});
 			return [ node ];
