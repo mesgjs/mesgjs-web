@@ -313,8 +313,8 @@ modcaps=''
 		for (const [name, value] of p.at('attrs').namedEntries()) {
 			if (!/^[0-9a-z:_-]*$/.test(name)) continue; // Only HTML attributes
 			if (value === true) HTML.push(` ${name}`);
-			else if (typeof value === 'string') {
-				HTML.push(` ${name}="${textToHTML(value, { dq: true })}"`);
+			else if (typeof value === 'string' || typeof value === 'number') {
+				HTML.push(` ${name}="${textToHTML(String(value), { dq: true })}"`);
 			}
 		}
 		return HTML.join('');

@@ -66,7 +66,7 @@ export async function setupRuntime ({ modules, standard = true } = {}) {
 export async function renderHTML (content) {
 	const { fwait, getInstance } = globalThis.$c;
 	const doc = getInstance('MWIDocument');
-	const nodes = await doc('from', content);
+	const nodes = await doc('from', ls(['list', content]));
 	await doc('append', nodes);
 	return doc('getHTML');
 }
