@@ -90,58 +90,58 @@ Deno.test('MWIRegistry - ID Generation', async (t) => {
 	});
 });
 
-Deno.test('MWIRegistry - Component Retrieval (getSync)', async (t) => {
+Deno.test('MWIRegistry - Component Retrieval (get)', async (t) => {
 	await fwait(REG_READY_FT);
 	const registry = getInstance('MWIRegistry');
 
-	await t.step('(getSync) - Retrieve registered component', () => {
+	await t.step('(get) - Retrieve registered component', () => {
 		// Core components should be registered by now
-		const textComp = registry('getSync', ls([, 'm.t']));
+		const textComp = registry('get', ls([, 'm.t']));
 		assert(textComp, 'Should return component entry for m.t');
 		assert(textComp.has('if'), 'Component entry should have interface');
 	});
 
-	await t.step('.getSync() - Retrieve registered component', () => {
-		const textComp = registry.getSync('m.t');
+	await t.step('.get() - Retrieve registered component', () => {
+		const textComp = registry.get('m.t');
 		assert(textComp, 'Should return component entry for m.t');
 		assert(textComp.has('if'), 'Component entry should have interface');
 	});
 
-	await t.step('(getSync) - Multiple component types', () => {
+	await t.step('(get) - Multiple component types', () => {
 		const components = ['m.t', 'm.com', 'm.frg', 'h.div'];
 		for (const compName of components) {
-			const comp = registry('getSync', ls([, compName]));
+			const comp = registry('get', ls([, compName]));
 			assert(comp, `Should return component entry for ${compName}`);
 		}
 	});
 
-	await t.step('.getSync() - Multiple component types', () => {
+	await t.step('.get() - Multiple component types', () => {
 		const components = ['m.t', 'm.com', 'm.frg', 'h.div'];
 		for (const compName of components) {
-			const comp = registry.getSync(compName);
+			const comp = registry.get(compName);
 			assert(comp, `Should return component entry for ${compName}`);
 		}
 	});
 
-	await t.step('(getSync) - Non-existent component', () => {
-		const comp = registry('getSync', ls([, 'nonexistent.component']));
+	await t.step('(get) - Non-existent component', () => {
+		const comp = registry('get', ls([, 'nonexistent.component']));
 		assertEquals(comp, undefined, 'Should return undefined for non-existent component');
 	});
 
-	await t.step('.getSync() - Non-existent component', () => {
-		const comp = registry.getSync('nonexistent.component');
+	await t.step('.get() - Non-existent component', () => {
+		const comp = registry.get('nonexistent.component');
 		assertEquals(comp, undefined, 'Should return undefined for non-existent component');
 	});
 
-	await t.step('(getSync) - Component has ID', () => {
-		const textComp = registry('getSync', ls([, 'm.t']));
+	await t.step('(get) - Component has ID', () => {
+		const textComp = registry('get', ls([, 'm.t']));
 		assert(textComp.has('id'), 'Component entry should have an ID');
 		const id = textComp.at('id');
 		assertMatch(id, /^_MO_/, 'Component ID should start with _MO_ prefix');
 	});
 
-	await t.step('.getSync() - Component has ID', () => {
-		const textComp = registry.getSync('m.t');
+	await t.step('.get() - Component has ID', () => {
+		const textComp = registry.get('m.t');
 		assert(textComp.has('id'), 'Component entry should have an ID');
 		const id = textComp.at('id');
 		assertMatch(id, /^_MO_/, 'Component ID should start with _MO_ prefix');
@@ -176,7 +176,7 @@ Deno.test('MWIRegistry - Hydration (loadServerComps)', async (t) => {
 		assert(registry, 'Registry should exist');
 		
 		// Verify core components are registered
-		const textComp = registry.getSync('m.t');
+		const textComp = registry.get('m.t');
 		assert(textComp, 'Text component should be registered');
 		assert(textComp.has('id'), 'Component should have an ID');
 	});
@@ -185,9 +185,9 @@ Deno.test('MWIRegistry - Hydration (loadServerComps)', async (t) => {
 		const registry = getInstance('MWIRegistry');
 		
 		// Get several components and verify they have sequential IDs
-		const comp1 = registry.getSync('m.t');
-		const comp2 = registry.getSync('m.com');
-		const comp3 = registry.getSync('m.frg');
+		const comp1 = registry.get('m.t');
+		const comp2 = registry.get('m.com');
+		const comp3 = registry.get('m.frg');
 		
 		assert(comp1 && comp1.has('id'), 'First component should have ID');
 		assert(comp2 && comp2.has('id'), 'Second component should have ID');

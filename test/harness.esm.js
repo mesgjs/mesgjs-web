@@ -62,12 +62,21 @@ export async function setupRuntime ({ modules, standard = true } = {}) {
 	await fwait('@loaded');
 }
 
-// Render a new MWIDocument with the specified content (doc-nodes, spec-item, or spec-list)
-export async function renderHTML (content) {
+// Render a new MWIDocument with the specified spec-list content and return the DOM
+export function renderDOM (content) {
 	const { fwait, getInstance } = globalThis.$c;
 	const doc = getInstance('MWIDocument');
-	const nodes = await doc('from', ls(['list', content]));
-	await doc('append', nodes);
+	const nodes = doc('from', ls(['list', content]));
+	doc('append', nodes);
+	return doc('getDOM');
+}
+
+// Render a new MWIDocument with the specified spec-list content and return the HTML
+export function renderHTML (content) {
+	const { fwait, getInstance } = globalThis.$c;
+	const doc = getInstance('MWIDocument');
+	const nodes = doc('from', ls(['list', content]));
+	doc('append', nodes);
 	return doc('getHTML');
 }
 

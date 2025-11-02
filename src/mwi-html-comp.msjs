@@ -152,24 +152,26 @@ modcaps=''
 
 	// MWIHTML (base) interface (standard `h.` HTML tags)
 	(() => {
-		/* async */ function opGetDOM (d) {
-			if (typeof document !== 'object' || typeof document.createElement !== 'function') return [];
-			const p = d.p, type = p.at('type').replace(/^h\./, '');
-			const node = document.createElement(type);
+		function opGetDOM (d) {
+			if (typeof document !== 'object' || typeof document.createElement !== 'function') return new NANOS();
+			const p = d.p;
+			if (p.has('dom')) return p.at('dom');
+			const type = p.at('type').replace(/^h\./, ''), node = document.createElement(type), nodes = new NANOS(node);
+			p.set('dom', nodes);
 			d.rr.setDOMAttrs(node, p.at('attrs'));
 			let curIter = 0;
 			getInstance('@reactive')('set', {
-				eager: true, def: async () => {
+				eager: true, def: () => {
 					const myIter = ++curIter;
-					const children = await d.rr('getSubDOM');
+					const children = d.rr('getSubDOM');
 					if (myIter === curIter) d.rr.domSyncChildren(node, children);
 				}
-			});
-			return [ node ];
+			})('rv'); // Wait for first execution
+			return nodes;
 		}
 
 		// Return HTML for standard (or void) HTML tags
-		async function opGetHTML (d) {
+		function opGetHTML (d) {
 			const p = d.p, type = p.at('type').replace(/^h\./, '');
 			const m = d.mp, hasIn = m.has('in'), html = m.at('in', []);
 			// Opening (or void) tag with optional (HTML) attributes
@@ -177,7 +179,7 @@ modcaps=''
 			if (!p.at([SCHEMA, VOID])) {
 				// Collect inner HTML
 				for (const node of p.at('subDoc', []).values()) {
-					await node('getHTML', { in: html });
+					node('getHTML', { in: html });
 				}
 				// Closing tag
 				html.push(`</${type}>`);
@@ -192,8 +194,8 @@ modcaps=''
 			// abstract, final, once, private, etc.
 			chain: [ SUPER_IF ],
 			handlers: {
-				/* async */ getDOM: opGetDOM,
-				/* async */ getHTML: opGetHTML,
+				getDOM: opGetDOM,
+				getHTML: opGetHTML,
 				subSlotSrc: (d) => d.p.at('slotSrc'), // HTML nodes are pass-through
 			}
 		});
@@ -202,7 +204,7 @@ modcaps=''
 	// MWIHTMLDocType (doctype) interface
 	// `[h.doctype]`
 	(() => {
-		/* async */ function opGetHTML (d) {
+		function opGetHTML (d) {
 			const m = d.mp, output = m.at('in');;
 			const html = `<!DOCTYPE html>`; // Fixed type for now
 			if (output) output.push(html);
@@ -213,10 +215,10 @@ modcaps=''
 			pristine: true, lock: true,
 			chain: [ BASE_IF ],
 			handlers: {
-				/* async */ getDOM: (_d) => [],
-				/* async */ getHTML: opGetHTML,
+				getDOM: (_d) => new NANOS(),
+				getHTML: opGetHTML,
 				getSubSpec: (_d) => new NANOS(),
-				/* async */ setSubSpec: (_d) => {},
+				setSubSpec: (d) => d.rr,
 			}
 		});
 	})();
@@ -225,19 +227,22 @@ modcaps=''
 	// `[h.script m.text=script?]`
 	// `[h.style m.text=style?]`
 	(() => {
-		/* async */ function opGetDOM (d) {
-			const p = d.p, type = p.at('type').replace(/^h\./, '');
-			if (typeof document === 'object' && typeof document.createNode === 'function') {
-				const text = d.rr('getAttr', [ 'm.text' ]) || '';
-				const node = document.createElement(type);
-				d.rr.setDOMAttrs(node, p.at('attrs'));
-				if (text !== '') node.innerHTML = text;
-				return [ node ];
-			}
-			return [];
+		function opGetDOM (d) {
+			if (typeof document !== 'object' || typeof document.createElement !== 'function') return new NANOS();
+			const p = d.p, doc = p.at('doc'), type = p.at('type').replace(/^h\./, '');
+			const node = document.createElement(type);
+			const nodes = new NANOS(node);
+			d.rr.setDOMAttrs(node, p.at('attrs'));
+			getInstance('@reactive')('set', {
+				eager: true, def: () => {
+					const text = d.rr('getAttr', [ 'm.text' ]) || '';
+					node.innerHTML = text;
+				}
+			})('rv');
+			return nodes;
 		}
 
-		/* async */ function opGetHTML (d) {
+		function opGetHTML (d) {
 			const p = d.p, type = p.at('type').replace(/^h\./, '');
 			const m = d.mp, output = m.at('in');;
 			const raw = d.rr('getAttr', [ 'm.text' ]) || '';
@@ -262,10 +267,10 @@ modcaps=''
 			pristine: true, lock: true,
 			chain: [ BASE_IF ],
 			handlers: {
-				/* async */ getDOM: opGetDOM,
-				/* async */ getHTML: opGetHTML,
+				getDOM: opGetDOM,
+				getHTML: opGetHTML,
 				getSubSpec: (_d) => new NANOS(),
-				/* async */ setSubSpec: (_d) => {},
+				setSubSpec: (d) => d.rr,
 			}
 		});
 	})();
@@ -273,17 +278,21 @@ modcaps=''
 	// MWIHTMLTitle (title) interface
 	// `[h.title m.text=title?]`
 	(() => {
-		/* async */ function opGetDOM (d) {
-			if (typeof document === 'object' && typeof document.createNode === 'function') {
-				const text = d.rr('getAttr', [ 'm.text' ]) || '';
-				const node = document.createNode('title');
-				node.textContent = text;
-				return [ node ];
-			}
-			return [];
+		function opGetDOM (d) {
+			if (typeof document !== 'object' || typeof document.createElement !== 'function') return new NANOS();
+			const p = d.p, doc = p.at('doc');
+			const node = document.createElement('title');
+			const nodes = new NANOS(node);
+			getInstance('@reactive')('set', {
+				eager: true, def: () => {
+					const text = d.rr('getAttr', [ 'm.text' ]) || '';
+					node.textContent = text;
+				}
+			})('rv');
+			return nodes;
 		}
 
-		/* async */ function opGetHTML (d) {
+		function opGetHTML (d) {
 			const m = d.mp, output = m.at('in');;
 			const text = d.rr('getAttr', [ 'm.text' ]) || '';
 			const html = `<title${d.rr('getAttrHTML')}>${d.rr.textToHTML(text)}</title>`;
@@ -295,10 +304,10 @@ modcaps=''
 			pristine: true, lock: true,
 			chain: [ BASE_IF ],
 			handlers: {
-				/* async */ getDOM: opGetDOM,
-				/* async */ getHTML: opGetHTML,
+				getDOM: opGetDOM,
+				getHTML: opGetHTML,
 				getSubSpec: (_d) => new NANOS(),
-				/* async */ setSubSpec: (_d) => {},
+				setSubSpec: (d) => d.rr,
 			}
 		});
 	})();

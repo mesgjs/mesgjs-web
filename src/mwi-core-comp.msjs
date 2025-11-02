@@ -24,10 +24,14 @@ modcaps=''
 	const BASE_IF = 'MWIDocNode';
 	const BASE_FT = BASE_IF;
 	const CORE_IF = 'MWICore';
+	const HTML_IF = 'MWIHTML';
+	const HTML_FT = 'mwi.comp.' + HTML_IF;
 	const READY_FT = 'mwi.comp.' + CORE_IF;
 
 	const COM_IF = CORE_IF + 'Com';
 	const COM_TYPE = 'm.com';
+	const DEFER_IF = CORE_IF + 'Defer';
+	const DEFER_TYPE = 'm.defer';
 	const FRAG_IF = CORE_IF + 'Frag';
 	const FRAG_TYPE = 'm.frg';
 	const TEXT_IF = CORE_IF + 'Text';
@@ -40,12 +44,13 @@ modcaps=''
 
 	const coreConfig = {
 		[COM_TYPE]: ls([INTERFACE, COM_IF, SCHEMA, ls([VOID, true])]),
+		[DEFER_TYPE]: ls([INTERFACE, DEFER_IF, SCHEMA, ls([AUTO_DOC, false, 'htmlAllowAttr', new Set(['id', 'data-mwi-defer'])])]),
 		[FRAG_TYPE]: ls([INTERFACE, FRAG_IF]),
 		[SLOT_TYPE]: ls([INTERFACE, SLOT_IF]),
 		[TEXT_TYPE]: ls([INTERFACE, TEXT_IF, SCHEMA, ls([VOID, true])]),
 	}
 
-	await fwait(BASE_FT); // For interface chaining
+	await fwait(BASE_FT, HTML_FT); // For interface chaining
 
 	// MWICoreCom (comment) interface
 	// `[m.com t=comment?]`
@@ -65,11 +70,19 @@ modcaps=''
 		}
 
 		function opGetDOM (d) {
-			if (typeof document === 'object' && typeof document.createComment === 'function') {
-				const text = d.rr('getAttr', [ 't' ]) || '';
-				return [ document.createComment(text) ];
-			}
-			return [];
+			if (typeof document !== 'object' || typeof document.createComment !== 'function') return new NANOS();
+			const p = d.p;
+			if (p.has('dom')) return p.at('dom'); // Return consistent result across calls
+			// Always return the same comment node, with reactively-updated comment content
+			const comment = document.createComment(''), doc = p.at('doc'), nodes = new NANOS(comment);
+			p.set('dom', nodes);
+			getInstance('@reactive')('set', {
+				eager: true, def: () => {
+					const text = d.rr('getAttr', [ 't' ]) || '';
+					comment.data = text;
+				}
+			})('rv');
+			return nodes;
 		}
 
 		function opGetHTML (d) {
@@ -87,7 +100,53 @@ modcaps=''
 				getDOM: opGetDOM,
 				getHTML: opGetHTML,
 				getSubSpec: (_d) => new NANOS(),
-				/* async */ setSubSpec: (_d) => {},
+				setSubSpec: (d) => d.rr,
+			}
+		});
+	})();
+
+	// MWICoreDefer (deferred component placeholder) interface
+	// `[m.defer type=originalType ...]`
+	// Represents a component that hasn't been loaded yet
+	// Renders as <slot id="..."> for easy location and future replacement
+	(() => {
+		function opInit (d) {
+			const p = d.p, m = d.mp;
+			// Capture the original deferred type before changing p.type
+			const deferType = m.at('type');
+			// Redispatch for MWIHTML init
+			d.sm(d, 'redis');
+			// Change type to h.slot for HTML and DOM rendering
+			p.set('type', 'h.slot');
+			// Store defer type in attributes
+			d.rr('setAttr', ['m.deferType', deferType]);
+			d.rr('setAttr', ['data-mwi-defer', deferType]);
+		}
+
+		function opGetDOM (d) {
+			// Ensure ID is assigned before rendering
+			d.rr('getAttr', ['m.id']); // Auto-assign ID if not present
+			// Redispatch to MWIHTML
+			return d.sm(d, 'redis');
+		}
+
+		function opGetHTML (d) {
+			// Ensure ID is assigned before rendering
+			d.rr('getAttr', ['m.id']); // Auto-assign ID if not present
+			// Redispatch to MWIHTML
+			return d.sm(d, 'redis');
+		}
+
+		getInterface(DEFER_IF).set({
+			pristine: true, lock: true,
+			chain: [ HTML_IF ],  // Sub-interface MWIHTML for h.slot rendering
+			handlers: {
+				'@init': opInit,
+				append: (d) => d.rr, // Don't add children
+				getDOM: opGetDOM,
+				getHTML: opGetHTML,
+				getSubSpec: (_d) => new NANOS(),
+				setSubSpec: (d) => d.rr,
 			}
 		});
 	})();
@@ -110,44 +169,81 @@ modcaps=''
 	// `[m.slot name=slotName? default-content...]`
 	// This is basically just a fragment with a computed sub-doc.
 	(() => {
-		/* async */ function opGetDOM (d) {
-			const p = d.p, m = d.mp;
-			const slotSrc = p.at('slotSrc'), name = d.rr('getAttr', [ 'name' ]);
-			// Named slot: check the slot-source for a list-valued attribute with the specified name
-			const slotAttr = slotSrc && name && slotSrc('getAttr', [name]), attrOK = slotAttr instanceof NANOS;
-			// Unnamed slot: check the slot-source for non-empty list of natural children
-			const slotSub = slotSrc && !name && slotSrc('getSubSpec'), subOK = (slotSub instanceof NANOS) && slotSub.next;
-			const specDOM = async (spec) => {
-				const doc = p.at('doc');
-				if (!p.has('frag')) p.set('frag', doc.createNodeSync('m.frg', { slotSrc: d.rr }));
-				const frag = p.at('frag');
-				await frag('setSubSpec', [ spec ]);
-				return frag('getDOM');
-			};
-			if (attrOK) return specDOC(slotAttr);
-			if (subOK) return specDOC(slotSub);
-			return d.sm(d, 'redis'); // Fall back to rendering m.slot's natural children
+		// Slot content selection:
+		// Named slot: Source attribute (if list-valued), with fall-back to slot's natural children
+		// Unnamed slot: Source natural children (if any), with fall-back to slot's natural children
+
+		// Return a properly slot-sourced fragment for content assembly
+		function getFrag (d) {
+			const p = d.p, doc = p.at('doc'), frag = doc.createNode('m.frg', { slotSrc: d.rr });
+			return frag;
 		}
 
-		/* async */ function opGetHTML (d) {
+		function opGetDOM (d) {
+			if (typeof document !== 'object') return new NANOS();
+			const p = d.p, slotSrc = p.at('slotSrc');
+			if (!slotSrc) return d.sm(d, 'redis'); // No slot source; always render natural children
+			// Note: slotDOM is our sub-interface result; dom is our super-interface result (fall-back)
+			if (p.has('slotDOM')) return p.at('slotDOM'); // Return consistent reactive result across calls
+			const doc = p.at('doc'), nodes = doc.rxNANOS();
+			p.set('slotDOM', nodes);
+			const relay = getInstance('@reactive');
+			relay('set', {
+				eager: true, def: () => {
+					const name = d.rr('getAttr', [ 'name' ]);
+					// Named slot: check the slot-source for a list-valued attribute with the specified name
+					const slotAttr = name && slotSrc('getAttr', [name]);
+					const attrOK = slotAttr instanceof NANOS;
+					// Unnamed slot: check the slot-source for non-empty list of natural children
+					const subOK = !name && slotSrc('hasChildren');
+
+					if (attrOK) {
+						// Named slotting is spec-based (no live nodes), and must fully re-render on every change
+						const frag = getFrag(d);
+						frag('setSubSpec', [slotAttr]);
+						relay('untr', () => relay('batch', () => {
+							nodes.clear();
+							nodes.push(frag('getDOM'));
+						}));
+					}
+					else {
+						// Get stable, reactive DOM from slot-source natural children (if any), or ours
+						const dom = subOK ? slotSrc('getDOM') : d.sm(d, 'redis');
+						relay('untr', () => relay('batch', () => {
+							nodes.clear();
+							nodes.push(dom);
+						}));
+					}
+				}
+			});
+			relay('rv');
+			return nodes;
+		}
+
+		function opGetHTML (d) {
 			const p = d.p, m = d.mp;
 			const slotSrc = p.at('slotSrc'), name = d.rr('getAttr', [ 'name' ]);
 			const hasIn = m.has('in'), html = m.at('in', []);
 			// Named slot: check the slot-source for a list-valued attribute with the specified name
 			const slotAttr = slotSrc && name && slotSrc('getAttr', [name]), attrOK = slotAttr instanceof NANOS;
 			// Unnamed slot: check the slot-source for non-empty list of natural children
-			const slotSub = slotSrc && !name && slotSrc('getSubSpec'), subOK = (slotSub instanceof NANOS) && slotSub.next;
-			const specHTML = async (spec) => {
-				const doc = p.at('doc');
-				if (!p.has('frag')) p.set('frag', doc.createNodeSync('m.frg', { slotSrc: d.rr }));
-				const frag = p.at('frag');
-				await frag('setSubSpec', [ spec ]);
-				await frag('getHTML', { in: html });
+			const subOK = slotSrc && !name && slotSrc('hasChildren');
+			const specHTML = (spec) => {
+				const frag = getFrag(d);
+				frag('setSubSpec', [ spec ]);
+				frag('getHTML', { in: html });
 				if (!hasIn) return html.join('');
 			};
 			if (attrOK) return specHTML(slotAttr);
-			if (subOK) return specHTML(slotSub);
+			if (subOK) return specHTML(slotSrc('getSubSpec'));
 			return d.sm(d, 'redis'); // Fall back to rendering m.slot's natural children
+		}
+
+		function opHasChildren (d) {
+			const p = d.p, slotSrc = p.at('slotSrc'), name = d.rr('getAttr', [ 'name ']);
+			if (!slotSrc) return d.sm(d, 'redis'); // Will fall-back; self-report
+			if (!name) return slotSrc('hasChildren'); // Unnamed: slot-source natural
+			return !!slotSrc('getAttr', [name]).next;
 		}
 
 		getInterface(SLOT_IF).set({
@@ -156,6 +252,7 @@ modcaps=''
 			handlers: {
 				getDOM: opGetDOM,
 				getHTML: opGetHTML,
+				hasChildren: opHasChildren,
 			}
 		});
 	})();
@@ -163,24 +260,29 @@ modcaps=''
 	// MWICoreText (text) interface
 	// `text` or `[m.t t=text?]`
 	(() => {
-		async function opGetDOM (d) {
-			if (typeof document === 'object' && typeof document.createElement === 'function') {
-				const p = d.p, doc = p.at('document');
-				const nodes = getInstance('@list', [ doc.rxNANOS() ]), output = document.createElement('output');
-				getInstance('@reactive')('set', {
-					eager: true, def: () => {
-						const text = d.rr('getAttr', [ 't' ]) || '';
+		function opGetDOM (d) {
+			if (typeof document !== 'object' || typeof document.createElement !== 'function') return new NANOS();
+			const p = d.p;
+			if (p.has('dom')) return p.at('dom');
+			const output = document.createElement('output'), doc = p.at('doc'), nodes = doc.rxNANOS();
+			globalThis.latestText = output;
+			p.set('dom', nodes);
+			const relay = getInstance('@reactive');
+			relay('set', {
+				eager: true, def: () => {
+					const text = d.rr('getAttr', [ 't' ]) || '';
+					relay('untr', () => {
 						if (text !== '') {
 							output.textContent = text;
-							nodes('set', new NANOS(0, { to: output }));
+							if (!nodes.has(0)) nodes.set(0, output);
 						} else {
-							nodes('clear');
+							if (nodes.has(0)) nodes.clear();
 						}
-					}
-				})('rv');
-				return nodes;
-			}
-			return [];
+					});
+				}
+			});
+			relay('rv');
+			return nodes;
 		}
 
 		function opGetHTML (d) {
@@ -198,7 +300,7 @@ modcaps=''
 				getDOM: opGetDOM,
 				getHTML: opGetHTML,
 				getSubSpec: (_d) => new NANOS(),
-				/* async */ setSubSpec: (_d) => {},
+				setSubSpec: (d) => d.rr,
 			}
 		});
 	})();
@@ -215,21 +317,36 @@ modcaps=''
 			schema.set(AUTO_DOC, false);
 		}
 
-		async function opGetDOM (d) {
-			const frag = await tplFrag(d);
-			return frag('getDOM', d.mp);
+		function opGetDOM (d) {
+			if (typeof document !== 'object') return new NANOS();
+			const p = d.p;
+			if (p.has('dom')) return p.at('dom');
+			const  doc = p.at('doc'), nodes = doc.rxNANOS(), relay = getInstance('@reactive');
+			p.set('dom', nodes);
+			relay('set', {
+				eager: true, def: () => {
+					const frag = tplFrag(d);
+					const result = frag('getDOM');
+					relay('untr', () => relay('batch', () => {
+						nodes.clear();
+						nodes.push([...result.values()]);
+					}));
+				}
+			});
+			relay('rv');
+			return nodes;
 		}
 
-		async function opGetHTML (d) {
-			const frag = await tplFrag(d);
+		function opGetHTML (d) {
+			const frag = tplFrag(d);
 			return frag('getHTML', d.mp);
 		}
 
-		async function tplFrag (d) {
+		function tplFrag (d) {
 			const slotSrc = d.rr, p = d.p, doc = p.at('doc');
-			if (!p.has('frag')) p.set('frag', await doc('createNode', { 0: 'm.frg', slotSrc} ));
+			if (!p.has('frag')) p.set('frag', doc.createNode('m.frg', { slotSrc }));
 			const frag = p.at('frag'), list = p.at('tpl');
-			await frag('setSubSpec', [ list ]);
+			frag('setSubSpec', [ list ]);
 			return frag;
 		}
 
@@ -238,8 +355,8 @@ modcaps=''
 			chain: [ BASE_IF ],
 			handlers: {
 				'@init': opInit,
-				/* async */ getDOM: opGetDOM,
-				/* async */ getHTML: opGetHTML,
+				getDOM: opGetDOM,
+				getHTML: opGetHTML,
 			}
 		});
 	})();

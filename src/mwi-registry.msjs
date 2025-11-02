@@ -45,7 +45,7 @@ modcaps=''
 		// Add JS-level interface
 		Object.setPrototypeOf(d.rr, Object.setPrototypeOf({
 			get (name) { return this('get', [ name ]); },
-			getSync (name) { return this('getSync', [ name ]); },
+			/* async */ getWait (name) { return this('getWait', [ name ]); },
 			get jsv () { return this; },
 			nextId () { return this('nextId'); },
 			register (name, entry) { return this('register', new NANOS([ name, entry ])); },
@@ -74,8 +74,15 @@ modcaps=''
 		});
 	}
 
-	// Return the registration details for a specific component
-	async function opGet (d) {
+	// Return component registration (synchronous - returns current state)
+	function opGet (d) {
+		const name = d.mp.at(0), p = d.p;
+		const comp = p.at(['components', name]);
+		return comp;
+	}
+
+	// Return the registration details for a specific component (async - waits for deferred load)
+	async function opGetWait (d) {
 		const name = d.mp.at(0), p = d.p;
 		if (!p.at('isReady')) await fwait(REG_READY_FT);
 		const comp = p.at(['components', name]);
@@ -84,14 +91,6 @@ modcaps=''
 			const feature = comp.at(FEATURE);
 			if (feature) await fwait(feature);
 		}
-		return comp;
-	}
-
-	// Return component registration
-	// (A simple synchronous version that returns whatever is ready)
-	function opGetSync (d) {
-		const name = d.mp.at(0), p = d.p;
-		const comp = p.at(['components', name]);
 		return comp;
 	}
 
@@ -149,7 +148,7 @@ modcaps=''
 			dump: (d) => console.log(d.p.toSLID({ compact: true })),
 			// dumpJSON: (d) => console.log(JSON.stringify(d.p)),
 			get: opGet,
-			getSync: opGetSync,
+			getWait: opGetWait,
 			nextId: opNextId,
 			register: opRegister,
 		}

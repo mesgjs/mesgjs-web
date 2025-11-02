@@ -36,6 +36,14 @@ This directory contains the active design and requirements documents for the MWI
     *   **Status:** ACTIVE
     *   **Scope:** Supplementary notes and clarifications from the user regarding V5 development.
 
+*   **Document:** `v5-architecture/resync-render.md`
+    *   **Status:** APPROVED
+    *   **Scope:** Architectural plan to eliminate async rendering complexity by making HTML and DOM rendering synchronous. Introduces `MWICoreDefer` component for deferred-load components and renames APIs to make sync operations the default.
+
+*   **Document:** `v5-architecture/resync-render-tests.md`
+    *   **Status:** APPROVED
+    *   **Scope:** Test suite migration plan for synchronous rendering changes. Details updates needed for all test files, new defer node test coverage, and execution strategy.
+
 ## Core Language and Runtime Reference
 
 *   **MANDATORY: Mesgjs Language & Runtime Bible:** `resources/Mesgjs-Training-Data.md`

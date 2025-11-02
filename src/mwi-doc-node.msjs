@@ -70,7 +70,7 @@ modcaps=''
 					// Only HTML attributes
 					if (!/^[0-9a-z:_-]*$/.test(name)) continue;
 					flux[name] ||= 0; // Track attribute activity
-					extra.remove(name); // Handled attributes are not "extra"
+					extra.delete(name); // Handled attributes are not "extra"
 					const update = (_, chg = 0) => { // Common update code
 						const curValue = node.getAttribute(name), newValue = attrs.at(name);
 						if (curValue !== newValue) {
@@ -128,8 +128,8 @@ modcaps=''
 		domAppendAfter,
 		domSyncChildren,
 		getAttr (name) { return this('getAttr', [ name ]); },
-		/* async */ getDOM () { return this('getDOM'); },
-		/* async */ getHTML () { return this('getHTML'); },
+		getDOM () { return this('getDOM'); },
+		getHTML () { return this('getHTML'); },
 		getSpec () { return this('getSpec'); },
 		getSubDoc () { return this('getSubDoc'); },
 		getSubSpec () { return this('getSubSpec'); },
@@ -138,8 +138,8 @@ modcaps=''
 		get jsv () { return this; },
 		setAttr (name, value) { return this('setAttr', [ name, value ]); },
 		setDOMAttrs,
-		/* async */ setSpec (spec) { return this('setSpec', [ spec ]); },
-		/* async */ setSubSpec (params) { return this('setSubSpec', params); },
+		setSpec (spec) { return this('setSpec', [ spec ]); },
+		setSubSpec (params) { return this('setSubSpec', params); },
 		get slotSrc () { return this('slotSrc'); }, // (intended for testing)
 		get subSlotSrc () { return this('subSlotSrc'); },
 		textToHTML,
@@ -205,7 +205,7 @@ modcaps=''
 			const doc = p.at('doc');
 			subDoc.push([...docNodes.map(orig => {
 				if (typeof orig !== 'string') return orig;
-				const node = doc.createNodeSync('m.t');
+				const node = doc.createNode('m.t');
 				node.setAttr('t', orig);
 				return node;
 			})]);
@@ -309,9 +309,11 @@ modcaps=''
 
 	// Return the HTML encoding of string- and true-valued, HTML, "non-dot" attributes
 	function opGetAttrHTML (d) {
-		const p = d.p, HTML = [];
+		const p = d.p, HTML = [], schema = p.at(SCHEMA);
+		const allowAttr = ((set) => set?.jsv || set)(schema?.at('htmlAllowAttr'));  // undefined or Set/@set
 		for (const [name, value] of p.at('attrs').namedEntries()) {
 			if (!/^[0-9a-z:_-]*$/.test(name)) continue; // Only HTML attributes
+			if (allowAttr && !allowAttr.has(name)) continue; // Filter if specified
 			if (value === true) HTML.push(` ${name}`);
 			else if (typeof value === 'string' || typeof value === 'number') {
 				HTML.push(` ${name}="${textToHTML(String(value), { dq: true })}"`);
@@ -320,76 +322,100 @@ modcaps=''
 		return HTML.join('');
 	}
 
-	// Get DOM node(s)
-	/* async */ function getDOM (d) {
-		// Typically equivalent to `(getSubDOM)`
+	// Get DOM node(s) - default implementation delegates to getSubDOM
+	function opGetDOM (d) {
 		return d.rr('getSubDOM');
 	}
 
 	// Typically just recursively gather HTML from sub-doc-nodes
-	async function opGetHTML (d) {
+	function opGetHTML (d) {
 		const p = d.p, m = d.mp;
 		const hasIn = m.has('in'), html = m.at('in', []);
 		const subDoc = p.at('subDoc');
 		for (const node of subDoc.values()) {
-			await node('getHTML', { in: html });
+			node('getHTML', { in: html });
 		}
 		if (!hasIn) return html.join('');
 	}
 
 	// Return this node's doc-spec (`[type attr=value... children...]`)
 	function opGetSpec (d) {
-		const p = d.p, spec = new NANOS(p.at('type'));
-		spec.fromEntries(p.at('attrs').namedEntries());
-		spec.push(d.rr('getSubSpec'));
+		const p = d.p, doc = p.at('doc'), type = p.at('type'), spec = doc.rxNANOS();
+		const relay = getInstance('@reactive');
+		relay('set', {
+			eager: true, def: () => {
+				const attrs = p.at('attrs').namedEntries();
+				const subSpec = d.rr('getSubSpec');
+				relay('untr', () => relay('batch', () => {
+					spec.clear();
+					spec.push(type);
+					spec.fromEntries(attrs);
+					spec.push(subSpec);
+				}));
+			},
+		});
+		relay('rv');
 		return spec;
 	}
 
-	// Get reactive @list of sub-doc DOM nodes
-	async function opGetSubDOM (d) {
-		const p = d.p, nodes = getInstance('@list');
-		nodes('rio', true)('setOpts', { autoReactive: true });
-		const track = getInstance('@reactive');
-		let curIter = 0;
-		await track('set', {
-			eager: true, def: async () => {
-				const myIter = ++curIter;
-				const collect = async () => {
-					const nodes = [];
-					for (const node of p.at('subDoc').values()) {
-						const subNodes = await node('getDOM');
-						if (myIter !== curIter) break; // abort if a new iteration started
-						nodes.push(...[...subNodes.values()]);
-					}
-					return nodes;
-				};
-				await collect.then(newNodes => track('batch', () => {
-					if (myIter === curIter) { // only update if latest iteration
-						nodes.clear();
-						nodes.push(newNodes);
-					}
+	// Get reactive NANOS of sub-doc DOM nodes
+	function opGetSubDOM (d) {
+		const p = d.p;
+		if (p.has('subDOM')) return p.at('subDOM');
+		const doc = p.at('doc'), subDoc = p.at('subDoc'), nodes = doc.rxNANOS(), relay = getInstance('@reactive');
+		p.set('subDOM', nodes);
+		relay('set', {
+			eager: true, def: () => {
+				const newNodes = [];
+				for (const node of subDoc.values()) {
+					const subDOM = node('getDOM');
+					newNodes.push(...subDOM.values());
+				}
+				relay('untr', () => relay('batch', () => {
+					nodes.clear();
+					nodes.push(newNodes);
 				}));
 			}
-		})('rv');
+		});
+		relay('rv');
 		return nodes;
 	}
 
-	// Return the node's sub-spec list
+	// Return the node's sub-spec list (reactive for CSR/DOM)
 	function opGetSubSpec (d) {
-		const p = d.p, subDoc = p.at('subDoc'), curSpec = p.at('subSpec');
-		// Live (porentially modified) sub-doc overrides original sub-spec
-		if (!subDoc.at('live')) return curSpec;
-		const newSpec = new NANOS();
-		for (const node of subDoc.values()) {
-			newSpec.push([node('getSpec')]);
-		}
-		return newSpec;
+		const p = d.p, doc = p.at('doc'), subDoc = p.at('subDoc'), result = doc.rxNANOS();
+		const relay = getInstance('@reactive');
+		relay('set', {
+			eager: true, def: () => {
+				let newSpec;
+				// Live (potentially modified) sub-doc overrides original sub-spec
+				if (!subDoc.at('live')) {
+					newSpec = p.at('subSpec');
+				} else {
+					newSpec = [];
+					for (const node of subDoc.values()) {
+						newSpec.push(node('getSpec'));
+					}
+				}
+				relay('untr', () => relay('batch', () => {
+					result.clear();
+					result.push(newSpec);
+				}));
+			}
+		});
+		relay('rv'); // Wait for first execution
+		return result;
 	}
 
 	// Do we have a particular attribute value?
 	function opHasAttr (d) {
 		const p = d.p, m = d.mp, attrs = p.at('attrs');
 		return attrs.has(m.at(0));
+	}
+
+	function opHasChildren (d) {
+		const p = d.p, subDoc = p.at('subDoc'), subSpec = p.at('subSpec');
+		return !!(subDoc.at('live') ? subDoc.next : subSpec.next);
 	}
 
 	// Have we been assigned a particular class?
@@ -482,41 +508,48 @@ modcaps=''
 	}
 
 	// (setSpec [spec])
-	async function opSetSpec (d) {
+	function opSetSpec (d) {
 		const p = d.p, m = d.mp, spec = m.at(0);
-		// Apply attributes from doc-spec
-		for (const attr of spec.namedEntries()) d.rr('setAttr', attr);
-		// Process sub-spec
-		await d.rr('setSubSpec', { spec });
+		reactive.batch(() => {
+			// Apply attributes from doc-spec
+			for (const attr of spec.namedEntries()) d.rr('setAttr', attr);
+			// Process sub-spec
+			d.rr('setSubSpec', { spec });
+		});
 		return d.rr;
 	}
 
 	// (setSubSpec [subspec...]) (a single, list-valued, positional parameter)
 	// (setSubSpec spec=[type attr=value... subspec...]) (a single, list-valued parameter named spec)
-	async function opSetSubSpec (d) {
-		const m = d.mp, p = d.p, schema = p.at(SCHEMA);
+	function opSetSubSpec (d) {
+		const m = d.mp, p = d.p, subSpec = p.at('subSpec'), schema = p.at(SCHEMA);
 		if (schema?.at(VOID)) return;
-		const subList = m.at(0), spec = m.at('spec');
-		if (subList instanceof NANOS) {
-			p.set('subSpec', subList);
-		} else if (spec instanceof NANOS) {
-			const copy = new NANOS([...spec.values()]);
-			copy.shift();
-			p.set('subSpec', copy);
-		}
-		if (schema?.at(AUTO_DOC) !== false) {
-			// Template sub-specs are only for (unnamed) content slotting and therefore disable auto-doc.
-			// (Their actual content is managed in an internal fragment.)
-			const doc = p.at('doc'), subDoc = p.at('subDoc'), subSpec = p.at('subSpec');
-			subDoc.clear();
-			if (subSpec?.size) {
-				const slotSrc = d.rr('subSlotSrc');
-				const nodes = await doc('from', { list: subSpec, slotSrc });
-				d.rr('append', nodes);
+		const subList = m.at(0), spec = m.at('spec'), subDoc = p.at('subDoc');
+		reactive.batch(() => {
+			subSpec.clear();
+			if (subList instanceof NANOS) {
+				subSpec.push(subList);
+			} else if (spec instanceof NANOS) {
+				const copy = new NANOS([...spec.values()]);
+				copy.shift();
+				subSpec.push(copy);
 			}
-			// For this component, the sub-doc will be the source of sub-spec truth
-			subDoc.set('live', true);
-		}
+			subDoc.set('live', false);
+			subDoc.clear();
+			if (schema?.at(AUTO_DOC) !== false) {
+				// Template sub-specs are only for (unnamed) content slotting and therefore disable auto-doc.
+				// (Their actual content is managed in an internal fragment.)
+				const doc = p.at('doc');
+				if (subSpec?.size) {
+					const slotSrc = d.rr('subSlotSrc');
+					const nodes = doc('from', { list: subSpec, slotSrc });
+					d.rr('append', nodes);
+				}
+				// For this component, the sub-doc will be the source of sub-spec truth
+				subDoc.set('live', true);
+			}
+		});
+		return d.rr;
 	}
 
 	// Set/edit the `style` attribute
@@ -576,20 +609,22 @@ modcaps=''
 			document: (d) => d.p.at('doc'),
 			getAttr: opGetAttr,
 			getAttrHTML: opGetAttrHTML,
-			/* async */ getDOM: (_d) => undefined,
-			/* async */ getHTML: opGetHTML,
+			getDOM: opGetDOM,
+			getHTML: opGetHTML,
 			getSpec: opGetSpec,
 			getSubDoc: (d) => d.p.at('subDoc'),
+			getSubDOM: opGetSubDOM,
 			getSubSpec: opGetSubSpec,
 			hasAttr: opHasAttr,
+			hasChildren: opHasChildren,
 			hasClass: opHasClass,
 			setAttr: opSetAttr,
 			slotSrc: (d) => d.p.at('slotSrc'), // (intended for testing)
 			// typically, this doc-node is the new sub-doc slot-source
 			subSlotSrc: (d) => d.rr,
 			textToHTML,
-			/* async */ setSpec: opSetSpec,
-			/* async */ setSubSpec: opSetSubSpec,
+			setSpec: opSetSpec,
+			setSubSpec: opSetSubSpec,
 			type: (d) => d.p.at('type'),
 		}
 	});
