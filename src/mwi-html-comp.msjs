@@ -158,13 +158,11 @@ modcaps=''
 			if (p.has('dom')) return p.at('dom');
 			const type = p.at('type').replace(/^h\./, ''), node = document.createElement(type), nodes = new NANOS(node);
 			p.set('dom', nodes);
-			d.rr.setDOMAttrs(node, p.at('attrs'));
-			let curIter = 0;
-			getInstance('@reactive')('set', {
+			d.rr.setDOMAttrs(node, p.at('attrs'), p.at(SCHEMA));
+			if (!p.at([SCHEMA, VOID])) getInstance('@reactive')('set', {
 				eager: true, def: () => {
-					const myIter = ++curIter;
-					const children = d.rr('getSubDOM');
-					if (myIter === curIter) d.rr.domSyncChildren(node, children);
+					const children = d.sm(d, 'redis');
+					d.rr.domSyncChildren(node, children);
 				}
 			})('rv'); // Wait for first execution
 			return nodes;
@@ -232,7 +230,7 @@ modcaps=''
 			const p = d.p, doc = p.at('doc'), type = p.at('type').replace(/^h\./, '');
 			const node = document.createElement(type);
 			const nodes = new NANOS(node);
-			d.rr.setDOMAttrs(node, p.at('attrs'));
+			d.rr.setDOMAttrs(node, p.at('attrs'), p.at(SCHEMA));
 			getInstance('@reactive')('set', {
 				eager: true, def: () => {
 					const text = d.rr('getAttr', [ 'm.text' ]) || '';

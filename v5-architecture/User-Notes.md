@@ -100,3 +100,58 @@
 - `getDOM` returns a DOM node/tree for the current node and subtree
   - The DOM node/tree reactively updates in response to changes to the doc-spec tree.
 - *Need to make sure doc-specs are unique when templating!*
+
+## Some Specific Node Behaviors
+
+### Fragment (`MWICoreFrag`, `m.frg`)
+
+- Fragments are "transparent containers".
+- The slotting source, if provided, is passed to the sub-doc, unmodified.
+- The fragment (DOM- or HTML-) renders as the combined rendering of its sub-doc nodes and nothing more.
+- Sub-specs are immediately transformed to sub-doc nodes upon application.
+
+### HTML Generators
+
+- Container types convert sub-specs to sub-doc nodes immediately upon application.
+- Container types accept sub-doc modifications (e.g. `append`).
+- Void types accept no sub-specs or sub-doc nodes.
+- The slotting source, if provided, is passed to the sub-doc, unmodified.
+
+### Slot (`MWICoreSlot`, `m.slot`)
+
+- Content selection is determined based on the presence or absence of a slotting source and a `name` attribute in the `m.slot` node.
+- If there is a slot source and it has a list-valued attribute (even an empty list) reactively corresponding to the name specified by the slot's `name` attribute, the list-value of the attribute is reactively interpreted as a sub-spec to populate an internal content fragment, which is then used for reactive HTML or DOM rendering.
+- If there is a slot source but no `name` attribute (or it is reactively empty/undefined) *and* the slot source has (a non-zero number of) natural children, the sub-spec of the source node is used to reactively populate an internal content fragment, which is then used for HTML or DOM rendering.
+- If neither of the above sets of conditions is satisfied, the slot's own natural sub-doc, if any, is reactively used for HTML or DOM rendering.
+- Slot nodes convert sub-specs immediately to sub-doc nodes upon application and accept "live" modifications (e.g. `append`).
+
+### Template (`MWICoreTpl`)
+
+- Templates have no specific component type.
+- The `MWICoreTpl` interface is assigned by `MWIDocument(createNode)` for components with `tpl`-based registrations.
+- HTML and DOM nodes are rendered against an internal fragment that is *statically* initialized from the component's `tpl` spec by delegating e.g. `getDOM` and `getHTML` to the fragment.
+- The instantiating node is the initial slot source for internal-fragment content.
+- The internal fragment *reactively* slots against the template instantiation node's attributes and/or current *sub-spec* (which might be derived "on-the-fly" from live sub-dom nodes).
+- The template instantiation node itself slots against its inherited slot source.
+- Templates accept a sub-spec, with lazy conversion to sub-doc nodes upon modification (e.g. `append`).
+- The template node's sub-spec and sub-doc are used only for slotting (never for direct rendering).
+- The node will revert to a sub-spec and discard any live sub-doc nodes if a new (sub-)spec is applied.
+
+### Text (`MWICoreText`, `m.t`)
+
+- DOM-renders to an `<output>` element for non-empty text and nothing (no DOM nodes at all) for empty text.
+
+### Default Behavior (`MWIDocNode`)
+
+Default behaviors are based on the assumption that most types will be associated with custom components using (either smart or static) template-like behavior.
+
+- Assume nodes will be slot-sources for their content (otherwise, sub-interface should override).
+- Check the schema to determine whether any sub-content should be permitted (no if void).
+- Check the schema to determine whether sub-specs should immediately be converted to sub-doc nodes (autoDoc is not false).
+  - The conversion should be split out to a helper function so that `MWICoreTpl` or similar interfaces can JIT-convert doc-specs to sub-doc nodes for editing.
+
+### Notes
+
+- If a component has dynamically-chosen output, `hasChildren` for its interface should be based on the current, reactively-selected output.
+- Rendering from a sub-spec should result in fresh DOM nodes.
+- Rendering from sub-doc nodes should generally reuse initially-created DOM nodes, reactively applying updates.
