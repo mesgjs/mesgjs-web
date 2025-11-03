@@ -142,7 +142,7 @@ modcaps=''
 		setAttr (name, value) { return this('setAttr', [ name, value ]); },
 		setDOMAttrs,
 		setSpec (spec) { return this('setSpec', [ spec ]); },
-		setSubSpec (params) { return this('setSubSpec', params); },
+		setSubSpec (...params) { return this('setSubSpec', (params.length === 1) ? params[0] : params); },
 		get slotSrc () { return this('slotSrc'); }, // (intended for testing)
 		get subSlotSrc () { return this('subSlotSrc'); },
 		textToHTML,
@@ -368,7 +368,7 @@ modcaps=''
 				if (!subDoc.at('live')) {
 					// Render from sub-spec
 					const slotSrc = d.rr('subSlotSrc'), frag = doc.createNode('m.frg', { slotSrc });
-					frag('setSubSpec', [d.rr('getSubSpec')]);
+					frag('setSubSpec', d.rr('getSubSpec'));
 					newNodes = [...frag('getDOM').values()];
 				} else for (const node of subDoc.values()) {
 					// Render from live sub-doc
@@ -522,21 +522,20 @@ modcaps=''
 		return d.rr;
 	}
 
-	// (setSubSpec [subspec...]) (a single, list-valued, positional parameter)
+	// (setSubSpec subspec...)
 	// (setSubSpec spec=[type attr=value... subspec...]) (a single, list-valued parameter named spec)
+	// (setSubSpec subSpec=[subspec...])
 	function opSetSubSpec (d) {
 		const m = d.mp, p = d.p, subSpec = p.at('subSpec'), schema = p.at(SCHEMA);
 		if (schema?.at(VOID)) return;
-		const subList = m.at(0), spec = m.at('spec'), subDoc = p.at('subDoc');
+		const subList = m.at('subSpec', m), spec = m.at('spec'), subDoc = p.at('subDoc');
 		reactive.batch(() => {
 			subSpec.clear();
-			if (subList instanceof NANOS) {
-				subSpec.push(subList);
-			} else if (spec instanceof NANOS) {
+			if (spec instanceof NANOS) {
 				const copy = new NANOS([...spec.values()]);
 				copy.shift();
 				subSpec.push(copy);
-			}
+			} else subSpec.push([...subList.values()]);
 			subDoc.set('live', false);
 			subDoc.clear();
 			if (schema?.at(AUTO_DOC) !== false) {

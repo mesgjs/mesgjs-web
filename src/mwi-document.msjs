@@ -42,7 +42,9 @@ modcaps=''
 
 	// JS interface prototype
 	const docProto = Object.setPrototypeOf({
-		append (params) { return this('append', params); },
+		// append({ item: itemSpec?, list: listSpec? });
+		// append(...nodes)
+		append (...params) { return this('append', (params.length === 1) ? params[0] : params); },
 		/* async */ appendWait (params) { return this('appendWait', params); },
 		compIdStr (id) { return '_MC_' + id.toString(36); },
 		createNode (type, { slotSrc } = {}) { return this('createNode', { 0: type, slotSrc }); },

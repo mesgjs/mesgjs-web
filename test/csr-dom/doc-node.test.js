@@ -1,0 +1,564 @@
+import {
+	assert,
+	assertEquals,
+	assertStrictEquals,
+} from "https://deno.land/std@0.152.0/testing/asserts.ts";
+
+import { setupRuntime, simulateBrowser } from '../harness.esm.js';
+
+const REG_READY_FT = 'mwi.compRegReady';
+
+await setupRuntime();
+
+const { fwait, getInstance } = globalThis.$c;
+const ls = globalThis.ls;
+const ps = globalThis.ps;
+
+// Wait for registry to be ready
+await fwait(REG_READY_FT);
+
+// Set up browser-like environment for DOM testing
+await simulateBrowser();
+
+const doc = getInstance('MWIDocument');
+
+Deno.test("MWIDocNode - CSR-DOM Basic Rendering", async (t) => {
+	await t.step("(getDOM) - Empty element (no attributes, no children)", async () => {
+		const divNode = doc('createNode', ['h.div']);
+		const domNodes = divNode('getDOM');
+		
+		await globalThis.reactive.wait();
+		assertEquals(domNodes.size, 1);
+		const divElem = domNodes.at(0);
+		assertEquals(divElem.tagName, 'DIV');
+		assertEquals(divElem.children.length, 0);
+		assertEquals(divElem.attributes.length, 0);
+	});
+
+	await t.step(".getDOM() - Empty element via JS", async () => {
+		const divNode = doc.createNode('h.div');
+		const domNodes = divNode.getDOM();
+		
+		await globalThis.reactive.wait();
+		assertEquals(domNodes.size, 1);
+		const divElem = domNodes.at(0);
+		assertEquals(divElem.tagName, 'DIV');
+		assertEquals(divElem.children.length, 0);
+	});
+
+	await t.step("(getDOM) - Element with attributes only", async () => {
+		const divNode = doc('createNode', ['h.div']);
+		divNode('setAttr', ['id', 'test-id']);
+		divNode('setAttr', ['class', 'test-class']);
+		const domNodes = divNode('getDOM');
+		
+		await globalThis.reactive.wait();
+		const divElem = domNodes.at(0);
+		assertEquals(divElem.id, 'test-id');
+		assertEquals(divElem.className, 'test-class');
+	});
+
+	await t.step(".getDOM() - Element with attributes only via JS", async () => {
+		const divNode = doc.createNode('h.div');
+		divNode.setAttr('id', 'js-test-id');
+		divNode.setAttr('title', 'Test Title');
+		const domNodes = divNode.getDOM();
+		
+		await globalThis.reactive.wait();
+		const divElem = domNodes.at(0);
+		assertEquals(divElem.id, 'js-test-id');
+		assertEquals(divElem.title, 'Test Title');
+	});
+
+	await t.step("(getDOM) - Element with children only", async () => {
+		const divNode = doc('createNode', ['h.div']);
+		const textNode = doc('createNode', ['m.t']);
+		textNode('setAttr', ['t', 'Child text']);
+		divNode('append', [textNode]);
+		const domNodes = divNode('getDOM');
+		
+		await globalThis.reactive.wait();
+		const divElem = domNodes.at(0);
+		assertEquals(divElem.textContent, 'Child text');
+	});
+
+	await t.step(".getDOM() - Element with children only via JS", async () => {
+		const divNode = doc.createNode('h.div');
+		const textNode = doc.createNode('m.t');
+		textNode.setAttr('t', 'JS Child text');
+		divNode.append(textNode);
+		const domNodes = divNode.getDOM();
+		
+		await globalThis.reactive.wait();
+		const divElem = domNodes.at(0);
+		assertEquals(divElem.textContent, 'JS Child text');
+	});
+
+	await t.step("(getDOM) - Element with both attributes and children", async () => {
+		const divNode = doc('createNode', ['h.div']);
+		divNode('setAttr', ['id', 'container']);
+		divNode('setAttr', ['class', 'wrapper']);
+		const textNode = doc('createNode', ['m.t']);
+		textNode('setAttr', ['t', 'Content']);
+		divNode('append', [textNode]);
+		const domNodes = divNode('getDOM');
+		
+		await globalThis.reactive.wait();
+		const divElem = domNodes.at(0);
+		assertEquals(divElem.id, 'container');
+		assertEquals(divElem.className, 'wrapper');
+		assertEquals(divElem.textContent, 'Content');
+	});
+
+	await t.step(".getDOM() - Element with both attributes and children via JS", async () => {
+		const divNode = doc.createNode('h.div');
+		divNode.setAttr('id', 'js-container');
+		divNode.setAttr('data-test', 'value');
+		divNode.append('JS Content');
+		const domNodes = divNode.getDOM();
+		
+		await globalThis.reactive.wait();
+		const divElem = domNodes.at(0);
+		assertEquals(divElem.id, 'js-container');
+		assertEquals(divElem.getAttribute('data-test'), 'value');
+		assertEquals(divElem.textContent, 'JS Content');
+	});
+
+	await t.step("(getDOM) - Void element (h.br)", async () => {
+		const brNode = doc('createNode', ['h.br']);
+		const domNodes = brNode('getDOM');
+		
+		await globalThis.reactive.wait();
+		assertEquals(domNodes.size, 1);
+		const brElem = domNodes.at(0);
+		assertEquals(brElem.tagName, 'BR');
+		assertEquals(brElem.childNodes.length, 0);
+	});
+
+	await t.step(".getDOM() - Void element (h.br) via JS", async () => {
+		const brNode = doc.createNode('h.br');
+		const domNodes = brNode.getDOM();
+		
+		await globalThis.reactive.wait();
+		assertEquals(domNodes.size, 1);
+		const brElem = domNodes.at(0);
+		assertEquals(brElem.tagName, 'BR');
+		assertEquals(brElem.childNodes.length, 0);
+	});
+});
+
+Deno.test("MWIDocNode - CSR-DOM Attribute Rendering", async (t) => {
+	await t.step("(getDOM) - Standard HTML attributes", async () => {
+		const divNode = doc('createNode', ['h.div']);
+		divNode('setAttr', ['id', 'my-id']);
+		divNode('setAttr', ['class', 'my-class']);
+		divNode('setAttr', ['title', 'My Title']);
+		divNode('setAttr', ['data-value', 'test']);
+		const domNodes = divNode('getDOM');
+		
+		await globalThis.reactive.wait();
+		const divElem = domNodes.at(0);
+		assertEquals(divElem.id, 'my-id');
+		assertEquals(divElem.className, 'my-class');
+		assertEquals(divElem.title, 'My Title');
+		assertEquals(divElem.getAttribute('data-value'), 'test');
+	});
+
+	await t.step(".getDOM() - Standard HTML attributes via JS", async () => {
+		const divNode = doc.createNode('h.div');
+		divNode.setAttr('id', 'js-id');
+		divNode.setAttr('aria-label', 'Label');
+		divNode.setAttr('data-test', 'value');
+		const domNodes = divNode.getDOM();
+		
+		await globalThis.reactive.wait();
+		const divElem = domNodes.at(0);
+		assertEquals(divElem.id, 'js-id');
+		assertEquals(divElem.getAttribute('aria-label'), 'Label');
+		assertEquals(divElem.getAttribute('data-test'), 'value');
+	});
+
+	await t.step("(getDOM) - Boolean attributes", async () => {
+		const inputNode = doc('createNode', ['h.input']);
+		inputNode('setAttr', ['disabled', true]);
+		inputNode('setAttr', ['readonly', true]);
+		const domNodes = inputNode('getDOM');
+		
+		await globalThis.reactive.wait();
+		const inputElem = domNodes.at(0);
+		assertEquals(inputElem.disabled, true);
+		assertEquals(inputElem.readOnly, true);
+	});
+
+	await t.step(".getDOM() - Boolean attributes via JS", async () => {
+		const inputNode = doc.createNode('h.input');
+		inputNode.setAttr('disabled', true);
+		inputNode.setAttr('checked', true);
+		const domNodes = inputNode.getDOM();
+		
+		await globalThis.reactive.wait();
+		const inputElem = domNodes.at(0);
+		assertEquals(inputElem.disabled, true);
+		assertEquals(inputElem.checked, true);
+	});
+
+	await t.step("(getDOM) - Non-HTML attributes do not render (m.id)", async () => {
+		const divNode = doc('createNode', ['h.div']);
+		divNode('setAttr', ['id', 'real-id']);
+		// Access m.id to ensure it's set
+		divNode('getAttr', ['m.id']);
+		const domNodes = divNode('getDOM');
+		
+		await globalThis.reactive.wait();
+		const divElem = domNodes.at(0);
+		assertEquals(divElem.id, 'real-id');
+		assertEquals(divElem.hasAttribute('m.id'), false);
+	});
+
+	await t.step(".getDOM() - Non-HTML attributes do not render (m.percl)", async () => {
+		const divNode = doc.createNode('h.div');
+		divNode.setAttr('m.percl', 'perm-class');
+		const domNodes = divNode.getDOM();
+		
+		await globalThis.reactive.wait();
+		const divElem = domNodes.at(0);
+		assertEquals(divElem.hasAttribute('m.percl'), false);
+		// But the permanent class should appear in the class attribute
+		assert(divElem.className.includes('perm-class'));
+	});
+
+	await t.step("(getDOM) - List-valued attributes do not render", async () => {
+		const divNode = doc('createNode', ['h.div']);
+		const listVal = ps('[(item1 item2 item3)]');
+		divNode('setAttr', ['c.items', listVal]);
+		divNode('setAttr', ['id', 'test-id']);
+		const domNodes = divNode('getDOM');
+		
+		await globalThis.reactive.wait();
+		const divElem = domNodes.at(0);
+		assertEquals(divElem.hasAttribute('c.items'), false);
+		assertEquals(divElem.id, 'test-id');
+	});
+
+	await t.step(".getDOM() - List-valued attributes do not render via JS", async () => {
+		const divNode = doc.createNode('h.div');
+		const listVal = ps('[(alpha beta gamma)]');
+		divNode.setAttr('c.data', listVal);
+		divNode.setAttr('title', 'Test');
+		const domNodes = divNode.getDOM();
+		
+		await globalThis.reactive.wait();
+		const divElem = domNodes.at(0);
+		assertEquals(divElem.hasAttribute('c.data'), false);
+		assertEquals(divElem.title, 'Test');
+	});
+});
+
+Deno.test("MWIDocNode - CSR-DOM Child Content Rendering", async (t) => {
+	await t.step("(getDOM) - Single text child", async () => {
+		const divNode = doc('createNode', ['h.div']);
+		const textNode = doc('createNode', ['m.t']);
+		textNode('setAttr', ['t', 'Single child']);
+		divNode('append', [textNode]);
+		const domNodes = divNode('getDOM');
+		
+		await globalThis.reactive.wait();
+		const divElem = domNodes.at(0);
+		assertEquals(divElem.textContent, 'Single child');
+	});
+
+	await t.step(".getDOM() - Single text child via JS", async () => {
+		const divNode = doc.createNode('h.div');
+		divNode.append('JS single child');
+		const domNodes = divNode.getDOM();
+		
+		await globalThis.reactive.wait();
+		const divElem = domNodes.at(0);
+		assertEquals(divElem.textContent, 'JS single child');
+	});
+
+	await t.step("(getDOM) - Multiple text children", async () => {
+		const divNode = doc('createNode', ['h.div']);
+		const text1 = doc('createNode', ['m.t']);
+		text1('setAttr', ['t', 'First']);
+		const text2 = doc('createNode', ['m.t']);
+		text2('setAttr', ['t', 'Second']);
+		const text3 = doc('createNode', ['m.t']);
+		text3('setAttr', ['t', 'Third']);
+		divNode('append', [text1, text2, text3]);
+		const domNodes = divNode('getDOM');
+		
+		await globalThis.reactive.wait();
+		const divElem = domNodes.at(0);
+		assertEquals(divElem.textContent, 'FirstSecondThird');
+	});
+
+	await t.step(".getDOM() - Multiple text children via JS", async () => {
+		const divNode = doc.createNode('h.div');
+		divNode.append('First', 'Second', 'Third');
+		const domNodes = divNode.getDOM();
+		
+		await globalThis.reactive.wait();
+		const divElem = domNodes.at(0);
+		assertEquals(divElem.textContent, 'FirstSecondThird');
+	});
+
+	await t.step("(getDOM) - Mixed content (text and element children)", async () => {
+		const divNode = doc('createNode', ['h.div']);
+		const textNode = doc('createNode', ['m.t']);
+		textNode('setAttr', ['t', 'Text']);
+		const spanNode = doc('createNode', ['h.span']);
+		spanNode('append', ['Span']);
+		divNode('append', [textNode, spanNode]);
+		const domNodes = divNode('getDOM');
+		
+		await globalThis.reactive.wait();
+		const divElem = domNodes.at(0);
+		assertEquals(divElem.textContent, 'TextSpan');
+		// Text renders as <output>, so we have 2 children: <output> and <span>
+		assertEquals(divElem.children.length, 2);
+		assertEquals(divElem.children[0].tagName, 'OUTPUT');
+		assertEquals(divElem.children[0].textContent, 'Text');
+		assertEquals(divElem.children[1].tagName, 'SPAN');
+		assertEquals(divElem.children[1].textContent, 'Span');
+	});
+
+	await t.step(".getDOM() - Mixed content via JS", async () => {
+		const divNode = doc.createNode('h.div');
+		const spanNode = doc.createNode('h.span');
+		spanNode.append('Span content');
+		divNode.append('Before', spanNode, 'After');
+		const domNodes = divNode.getDOM();
+		
+		await globalThis.reactive.wait();
+		const divElem = domNodes.at(0);
+		assertEquals(divElem.textContent, 'BeforeSpan contentAfter');
+		// Text renders as <output>, so we have 3 children: <output>, <span>, <output>
+		assertEquals(divElem.children.length, 3);
+		assertEquals(divElem.children[0].tagName, 'OUTPUT');
+		assertEquals(divElem.children[0].textContent, 'Before');
+		assertEquals(divElem.children[1].tagName, 'SPAN');
+		assertEquals(divElem.children[1].textContent, 'Span content');
+		assertEquals(divElem.children[2].tagName, 'OUTPUT');
+		assertEquals(divElem.children[2].textContent, 'After');
+	});
+
+	await t.step("(getDOM) - Nested elements", async () => {
+		const outerDiv = doc('createNode', ['h.div']);
+		const innerDiv = doc('createNode', ['h.div']);
+		const textNode = doc('createNode', ['m.t']);
+		textNode('setAttr', ['t', 'Nested']);
+		innerDiv('append', [textNode]);
+		outerDiv('append', [innerDiv]);
+		const domNodes = outerDiv('getDOM');
+		
+		await globalThis.reactive.wait();
+		const outerElem = domNodes.at(0);
+		assertEquals(outerElem.textContent, 'Nested');
+		assertEquals(outerElem.children.length, 1);
+		assertEquals(outerElem.children[0].tagName, 'DIV');
+	});
+
+	await t.step(".getDOM() - Nested elements via JS", async () => {
+		const outerDiv = doc.createNode('h.div');
+		const innerDiv = doc.createNode('h.div');
+		innerDiv.append('Inner content');
+		outerDiv.append(innerDiv);
+		const domNodes = outerDiv.getDOM();
+		
+		await globalThis.reactive.wait();
+		const outerElem = domNodes.at(0);
+		assertEquals(outerElem.textContent, 'Inner content');
+		assertEquals(outerElem.children.length, 1);
+	});
+
+	await t.step("(getDOM) - Void element has no children in output", async () => {
+		const brNode = doc('createNode', ['h.br']);
+		// Try to append (should be ignored)
+		brNode('append', ['text']);
+		const domNodes = brNode('getDOM');
+		
+		await globalThis.reactive.wait();
+		const brElem = domNodes.at(0);
+		assertEquals(brElem.childNodes.length, 0);
+	});
+
+	await t.step(".getDOM() - Void element has no children in output via JS", async () => {
+		const brNode = doc.createNode('h.br');
+		brNode.append('ignored text');
+		const domNodes = brNode.getDOM();
+		
+		await globalThis.reactive.wait();
+		const brElem = domNodes.at(0);
+		assertEquals(brElem.childNodes.length, 0);
+	});
+});
+
+Deno.test("MWIDocNode - CSR-DOM Reactive Updates", async (t) => {
+	await t.step("(getDOM) - Reactive attribute changes", async () => {
+		const divNode = doc('createNode', ['h.div']);
+		divNode('setAttr', ['title', 'Initial']);
+		const domNodes = divNode('getDOM');
+		
+		await globalThis.reactive.wait();
+		const divElem = domNodes.at(0);
+		assertEquals(divElem.title, 'Initial');
+		
+		// Change attribute
+		divNode('setAttr', ['title', 'Updated']);
+		await globalThis.reactive.wait();
+		assertEquals(divElem.title, 'Updated');
+		assertStrictEquals(domNodes.at(0), divElem, 'Should be same element');
+	});
+
+	await t.step(".getDOM() - Reactive attribute changes via JS", async () => {
+		const divNode = doc.createNode('h.div');
+		divNode.setAttr('title', 'JS Initial');
+		const domNodes = divNode.getDOM();
+		
+		await globalThis.reactive.wait();
+		const divElem = domNodes.at(0);
+		assertEquals(divElem.title, 'JS Initial');
+		
+		divNode.setAttr('title', 'JS Updated');
+		await globalThis.reactive.wait();
+		assertEquals(divElem.title, 'JS Updated');
+	});
+
+	await t.step("(getDOM) - Reactive child content changes", async () => {
+		const divNode = doc('createNode', ['h.div']);
+		const textNode = doc('createNode', ['m.t']);
+		textNode('setAttr', ['t', 'Initial']);
+		divNode('append', [textNode]);
+		const domNodes = divNode('getDOM');
+		
+		await globalThis.reactive.wait();
+		const divElem = domNodes.at(0);
+		assertEquals(divElem.textContent, 'Initial');
+		
+		// Change text content
+		textNode('setAttr', ['t', 'Updated']);
+		await globalThis.reactive.wait();
+		assertEquals(divElem.textContent, 'Updated');
+	});
+
+	await t.step(".getDOM() - Reactive child content changes via JS", async () => {
+		const divNode = doc.createNode('h.div');
+		const textNode = doc.createNode('m.t');
+		textNode.setAttr('t', 'JS Initial');
+		divNode.append(textNode);
+		const domNodes = divNode.getDOM();
+		
+		await globalThis.reactive.wait();
+		const divElem = domNodes.at(0);
+		assertEquals(divElem.textContent, 'JS Initial');
+		
+		textNode.setAttr('t', 'JS Updated');
+		await globalThis.reactive.wait();
+		assertEquals(divElem.textContent, 'JS Updated');
+	});
+
+	await t.step("(getDOM) - DOM is stable across calls", async () => {
+		const divNode = doc('createNode', ['h.div']);
+		const dom1 = divNode('getDOM');
+		const dom2 = divNode('getDOM');
+		
+		await globalThis.reactive.wait();
+		assertStrictEquals(dom1, dom2, 'Should return same NANOS instance');
+		assertStrictEquals(dom1.at(0), dom2.at(0), 'Should return same DOM element');
+	});
+
+	await t.step(".getDOM() - DOM is stable across calls via JS", async () => {
+		const divNode = doc.createNode('h.div');
+		const dom1 = divNode.getDOM();
+		const dom2 = divNode.getDOM();
+		
+		await globalThis.reactive.wait();
+		assertStrictEquals(dom1, dom2, 'Should return same NANOS instance');
+		assertStrictEquals(dom1.at(0), dom2.at(0), 'Should return same DOM element');
+	});
+});
+
+Deno.test("MWIDocNode - CSR-DOM Edge Cases", async (t) => {
+	await t.step("(getDOM) - Element with only whitespace text children", async () => {
+		const divNode = doc('createNode', ['h.div']);
+		const textNode = doc('createNode', ['m.t']);
+		textNode('setAttr', ['t', '   ']);
+		divNode('append', [textNode]);
+		const domNodes = divNode('getDOM');
+		
+		await globalThis.reactive.wait();
+		const divElem = domNodes.at(0);
+		assertEquals(divElem.textContent, '   ');
+	});
+
+	await t.step(".getDOM() - Element with only whitespace text children via JS", async () => {
+		const divNode = doc.createNode('h.div');
+		divNode.append('   ');
+		const domNodes = divNode.getDOM();
+		
+		await globalThis.reactive.wait();
+		const divElem = domNodes.at(0);
+		assertEquals(divElem.textContent, '   ');
+	});
+
+	await t.step("(getDOM) - Element with empty text nodes", async () => {
+		const divNode = doc('createNode', ['h.div']);
+		const text1 = doc('createNode', ['m.t']);
+		text1('setAttr', ['t', '']);
+		const text2 = doc('createNode', ['m.t']);
+		text2('setAttr', ['t', 'Content']);
+		const text3 = doc('createNode', ['m.t']);
+		text3('setAttr', ['t', '']);
+		divNode('append', [text1, text2, text3]);
+		const domNodes = divNode('getDOM');
+		
+		await globalThis.reactive.wait();
+		const divElem = domNodes.at(0);
+		assertEquals(divElem.textContent, 'Content');
+	});
+
+	await t.step(".getDOM() - Element with empty text nodes via JS", async () => {
+		const divNode = doc.createNode('h.div');
+		divNode.append('', 'Content', '');
+		const domNodes = divNode.getDOM();
+		
+		await globalThis.reactive.wait();
+		const divElem = domNodes.at(0);
+		assertEquals(divElem.textContent, 'Content');
+	});
+
+	await t.step("(getDOM) - Deeply nested structure", async () => {
+		const level1 = doc('createNode', ['h.div']);
+		const level2 = doc('createNode', ['h.div']);
+		const level3 = doc('createNode', ['h.div']);
+		const level4 = doc('createNode', ['h.div']);
+		const textNode = doc('createNode', ['m.t']);
+		textNode('setAttr', ['t', 'Deep']);
+		level4('append', [textNode]);
+		level3('append', [level4]);
+		level2('append', [level3]);
+		level1('append', [level2]);
+		const domNodes = level1('getDOM');
+		
+		await globalThis.reactive.wait();
+		const level1Elem = domNodes.at(0);
+		assertEquals(level1Elem.textContent, 'Deep');
+		assertEquals(level1Elem.querySelectorAll('div').length, 3);
+	});
+
+	await t.step(".getDOM() - Deeply nested structure via JS", async () => {
+		const level1 = doc.createNode('h.div');
+		const level2 = doc.createNode('h.div');
+		const level3 = doc.createNode('h.div');
+		level3.append('Deep content');
+		level2.append(level3);
+		level1.append(level2);
+		const domNodes = level1.getDOM();
+		
+		await globalThis.reactive.wait();
+		const level1Elem = domNodes.at(0);
+		assertEquals(level1Elem.textContent, 'Deep content');
+		assertEquals(level1Elem.querySelectorAll('div').length, 2);
+	});
+});

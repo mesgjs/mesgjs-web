@@ -200,7 +200,7 @@ modcaps=''
 					if (attrOK) {
 						// Named slotting is spec-based (no live nodes), and must fully re-render on every change
 						const frag = getFrag(d);
-						frag('setSubSpec', [slotAttr]);
+						frag('setSubSpec', slotAttr);
 						const newNodes = [...frag('getDOM').values()];
 						relay('unbatch', () => {
 							nodes.clear();
@@ -232,7 +232,7 @@ modcaps=''
 			const subOK = slotSrc && !name && slotSrc('hasChildren');
 			const specHTML = (spec) => {
 				const frag = getFrag(d);
-				frag('setSubSpec', [ spec ]);
+				frag('setSubSpec', spec);
 				frag('getHTML', { in: html });
 				if (!hasIn) return html.join('');
 			};
@@ -345,7 +345,7 @@ modcaps=''
 			const p = d.p;
 			if (!p.has('frag')) {
 				const doc = p.at('doc'), slotSrc = d.rr, frag = doc.createNode('m.frg', { slotSrc }), list = p.at('tpl');
-				frag('setSubSpec', [ list ]); // Initialize once with static template
+				frag('setSubSpec', list); // Initialize once with static template
 				p.set('frag', frag);
 			}
 			return p.at('frag');

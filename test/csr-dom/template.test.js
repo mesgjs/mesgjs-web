@@ -436,6 +436,165 @@ Deno.test("MWICoreTpl (template handler) - CSR-DOM Reactive Updates", async (t) 
 	});
 });
 
+Deno.test("MWICoreTpl (template handler) - CSR-DOM Reactive Slotting Cases", async (t) => {
+	await t.step("(getDOM) - Reactive change to attribute on template node", async () => {
+		registry.register('test.tpl.csr.reactive.attr', ls([
+			'allowLate', true,
+			'tpl', ps('[([m.slot name=header] [m.t t="Body"])]')
+		]));
+		const tplNode = doc('createNode', ['test.tpl.csr.reactive.attr']);
+		
+		// Set initial attribute
+		tplNode('setAttr', ['header', ps('[([m.t t="Initial Header"])]')]);
+		const domNodes = tplNode('getDOM');
+		await globalThis.reactive.wait();
+		assertEquals(domNodes.size, 2);
+		assertEquals(domNodes.at(0).textContent, 'Initial Header');
+		assertEquals(domNodes.at(1).textContent, 'Body');
+		
+		// Change the attribute on the template node
+		tplNode('setAttr', ['header', ps('[([m.t t="Updated Header"])]')]);
+		await globalThis.reactive.wait();
+		assertEquals(domNodes.size, 2);
+		assertEquals(domNodes.at(0).textContent, 'Updated Header');
+		assertEquals(domNodes.at(1).textContent, 'Body');
+	});
+
+	await t.step(".getDOM() - Reactive change to attribute on template node via JS", async () => {
+		registry.register('test.tpl.csr.reactive.attr2', ls([
+			'allowLate', true,
+			'tpl', ps('[([m.slot name=title] [m.t t="Content"])]')
+		]));
+		const tplNode = doc.createNode('test.tpl.csr.reactive.attr2');
+		
+		tplNode.setAttr('title', ps('[([m.t t="JS Initial"])]'));
+		const domNodes = tplNode.getDOM();
+		await globalThis.reactive.wait();
+		assertEquals(domNodes.size, 2);
+		assertEquals(domNodes.at(0).textContent, 'JS Initial');
+		
+		tplNode.setAttr('title', ps('[([m.t t="JS Changed"])]'));
+		await globalThis.reactive.wait();
+		assertEquals(domNodes.size, 2);
+		assertEquals(domNodes.at(0).textContent, 'JS Changed');
+	});
+
+	await t.step("(getDOM) - Reactive change to attribute within template's sub-spec", async () => {
+		registry.register('test.tpl.csr.reactive.subspec', ls([
+			'allowLate', true,
+			'tpl', ps('[([m.slot name=content])]')
+		]));
+		const tplNode = doc('createNode', ['test.tpl.csr.reactive.subspec']);
+		
+		// Set attribute with reactive sub-spec
+		tplNode('setAttr', ['content', ps('[([m.t])]')]);
+		const contentList = tplNode('getAttr', ['content']);
+		$toMsjs(contentList)('rxt');
+		const textNode = contentList.at(0);
+		textNode.set('t', 'Initial Text');
+		
+		const domNodes = tplNode('getDOM');
+		await globalThis.reactive.wait();
+		assertEquals(domNodes.size, 1);
+		assertEquals(domNodes.at(0).textContent, 'Initial Text');
+		
+		// Change attribute within the sub-spec
+		textNode.set('t', 'Modified Text');
+		await globalThis.reactive.wait();
+		assertEquals(domNodes.size, 1);
+		assertEquals(domNodes.at(0).textContent, 'Modified Text');
+	});
+
+	await t.step(".getDOM() - Reactive change to attribute within template's sub-spec via JS", async () => {
+		registry.register('test.tpl.csr.reactive.subspec2', ls([
+			'allowLate', true,
+			'tpl', ps('[([m.slot name=data])]')
+		]));
+		const tplNode = doc.createNode('test.tpl.csr.reactive.subspec2');
+		
+		tplNode.setAttr('data', ps('[([m.t])]'));
+		const dataList = tplNode.getAttr('data');
+		$toMsjs(dataList)('rxt');
+		const textNode = dataList.at(0);
+		textNode.set('t', 'JS Start');
+		
+		const domNodes = tplNode.getDOM();
+		await globalThis.reactive.wait();
+		assertEquals(domNodes.size, 1);
+		assertEquals(domNodes.at(0).textContent, 'JS Start');
+		
+		textNode.set('t', 'JS Modified');
+		await globalThis.reactive.wait();
+		assertEquals(domNodes.size, 1);
+		assertEquals(domNodes.at(0).textContent, 'JS Modified');
+	});
+
+	await t.step("(getDOM) - Reactive change to template's sub-doc using append", async () => {
+		registry.register('test.tpl.csr.reactive.subdoc', ls([
+			'allowLate', true,
+			'tpl', ps('[([m.slot [m.t t="Default"]])]')
+		]));
+		const tplNode = doc('createNode', ['test.tpl.csr.reactive.subdoc']);
+		
+		// Append initial child
+		const textNode1 = doc('createNode', ['m.t']);
+		textNode1('setAttr', ['t', 'First Child']);
+		tplNode('append', [textNode1]);
+		
+		const domNodes = tplNode('getDOM');
+		await globalThis.reactive.wait();
+		assertEquals(domNodes.size, 1);
+		assertEquals(domNodes.at(0).textContent, 'First Child');
+		
+		// Append another child
+		const textNode2 = doc('createNode', ['m.t']);
+		textNode2('setAttr', ['t', 'Second Child']);
+		tplNode('append', [textNode2]);
+		await globalThis.reactive.wait();
+		assertEquals(domNodes.size, 2);
+		assertEquals(domNodes.at(0).textContent, 'First Child');
+		assertEquals(domNodes.at(1).textContent, 'Second Child');
+		
+		// Modify first child
+		textNode1('setAttr', ['t', 'Modified First']);
+		await globalThis.reactive.wait();
+		assertEquals(domNodes.size, 2);
+		assertEquals(domNodes.at(0).textContent, 'Modified First');
+		assertEquals(domNodes.at(1).textContent, 'Second Child');
+	});
+
+	await t.step(".getDOM() - Reactive change to template's sub-doc using append via JS", async () => {
+		registry.register('test.tpl.csr.reactive.subdoc2', ls([
+			'allowLate', true,
+			'tpl', ps('[([m.slot [m.t t="Fallback"]])]')
+		]));
+		const tplNode = doc.createNode('test.tpl.csr.reactive.subdoc2');
+		
+		const textNode1 = doc.createNode('m.t');
+		textNode1.setAttr('t', 'JS First');
+		tplNode.append(textNode1);
+		
+		const domNodes = tplNode.getDOM();
+		await globalThis.reactive.wait();
+		assertEquals(domNodes.size, 1);
+		assertEquals(domNodes.at(0).textContent, 'JS First');
+		
+		const textNode2 = doc.createNode('m.t');
+		textNode2.setAttr('t', 'JS Second');
+		tplNode.append(textNode2);
+		await globalThis.reactive.wait();
+		assertEquals(domNodes.size, 2);
+		assertEquals(domNodes.at(0).textContent, 'JS First');
+		assertEquals(domNodes.at(1).textContent, 'JS Second');
+		
+		textNode1.setAttr('t', 'JS Modified First');
+		await globalThis.reactive.wait();
+		assertEquals(domNodes.size, 2);
+		assertEquals(domNodes.at(0).textContent, 'JS Modified First');
+		assertEquals(domNodes.at(1).textContent, 'JS Second');
+	});
+});
+
 Deno.test("MWICoreTpl (template handler) - CSR-DOM Attribute Slotting", async (t) => {
 	await t.step("(getDOM) - Template with m.slat remaps attributes", async () => {
 		registry.register('test.tpl.csr.slat', ls([
