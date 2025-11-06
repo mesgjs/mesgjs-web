@@ -65,14 +65,11 @@ modcaps=''
 		const p = d.p;
 		const registry = getInstance(REG_IF);
 		p.set('registry', registry);
+		p.set('typesUsed', rxNANOS()); // The *keys* form a reactive list of unique types created on the document
 		// Add JS interface
 		Object.setPrototypeOf(d.rr, docProto);
 		// Add document root (m.frg fragment)
-		const entry = registry.get(FRAG_TYPE);
-		const config = new NANOS({ type: FRAG_TYPE }, entry);
-		const ifName = entry.at('if');
-		const rootIf = getInterface(ifName);
-		const root = d.sm(rootIf, 'instance', config);
+		const root = d.rr('createNode', ['m.frg']);
 		p.set('root', root);
 	}
 
@@ -109,7 +106,11 @@ modcaps=''
 	}
 
 	// Create a new document node (common logic for both sync and async)
-	function createNodeCommon (d, entry, type, slotSrc, registry) {
+	function createNodeCommon (d, entry, type, registry) {
+		if (!entry) throw new TypeError(`No MWI registry entry found for component type "${type}"`);
+		const { p, mp } = d;
+		const used = p.at('typesUsed');
+		if (!used.has(type)) used.set(type, 1);
 		// Check if this is a deferred component (has feature but no interface/template)
 		const hasInterface = entry.has(INTERFACE) || entry.has(TEMPLATE);
 		const hasFeature = entry.has(FEATURE);
@@ -118,6 +119,7 @@ modcaps=''
 		if (!hasInterface && hasFeature) entry = registry.get('m.defer');
 
 		// Normal component - create it directly
+		const slotSrc = mp.at('slotSrc');
 		const nodeIfName = entry.at(INTERFACE, TPL_IF);
 		const config = new NANOS({ type, slotSrc }, entry);
 		const nodeIf = getInterface(nodeIfName);
@@ -128,19 +130,17 @@ modcaps=''
 	// Create node synchronously (may create defer node for unloaded components)
 	function opCreateNode (d) {
 		const p = d.p, m = d.mp;
-		const registry = p.at('registry'), type = m.at(0), slotSrc = m.at('slotSrc');
+		const registry = p.at('registry'), type = m.at(0);
 		const entry = registry.get(type);
-		if (!entry) throw new TypeError(`No MWI registry entry found for component type "${type}"`);
-		return createNodeCommon(d, entry, type, slotSrc, registry);
+		return createNodeCommon(d, entry, type, registry);
 	}
 
 	// Create node asynchronously (waits for deferred components to load)
 	async function opCreateNodeWait (d) {
 		const p = d.p, m = d.mp;
-		const registry = p.at('registry'), type = m.at(0), slotSrc = m.at('slotSrc');
+		const registry = p.at('registry'), type = m.at(0);
 		const entry = await registry.getWait(type);
-		if (!entry) throw new TypeError(`No MWI registry entry found for component type "${type}"`);
-		return createNodeCommon(d, entry, type, slotSrc, registry);
+		return createNodeCommon(d, entry, type, registry);
 	}
 
 	// Return document node(s) from a doc-spec item or list (synchronous)
@@ -224,6 +224,7 @@ modcaps=''
 			registry: (d) => d.p.at('registry'),
 			root: (d) => d.p.at('root'),
 			rxNANOS: (_d) => rxNANOS().fromEntries(d.mp.entries()),
+			typesUsed: (d) => [...d.p.at('typesUsed').keys()],
 		}
 	});
 

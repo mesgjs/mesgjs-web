@@ -216,17 +216,17 @@ Deno.test("Compound CSR - Complex Document Structures", async (t) => {
 		assertEquals(formElem.tagName, 'FORM');
 		assertEquals(formElem.action, 'http://localhost/submit');
 		assertEquals(formElem.method, 'post');
-		
+
 		const labels = formElem.querySelectorAll('label');
 		assertEquals(labels.length, 2);
 		assertEquals(labels[0].htmlFor, 'name');
 		assertEquals(labels[1].htmlFor, 'email');
-		
+
 		const inputs = formElem.querySelectorAll('input');
 		assertEquals(inputs.length, 2);
 		assertEquals(inputs[0].type, 'text');
 		assertEquals(inputs[1].type, 'email');
-		
+
 		const button = formElem.querySelector('button');
 		assertEquals(button.type, 'submit');
 		assertEquals(button.textContent, 'Submit');
@@ -245,7 +245,7 @@ Deno.test("Compound CSR - Complex Document Structures", async (t) => {
 		const navElem = domNodes.at(0);
 		assertEquals(navElem.tagName, 'NAV');
 		assertEquals(navElem.className, 'main-nav');
-		
+
 		const links = navElem.querySelectorAll('a');
 		assertEquals(links.length, 3);
 		assertEquals(links[0].textContent, 'Home');
@@ -265,12 +265,12 @@ Deno.test("Compound CSR - Complex Document Structures", async (t) => {
 		const articleElem = domNodes.at(0);
 		assertEquals(articleElem.tagName, 'ARTICLE');
 		assertEquals(articleElem.querySelector('h1').textContent, 'Article Title');
-		
+
 		const sections = articleElem.querySelectorAll('section');
 		assertEquals(sections.length, 2);
 		assertEquals(sections[0].querySelector('p').textContent, 'First paragraph');
 		assertEquals(sections[1].querySelector('p').textContent, 'Second paragraph');
-		
+
 		assertEquals(articleElem.querySelector('footer').textContent, 'Published 2025');
 	});
 });
@@ -315,7 +315,7 @@ Deno.test("Compound CSR - Core Components Integration", async (t) => {
 		const domNodes = renderDOM(spec);
 		await globalThis.reactive.wait();
 		const divElem = domNodes.at(0);
-		
+
 		// Should have: comment, p, 2 outputs (from fragment), comment
 		assertEquals(divElem.childNodes.length, 5);
 		assertEquals(divElem.childNodes[0].nodeType, 8);
@@ -379,7 +379,7 @@ Deno.test("Compound CSR - Special Attributes", async (t) => {
 		const outerDiv = domNodes.at(0);
 		assertEquals(outerDiv.id, 'outer');
 		assertEquals(outerDiv.className, 'container');
-		
+
 		const innerDiv = outerDiv.children[0];
 		assertEquals(innerDiv.id, 'inner');
 		assertEquals(innerDiv.className, 'box');
@@ -394,7 +394,7 @@ Deno.test("Compound CSR - Special Attributes", async (t) => {
 		divNode.setAttr('tabindex', -1);
 		divNode.append('Content');
 		const domNodes = divNode.getDOM();
-		
+
 		await globalThis.reactive.wait();
 		const divElem = domNodes.at(0);
 		assertEquals(divElem.getAttribute('data-count'), '100');
@@ -410,7 +410,7 @@ Deno.test("Compound CSR - Special Attributes", async (t) => {
 		await globalThis.reactive.wait();
 		const outerDiv = domNodes.at(0);
 		assertEquals(outerDiv.getAttribute('data-outer'), '1');
-		
+
 		const innerDiv = outerDiv.children[0];
 		assertEquals(innerDiv.getAttribute('data-inner'), '2');
 		assertEquals(innerDiv.getAttribute('data-zero'), '0');
@@ -483,13 +483,13 @@ Deno.test("Compound CSR - Real-World Patterns", async (t) => {
 		await globalThis.reactive.wait();
 		const cardElem = domNodes.at(0);
 		assertEquals(cardElem.className, 'card');
-		
+
 		const header = cardElem.querySelector('.card-header');
 		assertEquals(header.querySelector('h3').textContent, 'Card Title');
-		
+
 		const body = cardElem.querySelector('.card-body');
 		assertEquals(body.querySelector('p').textContent, 'Card content goes here.');
-		
+
 		const footer = cardElem.querySelector('.card-footer');
 		assertEquals(footer.querySelector('button').textContent, 'Action');
 	});
@@ -522,7 +522,7 @@ Deno.test("Compound CSR - Real-World Patterns", async (t) => {
 		await globalThis.reactive.wait();
 		const gridElem = domNodes.at(0);
 		assertEquals(gridElem.className, 'grid');
-		
+
 		const items = gridElem.querySelectorAll('.grid-item');
 		assertEquals(items.length, 4);
 		assertEquals(items[0].textContent, 'Item 1');
@@ -554,7 +554,7 @@ Deno.test("Compound CSR - Real-World Patterns", async (t) => {
 		assertEquals(modalElem.querySelector('h2').textContent, 'Dialog Title');
 		assertEquals(modalElem.querySelector('.close').textContent, '×');
 		assertEquals(modalElem.querySelector('.modal-body p').textContent, 'Dialog content');
-		
+
 		const buttons = modalElem.querySelectorAll('.modal-footer button');
 		assertEquals(buttons.length, 2);
 		assertEquals(buttons[0].textContent, 'Cancel');
@@ -571,12 +571,12 @@ Deno.test("Compound CSR - Reactive Complex Scenarios", async (t) => {
 		textNode.setAttr('t', 'Initial');
 		innerDiv.append(textNode);
 		outerDiv.append(innerDiv);
-		
+
 		const domNodes = outerDiv.getDOM();
 		await globalThis.reactive.wait();
 		const outerElem = domNodes.at(0);
 		assertEquals(outerElem.textContent, 'Initial');
-		
+
 		// Update nested text
 		textNode.setAttr('t', 'Updated');
 		await globalThis.reactive.wait();
@@ -590,12 +590,12 @@ Deno.test("Compound CSR - Reactive Complex Scenarios", async (t) => {
 		const div2 = doc.createNode('h.div');
 		div2.setAttr('class', 'box-2');
 		doc.append(div1, div2);
-		
+
 		const domNodes = doc.getDOM();
 		await globalThis.reactive.wait();
 		assertEquals(domNodes.at(0).className, 'box-1');
 		assertEquals(domNodes.at(1).className, 'box-2');
-		
+
 		// Update both
 		div1.setAttr('class', 'box-1 active');
 		div2.setAttr('class', 'box-2 active');
@@ -608,23 +608,23 @@ Deno.test("Compound CSR - Reactive Complex Scenarios", async (t) => {
 		const doc = getInstance('MWIDocument');
 		const container = doc.createNode('h.div');
 		container.setAttr('class', 'container');
-		
+
 		const item1 = doc.createNode('h.div');
 		item1.setAttr('class', 'item');
 		item1.append('Item 1');
 		container.append(item1);
-		
+
 		const domNodes = container.getDOM();
 		await globalThis.reactive.wait();
 		const containerElem = domNodes.at(0);
 		assertEquals(containerElem.children.length, 1);
-		
+
 		// Add more items
 		const item2 = doc.createNode('h.div');
 		item2.setAttr('class', 'item');
 		item2.append('Item 2');
 		container.append(item2);
-		
+
 		await globalThis.reactive.wait();
 		assertEquals(containerElem.children.length, 2);
 		assertEquals(containerElem.children[0].textContent, 'Item 1');

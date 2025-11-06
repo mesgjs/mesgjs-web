@@ -77,6 +77,7 @@ export function renderHTML (content) {
 	const doc = getInstance('MWIDocument');
 	const nodes = doc('from', ls(['list', content]));
 	doc('append', nodes);
+	// console.log('HTML (debug):', doc('getHTML'));
 	return doc('getHTML');
 }
 

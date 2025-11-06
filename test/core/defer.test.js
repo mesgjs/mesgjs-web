@@ -320,12 +320,12 @@ Deno.test("MWICoreDefer (m.defer) - Complex Scenarios", async (t) => {
 	await t.step("Defer node with multiple attributes", () => {
 		const spec = ps('[(m.defer class="defer-placeholder loading" data-priority=high id=defer-123)]');
 		const deferNode = doc.from({ item: spec });
-		
+
 		// Check defer-specific attributes
 		assertEquals(deferNode('getAttr', ls([, 'm.deferType'])), 'm.defer');
 		assertEquals(deferNode('getAttr', ls([, 'data-mwi-defer'])), 'm.defer');
 		assertEquals(deferNode('getAttr', ls([, 'id'])), 'defer-123');
-		
+
 		// Check other attributes
 		assert(deferNode('getAttr', ls([, 'class'])).includes('defer-placeholder'));
 		assert(deferNode('getAttr', ls([, 'class'])).includes('loading'));
@@ -336,11 +336,11 @@ Deno.test("MWICoreDefer (m.defer) - Complex Scenarios", async (t) => {
 		const defer1 = doc.createNode('m.defer');
 		const defer2 = doc.createNode('m.defer');
 		const defer3 = doc.createNode('m.defer');
-		
+
 		const id1 = defer1('getAttr', ls([, 'm.id']));
 		const id2 = defer2('getAttr', ls([, 'm.id']));
 		const id3 = defer3('getAttr', ls([, 'm.id']));
-		
+
 		// All IDs should be unique
 		assert(id1 !== id2, "ID1 and ID2 should be different");
 		assert(id2 !== id3, "ID2 and ID3 should be different");
@@ -349,15 +349,15 @@ Deno.test("MWICoreDefer (m.defer) - Complex Scenarios", async (t) => {
 
 	await t.step("Defer node attribute modifications", () => {
 		const deferNode = doc.createNode('m.defer');
-		
+
 		// Modify attributes after creation
 		deferNode('setAttr', ls([, 'class', , 'updated-class']));
 		deferNode('setAttr', ls([, 'data-status', , 'loading']));
-		
+
 		// Verify modifications
 		assertEquals(deferNode('getAttr', ls([, 'class'])), 'updated-class');
 		assertEquals(deferNode('getAttr', ls([, 'data-status'])), 'loading');
-		
+
 		// Defer-specific attributes should remain unchanged
 		assertEquals(deferNode('getAttr', ls([, 'm.deferType'])), 'm.defer');
 		assertEquals(deferNode('getAttr', ls([, 'data-mwi-defer'])), 'm.defer');

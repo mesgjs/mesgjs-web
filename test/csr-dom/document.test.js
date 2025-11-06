@@ -20,11 +20,11 @@ Deno.test('MWIDocument - CSR-DOM Rendering Delegation', async (t) => {
 	await t.step('(getDOM) - Delegates to root fragment', async () => {
 		const doc = getInstance('MWIDocument');
 		doc('append', ls(['item', 'Hello']));
-		
+
 		const docDOM = doc('getDOM');
 		const root = doc('root');
 		const rootDOM = root('getDOM');
-		
+
 		await globalThis.reactive.wait();
 		assertStrictEquals(docDOM, rootDOM, 'Document DOM should be same as root DOM');
 	});
@@ -32,11 +32,11 @@ Deno.test('MWIDocument - CSR-DOM Rendering Delegation', async (t) => {
 	await t.step('.getDOM() - Delegates to root fragment via JS', async () => {
 		const doc = getInstance('MWIDocument');
 		doc.append({ item: 'World' });
-		
+
 		const docDOM = doc.getDOM();
 		const root = doc.root;
 		const rootDOM = root.getDOM();
-		
+
 		await globalThis.reactive.wait();
 		assertStrictEquals(docDOM, rootDOM, 'Document DOM should be same as root DOM');
 	});
@@ -44,7 +44,7 @@ Deno.test('MWIDocument - CSR-DOM Rendering Delegation', async (t) => {
 	await t.step('(getDOM) - Empty document', async () => {
 		const doc = getInstance('MWIDocument');
 		const domNodes = doc('getDOM');
-		
+
 		await globalThis.reactive.wait();
 		assertEquals(domNodes.size, 0, 'Empty document should produce no DOM nodes');
 	});
@@ -52,7 +52,7 @@ Deno.test('MWIDocument - CSR-DOM Rendering Delegation', async (t) => {
 	await t.step('.getDOM() - Empty document via JS', async () => {
 		const doc = getInstance('MWIDocument');
 		const domNodes = doc.getDOM();
-		
+
 		await globalThis.reactive.wait();
 		assertEquals(domNodes.size, 0, 'Empty document should produce no DOM nodes');
 	});
@@ -61,7 +61,7 @@ Deno.test('MWIDocument - CSR-DOM Rendering Delegation', async (t) => {
 		const doc = getInstance('MWIDocument');
 		doc('append', ls(['list', '[([h.div test])]']));
 		const domNodes = doc('getDOM');
-		
+
 		await globalThis.reactive.wait();
 		assertEquals(domNodes.size, 1);
 		const divElem = domNodes.at(0);
@@ -73,7 +73,7 @@ Deno.test('MWIDocument - CSR-DOM Rendering Delegation', async (t) => {
 		const doc = getInstance('MWIDocument');
 		doc.append({ list: '[([h.div test])]' });
 		const domNodes = doc.getDOM();
-		
+
 		await globalThis.reactive.wait();
 		assertEquals(domNodes.size, 1);
 		const divElem = domNodes.at(0);
@@ -87,7 +87,7 @@ Deno.test('MWIDocument - CSR-DOM Multiple Content Items', async (t) => {
 		const doc = getInstance('MWIDocument');
 		doc('append', ls(['list', '[([m.t t=First] [m.t t=Second] [m.t t=Third])]']));
 		const domNodes = doc('getDOM');
-		
+
 		await globalThis.reactive.wait();
 		assertEquals(domNodes.size, 3);
 		assertEquals(domNodes.at(0).tagName, 'OUTPUT');
@@ -102,7 +102,7 @@ Deno.test('MWIDocument - CSR-DOM Multiple Content Items', async (t) => {
 		const doc = getInstance('MWIDocument');
 		doc.append({ list: '[([m.t t=A] [m.t t=B] [m.t t=C])]' });
 		const domNodes = doc.getDOM();
-		
+
 		await globalThis.reactive.wait();
 		assertEquals(domNodes.size, 3);
 		assertEquals(domNodes.at(0).textContent, 'A');
@@ -114,7 +114,7 @@ Deno.test('MWIDocument - CSR-DOM Multiple Content Items', async (t) => {
 		const doc = getInstance('MWIDocument');
 		doc('append', ls(['list', '[([h.div First] [h.span Second] [h.p Third])]']));
 		const domNodes = doc('getDOM');
-		
+
 		await globalThis.reactive.wait();
 		assertEquals(domNodes.size, 3);
 		assertEquals(domNodes.at(0).tagName, 'DIV');
@@ -129,7 +129,7 @@ Deno.test('MWIDocument - CSR-DOM Multiple Content Items', async (t) => {
 		const doc = getInstance('MWIDocument');
 		doc.append({ list: '[([h.div A] [h.span B] [h.p C])]' });
 		const domNodes = doc.getDOM();
-		
+
 		await globalThis.reactive.wait();
 		assertEquals(domNodes.size, 3);
 		assertEquals(domNodes.at(0).tagName, 'DIV');
@@ -141,7 +141,7 @@ Deno.test('MWIDocument - CSR-DOM Multiple Content Items', async (t) => {
 		const doc = getInstance('MWIDocument');
 		doc('append', ls(['list', '[([m.t t=Text] [h.div Element] [m.com t=Comment])]']));
 		const domNodes = doc('getDOM');
-		
+
 		await globalThis.reactive.wait();
 		assertEquals(domNodes.size, 3);
 		assertEquals(domNodes.at(0).tagName, 'OUTPUT');
@@ -156,7 +156,7 @@ Deno.test('MWIDocument - CSR-DOM Multiple Content Items', async (t) => {
 		const doc = getInstance('MWIDocument');
 		doc.append({ list: '[([m.t t=A] [h.span B] [m.com t=C])]' });
 		const domNodes = doc.getDOM();
-		
+
 		await globalThis.reactive.wait();
 		assertEquals(domNodes.size, 3);
 		assertEquals(domNodes.at(0).tagName, 'OUTPUT');
@@ -171,12 +171,12 @@ Deno.test('MWIDocument - CSR-DOM Reactive Updates', async (t) => {
 		const textNode = doc('createNode', ['m.t']);
 		textNode('setAttr', ['t', 'Initial']);
 		doc('append', [textNode]);
-		
+
 		const domNodes = doc('getDOM');
 		await globalThis.reactive.wait();
 		assertEquals(domNodes.size, 1);
 		assertEquals(domNodes.at(0).textContent, 'Initial');
-		
+
 		// Change text content
 		textNode('setAttr', ['t', 'Updated']);
 		await globalThis.reactive.wait();
@@ -189,12 +189,12 @@ Deno.test('MWIDocument - CSR-DOM Reactive Updates', async (t) => {
 		const textNode = doc.createNode('m.t');
 		textNode.setAttr('t', 'JS Initial');
 		doc.append(textNode);
-		
+
 		const domNodes = doc.getDOM();
 		await globalThis.reactive.wait();
 		assertEquals(domNodes.size, 1);
 		assertEquals(domNodes.at(0).textContent, 'JS Initial');
-		
+
 		textNode.setAttr('t', 'JS Updated');
 		await globalThis.reactive.wait();
 		assertEquals(domNodes.size, 1);
@@ -206,11 +206,11 @@ Deno.test('MWIDocument - CSR-DOM Reactive Updates', async (t) => {
 		const text1 = doc('createNode', ['m.t']);
 		text1('setAttr', ['t', 'First']);
 		doc('append', [text1]);
-		
+
 		const domNodes = doc('getDOM');
 		await globalThis.reactive.wait();
 		assertEquals(domNodes.size, 1);
-		
+
 		// Append another node
 		const text2 = doc('createNode', ['m.t']);
 		text2('setAttr', ['t', 'Second']);
@@ -226,11 +226,11 @@ Deno.test('MWIDocument - CSR-DOM Reactive Updates', async (t) => {
 		const text1 = doc.createNode('m.t');
 		text1.setAttr('t', 'JS First');
 		doc.append(text1);
-		
+
 		const domNodes = doc.getDOM();
 		await globalThis.reactive.wait();
 		assertEquals(domNodes.size, 1);
-		
+
 		const text2 = doc.createNode('m.t');
 		text2.setAttr('t', 'JS Second');
 		doc.append(text2);
@@ -245,7 +245,7 @@ Deno.test('MWIDocument - CSR-DOM Reactive Updates', async (t) => {
 		doc('append', ls(['item', 'Test']));
 		const dom1 = doc('getDOM');
 		const dom2 = doc('getDOM');
-		
+
 		await globalThis.reactive.wait();
 		assertStrictEquals(dom1, dom2, 'Should return same NANOS instance');
 	});
@@ -255,7 +255,7 @@ Deno.test('MWIDocument - CSR-DOM Reactive Updates', async (t) => {
 		doc.append({ item: 'Test' });
 		const dom1 = doc.getDOM();
 		const dom2 = doc.getDOM();
-		
+
 		await globalThis.reactive.wait();
 		assertStrictEquals(dom1, dom2, 'Should return same NANOS instance');
 	});
@@ -266,7 +266,7 @@ Deno.test('MWIDocument - CSR-DOM Complex Structures', async (t) => {
 		const doc = getInstance('MWIDocument');
 		doc('append', ls(['list', '[([h.div class=container [h.h1 Title] [h.p Content]])]']));
 		const domNodes = doc('getDOM');
-		
+
 		await globalThis.reactive.wait();
 		assertEquals(domNodes.size, 1);
 		const divElem = domNodes.at(0);
@@ -283,7 +283,7 @@ Deno.test('MWIDocument - CSR-DOM Complex Structures', async (t) => {
 		const doc = getInstance('MWIDocument');
 		doc.append({ list: '[([h.section [h.h2 Heading] [h.div Text]])]' });
 		const domNodes = doc.getDOM();
-		
+
 		await globalThis.reactive.wait();
 		assertEquals(domNodes.size, 1);
 		const sectionElem = domNodes.at(0);
@@ -297,7 +297,7 @@ Deno.test('MWIDocument - CSR-DOM Complex Structures', async (t) => {
 		const doc = getInstance('MWIDocument');
 		doc('append', ls(['list', '[([h.header Header] [h.main Main] [h.footer Footer])]']));
 		const domNodes = doc('getDOM');
-		
+
 		await globalThis.reactive.wait();
 		assertEquals(domNodes.size, 3);
 		assertEquals(domNodes.at(0).tagName, 'HEADER');
@@ -312,7 +312,7 @@ Deno.test('MWIDocument - CSR-DOM Complex Structures', async (t) => {
 		const doc = getInstance('MWIDocument');
 		doc.append({ list: '[([h.nav Nav] [h.article Article] [h.aside Aside])]' });
 		const domNodes = doc.getDOM();
-		
+
 		await globalThis.reactive.wait();
 		assertEquals(domNodes.size, 3);
 		assertEquals(domNodes.at(0).tagName, 'NAV');
@@ -326,7 +326,7 @@ Deno.test('MWIDocument - CSR-DOM Fragments', async (t) => {
 		const doc = getInstance('MWIDocument');
 		doc('append', ls(['list', '[([m.frg [m.t t=A] [m.t t=B]] [m.t t=C])]']));
 		const domNodes = doc('getDOM');
-		
+
 		await globalThis.reactive.wait();
 		// Fragment is transparent, so we get 3 text nodes at top level
 		assertEquals(domNodes.size, 3);
@@ -339,7 +339,7 @@ Deno.test('MWIDocument - CSR-DOM Fragments', async (t) => {
 		const doc = getInstance('MWIDocument');
 		doc.append({ list: '[([m.frg [m.t t=X] [m.t t=Y]] [m.t t=Z])]' });
 		const domNodes = doc.getDOM();
-		
+
 		await globalThis.reactive.wait();
 		assertEquals(domNodes.size, 3);
 		assertEquals(domNodes.at(0).textContent, 'X');
@@ -351,7 +351,7 @@ Deno.test('MWIDocument - CSR-DOM Fragments', async (t) => {
 		const doc = getInstance('MWIDocument');
 		doc('append', ls(['list', '[([m.frg [m.frg [m.t t=Deep]]])]']));
 		const domNodes = doc('getDOM');
-		
+
 		await globalThis.reactive.wait();
 		assertEquals(domNodes.size, 1);
 		assertEquals(domNodes.at(0).textContent, 'Deep');
@@ -361,7 +361,7 @@ Deno.test('MWIDocument - CSR-DOM Fragments', async (t) => {
 		const doc = getInstance('MWIDocument');
 		doc.append({ list: '[([m.frg [m.frg [m.t t=Nested]]])]' });
 		const domNodes = doc.getDOM();
-		
+
 		await globalThis.reactive.wait();
 		assertEquals(domNodes.size, 1);
 		assertEquals(domNodes.at(0).textContent, 'Nested');
@@ -374,12 +374,12 @@ Deno.test('MWIDocument - CSR-DOM Reactive Document Updates', async (t) => {
 		const textNode = doc('createNode', ['m.t']);
 		textNode('setAttr', ['t', 'Initial']);
 		doc('append', [textNode]);
-		
+
 		const domNodes = doc('getDOM');
 		await globalThis.reactive.wait();
 		assertEquals(domNodes.size, 1);
 		assertEquals(domNodes.at(0).textContent, 'Initial');
-		
+
 		// Modify existing content
 		textNode('setAttr', ['t', 'Modified']);
 		await globalThis.reactive.wait();
@@ -392,12 +392,12 @@ Deno.test('MWIDocument - CSR-DOM Reactive Document Updates', async (t) => {
 		const textNode = doc.createNode('m.t');
 		textNode.setAttr('t', 'JS Initial');
 		doc.append(textNode);
-		
+
 		const domNodes = doc.getDOM();
 		await globalThis.reactive.wait();
 		assertEquals(domNodes.size, 1);
 		assertEquals(domNodes.at(0).textContent, 'JS Initial');
-		
+
 		textNode.setAttr('t', 'JS Modified');
 		await globalThis.reactive.wait();
 		assertEquals(domNodes.size, 1);
@@ -409,11 +409,11 @@ Deno.test('MWIDocument - CSR-DOM Reactive Document Updates', async (t) => {
 		const text1 = doc('createNode', ['m.t']);
 		text1('setAttr', ['t', 'First']);
 		doc('append', [text1]);
-		
+
 		const domNodes = doc('getDOM');
 		await globalThis.reactive.wait();
 		assertEquals(domNodes.size, 1);
-		
+
 		// Append more content
 		const text2 = doc('createNode', ['m.t']);
 		text2('setAttr', ['t', 'Second']);
@@ -429,11 +429,11 @@ Deno.test('MWIDocument - CSR-DOM Reactive Document Updates', async (t) => {
 		const text1 = doc.createNode('m.t');
 		text1.setAttr('t', 'JS First');
 		doc.append(text1);
-		
+
 		const domNodes = doc.getDOM();
 		await globalThis.reactive.wait();
 		assertEquals(domNodes.size, 1);
-		
+
 		const text2 = doc.createNode('m.t');
 		text2.setAttr('t', 'JS Second');
 		doc.append(text2);
@@ -449,7 +449,7 @@ Deno.test('MWIDocument - CSR-DOM Special Cases', async (t) => {
 		const doc = getInstance('MWIDocument');
 		doc('append', ls(['list', '[([m.t t=""] [m.t t=Content] [m.t t=""])]']));
 		const domNodes = doc('getDOM');
-		
+
 		await globalThis.reactive.wait();
 		// Empty text nodes should not appear in DOM
 		assertEquals(domNodes.size, 1);
@@ -460,7 +460,7 @@ Deno.test('MWIDocument - CSR-DOM Special Cases', async (t) => {
 		const doc = getInstance('MWIDocument');
 		doc.append({ list: '[([m.t t=""] [m.t t=Content] [m.t t=""])]' });
 		const domNodes = doc.getDOM();
-		
+
 		await globalThis.reactive.wait();
 		assertEquals(domNodes.size, 1);
 		assertEquals(domNodes.at(0).textContent, 'Content');
@@ -470,7 +470,7 @@ Deno.test('MWIDocument - CSR-DOM Special Cases', async (t) => {
 		const doc = getInstance('MWIDocument');
 		doc('append', ls(['list', '[([h.div [h.div [h.div [h.div Deep]]]])]']));
 		const domNodes = doc('getDOM');
-		
+
 		await globalThis.reactive.wait();
 		assertEquals(domNodes.size, 1);
 		const outerDiv = domNodes.at(0);
@@ -482,7 +482,7 @@ Deno.test('MWIDocument - CSR-DOM Special Cases', async (t) => {
 		const doc = getInstance('MWIDocument');
 		doc.append({ list: '[([h.div [h.div [h.div Content]]])]' });
 		const domNodes = doc.getDOM();
-		
+
 		await globalThis.reactive.wait();
 		assertEquals(domNodes.size, 1);
 		const outerDiv = domNodes.at(0);

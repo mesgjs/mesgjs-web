@@ -37,7 +37,7 @@ Deno.test("MWICoreDefer (m.defer) - CSR-DOM Basic Rendering", async (t) => {
 	await t.step("(getDOM) - Renders as slot element", async () => {
 		const deferNode = doc('createNode', ['m.defer']);
 		const domNodes = deferNode('getDOM');
-		
+
 		await globalThis.reactive.wait();
 		assertEquals(domNodes.size, 1);
 		const slotElem = domNodes.at(0);
@@ -47,7 +47,7 @@ Deno.test("MWICoreDefer (m.defer) - CSR-DOM Basic Rendering", async (t) => {
 	await t.step(".getDOM() - Renders as slot element via JS", async () => {
 		const deferNode = doc.createNode('m.defer');
 		const domNodes = deferNode.getDOM();
-		
+
 		await globalThis.reactive.wait();
 		assertEquals(domNodes.size, 1);
 		assertEquals(domNodes.at(0).tagName, 'SLOT');
@@ -56,7 +56,7 @@ Deno.test("MWICoreDefer (m.defer) - CSR-DOM Basic Rendering", async (t) => {
 	await t.step("(getDOM) - Includes auto-assigned ID", async () => {
 		const deferNode = doc('createNode', ['m.defer']);
 		const domNodes = deferNode('getDOM');
-		
+
 		await globalThis.reactive.wait();
 		const slotElem = domNodes.at(0);
 		assert(slotElem.id, 'Should have id attribute');
@@ -66,7 +66,7 @@ Deno.test("MWICoreDefer (m.defer) - CSR-DOM Basic Rendering", async (t) => {
 	await t.step(".getDOM() - Includes auto-assigned ID via JS", async () => {
 		const deferNode = doc.createNode('m.defer');
 		const domNodes = deferNode.getDOM();
-		
+
 		await globalThis.reactive.wait();
 		const slotElem = domNodes.at(0);
 		assert(slotElem.id, 'Should have id attribute');
@@ -76,7 +76,7 @@ Deno.test("MWICoreDefer (m.defer) - CSR-DOM Basic Rendering", async (t) => {
 	await t.step("(getDOM) - Includes data-mwi-defer attribute", async () => {
 		const deferNode = doc('createNode', ['m.defer']);
 		const domNodes = deferNode('getDOM');
-		
+
 		await globalThis.reactive.wait();
 		const slotElem = domNodes.at(0);
 		assertEquals(slotElem.getAttribute('data-mwi-defer'), 'm.defer');
@@ -85,7 +85,7 @@ Deno.test("MWICoreDefer (m.defer) - CSR-DOM Basic Rendering", async (t) => {
 	await t.step(".getDOM() - Includes data-mwi-defer attribute via JS", async () => {
 		const deferNode = doc.createNode('m.defer');
 		const domNodes = deferNode.getDOM();
-		
+
 		await globalThis.reactive.wait();
 		const slotElem = domNodes.at(0);
 		assertEquals(slotElem.getAttribute('data-mwi-defer'), 'm.defer');
@@ -97,14 +97,14 @@ Deno.test("MWICoreDefer (m.defer) - CSR-DOM Basic Rendering", async (t) => {
 		deferNode('setAttr', ['style', 'color: red']);
 		deferNode('setAttr', ['aria-label', 'should-not-render']);
 		const domNodes = deferNode('getDOM');
-		
+
 		await globalThis.reactive.wait();
 		const slotElem = domNodes.at(0);
-		
+
 		// Should have id and data-mwi-defer
 		assert(slotElem.id, 'Should have id');
 		assertEquals(slotElem.getAttribute('data-mwi-defer'), 'm.defer');
-		
+
 		// Should NOT have other attributes
 		assertEquals(slotElem.hasAttribute('class'), false, 'Should not have class attribute');
 		assertEquals(slotElem.hasAttribute('style'), false, 'Should not have style attribute');
@@ -116,10 +116,10 @@ Deno.test("MWICoreDefer (m.defer) - CSR-DOM Basic Rendering", async (t) => {
 		deferNode.setAttr('class', 'should-not-render');
 		deferNode.setAttr('data-custom', 'should-not-render');
 		const domNodes = deferNode.getDOM();
-		
+
 		await globalThis.reactive.wait();
 		const slotElem = domNodes.at(0);
-		
+
 		assert(slotElem.id, 'Should have id');
 		assertEquals(slotElem.getAttribute('data-mwi-defer'), 'm.defer');
 		assertEquals(slotElem.hasAttribute('class'), false, 'Should not have class attribute');
@@ -132,7 +132,7 @@ Deno.test("MWICoreDefer (m.defer) - CSR-DOM with Explicit ID", async (t) => {
 		const spec = ps('[(m.defer id=my-defer-id)]');
 		const deferNode = doc('from', { item: spec });
 		const domNodes = deferNode('getDOM');
-		
+
 		await globalThis.reactive.wait();
 		const slotElem = domNodes.at(0);
 		assertEquals(slotElem.id, 'my-defer-id');
@@ -142,7 +142,7 @@ Deno.test("MWICoreDefer (m.defer) - CSR-DOM with Explicit ID", async (t) => {
 		const spec = ps('[(m.defer id=custom-id-123)]');
 		const deferNode = doc.from({ item: spec });
 		const domNodes = deferNode.getDOM();
-		
+
 		await globalThis.reactive.wait();
 		const slotElem = domNodes.at(0);
 		assertEquals(slotElem.id, 'custom-id-123');
@@ -153,7 +153,7 @@ Deno.test("MWICoreDefer (m.defer) - CSR-DOM Real-World Scenarios", async (t) => 
 	await t.step("(getDOM) - Defer node created via document for unloaded component", async () => {
 		const node = doc('createNode', ['test.deferred.csr']);
 		const domNodes = node('getDOM');
-		
+
 		await globalThis.reactive.wait();
 		assertEquals(domNodes.size, 1);
 		const slotElem = domNodes.at(0);
@@ -165,7 +165,7 @@ Deno.test("MWICoreDefer (m.defer) - CSR-DOM Real-World Scenarios", async (t) => 
 	await t.step(".getDOM() - Defer node created via document for unloaded component via JS", async () => {
 		const node = doc.createNode('test.deferred.csr');
 		const domNodes = node.getDOM();
-		
+
 		await globalThis.reactive.wait();
 		assertEquals(domNodes.size, 1);
 		const slotElem = domNodes.at(0);
@@ -179,11 +179,11 @@ Deno.test("MWICoreDefer (m.defer) - CSR-DOM Real-World Scenarios", async (t) => 
 		const defer2 = doc('createNode', ['m.defer']);
 		const dom1 = defer1('getDOM');
 		const dom2 = defer2('getDOM');
-		
+
 		await globalThis.reactive.wait();
 		const id1 = dom1.at(0).id;
 		const id2 = dom2.at(0).id;
-		
+
 		assert(id1, 'First defer should have ID');
 		assert(id2, 'Second defer should have ID');
 		assert(id1 !== id2, 'IDs should be unique');
@@ -194,11 +194,11 @@ Deno.test("MWICoreDefer (m.defer) - CSR-DOM Real-World Scenarios", async (t) => 
 		const defer2 = doc.createNode('m.defer');
 		const dom1 = defer1.getDOM();
 		const dom2 = defer2.getDOM();
-		
+
 		await globalThis.reactive.wait();
 		const id1 = dom1.at(0).id;
 		const id2 = dom2.at(0).id;
-		
+
 		assert(id1, 'First defer should have ID');
 		assert(id2, 'Second defer should have ID');
 		assert(id1 !== id2, 'IDs should be unique');
@@ -208,7 +208,7 @@ Deno.test("MWICoreDefer (m.defer) - CSR-DOM Real-World Scenarios", async (t) => 
 		const testDoc = getInstance('MWIDocument');
 		testDoc('append', { list: '[([test.deferred.csr])]' });
 		const domNodes = testDoc('getDOM');
-		
+
 		await globalThis.reactive.wait();
 		assertEquals(domNodes.size, 1);
 		const slotElem = domNodes.at(0);
@@ -220,7 +220,7 @@ Deno.test("MWICoreDefer (m.defer) - CSR-DOM Real-World Scenarios", async (t) => 
 		const testDoc = getInstance('MWIDocument');
 		testDoc.append({ list: '[([test.deferred.csr])]' });
 		const domNodes = testDoc.getDOM();
-		
+
 		await globalThis.reactive.wait();
 		assertEquals(domNodes.size, 1);
 		const slotElem = domNodes.at(0);
@@ -232,7 +232,7 @@ Deno.test("MWICoreDefer (m.defer) - CSR-DOM Real-World Scenarios", async (t) => 
 		const testDoc = getInstance('MWIDocument');
 		testDoc('append', { list: '[([m.t t=Before] [test.deferred.csr] [m.t t=After])]' });
 		const domNodes = testDoc('getDOM');
-		
+
 		await globalThis.reactive.wait();
 		assertEquals(domNodes.size, 3);
 		assertEquals(domNodes.at(0).tagName, 'OUTPUT');
@@ -246,7 +246,7 @@ Deno.test("MWICoreDefer (m.defer) - CSR-DOM Real-World Scenarios", async (t) => 
 		const testDoc = getInstance('MWIDocument');
 		testDoc.append({ list: '[([m.t t=Start] [test.deferred.csr] [m.t t=End])]' });
 		const domNodes = testDoc.getDOM();
-		
+
 		await globalThis.reactive.wait();
 		assertEquals(domNodes.size, 3);
 		assertEquals(domNodes.at(0).tagName, 'OUTPUT');
@@ -262,7 +262,7 @@ Deno.test("MWICoreDefer (m.defer) - CSR-DOM Empty Content", async (t) => {
 		const deferNode = doc('createNode', ['m.defer']);
 		deferNode('append', ['ignored content']);
 		const domNodes = deferNode('getDOM');
-		
+
 		await globalThis.reactive.wait();
 		assertEquals(domNodes.size, 1);
 		const slotElem = domNodes.at(0);
@@ -275,7 +275,7 @@ Deno.test("MWICoreDefer (m.defer) - CSR-DOM Empty Content", async (t) => {
 		const deferNode = doc.createNode('m.defer');
 		deferNode.append('ignored content');
 		const domNodes = deferNode.getDOM();
-		
+
 		await globalThis.reactive.wait();
 		assertEquals(domNodes.size, 1);
 		const slotElem = domNodes.at(0);
@@ -289,7 +289,7 @@ Deno.test("MWICoreDefer (m.defer) - CSR-DOM Reactive Behavior", async (t) => {
 		const deferNode = doc('createNode', ['m.defer']);
 		const dom1 = deferNode('getDOM');
 		const dom2 = deferNode('getDOM');
-		
+
 		await globalThis.reactive.wait();
 		assertStrictEquals(dom1, dom2, 'Should return same NANOS instance');
 		assertStrictEquals(dom1.at(0), dom2.at(0), 'Should return same slot element');
@@ -299,7 +299,7 @@ Deno.test("MWICoreDefer (m.defer) - CSR-DOM Reactive Behavior", async (t) => {
 		const deferNode = doc.createNode('m.defer');
 		const dom1 = deferNode.getDOM();
 		const dom2 = deferNode.getDOM();
-		
+
 		await globalThis.reactive.wait();
 		assertStrictEquals(dom1, dom2, 'Should return same NANOS instance');
 		assertStrictEquals(dom1.at(0), dom2.at(0), 'Should return same slot element');
@@ -308,15 +308,15 @@ Deno.test("MWICoreDefer (m.defer) - CSR-DOM Reactive Behavior", async (t) => {
 	await t.step("(getDOM) - Attribute changes don't affect rendered attributes (filtered)", async () => {
 		const deferNode = doc('createNode', ['m.defer']);
 		const domNodes = deferNode('getDOM');
-		
+
 		await globalThis.reactive.wait();
 		const slotElem = domNodes.at(0);
 		const originalId = slotElem.id;
-		
+
 		// Try to change attributes
 		deferNode('setAttr', ['class', 'new-class']);
 		deferNode('setAttr', ['data-custom', 'custom-value']);
-		
+
 		await globalThis.reactive.wait();
 		// ID should remain the same
 		assertEquals(slotElem.id, originalId);
@@ -330,14 +330,14 @@ Deno.test("MWICoreDefer (m.defer) - CSR-DOM Reactive Behavior", async (t) => {
 	await t.step(".getDOM() - Attribute changes don't affect rendered attributes via JS", async () => {
 		const deferNode = doc.createNode('m.defer');
 		const domNodes = deferNode.getDOM();
-		
+
 		await globalThis.reactive.wait();
 		const slotElem = domNodes.at(0);
 		const originalId = slotElem.id;
-		
+
 		deferNode.setAttr('style', 'color: red');
 		deferNode.setAttr('aria-label', 'test');
-		
+
 		await globalThis.reactive.wait();
 		assertEquals(slotElem.id, originalId);
 		assertEquals(slotElem.hasAttribute('style'), false);

@@ -39,6 +39,8 @@ modcaps=''
 	const TPL_IF = CORE_IF + 'Tpl';
 	const SLOT_IF = CORE_IF + 'Slot';
 	const SLOT_TYPE = 'm.slot';
+	const SCPCSS_IF = CORE_IF + 'ScpCSS';
+	const SCPCSS_TYPE = 'm.scpcss';
 
 	const { fready, fwait, getInstance, getInterface, getModMeta, setRO, modHasCap } = globalThis.$c;
 
@@ -46,6 +48,7 @@ modcaps=''
 		[COM_TYPE]: ls([INTERFACE, COM_IF, SCHEMA, ls([VOID, true])]),
 		[DEFER_TYPE]: ls([INTERFACE, DEFER_IF, SCHEMA, ls([AUTO_DOC, false, 'htmlAllowAttr', new Set(['id', 'data-mwi-defer'])])]),
 		[FRAG_TYPE]: ls([INTERFACE, FRAG_IF]),
+		[SCPCSS_TYPE]: ls([INTERFACE, SCPCSS_IF, SCHEMA, ls([VOID, true])]),
 		[SLOT_TYPE]: ls([INTERFACE, SLOT_IF]),
 		[TEXT_TYPE]: ls([INTERFACE, TEXT_IF, SCHEMA, ls([VOID, true])]),
 	}
@@ -162,6 +165,77 @@ modcaps=''
 			chain: [ BASE_IF ],
 			handlers: {
 				subSlotSrc: (d) => d.p.at('slotSrc'), // non-source; pass through
+			}
+		});
+	})();
+
+	// MWICoreScpCSS (scoped CSS aggregator) interface
+	// `[m.scpcss]`
+	// Aggregates scoped CSS from all used component types
+	(() => {
+		function aggregateCSS (d) {
+			const doc = d.p.at('doc'), registry = doc('registry');
+			const typesUsed = doc('typesUsed');
+			const cssBlocks = [];
+
+			for (const type of typesUsed) {
+				const entry = registry.get(type);
+				if (entry && entry.has('scopedCSS')) {
+					const scopedCSS = entry.at('scopedCSS');
+					const id = entry.at('id');
+					// Replace @@ with component ID
+					const processedCSS = scopedCSS.replace(/@@/g, id);
+					cssBlocks.push(processedCSS);
+				}
+			}
+
+			return cssBlocks.join('\n');
+		}
+
+		function opGetDOM (d) {
+			if (typeof document !== 'object' || typeof document.createElement !== 'function') return new NANOS();
+			const p = d.p;
+			if (p.has('dom')) return p.at('dom');
+			const styleElem = document.createElement('style'), doc = p.at('doc'), nodes = doc.rxNANOS();
+			p.set('dom', nodes);
+			const relay = getInstance('@reactive', {
+				eager: true, def: () => {
+					const css = aggregateCSS(d);
+					relay('untr', () => {
+						if (css !== '') {
+							styleElem.textContent = css;
+							if (!nodes.has(0)) nodes.set(0, styleElem);
+						} else {
+							if (nodes.has(0)) nodes.clear();
+						}
+					});
+				}
+			});
+			relay('rv');
+			return nodes;
+		}
+
+		function opGetHTML (d) {
+			const m = d.mp, output = m.at('in');
+			const css = aggregateCSS(d);
+			if (css !== '') {
+				// Escape </style> as \3c /style> (based on CSS string syntax)
+				const sanzd = css.replace(/<(?=\s*\/\s*style)/gi, '\\3c ');
+				const html = `<style>${sanzd}</style>`;
+				if (output) output.push(html);
+				return html;
+			}
+			return '';
+		}
+
+		getInterface(SCPCSS_IF).set({
+			pristine: true, lock: true,
+			chain: [ BASE_IF ],
+			handlers: {
+				getDOM: opGetDOM,
+				getHTML: opGetHTML,
+				getSubSpec: (_d) => new NANOS(),
+				setSubSpec: (d) => d.rr,
 			}
 		});
 	})();

@@ -23,7 +23,7 @@ Deno.test("MWIHTML (h.*) - CSR-DOM Basic Element Rendering", async (t) => {
 	await t.step("(getDOM) - Simple div element", () => {
 		const divNode = doc('createNode', ['h.div']);
 		const domNodes = divNode('getDOM');
-		
+
 		const divElem = domNodes.at(0);
 		assertExists(divElem);
 		assertEquals(divElem.tagName, 'DIV');
@@ -33,7 +33,7 @@ Deno.test("MWIHTML (h.*) - CSR-DOM Basic Element Rendering", async (t) => {
 	await t.step(".getDOM() - Simple div element via JS", () => {
 		const divNode = doc.createNode('h.div');
 		const domNodes = divNode.getDOM();
-		
+
 		const divElem = domNodes.at(0);
 		assertEquals(divElem.tagName, 'DIV');
 		assertEquals(domNodes.size, 1);
@@ -43,7 +43,7 @@ Deno.test("MWIHTML (h.*) - CSR-DOM Basic Element Rendering", async (t) => {
 		const divNode = doc('createNode', ['h.div']);
 		divNode('setAttr', ['class', 'test-class']);
 		const domNodes = divNode('getDOM');
-		
+
 		const divElem = domNodes.at(0);
 		assertEquals(divElem.className, 'test-class');
 		assertEquals(domNodes.size, 1);
@@ -53,7 +53,7 @@ Deno.test("MWIHTML (h.*) - CSR-DOM Basic Element Rendering", async (t) => {
 		const divNode = doc.createNode('h.div');
 		divNode.setAttr('class', 'js-test-class');
 		const domNodes = divNode.getDOM();
-		
+
 		const divElem = domNodes.at(0);
 		assertEquals(divElem.className, 'js-test-class');
 		assertEquals(domNodes.size, 1);
@@ -65,7 +65,7 @@ Deno.test("MWIHTML (h.*) - CSR-DOM Basic Element Rendering", async (t) => {
 		divNode('setAttr', ['id', 'main']);
 		divNode('setAttr', ['data-test', 'value']);
 		const domNodes = divNode('getDOM');
-		
+
 		const divElem = domNodes.at(0);
 		assertEquals(divElem.className, 'container');
 		assertEquals(divElem.id, 'main');
@@ -79,7 +79,7 @@ Deno.test("MWIHTML (h.*) - CSR-DOM Basic Element Rendering", async (t) => {
 		divNode.setAttr('id', 'content');
 		divNode.setAttr('aria-label', 'Main content');
 		const domNodes = divNode.getDOM();
-		
+
 		const divElem = domNodes.at(0);
 		assertEquals(divElem.className, 'wrapper');
 		assertEquals(divElem.id, 'content');
@@ -95,7 +95,7 @@ Deno.test("MWIHTML (h.*) - CSR-DOM Element with Children", async (t) => {
 		textNode('setAttr', ['t', 'Hello World']);
 		divNode('append', [textNode]);
 		const domNodes = divNode('getDOM');
-		
+
 		const divElem = domNodes.at(0);
 		assertEquals(divElem.tagName, 'DIV');
 		// The div should contain an <output> element from the text node
@@ -111,7 +111,7 @@ Deno.test("MWIHTML (h.*) - CSR-DOM Element with Children", async (t) => {
 		textNode.setAttr('t', 'JS Hello');
 		divNode.append(textNode);
 		const domNodes = divNode.getDOM();
-		
+
 		const divElem = domNodes.at(0);
 		assertEquals(divElem.children.length, 1);
 		assertEquals(divElem.children[0].textContent, 'JS Hello');
@@ -126,7 +126,7 @@ Deno.test("MWIHTML (h.*) - CSR-DOM Element with Children", async (t) => {
 		text2('setAttr', ['t', 'Second']);
 		divNode('append', [text1, text2]);
 		const domNodes = divNode('getDOM');
-		
+
 		const divElem = domNodes.at(0);
 		assertEquals(divElem.children.length, 2);
 		assertEquals(divElem.children[0].textContent, 'First');
@@ -142,7 +142,7 @@ Deno.test("MWIHTML (h.*) - CSR-DOM Element with Children", async (t) => {
 		text2.setAttr('t', 'JS Second');
 		divNode.append(text1, text2);
 		const domNodes = divNode.getDOM();
-		
+
 		const divElem = domNodes.at(0);
 		assertEquals(divElem.children.length, 2);
 		assertEquals(divElem.children[0].textContent, 'JS First');
@@ -160,7 +160,7 @@ Deno.test("MWIHTML (h.*) - CSR-DOM Element with Children", async (t) => {
 		innerDiv('append', [textNode]);
 		outerDiv('append', [innerDiv]);
 		const domNodes = outerDiv('getDOM');
-		
+
 		const outerElem = domNodes.at(0);
 		assertEquals(outerElem.className, 'outer');
 		assertEquals(outerElem.children.length, 1);
@@ -181,7 +181,7 @@ Deno.test("MWIHTML (h.*) - CSR-DOM Element with Children", async (t) => {
 		innerDiv.append(textNode);
 		outerDiv.append(innerDiv);
 		const domNodes = outerDiv.getDOM();
-		
+
 		const outerElem = domNodes.at(0);
 		assertEquals(outerElem.className, 'js-outer');
 		const innerElem = outerElem.children[0];
@@ -195,7 +195,7 @@ Deno.test("MWIHTML (h.*) - CSR-DOM Void Elements", async (t) => {
 	await t.step("(getDOM) - Void element (br)", () => {
 		const brNode = doc('createNode', ['h.br']);
 		const domNodes = brNode('getDOM');
-		
+
 		const brElem = domNodes.at(0);
 		assertEquals(brElem.tagName, 'BR');
 		assertEquals(domNodes.size, 1);
@@ -204,7 +204,7 @@ Deno.test("MWIHTML (h.*) - CSR-DOM Void Elements", async (t) => {
 	await t.step(".getDOM() - Void element (br) via JS", () => {
 		const brNode = doc.createNode('h.br');
 		const domNodes = brNode.getDOM();
-		
+
 		const brElem = domNodes.at(0);
 		assertEquals(brElem.tagName, 'BR');
 		assertEquals(domNodes.size, 1);
@@ -214,7 +214,7 @@ Deno.test("MWIHTML (h.*) - CSR-DOM Void Elements", async (t) => {
 		const brNode = doc('createNode', ['h.br']);
 		brNode('setAttr', ['class', 'line-break']);
 		const domNodes = brNode('getDOM');
-		
+
 		const brElem = domNodes.at(0);
 		assertEquals(brElem.className, 'line-break');
 		assertEquals(domNodes.size, 1);
@@ -224,7 +224,7 @@ Deno.test("MWIHTML (h.*) - CSR-DOM Void Elements", async (t) => {
 		const brNode = doc.createNode('h.br');
 		brNode.setAttr('class', 'js-break');
 		const domNodes = brNode.getDOM();
-		
+
 		const brElem = domNodes.at(0);
 		assertEquals(brElem.className, 'js-break');
 		assertEquals(domNodes.size, 1);
@@ -236,7 +236,7 @@ Deno.test("MWIHTML (h.*) - CSR-DOM Void Elements", async (t) => {
 		textNode('setAttr', ['t', 'Ignored']);
 		brNode('append', [textNode]);
 		const domNodes = brNode('getDOM');
-		
+
 		const brElem = domNodes.at(0);
 		// Void elements should not have children
 		assertEquals(brElem.childNodes.length, 0);
@@ -249,7 +249,7 @@ Deno.test("MWIHTML (h.*) - CSR-DOM Void Elements", async (t) => {
 		textNode.setAttr('t', 'Ignored');
 		brNode.append(textNode);
 		const domNodes = brNode.getDOM();
-		
+
 		const brElem = domNodes.at(0);
 		assertEquals(brElem.childNodes.length, 0);
 		assertEquals(domNodes.size, 1);
@@ -261,14 +261,14 @@ Deno.test("MWIHTML (h.*) - CSR-DOM Reactive Updates", async (t) => {
 		const divNode = doc('createNode', ['h.div']);
 		divNode('setAttr', ['class', 'initial']);
 		const domNodes = divNode('getDOM');
-		
+
 		const divElem = domNodes.at(0);
 		assertEquals(divElem.className, 'initial');
-		
+
 		// Update attribute
 		divNode('setAttr', ['class', 'updated']);
 		await globalThis.reactive.wait();
-		
+
 		// Same element, updated attribute
 		assertEquals(divElem.className, 'updated');
 		assertEquals(domNodes.size, 1);
@@ -278,13 +278,13 @@ Deno.test("MWIHTML (h.*) - CSR-DOM Reactive Updates", async (t) => {
 		const divNode = doc.createNode('h.div');
 		divNode.setAttr('class', 'js-initial');
 		const domNodes = divNode.getDOM();
-		
+
 		const divElem = domNodes.at(0);
 		assertEquals(divElem.className, 'js-initial');
-		
+
 		divNode.setAttr('class', 'js-updated');
 		await globalThis.reactive.wait();
-		
+
 		assertEquals(divElem.className, 'js-updated');
 		assertEquals(domNodes.size, 1);
 	});
@@ -295,14 +295,14 @@ Deno.test("MWIHTML (h.*) - CSR-DOM Reactive Updates", async (t) => {
 		textNode('setAttr', ['t', 'Initial']);
 		divNode('append', [textNode]);
 		const domNodes = divNode('getDOM');
-		
+
 		const divElem = domNodes.at(0);
 		assertEquals(divElem.children[0].textContent, 'Initial');
-		
+
 		// Update child text
 		textNode('setAttr', ['t', 'Updated']);
 		await globalThis.reactive.wait();
-		
+
 		// Same div, updated child content
 		assertEquals(divElem.children[0].textContent, 'Updated');
 		assertEquals(domNodes.size, 1);
@@ -314,13 +314,13 @@ Deno.test("MWIHTML (h.*) - CSR-DOM Reactive Updates", async (t) => {
 		textNode.setAttr('t', 'JS Initial');
 		divNode.append(textNode);
 		const domNodes = divNode.getDOM();
-		
+
 		const divElem = domNodes.at(0);
 		assertEquals(divElem.children[0].textContent, 'JS Initial');
-		
+
 		textNode.setAttr('t', 'JS Updated');
 		await globalThis.reactive.wait();
-		
+
 		assertEquals(divElem.children[0].textContent, 'JS Updated');
 		assertEquals(domNodes.size, 1);
 	});
@@ -331,16 +331,16 @@ Deno.test("MWIHTML (h.*) - CSR-DOM Reactive Updates", async (t) => {
 		textNode('setAttr', ['t', '']);
 		divNode('append', [textNode]);
 		const domNodes = divNode('getDOM');
-		
+
 		const divElem = domNodes.at(0);
 		// Initially empty - no children
 		await globalThis.reactive.wait();
 		assertEquals(divElem.children.length, 0);
-		
+
 		// Update to non-empty
 		textNode('setAttr', ['t', 'Now has text']);
 		await globalThis.reactive.wait();
-		
+
 		// Should now have one child
 		assertEquals(divElem.children.length, 1);
 		assertEquals(divElem.children[0].textContent, 'Now has text');
@@ -353,14 +353,14 @@ Deno.test("MWIHTML (h.*) - CSR-DOM Reactive Updates", async (t) => {
 		textNode.setAttr('t', '');
 		divNode.append(textNode);
 		const domNodes = divNode.getDOM();
-		
+
 		const divElem = domNodes.at(0);
 		await globalThis.reactive.wait();
 		assertEquals(divElem.children.length, 0);
-		
+
 		textNode.setAttr('t', 'Now has text');
 		await globalThis.reactive.wait();
-		
+
 		assertEquals(divElem.children.length, 1);
 		assertEquals(divElem.children[0].textContent, 'Now has text');
 		assertEquals(domNodes.size, 1);
@@ -374,7 +374,7 @@ Deno.test("MWIHTML (h.*) - CSR-DOM Various Element Types", async (t) => {
 		textNode('setAttr', ['t', 'Paragraph text']);
 		pNode('append', [textNode]);
 		const domNodes = pNode('getDOM');
-		
+
 		const pElem = domNodes.at(0);
 		assertEquals(pElem.tagName, 'P');
 		assertEquals(pElem.children[0].textContent, 'Paragraph text');
@@ -387,7 +387,7 @@ Deno.test("MWIHTML (h.*) - CSR-DOM Various Element Types", async (t) => {
 		textNode.setAttr('t', 'JS Paragraph');
 		pNode.append(textNode);
 		const domNodes = pNode.getDOM();
-		
+
 		const pElem = domNodes.at(0);
 		assertEquals(pElem.tagName, 'P');
 		assertEquals(pElem.children[0].textContent, 'JS Paragraph');
@@ -401,7 +401,7 @@ Deno.test("MWIHTML (h.*) - CSR-DOM Various Element Types", async (t) => {
 		textNode('setAttr', ['t', 'Highlighted']);
 		spanNode('append', [textNode]);
 		const domNodes = spanNode('getDOM');
-		
+
 		const spanElem = domNodes.at(0);
 		assertEquals(spanElem.tagName, 'SPAN');
 		assertEquals(spanElem.className, 'highlight');
@@ -416,7 +416,7 @@ Deno.test("MWIHTML (h.*) - CSR-DOM Various Element Types", async (t) => {
 		textNode.setAttr('t', 'JS Highlighted');
 		spanNode.append(textNode);
 		const domNodes = spanNode.getDOM();
-		
+
 		const spanElem = domNodes.at(0);
 		assertEquals(spanElem.tagName, 'SPAN');
 		assertEquals(spanElem.className, 'js-highlight');

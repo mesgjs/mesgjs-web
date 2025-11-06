@@ -120,7 +120,7 @@ Deno.test('MWIDocument - Basic Interface', async (t) => {
 		const str1 = doc.compIdStr(1);
 		const str10 = doc.compIdStr(10);
 		const str100 = doc.compIdStr(100);
-		
+
 		assertEquals(str0, '_MC_0', 'ID 0 should convert correctly');
 		assertEquals(str1, '_MC_1', 'ID 1 should convert correctly');
 		assertEquals(str10, '_MC_a', 'ID 10 should convert to base-36');
@@ -340,7 +340,7 @@ Deno.test('MWIDocument - Node Creation with Slot Source', async (t) => {
 	await t.step('(createNodeWait) - With slot source', async () => {
 		const source = await doc('createNodeWait', ls([, 'm.frg']));
 		source('setAttr', ls(['title', 'Source Title']));
-		
+
 		const node = await doc('createNodeWait', ls([, 'h.div', 'slotSrc', source]));
 		const slotSrc = node('slotSrc');
 		assertStrictEquals(slotSrc, source, 'Node should have slot source set');
@@ -349,7 +349,7 @@ Deno.test('MWIDocument - Node Creation with Slot Source', async (t) => {
 	await t.step('.createNodeWait() - With slot source', async () => {
 		const source = await doc.createNodeWait('m.frg');
 		source.setAttr('title', 'Source Title');
-		
+
 		const node = await doc.createNodeWait('h.div', { slotSrc: source });
 		const slotSrc = node('slotSrc');
 		assertStrictEquals(slotSrc, source, 'Node should have slot source set');
@@ -358,7 +358,7 @@ Deno.test('MWIDocument - Node Creation with Slot Source', async (t) => {
 	await t.step('(createNode) - With slot source', () => {
 		const source = doc('createNode', ls([, 'm.frg']));
 		source('setAttr', ls(['title', 'Source Title']));
-		
+
 		const node = doc('createNode', ls([, 'h.div', 'slotSrc', source]));
 		const slotSrc = node('slotSrc');
 		assertStrictEquals(slotSrc, source, 'Node should have slot source set');
@@ -367,7 +367,7 @@ Deno.test('MWIDocument - Node Creation with Slot Source', async (t) => {
 	await t.step('.createNode() - With slot source', () => {
 		const source = doc.createNode('m.frg');
 		source.setAttr('title', 'Source Title');
-		
+
 		const node = doc.createNode('h.div', { slotSrc: source });
 		const slotSrc = node('slotSrc');
 		assertStrictEquals(slotSrc, source, 'Node should have slot source set');
@@ -518,7 +518,7 @@ Deno.test('MWIDocument - Document Root Operations', async (t) => {
 		const doc = getInstance('MWIDocument');
 		const result = doc('append', ls(['item', 'Hello']));
 		assertStrictEquals(result, doc, 'Should return document for chaining');
-		
+
 		const root = doc('root');
 		const subSpec = root('getSubSpec');
 		assertEquals(subSpec.size, 1, 'Root should have one child');
@@ -528,10 +528,10 @@ Deno.test('MWIDocument - Document Root Operations', async (t) => {
 		const doc = getInstance('MWIDocument');
 		const node = doc('createNode', ls([, 'm.t']));
 		node('setAttr', ls(['t', 'Test']));
-		
+
 		const result = doc('append', ls([, node]));
 		assertStrictEquals(result, doc, 'Should return document for chaining');
-		
+
 		const root = doc('root');
 		const subSpec = root('getSubSpec');
 		assertEquals(subSpec.size, 1, 'Root should have one child');
@@ -541,10 +541,10 @@ Deno.test('MWIDocument - Document Root Operations', async (t) => {
 		const doc = getInstance('MWIDocument');
 		const node1 = doc('createNode', ls([, 'm.t']));
 		const node2 = doc('createNode', ls([, 'm.t']));
-		
+
 		const result = doc('append', ls([, node1, , node2]));
 		assertStrictEquals(result, doc, 'Should return document for chaining');
-		
+
 		const root = doc('root');
 		const subSpec = root('getSubSpec');
 		assertEquals(subSpec.size, 2, 'Root should have two children');
@@ -553,7 +553,7 @@ Deno.test('MWIDocument - Document Root Operations', async (t) => {
 	await t.step('(append) - Append SLID spec', () => {
 		const doc = getInstance('MWIDocument');
 		doc('append', ls(['list', '[([m.t t=A] [m.t t=B])]']));
-		
+
 		const root = doc('root');
 		const subSpec = root('getSubSpec');
 		assertEquals(subSpec.size, 2, 'Root should have two children');
@@ -562,11 +562,11 @@ Deno.test('MWIDocument - Document Root Operations', async (t) => {
 	await t.step('(append) - Root sub-spec reflects content', () => {
 		const doc = getInstance('MWIDocument');
 		doc('append', ls(['list', '[([m.t t=First] [m.t t=Second])]']));
-		
+
 		const root = doc('root');
 		const subSpec = root('getSubSpec');
 		assertEquals(subSpec.size, 2, 'Should have two children');
-		
+
 		const first = subSpec.at(0);
 		const second = subSpec.at(1);
 		assertEquals(first.at('t'), 'First', 'First child should have correct text');
@@ -577,7 +577,7 @@ Deno.test('MWIDocument - Document Root Operations', async (t) => {
 		const doc = getInstance('MWIDocument');
 		const result = await doc('appendWait', ls(['item', 'Hello']));
 		assertStrictEquals(result, doc, 'Should return document for chaining');
-		
+
 		const root = doc('root');
 		const subSpec = root('getSubSpec');
 		assertEquals(subSpec.size, 1, 'Root should have one child');
@@ -587,7 +587,7 @@ Deno.test('MWIDocument - Document Root Operations', async (t) => {
 		const doc = getInstance('MWIDocument');
 		const result = await doc.appendWait({ item: 'Hello' });
 		assertStrictEquals(result, doc, 'Should return document for chaining');
-		
+
 		const root = doc('root');
 		const subSpec = root('getSubSpec');
 		assertEquals(subSpec.size, 1, 'Root should have one child');
@@ -596,7 +596,7 @@ Deno.test('MWIDocument - Document Root Operations', async (t) => {
 	await t.step('(appendWait) - Append SLID spec', async () => {
 		const doc = getInstance('MWIDocument');
 		await doc('appendWait', ls(['list', '[([m.t t=A] [m.t t=B])]']));
-		
+
 		const root = doc('root');
 		const subSpec = root('getSubSpec');
 		assertEquals(subSpec.size, 2, 'Root should have two children');
@@ -605,7 +605,7 @@ Deno.test('MWIDocument - Document Root Operations', async (t) => {
 	await t.step('.appendWait() - Append SLID spec', async () => {
 		const doc = getInstance('MWIDocument');
 		await doc.appendWait({ list: '[([m.t t=A] [m.t t=B])]' });
-		
+
 		const root = doc('root');
 		const subSpec = root('getSubSpec');
 		assertEquals(subSpec.size, 2, 'Root should have two children');
@@ -643,11 +643,11 @@ Deno.test('MWIDocument - Deferred Component Creation', async (t) => {
 	await t.step('(createNodeWait) - Waits and creates actual component after load', async () => {
 		// Start the async creation (it will wait for the feature)
 		const nodePromise = doc('createNodeWait', ls([, 'test.deferred']));
-		
+
 		// Simulate loading the component by adding interface and signaling ready
 		registry.register('test.deferred', ls(['if', 'MWIDocFrag']));
 		fready(null, 'test.deferred.component');
-		
+
 		// Now the promise should resolve with the actual component
 		const node = await nodePromise;
 		assert(node, 'Should create node');
@@ -661,14 +661,14 @@ Deno.test('MWIDocument - Deferred Component Creation', async (t) => {
 			'ftr', 'test.deferred2.component'
 		]);
 		registry.register('test.deferred2', deferredEntry2);
-		
+
 		// Start the async creation (it will wait for the feature)
 		const nodePromise = doc.createNodeWait('test.deferred2');
-		
+
 		// Simulate loading the component
 		registry.register('test.deferred2', ls(['if', 'MWIDocFrag']));
 		fready(null, 'test.deferred2.component');
-		
+
 		// Now the promise should resolve with the actual component
 		const node = await nodePromise;
 		assert(node, 'Should create node');

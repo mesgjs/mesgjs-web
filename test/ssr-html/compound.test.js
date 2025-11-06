@@ -288,7 +288,7 @@ Deno.test("Compound SSR - Special Attributes", async (t) => {
 		divNode.setAttr('tabindex', -1);
 		divNode.append('Content');
 		const html = divNode.getHTML();
-		
+
 		assert(html.includes('data-count="100"'), 'Should render positive number');
 		assert(html.includes('data-index="0"'), 'Should render zero');
 		assert(html.includes('tabindex="-1"'), 'Should render negative number');
@@ -299,7 +299,7 @@ Deno.test("Compound SSR - Special Attributes", async (t) => {
 			[h.div data-inner=2 data-zero=0 data-neg=-5 "Nested"]
 		])]`);
 		const html = renderHTML(spec);
-		
+
 		assert(html.includes('data-outer="1"'), 'Should render number on outer element');
 		assert(html.includes('data-inner="2"'), 'Should render number on inner element');
 		assert(html.includes('data-zero="0"'), 'Should render zero');

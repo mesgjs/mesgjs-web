@@ -16,22 +16,22 @@ Deno.test('MWIDocument - HTML Rendering Delegation', async (t) => {
 	await t.step('(getHTML) - Delegates to root fragment', () => {
 		const doc = getInstance('MWIDocument');
 		doc('append', ls(['item', 'Hello']));
-		
+
 		const docHTML = doc('getHTML');
 		const root = doc('root');
 		const rootHTML = root('getHTML');
-		
+
 		assertEquals(docHTML, rootHTML, 'Document HTML should match root HTML');
 	});
 
 	await t.step('.getHTML() - Delegates to root fragment', () => {
 		const doc = getInstance('MWIDocument');
 		doc('append', ls(['item', 'World']));
-		
+
 		const docHTML = doc.getHTML();
 		const root = doc.root;
 		const rootHTML = root.getHTML();
-		
+
 		assertEquals(docHTML, rootHTML, 'Document HTML should match root HTML');
 	});
 

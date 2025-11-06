@@ -73,7 +73,7 @@ Deno.test("MWIHTML - Numeric Attribute Values", async (t) => {
 		divNode('setAttr', ['data-index', 0]);
 		divNode('setAttr', ['tabindex', -1]);
 		const html = divNode('getHTML');
-		
+
 		assert(html.includes('data-count="42"'), 'Should render positive number');
 		assert(html.includes('data-index="0"'), 'Should render zero');
 		assert(html.includes('tabindex="-1"'), 'Should render negative number');
@@ -85,7 +85,7 @@ Deno.test("MWIHTML - Numeric Attribute Values", async (t) => {
 		divNode.setAttr('data-zero', 0);
 		divNode.setAttr('data-negative', -99);
 		const html = divNode.getHTML();
-		
+
 		assert(html.includes('data-value="123"'), 'Should render positive number');
 		assert(html.includes('data-zero="0"'), 'Should render zero');
 		assert(html.includes('data-negative="-99"'), 'Should render negative number');
@@ -95,7 +95,7 @@ Deno.test("MWIHTML - Numeric Attribute Values", async (t) => {
 		const spec = globalThis.ps('[(h.div data-id=456 data-count=0 data-i-squared=-1)]');
 		const divNode = doc.from({ item: spec });
 		const html = divNode.getHTML();
-		
+
 		assert(html.includes('data-id="456"'), 'Should render positive number from SLID');
 		assert(html.includes('data-count="0"'), 'Should render zero from SLID');
 		assert(html.includes('data-i-squared="-1"'), 'Should render negative number from SLID');
@@ -107,7 +107,7 @@ Deno.test("MWIHTML - Numeric Attribute Values", async (t) => {
 		divNode.setAttr('data-number', 789);
 		divNode.setAttr('class', 'test');
 		const html = divNode.getHTML();
-		
+
 		assert(html.includes('data-string="text"'), 'Should render string value');
 		assert(html.includes('data-number="789"'), 'Should render numeric value');
 		assert(html.includes('class="test"'), 'Should render string class');

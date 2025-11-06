@@ -234,7 +234,7 @@ modcaps=''
 			getInstance('@reactive')('set', {
 				eager: true, def: () => {
 					const text = d.rr('getAttr', [ 'm.text' ]) || '';
-					node.innerHTML = text;
+					node.textContent = text;
 				}
 			})('rv');
 			return nodes;

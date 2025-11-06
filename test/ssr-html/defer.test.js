@@ -70,11 +70,11 @@ Deno.test("MWICoreDefer (m.defer) - SSR-HTML Basic Rendering", async (t) => {
 		deferNode('setAttr', ['style', 'color: red']);
 		deferNode('setAttr', ['aria-label', 'should-not-render']);
 		const html = deferNode('getHTML');
-		
+
 		// Should have id and data-mwi-defer
 		assertMatch(html, /id="[^"]+"/, 'Should include id');
 		assertMatch(html, /data-mwi-defer="m\.defer"/, 'Should include data-mwi-defer');
-		
+
 		// Should NOT have other attributes
 		assert(!html.includes('class='), 'Should not include class attribute');
 		assert(!html.includes('style='), 'Should not include style attribute');
@@ -86,7 +86,7 @@ Deno.test("MWICoreDefer (m.defer) - SSR-HTML Basic Rendering", async (t) => {
 		deferNode.setAttr('class', 'should-not-render');
 		deferNode.setAttr('data-custom', 'should-not-render');
 		const html = deferNode.getHTML();
-		
+
 		assertMatch(html, /id="[^"]+"/, 'Should include id');
 		assertMatch(html, /data-mwi-defer="m\.defer"/, 'Should include data-mwi-defer');
 		assert(!html.includes('class='), 'Should not include class attribute');
@@ -132,10 +132,10 @@ Deno.test("MWICoreDefer (m.defer) - SSR-HTML Real-World Scenarios", async (t) =>
 		const defer2 = doc('createNode', ['m.defer']);
 		const html1 = defer1('getHTML');
 		const html2 = defer2('getHTML');
-		
+
 		const id1Match = html1.match(/id="([^"]+)"/);
 		const id2Match = html2.match(/id="([^"]+)"/);
-		
+
 		assert(id1Match && id1Match[1], 'First defer should have ID');
 		assert(id2Match && id2Match[1], 'Second defer should have ID');
 		assert(id1Match[1] !== id2Match[1], 'IDs should be unique');
@@ -146,10 +146,10 @@ Deno.test("MWICoreDefer (m.defer) - SSR-HTML Real-World Scenarios", async (t) =>
 		const defer2 = doc.createNode('m.defer');
 		const html1 = defer1.getHTML();
 		const html2 = defer2.getHTML();
-		
+
 		const id1Match = html1.match(/id="([^"]+)"/);
 		const id2Match = html2.match(/id="([^"]+)"/);
-		
+
 		assert(id1Match && id1Match[1], 'First defer should have ID');
 		assert(id2Match && id2Match[1], 'Second defer should have ID');
 		assert(id1Match[1] !== id2Match[1], 'IDs should be unique');

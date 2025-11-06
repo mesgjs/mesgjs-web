@@ -49,12 +49,12 @@ Deno.test('MWIRegistry - ID Generation', async (t) => {
 		const id1 = registry('nextId');
 		const id2 = registry('nextId');
 		const id3 = registry('nextId');
-		
+
 		// Extract numeric parts (base-36)
 		const num1 = parseInt(id1.slice(4), 36);
 		const num2 = parseInt(id2.slice(4), 36);
 		const num3 = parseInt(id3.slice(4), 36);
-		
+
 		assertEquals(num2, num1 + 1, 'IDs should increment sequentially');
 		assertEquals(num3, num2 + 1, 'IDs should increment sequentially');
 	});
@@ -63,12 +63,12 @@ Deno.test('MWIRegistry - ID Generation', async (t) => {
 		const id1 = registry.nextId();
 		const id2 = registry.nextId();
 		const id3 = registry.nextId();
-		
+
 		// Extract numeric parts (base-36)
 		const num1 = parseInt(id1.slice(4), 36);
 		const num2 = parseInt(id2.slice(4), 36);
 		const num3 = parseInt(id3.slice(4), 36);
-		
+
 		assertEquals(num2, num1 + 1, 'IDs should increment sequentially');
 		assertEquals(num3, num2 + 1, 'IDs should increment sequentially');
 	});
@@ -151,7 +151,7 @@ Deno.test('MWIRegistry - Component Retrieval (get)', async (t) => {
 Deno.test('MWIRegistry - Hydration (loadServerComps)', async (t) => {
 	// Create a new runtime instance with server component data
 	// This simulates SSR hydration on the client
-	
+
 	await t.step('Hydration with server components', async () => {
 		// Set up server component data before runtime initialization
 		const serverComps = ls([
@@ -161,20 +161,20 @@ Deno.test('MWIRegistry - Hydration (loadServerComps)', async (t) => {
 			, 'h.div',
 			, 'h.span',
 		]);
-		
+
 		globalThis.mwiServer = ls(['components', serverComps]);
-		
+
 		// Create a fresh runtime with the server data
 		// Note: We can't actually reinitialize the runtime in the same process,
 		// so we'll test the behavior by checking if the registry would handle it correctly
-		
+
 		// Clean up
 		delete globalThis.mwiServer;
-		
+
 		// For now, we verify the registry exists and has the expected components
 		const registry = getInstance('MWIRegistry');
 		assert(registry, 'Registry should exist');
-		
+
 		// Verify core components are registered
 		const textComp = registry.get('m.t');
 		assert(textComp, 'Text component should be registered');
@@ -183,16 +183,16 @@ Deno.test('MWIRegistry - Hydration (loadServerComps)', async (t) => {
 
 	await t.step('Component IDs match server assignments', async () => {
 		const registry = getInstance('MWIRegistry');
-		
+
 		// Get several components and verify they have sequential IDs
 		const comp1 = registry.get('m.t');
 		const comp2 = registry.get('m.com');
 		const comp3 = registry.get('m.frg');
-		
+
 		assert(comp1 && comp1.has('id'), 'First component should have ID');
 		assert(comp2 && comp2.has('id'), 'Second component should have ID');
 		assert(comp3 && comp3.has('id'), 'Third component should have ID');
-		
+
 		// All component IDs should use _MO_ prefix
 		assertMatch(comp1.at('id'), /^_MO_/, 'Component ID should use _MO_ prefix');
 		assertMatch(comp2.at('id'), /^_MO_/, 'Component ID should use _MO_ prefix');

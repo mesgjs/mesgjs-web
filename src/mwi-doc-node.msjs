@@ -125,6 +125,7 @@ modcaps=''
 	// JS interface prototype
 	const docNodeProto = Object.setPrototypeOf({
 		append (...content) { return this('append', content); },
+		get compId () { return this('compId'); },
 		[globalThis.$c.symbols.convert] () { return this; },
 		delAttr (name) { return this('delAttr', [ name ]); },
 		get document () { return this('document'); },
@@ -175,9 +176,9 @@ modcaps=''
 	// m.coat (computed) attribute slotting
 	function applyCoat (d, value) {
 		if (!(value instanceof NANOS)) return;
-		const p = d.p, attrs = p.at('attrs'), slotSrc = p.at('slotSrc');
+		const p = d.p, attrs = p.at('attrs');
 		attrs.set('m.coat', value);
-		if (slotSrc) for (const [target, spec] of value.namedEntries()) {
+		for (const [target, spec] of value.namedEntries()) {
 			const value = computeAttr(d, spec);
 			d.rr('setAttr', [ target, value ]);
 		}
@@ -219,26 +220,34 @@ modcaps=''
 	// Return the final (string) value for a computed (m.coat) attribute
 	function computeAttr (d, spec) {
 		const slotSrc = d.p.at('slotSrc');
+		let retUndef = false;
 		const getVal = (name) => {
 			switch (name) { // Handle escapes, e.g. <.lt>
 			case '.lt': return '<';
 			case '.gt': return '>';
 			case '.qm': return '?';
 			case '.vb': return '|';
+			case '.un': retUndef = true; return;
 			}
 			if (slotSrc) return slotSrc('getAttr', [ name ]);
 		};
-		const isUns = (v) => v === undefined; // unset
-		const isUOE = (v) => v === undefined || v === ""; // unset or empty
+		const isUns = (v) => v === undefined || v === false; // unset
+		const isUOE = (v) => v === undefined || v === "" || v === false; // unset or empty
 		// Tokenize into a flat array of operators and literals
 		const tokens = String(spec).match(/<|>|\?\??|\|\|?|[^<>?|]+/g) || [];
 		const output = [];
+		const outStr = (v) => {
+			if (typeof v === 'string' || typeof v === 'number') {
+				const str = String(v);
+				if (str) output.push(str);
+			}
+		};
 		let token;
 		const parseExpr = () => { // Parse a (sub-)expression
 			const name = tokens.shift(), value = getVal(name);
 			const then = tokens.shift();
 			if (then === '>') { // Simple interpolations
-				if (typeof value === 'string' && value) output.push(value);
+				outStr(value);
 				return;
 			}
 			let copy = false;
@@ -247,25 +256,28 @@ modcaps=''
 			case '?': copy = !isUns(value); break;
 			case '??': copy = !isUOE(value); break;
 			// Defaults
-			case '|': copy = isUns(value); break;
-			case '||': copy = isUOE(value); break;
+			case '|':
+			case '||':
+				copy = (then === '|') ? isUns(value) : isUOE(value);
+				if (!copy) outStr(value);
+				break;
 			}
 			// deno-lint-ignore no-cond-assign
-			while (token = tokens.shift()) {
+			while (!retUndef && (token = tokens.shift())) {
 				switch (token) {
 				case '<': parseExpr(); break; // Start sub-expression
 				case '>': return; // End current expression
 				case '|': case '||': copy = !copy; break; // Toggle copy mode
-				default: if (copy) output.push(token); break; // Literal
+				default: if (copy) outStr(token); break; // Literal
 				}
 			}
 		};
 		// deno-lint-ignore no-cond-assign
-		while (token = tokens.shift()) {
+		while (!retUndef && (token = tokens.shift())) {
 			if (token === '<') parseExpr(); // Expression
-			else output.push(token); // Literal
+			else outStr(token); // Literal
 		}
-		return output.join('');
+		if (!retUndef) return output.join('');
 	}
 
 	// Delete attribute
@@ -298,7 +310,9 @@ modcaps=''
 		const p = d.p, m = d.mp;
 		const name = m.at(0), attrs = p.at('attrs');
 		switch (name) {
-		case 'm.id': // Mandatory id value
+		case 'm.ci': // Component id (read-only)
+			return p.at('id');
+		case 'm.id': // Mandatory id value (read-only)
 			if (!attrs.has('id')) {
 				// There's no user-assigned id, so auto-assign one
 				const doc = p.at('doc'), mid = doc('nextId');
@@ -412,8 +426,9 @@ modcaps=''
 
 	// Do we have a particular attribute value?
 	function opHasAttr (d) {
-		const p = d.p, m = d.mp, attrs = p.at('attrs');
-		return attrs.has(m.at(0));
+		const p = d.p, m = d.mp, name = m.at(0);
+		const attrs = p.at('attrs');
+		return attrs.has(name);
 	}
 
 	function opHasChildren (d) {
@@ -607,6 +622,7 @@ modcaps=''
 		handlers: {
 			'@init': opInit,
 			append: opAppend,
+			compId: (d) => d.p.at('id'), // Component id
 			delAttr: opDelAttr,
 			document: (d) => d.p.at('doc'),
 			getAttr: opGetAttr,
