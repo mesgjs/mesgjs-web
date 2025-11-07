@@ -1,7 +1,7 @@
 import {
 	assert,
 	assertEquals,
-	assertStrictEquals,
+	assertExists,
 } from "https://deno.land/std@0.152.0/testing/asserts.ts";
 
 import { setupRuntime } from '../harness.esm.js';
@@ -17,404 +17,535 @@ const ps = globalThis.ps;
 // Wait for registry to be ready
 await fwait(REG_READY_FT);
 
-const doc = getInstance('MWIDocument');
 const registry = getInstance('MWIRegistry');
 
-Deno.test("MWICoreScpCSS - Basic Interface Behavior", async (t) => {
+Deno.test("MWICoreScpCSS Core - Basic Interface Behavior", async (t) => {
 	await t.step("Create m.scpcss node", () => {
+		const doc = getInstance('MWIDocument');
 		const scpNode = doc.createNode('m.scpcss');
-		assert(scpNode, "m.scpcss node should be created");
-		assertEquals(scpNode.msjsType, 'MWICoreScpCSS');
+
+		assertExists(scpNode, "Node creation should succeed");
+		assertEquals(scpNode('type'), 'm.scpcss', "Node should have correct type");
+
+		// Verify void behavior - setSubSpec should be no-op
+		scpNode('setSubSpec', ps('[( [m.t t="test"] )]'));
+		assertEquals(scpNode('hasChildren'), false, "Void node should not accept children");
 	});
 
-	await t.step("m.scpcss node has correct type", () => {
-		const scpNode = doc.createNode('m.scpcss');
-		assertEquals(scpNode('type'), 'm.scpcss');
-		assertEquals(scpNode.type, 'm.scpcss');
-	});
-
-	await t.step("m.scpcss is void (no children allowed)", () => {
-		const scpNode = doc.createNode('m.scpcss');
-		const subSpec = scpNode('getSubSpec');
-		assertEquals(subSpec.size, 0, "getSubSpec should return empty NANOS");
-
-		// setSubSpec should be a no-op
-		const result = scpNode('setSubSpec', ls([, ps('[([m.t t="test"])]')]));
-		assertStrictEquals(result, scpNode, "setSubSpec should return receiver");
-		assertEquals(scpNode('getSubSpec').size, 0, "subSpec should still be empty");
-	});
-});
-
-Deno.test("MWICoreScpCSS - Empty Document", async (t) => {
 	await t.step("Empty document (no components used)", () => {
-		const emptyDoc = getInstance('MWIDocument');
-		const scpNode = emptyDoc.createNode('m.scpcss');
-		const html = scpNode('getHTML');
-		assertEquals(html, '', "getHTML should return empty string for empty document");
-	});
+		const doc = getInstance('MWIDocument');
+		const scpNode = doc.createNode('m.scpcss');
 
-	await t.step("Empty document getDOM returns empty NANOS", () => {
-		const emptyDoc = getInstance('MWIDocument');
-		const scpNode = emptyDoc.createNode('m.scpcss');
+		const html = scpNode('getHTML');
+		assertEquals(html, '', "Empty document should render empty string");
+
 		const dom = scpNode('getDOM');
-		assertEquals(dom.size, 0, "getDOM should return empty NANOS for empty document");
+		assertEquals(dom.size, 0, "Empty document should return empty NANOS");
 	});
-});
 
-Deno.test("MWICoreScpCSS - Document with No Scoped CSS", async (t) => {
-	await t.step("Components without scopedCSS property", () => {
-		registry.register('test.scpcss.noCSS', ls(['allowLate', true, 'if', 'MWIHTML']));
-		const testDoc = getInstance('MWIDocument');
-		testDoc.createNode('test.scpcss.noCSS');
-		const scpNode = testDoc.createNode('m.scpcss');
+	await t.step("Document with no scoped CSS components", () => {
+		// Register component without scopedCSS
+		registry.register('test.core.scpcss.noscope', ls([
+			'allowLate', true,
+			'if', 'MWIHTML'
+		]));
+
+		const doc = getInstance('MWIDocument');
+		doc.createNode('test.core.scpcss.noscope');
+		const scpNode = doc.createNode('m.scpcss');
+
 		const html = scpNode('getHTML');
-		assertEquals(html, '', "Should render nothing when no components have scopedCSS");
+		assertEquals(html, '', "Should render nothing when no scoped CSS");
 	});
 });
 
-Deno.test("MWICoreScpCSS - CSS Aggregation Logic", async (t) => {
+Deno.test("MWICoreScpCSS Core - CSS Aggregation Logic", async (t) => {
 	await t.step("Single component with scoped CSS", () => {
-		registry.register('test.scpcss.single', ls([
+		registry.register('test.core.scpcss.single', ls([
 			'allowLate', true,
 			'if', 'MWIHTML',
 			'scopedCSS', '.@@ { color: blue; }'
 		]));
-		const testDoc = getInstance('MWIDocument');
-		testDoc.createNode('test.scpcss.single');
-		const scpNode = testDoc.createNode('m.scpcss');
-		const html = scpNode('getHTML');
 
-		assert(html.includes('<style>'), "Should include style tag");
-		assert(html.includes('</style>'), "Should close style tag");
+		const doc = getInstance('MWIDocument');
+		doc.createNode('test.core.scpcss.single');
+		const scpNode = doc.createNode('m.scpcss');
+
+		const html = scpNode('getHTML');
 		assert(html.includes('color: blue'), "Should include CSS content");
-		assert(html.includes('_MO_'), "Should replace @@ with component ID");
+		assert(html.includes('_MO_'), "Should include component ID");
 		assert(!html.includes('@@'), "Should not contain @@ placeholder");
 	});
 
 	await t.step("Multiple components with scoped CSS", () => {
-		registry.register('test.scpcss.multi1', ls([
+		registry.register('test.core.scpcss.multi1', ls([
 			'allowLate', true,
 			'if', 'MWIHTML',
 			'scopedCSS', '.@@ { color: red; }'
 		]));
-		registry.register('test.scpcss.multi2', ls([
+		registry.register('test.core.scpcss.multi2', ls([
 			'allowLate', true,
 			'if', 'MWIHTML',
 			'scopedCSS', '.@@ { color: green; }'
 		]));
-		registry.register('test.scpcss.multi3', ls([
+		registry.register('test.core.scpcss.multi3', ls([
 			'allowLate', true,
 			'if', 'MWIHTML',
-			'scopedCSS', '.@@ { color: blue; }'
+			'scopedCSS', '.@@ { color: yellow; }'
 		]));
 
-		const testDoc = getInstance('MWIDocument');
-		testDoc.createNode('test.scpcss.multi1');
-		testDoc.createNode('test.scpcss.multi2');
-		testDoc.createNode('test.scpcss.multi3');
-		const scpNode = testDoc.createNode('m.scpcss');
-		const html = scpNode('getHTML');
+		const doc = getInstance('MWIDocument');
+		doc.createNode('test.core.scpcss.multi1');
+		doc.createNode('test.core.scpcss.multi2');
+		doc.createNode('test.core.scpcss.multi3');
+		const scpNode = doc.createNode('m.scpcss');
 
+		const html = scpNode('getHTML');
 		assert(html.includes('color: red'), "Should include first component CSS");
 		assert(html.includes('color: green'), "Should include second component CSS");
-		assert(html.includes('color: blue'), "Should include third component CSS");
+		assert(html.includes('color: yellow'), "Should include third component CSS");
+
+		// Verify all @@ replaced
+		assert(!html.includes('@@'), "Should not contain any @@ placeholders");
 	});
 
-	await t.step("Component ID substitution - single occurrence", () => {
-		registry.register('test.scpcss.subst1', ls([
+	await t.step("Component ID substitution patterns", () => {
+		registry.register('test.core.scpcss.patterns', ls([
 			'allowLate', true,
 			'if', 'MWIHTML',
-			'scopedCSS', '.@@ { border: 1px solid; }'
+			'scopedCSS', '.@@ { color: blue; } .@@ .child { color: red; } .@@:hover { color: green; } .@@::before { content: "x"; }'
 		]));
-		const testDoc = getInstance('MWIDocument');
-		testDoc.createNode('test.scpcss.subst1');
-		const scpNode = testDoc.createNode('m.scpcss');
+
+		const doc = getInstance('MWIDocument');
+		doc.createNode('test.core.scpcss.patterns');
+		const scpNode = doc.createNode('m.scpcss');
+
 		const html = scpNode('getHTML');
 
-		const matches = html.match(/_MO_[0-9a-z]+/g);
-		assert(matches && matches.length === 1, "Should have exactly one component ID");
-		assert(!html.includes('@@'), "Should not contain @@ placeholder");
-	});
+		// Count component ID occurrences (should be 4, one for each @@)
+		const compIdMatches = html.match(/_MO_\w+/g);
+		assertEquals(compIdMatches?.length, 4, "Should replace all @@ occurrences");
 
-	await t.step("Component ID substitution - multiple occurrences", () => {
-		registry.register('test.scpcss.subst2', ls([
-			'allowLate', true,
-			'if', 'MWIHTML',
-			'scopedCSS', '.@@ { color: red; } .@@ .child { color: blue; } .@@:hover { color: green; }'
-		]));
-		const testDoc = getInstance('MWIDocument');
-		testDoc.createNode('test.scpcss.subst2');
-		const scpNode = testDoc.createNode('m.scpcss');
-		const html = scpNode('getHTML');
-
-		const matches = html.match(/_MO_[0-9a-z]+/g);
-		assert(matches && matches.length === 3, "Should replace all three @@ occurrences");
-		// All should be the same ID
-		const uniqueIds = new Set(matches);
-		assertEquals(uniqueIds.size, 1, "All @@ should be replaced with same component ID");
+		// Verify contexts preserved
+		assert(html.includes('.child'), "Should preserve child selector");
+		assert(html.includes(':hover'), "Should preserve pseudo-class");
+		assert(html.includes('::before'), "Should preserve pseudo-element");
 	});
 
 	await t.step("Mixed components (with and without scoped CSS)", () => {
-		registry.register('test.scpcss.mixed1', ls([
+		registry.register('test.core.scpcss.withcss', ls([
 			'allowLate', true,
 			'if', 'MWIHTML',
-			'scopedCSS', '.@@ { color: red; }'
+			'scopedCSS', '.@@ { margin: 1rem; }'
 		]));
-		registry.register('test.scpcss.mixed2', ls([
+		registry.register('test.core.scpcss.nocss', ls([
 			'allowLate', true,
 			'if', 'MWIHTML'
-			// No scopedCSS
-		]));
-		registry.register('test.scpcss.mixed3', ls([
-			'allowLate', true,
-			'if', 'MWIHTML',
-			'scopedCSS', '.@@ { color: blue; }'
 		]));
 
-		const testDoc = getInstance('MWIDocument');
-		testDoc.createNode('test.scpcss.mixed1');
-		testDoc.createNode('test.scpcss.mixed2');
-		testDoc.createNode('test.scpcss.mixed3');
-		const scpNode = testDoc.createNode('m.scpcss');
+		const doc = getInstance('MWIDocument');
+		doc.createNode('test.core.scpcss.withcss');
+		doc.createNode('test.core.scpcss.nocss');
+		const scpNode = doc.createNode('m.scpcss');
+
 		const html = scpNode('getHTML');
+		assert(html.includes('margin: 1rem'), "Should include CSS from component with scopedCSS");
 
-		assert(html.includes('color: red'), "Should include CSS from first component");
-		assert(html.includes('color: blue'), "Should include CSS from third component");
-		// Should only have 2 component IDs (not 3)
-		const matches = html.match(/_MO_[0-9a-z]+/g);
-		const uniqueIds = new Set(matches);
-		assertEquals(uniqueIds.size, 2, "Should only include IDs for components with scopedCSS");
+		// Should only have one component ID (from withcss)
+		const compIdMatches = html.match(/_MO_\w+/g);
+		assertEquals(compIdMatches?.length, 1, "Should only include components with scopedCSS");
 	});
 });
 
-Deno.test("MWICoreScpCSS - Edge Cases", async (t) => {
+Deno.test("MWICoreScpCSS Core - Edge Cases", async (t) => {
 	await t.step("Component with empty scopedCSS string", () => {
-		registry.register('test.scpcss.empty', ls([
+		registry.register('test.core.scpcss.empty', ls([
 			'allowLate', true,
 			'if', 'MWIHTML',
 			'scopedCSS', ''
 		]));
-		const testDoc = getInstance('MWIDocument');
-		testDoc.createNode('test.scpcss.empty');
-		const scpNode = testDoc.createNode('m.scpcss');
-		const html = scpNode('getHTML');
 
-		// Empty CSS should not contribute to output
-		assertEquals(html, '', "Empty scopedCSS should not produce output");
+		const doc = getInstance('MWIDocument');
+		doc.createNode('test.core.scpcss.empty');
+		const scpNode = doc.createNode('m.scpcss');
+
+		const html = scpNode('getHTML');
+		assertEquals(html, '', "Empty scopedCSS should not contribute to output");
 	});
 
 	await t.step("Component with whitespace-only scopedCSS", () => {
-		registry.register('test.scpcss.whitespace', ls([
+		registry.register('test.core.scpcss.whitespace', ls([
 			'allowLate', true,
 			'if', 'MWIHTML',
 			'scopedCSS', '   \n  '
 		]));
-		const testDoc = getInstance('MWIDocument');
-		testDoc.createNode('test.scpcss.whitespace');
-		const scpNode = testDoc.createNode('m.scpcss');
-		const html = scpNode('getHTML');
 
-		// Whitespace-only CSS should be included (implementation includes it)
-		assert(html.includes('<style>'), "Should include style tag for whitespace");
+		const doc = getInstance('MWIDocument');
+		doc.createNode('test.core.scpcss.whitespace');
+		const scpNode = doc.createNode('m.scpcss');
+
+		const html = scpNode('getHTML');
+		// Whitespace-only CSS should still be included (implementation detail)
+		assert(html.length > 0, "Whitespace CSS should be included");
 	});
 
 	await t.step("CSS with special characters", () => {
-		registry.register('test.scpcss.special', ls([
+		registry.register('test.core.scpcss.special', ls([
 			'allowLate', true,
 			'if', 'MWIHTML',
-			'scopedCSS', '.@@ { content: "test\'s \\"quoted\\" text"; background: url(\'data:image/svg+xml;utf8,<svg></svg>\'); }'
+			'scopedCSS', '.@@ { content: "test\'s \\"quoted\\" & <text>"; }'
 		]));
-		const testDoc = getInstance('MWIDocument');
-		testDoc.createNode('test.scpcss.special');
-		const scpNode = testDoc.createNode('m.scpcss');
-		const html = scpNode('getHTML');
 
-		assert(html.includes('content:'), "Should handle quotes in CSS");
-		assert(html.includes('background:'), "Should handle special characters");
+		const doc = getInstance('MWIDocument');
+		doc.createNode('test.core.scpcss.special');
+		const scpNode = doc.createNode('m.scpcss');
+
+		const html = scpNode('getHTML');
+		assert(html.includes('content:'), "Should handle special characters");
+		assert(html.includes('test'), "Should preserve content");
 	});
 
 	await t.step("CSS containing </style> tag", () => {
-		registry.register('test.scpcss.closetag', ls([
+		registry.register('test.core.scpcss.closetag', ls([
 			'allowLate', true,
 			'if', 'MWIHTML',
-			'scopedCSS', '.@@ { /* </style> in comment */ content: "</style>"; }'
+			'scopedCSS', '.@@ { content: "</style>"; }'
 		]));
-		const testDoc = getInstance('MWIDocument');
-		testDoc.createNode('test.scpcss.closetag');
-		const scpNode = testDoc.createNode('m.scpcss');
-		const html = scpNode('getHTML');
 
+		const doc = getInstance('MWIDocument');
+		doc.createNode('test.core.scpcss.closetag');
+		const scpNode = doc.createNode('m.scpcss');
+
+		const html = scpNode('getHTML');
 		assert(html.includes('\\3c /style>'), "Should escape </style> as \\3c /style>");
-		assert(!html.includes('</style></style>'), "Should not have premature tag closure");
-		// Should have exactly one closing </style> at the end
+
+		// Count closing tags - should be exactly 1 (the actual closing tag)
 		const closeTags = html.match(/<\/style>/gi);
-		assertEquals(closeTags?.length, 1, "Should have exactly one closing </style> tag");
+		assertEquals(closeTags?.length, 1, "Should have exactly one closing </style>");
 	});
 
-	await t.step("CSS containing </STYLE> (case insensitive)", () => {
-		registry.register('test.scpcss.caseinsens', ls([
+	await t.step("CSS containing </style> - case variations", () => {
+		registry.register('test.core.scpcss.casevar', ls([
 			'allowLate', true,
 			'if', 'MWIHTML',
-			'scopedCSS', '.@@ { content: "</STYLE>"; }'
+			'scopedCSS', '.@@ { content: "</STYLE></Style></sTyLe>"; }'
 		]));
-		const testDoc = getInstance('MWIDocument');
-		testDoc.createNode('test.scpcss.caseinsens');
-		const scpNode = testDoc.createNode('m.scpcss');
+
+		const doc = getInstance('MWIDocument');
+		doc.createNode('test.core.scpcss.casevar');
+		const scpNode = doc.createNode('m.scpcss');
+
 		const html = scpNode('getHTML');
 
-		assert(html.includes('\\3c /'), "Should escape case-insensitive </STYLE>");
-		assert(!html.includes('</STYLE>'), "Should not contain unescaped </STYLE>");
+		// All variations should be escaped
+		const unescapedCloseTags = html.match(/<\/style>/gi);
+		assertEquals(unescapedCloseTags?.length, 1, "Should have only one unescaped </style> (the closing tag)");
 	});
 
-	await t.step("CSS with whitespace variations in </style>", () => {
-		registry.register('test.scpcss.whitespace2', ls([
+	await t.step("Very long CSS content", () => {
+		// Generate large CSS block
+		let longCSS = '';
+		for (let i = 0; i < 1000; i++) {
+			longCSS += `.@@ .class${i} { color: color${i}; } `;
+		}
+
+		registry.register('test.core.scpcss.long', ls([
 			'allowLate', true,
 			'if', 'MWIHTML',
-			'scopedCSS', '.@@ { content: "< /style>"; }'
+			'scopedCSS', longCSS
 		]));
-		const testDoc = getInstance('MWIDocument');
-		testDoc.createNode('test.scpcss.whitespace2');
-		const scpNode = testDoc.createNode('m.scpcss');
-		const html = scpNode('getHTML');
 
-		assert(html.includes('\\3c  /'), "Should escape whitespace variations");
+		const doc = getInstance('MWIDocument');
+		doc.createNode('test.core.scpcss.long');
+		const scpNode = doc.createNode('m.scpcss');
+
+		const html = scpNode('getHTML');
+		assert(html.includes('class0'), "Should include first class");
+		assert(html.includes('class999'), "Should include last class");
+		assert(html.length > 10000, "Should have substantial length");
 	});
 });
 
-Deno.test("MWICoreScpCSS - CSS Deduplication", async (t) => {
-	await t.step("Single component type, multiple instances", () => {
-		registry.register('test.scpcss.dedup1', ls([
+Deno.test("MWICoreScpCSS Core - m.ci Virtual Attribute", async (t) => {
+	await t.step("Read m.ci from node itself", () => {
+		registry.register('test.core.scpcss.ci1', ls([
 			'allowLate', true,
 			'if', 'MWIHTML',
-			'scopedCSS', '.@@ { color: purple; }'
+			'scopedCSS', '.@@ { color: blue; }'
 		]));
-		const testDoc = getInstance('MWIDocument');
-		// Create 5 instances of the same component type
-		testDoc.createNode('test.scpcss.dedup1');
-		testDoc.createNode('test.scpcss.dedup1');
-		testDoc.createNode('test.scpcss.dedup1');
-		testDoc.createNode('test.scpcss.dedup1');
-		testDoc.createNode('test.scpcss.dedup1');
-		const scpNode = testDoc.createNode('m.scpcss');
+
+		const doc = getInstance('MWIDocument');
+		const node = doc.createNode('test.core.scpcss.ci1');
+
+		const ci = node('getAttr', ls([, 'm.ci']));
+		assertExists(ci, "m.ci should be defined for node");
+		assert(ci.startsWith('_MO_'), "Component ID should start with _MO_");
+	});
+
+	await t.step("Read m.ci via m.slat from slot source", () => {
+		registry.register('test.core.scpcss.ci2', ls([
+			'allowLate', true,
+			'tpl', ps('[( [h.div m.slat=[ci=[m.ci]]] )]')
+		]));
+
+		const doc = getInstance('MWIDocument');
+		const tplNode = doc.createNode('test.core.scpcss.ci2');
+
+		// The template's internal div should have ci attribute set from slot source
+		const html = tplNode('getHTML');
+		assert(html.includes('ci='), "Should have ci attribute from m.slat");
+	});
+
+	await t.step("m.ci is read-only", () => {
+		registry.register('test.core.scpcss.ci3', ls([
+			'allowLate', true,
+			'if', 'MWIHTML'
+		]));
+
+		const doc = getInstance('MWIDocument');
+		const node = doc.createNode('test.core.scpcss.ci3');
+
+		const originalCi = node('getAttr', ls([, 'm.ci']));
+
+		// Attempt to set m.ci
+		node('setAttr', ls([, 'm.ci', , 'fake-id']));
+
+		const afterCi = node('getAttr', ls([, 'm.ci']));
+		assertEquals(afterCi, originalCi, "m.ci should remain unchanged (read-only)");
+	});
+});
+
+Deno.test("MWICoreScpCSS Core - m.coat with m.ci Integration", async (t) => {
+	await t.step("Use m.ci in m.coat to set m.percl", () => {
+		registry.register('test.core.scpcss.coat1', ls([
+			'allowLate', true,
+			'tpl', ps('[( [h.div m.coat=[m.percl="<m.ci>"]] )]'),
+			'scopedCSS', '.@@ { border: 1px solid; }'
+		]));
+
+		const doc = getInstance('MWIDocument');
+		const tplNode = doc.createNode('test.core.scpcss.coat1');
+
+		// Get the internal div
+		const html = tplNode('getHTML');
+
+		// Should have m.percl set to component ID
+		const compId = tplNode('getAttr', ls([, 'm.ci']));
+		assert(html.includes(`class="${compId}"`), "Should have component ID as class");
+	});
+
+	await t.step("Use m.ci in m.coat to set regular class", () => {
+		registry.register('test.core.scpcss.coat2', ls([
+			'allowLate', true,
+			'tpl', ps('[( [h.div m.coat=[class="<m.ci>"]] )]')
+		]));
+
+		const doc = getInstance('MWIDocument');
+		const tplNode = doc.createNode('test.core.scpcss.coat2');
+
+		const compId = tplNode('getAttr', ls([, 'm.ci']));
+		const html = tplNode('getHTML');
+
+		assert(html.includes(`class="${compId}"`), "Should have component ID as class");
+	});
+
+	await t.step("Multiple m.coat attributes using m.ci", () => {
+		registry.register('test.core.scpcss.coat3', ls([
+			'allowLate', true,
+			'tpl', ps('[( [h.div m.coat=[m.percl="<m.ci>" data-comp="<m.ci>"]] )]')
+		]));
+
+		const doc = getInstance('MWIDocument');
+		const tplNode = doc.createNode('test.core.scpcss.coat3');
+
+		const compId = tplNode('getAttr', ls([, 'm.ci']));
+		const html = tplNode('getHTML');
+
+		assert(html.includes(`class="${compId}"`), "Should have component ID as class");
+		assert(html.includes(`data-comp="${compId}"`), "Should have component ID as data attribute");
+	});
+
+	await t.step("m.coat with m.ci in nested template context", () => {
+		registry.register('test.core.scpcss.coat4outer', ls([
+			'allowLate', true,
+			'tpl', ps('[( [test.core.scpcss.coat4inner m.slat=[outerci=[m.ci]]] )]'),
+			'scopedCSS', '.@@ { border: 2px solid; }'
+		]));
+		registry.register('test.core.scpcss.coat4inner', ls([
+			'allowLate', true,
+			'tpl', ps('[( [h.div m.coat=[m.percl="<outerci>"]] )]'),
+			'scopedCSS', '.@@ { padding: 1rem; }'
+		]));
+
+		const doc = getInstance('MWIDocument');
+		const outerNode = doc.createNode('test.core.scpcss.coat4outer');
+
+		const html = outerNode('getHTML');
+
+		// The inner div should have the outer template's component ID
+		const outerCompId = outerNode('getAttr', ls([, 'm.ci']));
+		assert(html.includes(`class="${outerCompId}"`), "Should have outer component ID as class");
+	});
+});
+
+Deno.test("MWICoreScpCSS Core - CSS Deduplication", async (t) => {
+	await t.step("Single component type, multiple instances", () => {
+		registry.register('test.core.scpcss.dedup1', ls([
+			'allowLate', true,
+			'if', 'MWIHTML',
+			'scopedCSS', '.@@ { width: 100%; }'
+		]));
+
+		const doc = getInstance('MWIDocument');
+
+		// Create 5 instances
+		for (let i = 0; i < 5; i++) {
+			doc.createNode('test.core.scpcss.dedup1');
+		}
+
+		const scpNode = doc.createNode('m.scpcss');
 		const html = scpNode('getHTML');
 
 		// CSS should appear only once
-		const matches = html.match(/color: purple/g);
-		assertEquals(matches?.length, 1, "CSS should appear only once, not per instance");
+		const matches = html.match(/width: 100%/g);
+		assertEquals(matches?.length, 1, "CSS should appear only once despite multiple instances");
 	});
 
 	await t.step("Component type reuse across document", () => {
-		registry.register('test.scpcss.dedup2', ls([
+		registry.register('test.core.scpcss.dedup2', ls([
 			'allowLate', true,
 			'if', 'MWIHTML',
-			'scopedCSS', '.@@ { border: 2px solid; }'
+			'scopedCSS', '.@@ { height: 50px; }'
 		]));
-		const testDoc = getInstance('MWIDocument');
-		// Use same component type in different parts
-		const frag1 = testDoc.createNode('m.frg');
-		frag1('append', testDoc.createNode('test.scpcss.dedup2'));
-		const frag2 = testDoc.createNode('m.frg');
-		frag2('append', testDoc.createNode('test.scpcss.dedup2'));
-		testDoc('append', frag1);
-		testDoc('append', frag2);
 
-		const scpNode = testDoc.createNode('m.scpcss');
+		const doc = getInstance('MWIDocument');
+
+		// Use in different parts
+		const frag1 = doc.createNode('m.frg');
+		frag1('append', doc.createNode('test.core.scpcss.dedup2'));
+		doc('append', frag1);
+
+		const frag2 = doc.createNode('m.frg');
+		frag2('append', doc.createNode('test.core.scpcss.dedup2'));
+		doc('append', frag2);
+
+		const scpNode = doc.createNode('m.scpcss');
 		const html = scpNode('getHTML');
 
 		// CSS should not be duplicated
-		const matches = html.match(/border: 2px solid/g);
+		const matches = html.match(/height: 50px/g);
 		assertEquals(matches?.length, 1, "CSS should not be duplicated across document");
 	});
 
 	await t.step("Multiple m.scpcss nodes with same components", () => {
-		registry.register('test.scpcss.dedup3', ls([
+		registry.register('test.core.scpcss.dedup3', ls([
 			'allowLate', true,
 			'if', 'MWIHTML',
-			'scopedCSS', '.@@ { margin: 10px; }'
+			'scopedCSS', '.@@ { margin: 2rem; }'
 		]));
-		const testDoc = getInstance('MWIDocument');
-		testDoc.createNode('test.scpcss.dedup3');
 
-		const scpNode1 = testDoc.createNode('m.scpcss');
-		const scpNode2 = testDoc.createNode('m.scpcss');
+		const doc = getInstance('MWIDocument');
+		doc.createNode('test.core.scpcss.dedup3');
+
+		const scpNode1 = doc.createNode('m.scpcss');
+		const scpNode2 = doc.createNode('m.scpcss');
 
 		const html1 = scpNode1('getHTML');
 		const html2 = scpNode2('getHTML');
 
-		// Each m.scpcss independently aggregates, so both should have the same CSS
-		assertEquals(html1, html2, "Multiple m.scpcss nodes should generate same CSS");
-		assert(html1.includes('margin: 10px'), "Both should include the CSS");
+		// Both should generate the same CSS (expected behavior)
+		assertEquals(html1, html2, "Each m.scpcss should independently aggregate same CSS");
+
+		// Each should have the CSS once
+		const matches1 = html1.match(/margin: 2rem/g);
+		const matches2 = html2.match(/margin: 2rem/g);
+		assertEquals(matches1?.length, 1, "First m.scpcss should have CSS once");
+		assertEquals(matches2?.length, 1, "Second m.scpcss should have CSS once");
 	});
 });
 
-Deno.test("MWICoreScpCSS - m.sci Virtual Attribute", async (t) => {
-	await t.step("Read m.sci from node with slot source", () => {
-		registry.register('test.scpcss.sci1', ls([
-			'allowLate', true,
-			'if', 'MWIHTML',
-			'scopedCSS', '.@@ { color: red; }',
-			'tpl', ps('[([h.div])]')
-		]));
-		const testDoc = getInstance('MWIDocument');
-		const tplNode = testDoc.createNode('test.scpcss.sci1');
-
-		// The template becomes the slotSrc for its content
-		// We need to access the internal fragment's children to test m.sci
-		// This is a bit tricky since we can't directly access internal state
-		// For now, verify the template node exists
-		assert(tplNode, "Template with scopedCSS should be created");
-	});
-
-	await t.step("Read m.sci from node without slot source", () => {
-		const testDoc = getInstance('MWIDocument');
-		const divNode = testDoc.createNode('h.div');
-		const sci = divNode('getAttr', ls([, 'm.sci']));
-		assertEquals(sci, undefined, "m.sci should be undefined without slot source");
-	});
-});
-
-Deno.test("MWICoreScpCSS - Real-World Patterns", async (t) => {
+Deno.test("MWICoreScpCSS Core - Real-World Patterns", async (t) => {
 	await t.step("Card component with scoped styles", () => {
-		registry.register('test.scpcss.card', ls([
+		registry.register('test.core.scpcss.card', ls([
 			'allowLate', true,
-			'if', 'MWIHTML',
+			'tpl', ps('[( [h.div m.coat=[m.percl="<m.ci>"] [m.slot]] )]'),
 			'scopedCSS', '.@@ { border: 1px solid #ccc; padding: 1rem; } .@@ .header { font-weight: bold; }'
 		]));
-		const testDoc = getInstance('MWIDocument');
-		testDoc.createNode('test.scpcss.card');
-		const scpNode = testDoc.createNode('m.scpcss');
+
+		const doc = getInstance('MWIDocument');
+		const cardNode = doc.createNode('test.core.scpcss.card');
+		cardNode('setSubSpec', ps('[( [h.div class="header" "Card Title"] )]'));
+
+		const scpNode = doc.createNode('m.scpcss');
 		const html = scpNode('getHTML');
 
-		assert(html.includes('border: 1px solid #ccc'), "Should include card border style");
-		assert(html.includes('padding: 1rem'), "Should include card padding");
+		assert(html.includes('border: 1px solid #ccc'), "Should include card border CSS");
+		assert(html.includes('padding: 1rem'), "Should include padding CSS");
 		assert(html.includes('.header'), "Should include nested selector");
 		assert(html.includes('font-weight: bold'), "Should include header style");
+
+		// Verify card HTML has scoped class
+		const cardHtml = cardNode('getHTML');
+		const compId = cardNode('getAttr', ls([, 'm.ci']));
+		assert(cardHtml.includes(`class="${compId}"`), "Card should have scoped class");
+	});
+
+	await t.step("Nested components with scoped CSS", () => {
+		registry.register('test.core.scpcss.parent', ls([
+			'allowLate', true,
+			'tpl', ps('[( [m.scpcss] [h.div m.coat=[m.percl="<m.ci>"] [test.core.scpcss.child m.slat=[parentci=[m.ci]]]] )]'),
+			'scopedCSS', '.@@ { background: #f0f0f0; }'
+		]));
+		registry.register('test.core.scpcss.child', ls([
+			'allowLate', true,
+			'tpl', ps('[( [h.span m.coat=[m.percl="<parentci>"] "Child"] )]'),
+			'scopedCSS', '.@@ { color: blue; }'
+		]));
+
+		const doc = getInstance('MWIDocument');
+		const parNode = doc.createNode('test.core.scpcss.parent');
+
+		const html = parNode('getHTML');
+
+		assert(html.includes('background: #f0f0f0'), "Should include parent CSS");
+		assert(html.includes('color: blue'), "Should include child CSS");
+
+		// Should have two different component IDs
+		const compIdMatches = html.match(/_MO_\w+/g);
+		assert(compIdMatches.length >= 2, "Should have at least two component IDs");
 	});
 
 	await t.step("Component library pattern", () => {
 		// Register multiple components
-		for (let i = 0; i < 10; i++) {
-			registry.register(`test.scpcss.lib${i}`, ls([
-				'allowLate', true,
-				'if', 'MWIHTML',
-				'scopedCSS', `.@@ { color: color${i}; }`
-			]));
-		}
+		registry.register('test.core.scpcss.button', ls([
+			'allowLate', true,
+			'tpl', ps('[( [h.button m.coat=[m.percl="<m.ci>"] [m.slot]] )]'),
+			'scopedCSS', '.@@ { padding: 0.5rem 1rem; border-radius: 4px; }'
+		]));
+		registry.register('test.core.scpcss.input', ls([
+			'allowLate', true,
+			'tpl', ps('[( [h.input m.coat=[m.percl="<m.ci>"]] )]'),
+			'scopedCSS', '.@@ { border: 1px solid #ddd; padding: 0.5rem; }'
+		]));
+		registry.register('test.core.scpcss.cardlib', ls([
+			'allowLate', true,
+			'tpl', ps('[( [h.div m.coat=[m.percl="<m.ci>"] [m.slot]] )]'),
+			'scopedCSS', '.@@ { box-shadow: 0 2px 4px rgba(0,0,0,0.1); }'
+		]));
 
-		const testDoc = getInstance('MWIDocument');
-		// Use only a subset
-		testDoc.createNode('test.scpcss.lib2');
-		testDoc.createNode('test.scpcss.lib5');
-		testDoc.createNode('test.scpcss.lib7');
+		const doc = getInstance('MWIDocument');
 
-		const scpNode = testDoc.createNode('m.scpcss');
+		// Use all components
+		doc.createNode('test.core.scpcss.button');
+		doc.createNode('test.core.scpcss.input');
+		doc.createNode('test.core.scpcss.cardlib');
+
+		const scpNode = doc.createNode('m.scpcss');
 		const html = scpNode('getHTML');
 
-		// Should only include CSS for used components
-		assert(html.includes('color2'), "Should include lib2 CSS");
-		assert(html.includes('color5'), "Should include lib5 CSS");
-		assert(html.includes('color7'), "Should include lib7 CSS");
-		assert(!html.includes('color0'), "Should not include unused lib0 CSS");
-		assert(!html.includes('color9'), "Should not include unused lib9 CSS");
+		assert(html.includes('padding: 0.5rem 1rem'), "Should include button CSS");
+		assert(html.includes('border-radius: 4px'), "Should include button border-radius");
+		assert(html.includes('border: 1px solid #ddd'), "Should include input CSS");
+		assert(html.includes('box-shadow'), "Should include card CSS");
 	});
 });

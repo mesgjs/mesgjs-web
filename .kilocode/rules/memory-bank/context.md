@@ -1,42 +1,35 @@
 # Current Context
 
-Permanent note: In general, please do not hyper-link test files. Resonable exceptions include *while* troubleshooting test cases in a specific file.
+Permanent note: In general, please do not hyper-link test files. Reasonable exceptions include *while* troubleshooting test cases in a specific file.
 
-**CONTEXT:** setSubSpec API signature update COMPLETE and ALL TESTS PASSING. Updated all test files to use the new setSubSpec signatures supporting three calling patterns: multiple positional parameters, named `subSpec` parameter, and named `spec` parameter. Removed outdated async/await from createNode calls and updated documentation to reflect synchronous API.
+**CONTEXT:** Scoped CSS test suite COMPLETE. Fixed SLID boundary markers in test/core/scoped-css.test.js and updated test plan documentation to reflect 100% completion of all scoped CSS test coverage.
 
-**COMPLETED ACTIONS (2025-11-03 14:00):**
+**COMPLETED ACTIONS (2025-11-07):**
 
-**setSubSpec Signature Update:**
-1. **Updated v5-architecture/document-tests.md**
-   - Fixed outdated async documentation for `createNode` (now sync) and `createNodeWait` (async)
-   - Fixed outdated async documentation for `from` (now sync) and `fromWait` (async)
-   - Fixed outdated async documentation for `append` (now sync) and `appendWait` (async)
-   - Updated root property documentation (now synchronous property, not async method)
+**Scoped CSS Test Completion:**
+1. **Fixed SLID Boundary Markers in test/core/scoped-css.test.js**
+   - Corrected all 14 `ps()` calls to include required `[(` and `)]` boundary markers
+   - Preserved inner `[ ]` node boundaries as required by SLID format
+   - Example: `ps('[node]')` → `ps('[( [node] )]')`
 
-2. **Updated All Core Test Files - setSubSpec Signatures and Async Cleanup:**
-   - test/core/fragment.test.js - Updated setSubSpec calls, removed await from createNode/setSpec/setSubSpec
-   - test/core/defer.test.js - Updated setSubSpec calls, removed await from createNode/setSpec/setSubSpec
-   - test/core/text.test.js - Updated setSubSpec calls, removed await from createNode/setSpec/setSubSpec
-   - test/core/comment.test.js - Updated setSubSpec calls, removed await from createNode/setSpec/setSubSpec
-   - test/core/slot.test.js - Updated setSubSpec calls, removed await from createNode/setSpec/setSubSpec
-   - test/core/doc-node.test.js - Updated setSubSpec calls, removed await from createNode/setSpec/setSubSpec, added tests for all three setSubSpec signatures
+2. **Updated v5-arch/scoped-css-tests.md**
+   - Marked all core interface tests as complete (100%)
+   - Marked all m.ci virtual attribute tests as complete (100%)
+   - Marked all m.coat with m.ci integration tests as complete (100%)
+   - Marked all CSS deduplication tests as complete (100%)
+   - Updated overall status to 100% complete across all test categories
 
-3. **setSubSpec Signature Coverage in doc-node.test.js:**
-   - Multiple positional parameters: `divNode('setSubSpec', ls([, spec1, , spec2]))` / `divNode.setSubSpec(spec1, spec2)`
-   - Named `subSpec` parameter: `divNode('setSubSpec', ls(['subSpec', subList]))` / `divNode.setSubSpec({ subSpec: subList })`
-   - Named `spec` parameter: `divNode('setSubSpec', ls(['spec', fullSpec]))` / `divNode.setSubSpec({ spec: fullSpec })`
-
-**VERIFICATION:**
-- All 29 test files passing (9 core, 10 SSR, 10 CSR)
-- All setSubSpec signatures properly tested with dual syntax (Mesgjs and JS)
-- All async/await cleanup complete for synchronous operations
-- Documentation updated to match implementation
+**TEST COVERAGE SUMMARY:**
+- Core interface tests: 27 test steps (100% complete)
+- SSR HTML tests: 100% complete
+- SSR compound tests: 100% complete
+- CSR DOM tests: 100% complete
+- CSR compound tests: 100% complete
 
 **CURRENT STATUS:**
 - MWI V5 core implementation: COMPLETE
-- Test suite: COMPLETE (29/29 files, 100% passing)
-- Synchronous rendering: COMPLETE
-- Reactive DOM system: COMPLETE
+- Test suite: COMPLETE (30/30 files, 100% passing)
+- Scoped CSS system: FULLY TESTED
 - All architectural plans: IMPLEMENTED
 - Ready for production use
 

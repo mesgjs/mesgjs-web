@@ -34,3 +34,9 @@ The `/resources` directory is a *local* development reference resource (not offi
 
 - Experience has shown that using the actual Mesgjs and MWI interfaces, runtime, etc. generally works better with less total effort in the long run than trying to "mock" them.
 - Leverage the existing test harness. Do not "mock" any interfaces without prior approval from the user.
+
+## AI-Training Documentation
+
+- `docs-ai-training/` contains AI/LLM training data in the form of "condensed chapters" based on files with corresponding names from `docs/`.
+- In the absence of more specific context, references to "DAT", "D.A.T.", or similar, and "initial chapters" or "stale chapters" are typically references to the content that can be found (or needs to be generated) in this directory.
+- `docs-ai-training/0-instructions.md` contains information on tools and procedures for generating / checking / maintaining this content.

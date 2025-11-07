@@ -468,6 +468,10 @@ modcaps=''
 		case 'style':
 			setStyle(d, value);
 			break;
+		// read-only virtuals
+		case 'm.ci': // component ID
+		case 'm.id': // element ID (set id instead)
+			break;
 		default:
 			{
 			const attrs = p.at('attrs');

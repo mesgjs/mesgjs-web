@@ -74,12 +74,15 @@
 **`(getHTML)` / `getHTML()`**
 - Returns HTML string for node and subtree
 - Synchronous operation
-- Snapshot only (not reactive)
+- **Always a snapshot at the time of the call**
+- **Not reactive** - subsequent changes to attributes or content are not reflected
+- Must call `getHTML()` again to get updated HTML
 
 **`(getDOM)` / `getDOM()`**
 - Returns reactive NANOS of DOM nodes
 - Synchronous initial render
-- Reactive updates automatic
+- **Reactive updates automatic** - DOM updates when attributes or content change
+- Changes propagate to browser DOM in real-time
 
 **`(getSubDOM)` / `getSubDOM()`**
 - Returns reactive NANOS of sub-doc DOM nodes
@@ -102,12 +105,19 @@
 
 ## Special Attributes
 
-### `m.id` - Element ID Assignment
+### `m.ci` - Component ID
 
-Assigns unique element ID to node:
-- If value is `true` → Auto-generates ID via `doc.nextId()`
-- If value is string → Uses provided ID
-- ID stored in regular `id` attribute
+This returns the component ID of the component, as assigned by the registry (`MWIRegistry`).
+
+- Via `getAttr`, this returns the component ID of the node itself. (This will *always* be defined.)
+- Since `m.coat` and `m.slat` work with the node's slot source, `<m.ci>` (for `m.coat`) or `m.ci=[]` (for `m.slat`) will reflect the component ID of the slot source. (This will be undefined for nodes without a slot source.)
+- This value is read-only.
+
+### `m.id` - Mandatory Element ID
+
+- If the node does not already have an assigned, non-empty, standard `id` attribute, a unique one is automatically generated and assigned.
+- The value of the `id` attribute (whether user-specified or automatically generated) is then returned.
+- This value is read-only.
 
 ### `m.percl` - Permanent Classes
 
@@ -115,7 +125,7 @@ Space-separated list of classes that must always be present:
 - Typically includes component scope class
 - Classes always appear in `class` attribute
 - Adding permanent classes guarantees presence
-- Removing permanent classes doesn't auto-remove from `class`
+- Note: Removing permanent classes does not automatically remove them from `class`
 
 ### `m.slat` - Attribute Slotting
 
@@ -146,18 +156,21 @@ node.setAttr('m.coat', ps('[(class="btn <type>-btn <size?large>")]'));
 ```
 
 **Expression Syntax:**
-- `<name>` - Simple substitution
-- `<name|else>` - Presence-based fallback
-- `<name||else>` - Value-based fallback
-- `<name?then>` - Presence-based conditional
-- `<name??then>` - Value-based conditional
-- `<name?then|else>` - Conditional with fallback
+- `<name>` - Value of named attribute, or ""
+- `<name|else>` - Value of named attribute if not undefined/false, or "else" otherwise
+- `<name||else>` - Value of named attribute if not undefined/false/"", or "else" otherwise
+- `<name?then>` - "then" if named attribute is not undefined/false, or "" otherwise
+- `<name??then>` - "then" if named attribute is not undefined/false/"", or "" otherwise
+- `|` (or, identically, `||`) after the first test toggles the output state
+  - `<name?then|else>` - "then" if value is not undefined/false, or "else" otherwise
+  - `<name??then|else>` - "then" if value is not undefined/false/"", or "else" otherwise
 
 **Special Escapes:**
 - `<.lt>` → `<`
 - `<.gt>` → `>`
 - `<.qm>` → `?`
 - `<.vb>` → `|`
+- `<.un>` → Returns undefined (Mesgjs `@u`) as the final result
 
 ### `class` - Class Attribute
 
@@ -207,13 +220,15 @@ Nodes can define schema to control behavior:
 
 **`autoDoc`** (boolean, default `true`)
 - If `true` - Sub-specs immediately converted to sub-doc nodes
-- If `false` - Sub-specs stored, conversion deferred
+- If `false` - Sub-specs stored
+  - Sub-specs might or might not be converted to sub-doc nodes later
+  - Sub-specs might be converted to sub-doc nodes on a different node or nodes
 
 **`void`** (boolean, default `false`)
 - If `true` - Node cannot have children
-- Sub-specs rejected
+- Sub-specs and modifications, such as `append`, are ignored
 
-**`htmlAllowAttr`** (Set, optional)
+**`htmlAllowAttr`** (JS `Set` or Mesgjs `@set`, optional)
 - If present - Only listed attributes render to HTML
 - Used by `MWICoreDefer` to filter attributes
 

@@ -15,6 +15,7 @@
 - **Static Template:** Internal fragment initialized once with template spec
 - **Lazy Conversion:** Sub-specs not immediately converted (`autoDoc = false`)
 - **Slot Source:** Template node itself is slot source for template content
+  - As a slot source, you must "slot through" the template node (using `m.coat` and/or `m.slat`) to make higher-level template values available to the template's inner content.
 - **Reactive Slotting:** Template reactively slots against node's attributes and sub-spec
 
 ## Template Mechanics

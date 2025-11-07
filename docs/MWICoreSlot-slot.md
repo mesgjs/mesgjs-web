@@ -16,6 +16,7 @@ Handles content slotting for template components. Selects content from the slot 
 - **Reactive:** Content selection updates reactively
 - **Fallback:** Uses slot's own children if no source content available
 - **Slot Source:** Slot itself becomes slot source for its content
+  - As a slot source, you must "slot through" the `m.slot` node (using `m.coat` and/or `m.slat`) to make outer (template node) values available to the slot's inner content.
 
 ## Attributes
 
