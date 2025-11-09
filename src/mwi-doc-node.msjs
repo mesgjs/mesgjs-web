@@ -222,6 +222,7 @@ modcaps=''
 		const slotSrc = d.p.at('slotSrc');
 		// Handle first-pass shortcuts: `@@` for component id, `@#` for doc-node id
 		// Use functional replacement to only access attributes when/if referenced
+		if (typeof spec === 'number') spec = String(spec);
 		spec = spec.replace(/@@|@#/g, (match) => {
 			switch (match) {
 			case '@@': return slotSrc?.('getAttr', 'm.ci') || '';

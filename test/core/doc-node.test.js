@@ -571,6 +571,161 @@ Deno.test("MWIDocNode - Special Attribute: m.percl", async (t) => {
 	});
 });
 
+Deno.test("MWIDocNode - Special Attribute: id type checking", async (t) => {
+	await t.step("(setAttr) - id accepts string", () => {
+		const divNode = doc.createNode('h.div');
+		divNode('setAttr', ls([, 'id', , 'my-id']));
+		assertEquals(divNode('getAttr', ls([, 'id'])), 'my-id');
+	});
+
+	await t.step(".setAttr() - id accepts string via JS", () => {
+		const divNode = doc.createNode('h.div');
+		divNode.setAttr('id', 'js-my-id');
+		assertEquals(divNode.getAttr('id'), 'js-my-id');
+	});
+
+	await t.step("(setAttr) - id accepts number (normalized to string)", () => {
+		const divNode = doc.createNode('h.div');
+		divNode('setAttr', ls([, 'id', , 123]));
+		assertEquals(divNode('getAttr', ls([, 'id'])), '123');
+	});
+
+	await t.step(".setAttr() - id accepts number (normalized to string) via JS", () => {
+		const divNode = doc.createNode('h.div');
+		divNode.setAttr('id', 456);
+		assertEquals(divNode.getAttr('id'), '456');
+	});
+
+	await t.step("(setAttr) - id clears on undefined", () => {
+		const divNode = doc.createNode('h.div');
+		divNode('setAttr', ls([, 'id', , 'initial']));
+		divNode('setAttr', ls([, 'id', , undefined]));
+		assertEquals(divNode('getAttr', ls([, 'id'])), undefined);
+	});
+
+	await t.step(".setAttr() - id clears on null via JS", () => {
+		const divNode = doc.createNode('h.div');
+		divNode.setAttr('id', 'initial');
+		divNode.setAttr('id', null);
+		assertEquals(divNode.getAttr('id'), undefined);
+	});
+
+	await t.step("(setAttr) - id clears on false", () => {
+		const divNode = doc.createNode('h.div');
+		divNode('setAttr', ls([, 'id', , 'initial']));
+		divNode('setAttr', ls([, 'id', , false]));
+		assertEquals(divNode('getAttr', ls([, 'id'])), undefined);
+	});
+
+	await t.step(".setAttr() - id ignores other types", () => {
+		const divNode = doc.createNode('h.div');
+		divNode.setAttr('id', 'initial');
+		divNode.setAttr('id', true); // Should be ignored
+		assertEquals(divNode.getAttr('id'), 'initial');
+		divNode.setAttr('id', {}); // Should be ignored
+		assertEquals(divNode.getAttr('id'), 'initial');
+	});
+});
+
+Deno.test("MWIDocNode - document.getDocById()", async (t) => {
+	await t.step("(getDocById) - Find node by string id", () => {
+		const divNode = doc.createNode('h.div');
+		divNode('setAttr', ls([, 'id', , 'test-node-1']));
+		
+		const found = doc('getDocById', ls([, 'test-node-1']));
+		assertStrictEquals(found, divNode);
+	});
+
+	await t.step(".getDocById() - Find node by string id via JS", () => {
+		const divNode = doc.createNode('h.div');
+		divNode.setAttr('id', 'js-test-node-2');
+		
+		const found = doc.getDocById('js-test-node-2');
+		assertStrictEquals(found, divNode);
+	});
+
+	await t.step("(getDocById) - Find node by numeric id", () => {
+		const divNode = doc.createNode('h.div');
+		divNode('setAttr', ls([, 'id', , 12345]));
+		
+		const found = doc('getDocById', ls([, 12345]));
+		assertStrictEquals(found, divNode);
+	});
+
+	await t.step(".getDocById() - Find node by numeric id via JS", () => {
+		const divNode = doc.createNode('h.div');
+		divNode.setAttr('id', 45678);
+		
+		const found = doc.getDocById(45678);
+		assertStrictEquals(found, divNode);
+	});
+
+	await t.step("(getDocById) - Numeric id normalized to string for lookup", () => {
+		const divNode = doc.createNode('h.div');
+		divNode('setAttr', ls([, 'id', , '78901']));
+		
+		// Should find with numeric lookup
+		const found = doc('getDocById', ls([, 78901]));
+		assertStrictEquals(found, divNode);
+	});
+
+	await t.step(".getDocById() - Return undefined for non-existent id", () => {
+		const found = doc.getDocById('does-not-exist-xyz');
+		assertEquals(found, undefined);
+	});
+
+	await t.step("(getDocById) - Works with disconnected nodes", () => {
+		const divNode = doc.createNode('h.div');
+		divNode('setAttr', ls([, 'id', , 'disconnected-node']));
+		
+		// Node is not in any rendering tree
+		const found = doc('getDocById', ls([, 'disconnected-node']));
+		assertStrictEquals(found, divNode);
+	});
+
+	await t.step(".getDocById() - Last assignment wins on collision", () => {
+		const div1 = doc.createNode('h.div');
+		div1.setAttr('id', 'shared-id-test');
+		
+		const div2 = doc.createNode('h.div');
+		div2.setAttr('id', 'shared-id-test');
+		
+		// Should return the last one assigned
+		const found = doc.getDocById('shared-id-test');
+		assertStrictEquals(found, div2);
+	});
+
+	await t.step("(getDocById) - Cleared id removes from index", () => {
+		const divNode = doc.createNode('h.div');
+		divNode('setAttr', ls([, 'id', , 'temp-id-test']));
+		
+		let found = doc('getDocById', ls([, 'temp-id-test']));
+		assertStrictEquals(found, divNode);
+		
+		// Clear the id
+		divNode('delAttr', ls([, 'id']));
+		found = doc('getDocById', ls([, 'temp-id-test']));
+		assertEquals(found, undefined);
+	});
+
+	await t.step(".getDocById() - Changed id updates index", () => {
+		const divNode = doc.createNode('h.div');
+		divNode.setAttr('id', 'old-id-test');
+		
+		let found = doc.getDocById('old-id-test');
+		assertStrictEquals(found, divNode);
+		
+		// Change the id
+		divNode.setAttr('id', 'new-id-test');
+		
+		found = doc.getDocById('old-id-test');
+		assertEquals(found, undefined, 'Old id should not find node');
+		
+		found = doc.getDocById('new-id-test');
+		assertStrictEquals(found, divNode, 'New id should find node');
+	});
+});
+
 Deno.test("MWIDocNode - Special Attribute: style", async (t) => {
 	await t.step("(setAttr) - Basic style", () => {
 		const divNode = doc.createNode('h.div');

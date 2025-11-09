@@ -2,44 +2,59 @@
 
 Permanent note: In general, please do not hyper-link test files. Reasonable exceptions include *while* troubleshooting test cases in a specific file.
 
-**CONTEXT:** Implemented computed attribute enhancements and id attribute system. All code changes complete for `m.percl`/`class` computed attributes, `@@`/`@#` shortcuts with escapes, and full `id` attribute functionality including type checking, computed attribute support, and `document.getDocById()` with WeakRef index tracking.
+**CONTEXT:** Completed test coverage for computed attribute enhancements and id attribute system. All tests passing (100%).
 
-**COMPLETED ACTIONS (2025-11-08):**
+**COMPLETED ACTIONS (2025-11-09):**
 
-**Computed Attribute Enhancements:**
-1. **Updated `computeAttr()` function** in [`src/mwi-doc-node.msjs`](src/mwi-doc-node.msjs:220-232)
-   - Implemented functional replacement for `@@` and `@#` shortcuts using switch/case
-   - `@@` expands to slot-source component ID (`m.ci`)
-   - `@#` expands to slot-source doc-node ID (`m.id`)
-   - Only accesses attributes when/if referenced in the computed string
+**Test Coverage for Computed Attributes:**
+1. **Added `m.percl` with `@@` tests** in test/ssr-html/doc-node.test.js
+   - Tests `@@` expansion to `m.ci` in templates
+   - Tests `@@` with prefixes/suffixes (e.g., `@@__custom`)
+   - 4 test steps covering both Mesgjs and JS APIs
 
-2. **Added escape sequences** in [`getVal()`](src/mwi-doc-node.msjs:234-243)
-   - `<.aa>` → `@@` (at-at escape)
-   - `<.ap>` → `@#` (at-pound escape)
+2. **Added `class` with `@@` tests** in test/ssr-html/doc-node.test.js
+   - Tests `@@` expansion to `m.ci` in templates
+   - Tests `@@` with additional classes
+   - 4 test steps covering both Mesgjs and JS APIs
 
-3. **Updated documentation** in [`docs/MWIDocNode-document-node.md`](docs/MWIDocNode-document-node.md) and AI training docs
-   - Documented that `m.percl` and `class` are computed attributes (unless `coat: false`)
-   - Added shortcuts and escapes to `m.coat` section
-   - Noted that unlike `m.coat`, only the result is stored (not the expression)
+3. **Added `m.coat` escape tests** in test/ssr-html/doc-node.test.js
+   - Tests `<.aa>` escape for literal `@@` in computed attributes
+   - Tests `<.ap>` escape for literal `@#` in computed attributes
+   - 4 test steps covering both Mesgjs and JS APIs
 
-**ID Attribute System:**
-1. **Implemented type checking and normalization** in [`opSetAttr()`](src/mwi-doc-node.msjs:478-497)
-   - Accepts string or number (normalized to string)
-   - Clears on undefined/null/false
-   - Ignores other types
-   - Made `id` a computed attribute (unless `coat: false`)
+**Test Coverage for ID Attribute:**
+1. **Added `id` type checking tests** in test/core/doc-node.test.js
+   - Tests string and number acceptance (with normalization)
+   - Tests clearing on undefined/null/false
+   - Tests ignoring of other types
+   - 8 test steps covering both Mesgjs and JS APIs
 
-2. **Created id index system**
-   - Added Map of WeakRefs in [`MWIDocument.opInit()`](src/mwi-document.msjs:68)
-   - Implemented [`document.getDocById(id)`](src/mwi-document.msjs:206-219) with numeric id normalization
-   - Created [`document.updIdIndex()`](src/mwi-document.msjs:221-238) internal message handler
-   - Implemented [`updateIdIndex()`](src/mwi-doc-node.msjs:290-293) helper function
-   - Updated [`opDelAttr()`](src/mwi-doc-node.msjs:308-315) to handle id deletion
+2. **Added `id` with `@#` tests** in test/ssr-html/doc-node.test.js
+   - Tests `@#` expansion to parent `m.id`
+   - Tests hierarchical id pattern (e.g., `@#-child-id` → `parent-id-child-id`)
+   - Tests `<.ap>` escape for literal `@#`
+   - Tests `coat: false` to disable computation
+   - 8 test steps covering both Mesgjs and JS APIs
 
-**REMAINING WORK:**
-- Update tests for `m.percl`/`class` computed attributes
-- Create tests for id attribute functionality
-- Document detailed id attribute behavior and patterns
+3. **Added `document.getDocById()` tests** in test/core/doc-node.test.js
+   - Tests finding nodes by string and numeric ids
+   - Tests numeric id normalization for lookup
+   - Tests disconnected nodes
+   - Tests collision handling (last assignment wins)
+   - Tests id clearing and changing
+   - 10 test steps covering both Mesgjs and JS APIs
+
+**TEST RESULTS:**
+- All new tests passing (100%)
+- Total new test steps: 38
+- Core doc-node tests: +18 steps
+- SSR HTML doc-node tests: +20 steps
+
+**NOTES:**
+- `@@` is not a valid class name character, so `<.aa>` escape tests must use `m.coat` with non-class targets
+- `m.ci` is immutable (set by registry) and read-only
+- `m.id` can change but shouldn't in practice
+- Computed attributes (`m.percl`, `class`, `id`) compute once when set, not reactively
 
 **PREVIOUS CONTEXT:** Scoped CSS test suite COMPLETE. Fixed SLID boundary markers in test/core/scoped-css.test.js and updated test plan documentation to reflect 100% completion of all scoped CSS test coverage.
 
