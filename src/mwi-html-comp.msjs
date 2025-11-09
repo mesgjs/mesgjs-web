@@ -1,7 +1,7 @@
 [(
 modpath='mwi/mwi-html-comp'
 version='0.5.0'
-featreq='MWIDocNode mwi.compRegOpen'
+featreq='mwi.compRegOpen MWIDocNode'
 featpro='mwi.comp.MWIHTML'
 modcaps=''
 )]

@@ -1,7 +1,7 @@
 [(
 modpath='mwi/mwi-document'
 version='0.5.0'
-featreq='mwi.compRegReady MWIDocNode MWICoreFrag MWICoreTpl'
+featreq='mwi.comp.MWICore mwi.compRegReady MWIDocNode'
 featpro='MWIDocument'
 modcaps=''
 )]
@@ -51,6 +51,7 @@ modcaps=''
 		/* async */ createNodeWait (type, { slotSrc } = {}) { return this('createNodeWait', { 0: type, slotSrc }); },
 		from (params) { return this('from', params); },
 		/* async */ fromWait (params) { return this('fromWait', params); },
+		getDocById (id) { return this('getDocById', [ id ]); },
 		getDOM () { return this('getDOM'); },
 		getHTML () { return this('getHTML'); },
 		getId () { return this('getElemId'); },
@@ -66,6 +67,7 @@ modcaps=''
 		const registry = getInstance(REG_IF);
 		p.set('registry', registry);
 		p.set('typesUsed', rxNANOS()); // The *keys* form a reactive list of unique types created on the document
+		p.set('idIndex', new Map()); // Map of id (string) -> doc-node for getDocById
 		// Add JS interface
 		Object.setPrototypeOf(d.rr, docProto);
 		// Add document root (m.frg fragment)
@@ -204,6 +206,40 @@ modcaps=''
 		throw new TypeError(`${IF_NAME}(fromWait) without "item" or "list"`);
 	}
 
+	// Get doc-node by id
+	// (getDocById id)
+	function opGetDocById (d) {
+		const m = d.mp, id = m.at(0);
+		// Normalize numeric id to string before lookup
+		const normalId = (typeof id === 'number') ? String(id) : id;
+		if (typeof normalId !== 'string') return undefined;
+		const idIndex = d.p.at('idIndex');
+		const weakRef = idIndex.get(normalId);
+		// Dereference WeakRef and return node (or undefined if collected)
+		return weakRef?.deref();
+	}
+
+	// Update id index of MWIDocNode sender (internal, attributed message)
+	// (updIdIndex oldId newId)
+	function opUpdIdIndex (d) {
+		// Only doc nodes may use this
+		if (!typeChains(d.st, NODE_IF)) throw new TypeError(`${IF_NAME}(updIdIndex) is only permitted by ${NODE_IF} instances`);
+
+		const node = d.sr; // sender is mapping-entry value
+		const p = d.p, idIndex = p.at('idIndex');
+		const m = d.mp, oldId = m.at(0), newId = m.at(1);
+
+		// Remove node from index at old id (unless there's a newer value)
+		if (oldId && typeof oldId === 'string' && idIndex.get(oldId)?.deref() === node) {
+			idIndex.delete(oldId);
+		}
+
+		// Add node (as WeakRef) to index at new id (potentially overwriting earlier values)
+		if (newId && typeof newId === 'string') {
+			idIndex.set(newId, new WeakRef(node));
+		}
+	}
+
 	// With dependencies loaded, configure *my* module interface
 	getInterface(IF_NAME).set({
 		pristine: true, lock: true, final: true,
@@ -218,6 +254,7 @@ modcaps=''
 			/* async */ createNodeWait: opCreateNodeWait,
 			from: opFrom,
 			/* async */ fromWait: opFromWait,
+			getDocById: opGetDocById,
 			getDOM: (d) => d.p.at('root')('getDOM'),
 			getHTML: (d) => d.p.at('root')('getHTML'),
 			nextId: (d) => d.p.at('registry')('nextId'),
@@ -225,6 +262,7 @@ modcaps=''
 			root: (d) => d.p.at('root'),
 			rxNANOS: (_d) => rxNANOS().fromEntries(d.mp.entries()),
 			typesUsed: (d) => [...d.p.at('typesUsed').keys()],
+			updIdIndex: opUpdIdIndex,
 		}
 	});
 

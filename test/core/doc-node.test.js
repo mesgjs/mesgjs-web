@@ -879,6 +879,40 @@ Deno.test("MWIDocNode - Attribute Slotting: m.slat", async (t) => {
 		// Verify slotting occurred immediately
 		assertEquals(divNode.getAttr('title'), 'JS Slotted');
 	});
+
+	await t.step("(setAttr) - No slot source uses else default", async () => {
+		// Node with NO slotSrc
+		const divNode = doc.createNode('h.div');
+		divNode('setAttr', ls([, 'm.slat', , ps('[(title=[missing else=DefaultValue])]')]));
+
+		assertEquals(divNode('getAttr', ls([, 'title'])), 'DefaultValue');
+	});
+
+	await t.step(".setAttr() - No slot source uses else default via JS", async () => {
+		// Node with NO slotSrc
+		const divNode = doc.createNode('h.div');
+		divNode.setAttr('m.slat', ps('[(title=[missing else="JS DefaultValue"])]'));
+
+		assertEquals(divNode.getAttr('title'), 'JS DefaultValue');
+	});
+
+	await t.step("(setAttr) - No slot source, multiple targets with defaults", async () => {
+		// Node with NO slotSrc
+		const divNode = doc.createNode('h.div');
+		divNode('setAttr', ls([, 'm.slat', , ps('[(title=[src1 else=Default1] data-info=[src2 else=Default2])]')]));
+
+		assertEquals(divNode('getAttr', ls([, 'title'])), 'Default1');
+		assertEquals(divNode('getAttr', ls([, 'data-info'])), 'Default2');
+	});
+
+	await t.step(".setAttr() - No slot source, multiple targets with defaults via JS", async () => {
+		// Node with NO slotSrc
+		const divNode = doc.createNode('h.div');
+		divNode.setAttr('m.slat', ps('[(title=[src1 else="JS Default1"] data-info=[src2 else="JS Default2"])]'));
+
+		assertEquals(divNode.getAttr('title'), 'JS Default1');
+		assertEquals(divNode.getAttr('data-info'), 'JS Default2');
+	});
 });
 
 Deno.test("MWIDocNode - Computed Attributes: m.coat", async (t) => {

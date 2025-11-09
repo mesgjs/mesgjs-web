@@ -2,6 +2,7 @@
 
 **Interface:** `MWIHTMLDocType`  
 **Component Type:** `h.doctype`  
+**Attributes:** Void
 **Source:** [`src/mwi-html-comp.msjs`](../src/mwi-html-comp.msjs) (lines 202-222)  
 **Extends:** [`MWIHTML`](MWIHTML-HTML-elements.md)  
 **Status:** ACTIVE

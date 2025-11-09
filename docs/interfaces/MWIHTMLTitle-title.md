@@ -2,6 +2,7 @@
 
 **Interface:** `MWIHTMLTitle`  
 **Component Type:** `h.title`  
+**Attributes:** Void
 **Source:** [`src/mwi-html-comp.msjs`](../src/mwi-html-comp.msjs) (lines 276-311)  
 **Extends:** [`MWIHTML`](MWIHTML-HTML-elements.md)  
 **Status:** ACTIVE

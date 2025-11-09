@@ -2,6 +2,7 @@
 
 **Interface:** `MWICoreFrag`  
 **Component Type:** `m.frg`  
+**Attributes:** Container
 **Source:** [`src/mwi-core-comp.msjs`](../src/mwi-core-comp.msjs) (lines 155-167)  
 **Extends:** [`MWIDocNode`](MWIDocNode-document-node.md)  
 **Status:** ACTIVE

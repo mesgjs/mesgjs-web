@@ -24,13 +24,13 @@
 - Returns attribute value or `undefined`
 - Supports reactive tracking
 
-**`(setAttr name value)` / `setAttr(name, value)`**
+**`(setAttr name value coat=@t)` / `setAttr(name, value, { coat=true })`**
 - Sets attribute value
-- Triggers special processing for `m.slat`, `m.coat`, `m.id`, `m.percl`
+- Triggers special processing for `id`, `class`, `style`, `m.slat`, `m.coat`, `m.id`, `m.percl`
 - Updates reactive wrappers
 
 **`(hasAttr name)` / `hasAttr(name)`**
-- Returns `true` if attribute exists (not `undefined`)
+- Returns `true` if attribute exists (and is not `undefined` / `@u`)
 - Returns `false` otherwise
 
 ### Spec Management
@@ -117,7 +117,7 @@ This returns the component ID of the component, as assigned by the registry (`MW
 
 - If the node does not already have an assigned, non-empty, standard `id` attribute, a unique one is automatically generated and assigned.
 - The value of the `id` attribute (whether user-specified or automatically generated) is then returned.
-- This value is read-only.
+- This value is read-only (but with side effects; use the `id` attribute directly to set a value).
 
 ### `m.percl` - Permanent Classes
 
@@ -126,6 +126,9 @@ Space-separated list of classes that must always be present:
 - Classes always appear in `class` attribute
 - Adding permanent classes guarantees presence
 - Note: Removing permanent classes does not automatically remove them from `class`
+- **Computed when set:** Uses `m.coat` expression syntax (unless `coat: false` is specified)
+- Unlike `m.coat`, only the computed result is stored (not the expression)
+- Not fully reactive - only recomputed when explicitly set again
 
 ### `m.slat` - Attribute Slotting
 
@@ -166,11 +169,42 @@ node.setAttr('m.coat', ps('[(class="btn <type>-btn <size?large>")]'));
   - `<name??then|else>` - "then" if value is not undefined/false/"", or "else" otherwise
 
 **Special Escapes:**
-- `<.lt>` → `<`
-- `<.gt>` → `>`
-- `<.qm>` → `?`
-- `<.vb>` → `|`
+- `<.aa>` → `@@` (at-at escape)
+- `<.ap>` → `@#` (at-pound escape)
+- `<.gt>` → `>` (greater-than)
+- `<.lt>` → `<` (less-than)
+- `<.qm>` → `?` (question-mark)
 - `<.un>` → Returns undefined (Mesgjs `@u`) as the final result
+- `<.vb>` → `|` (vertical bar)
+
+**Shortcut:**
+- `@@` → Expands to the slot-source's component ID (before expression parsing)
+- `@#` → Expands to the slot-source's doc-node ID (before expression parsing)
+
+### `id` - Node ID Attribute
+
+**Type Checking and Normalization:**
+- Accepts string or number values (numbers normalized to strings)
+- Clears attribute if set to `undefined`, `null`, or `false`
+- Ignores other types (no error, no change)
+
+**Computed when set:** Uses `m.coat` expression syntax (unless `coat: false` is specified)
+- Unlike `m.coat`, only the computed result is stored (not the expression)
+- Not fully reactive - only recomputed when explicitly set again
+
+**ID Index and Lookup:**
+- Document maintains an index of all nodes with `id` attributes
+- Use `document.getDocById(id)` to retrieve nodes by ID
+- Numeric IDs automatically normalized to strings for lookup
+- Returns the doc-node or `undefined` if not found
+
+**Important Behaviors:**
+- **User Responsibility:** The user is responsible for ensuring active doc-nodes have unique IDs (it's not enforced by the system); if IDs are not unique, the most recent assignment is (usually) indexed (but see below for exceptions)
+- **Live Nodes Only:** Index applies to live doc-nodes, not doc specs
+- **Works for Disconnected Nodes:** Even nodes not currently in the rendering tree are indexed
+- **No Auto-Replacement:** If an ID collision occurs and *the most recently indexed node* for that ID changes or removes its ID, the index will report **undefined** for that ID until the next time it is assigned (the index will not automatically start returning any of the other nodes)
+- **Computed Attribute Pattern:** Since computed attributes (including `id`) are based on the *slotting source's* attributes, you can use `id=@#_subid` (shortcut for `id=<m.id>_subid`) to build a hierarchy of unique IDs, even if the top-most ID was auto-generated
+  - Remember to use this pattern to slot IDs through slot-source changes
 
 ### `class` - Class Attribute
 
@@ -185,6 +219,10 @@ Special merge/update semantics:
 - `!` - Remove class
 - `~` - Toggle class
 - (none) - Add class
+
+**Computed when set:** Uses `m.coat` expression syntax (unless `coat: false` is specified)
+- Unlike `m.coat`, only the computed result is stored (not the expression)
+- Not fully reactive - only recomputed when explicitly set again
 
 **Examples:**
 ```javascript

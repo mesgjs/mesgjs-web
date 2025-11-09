@@ -2,6 +2,7 @@
 
 **Interface:** `MWICoreCom`  
 **Component Type:** `m.com`  
+**Attributes:** Void
 **Source:** [`src/mwi-core-comp.msjs`](../src/mwi-core-comp.msjs) (lines 55-107)  
 **Extends:** [`MWIDocNode`](MWIDocNode-document-node.md)  
 **Status:** ACTIVE

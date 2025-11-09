@@ -503,3 +503,35 @@ Deno.test("MWIDocNode - Edge Cases", async (t) => {
 		assert(html.includes('Content'));
 	});
 });
+
+Deno.test("MWIDocNode - Slotting Without Slot Source", async (t) => {
+	await t.step("(getHTML) - m.slat with no slot source uses else default", () => {
+		const divNode = doc('createNode', ls([, 'h.div']));
+		divNode('setAttr', ls([, 'm.slat', , ps('[(title=[missing else=DefaultValue])]')]));
+		const html = divNode('getHTML');
+		assert(html.includes('title="DefaultValue"'));
+	});
+
+	await t.step(".getHTML() - m.slat with no slot source uses else default via JS", () => {
+		const divNode = doc.createNode('h.div');
+		divNode.setAttr('m.slat', ps('[(title=[missing else="JS DefaultValue"])]'));
+		const html = divNode.getHTML();
+		assert(html.includes('title="JS DefaultValue"'));
+	});
+
+	await t.step("(getHTML) - Multiple m.slat targets with no slot source", () => {
+		const divNode = doc('createNode', ls([, 'h.div']));
+		divNode('setAttr', ls([, 'm.slat', , ps('[(title=[src1 else=Default1] data-info=[src2 else=Default2])]')]));
+		const html = divNode('getHTML');
+		assert(html.includes('title="Default1"'));
+		assert(html.includes('data-info="Default2"'));
+	});
+
+	await t.step(".getHTML() - Multiple m.slat targets with no slot source via JS", () => {
+		const divNode = doc.createNode('h.div');
+		divNode.setAttr('m.slat', ps('[(title=[src1 else="JS Default1"] data-info=[src2 else="JS Default2"])]'));
+		const html = divNode.getHTML();
+		assert(html.includes('title="JS Default1"'));
+		assert(html.includes('data-info="JS Default2"'));
+	});
+});

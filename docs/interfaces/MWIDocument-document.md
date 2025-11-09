@@ -86,6 +86,13 @@
 - Returns next unique element ID
 - Delegates to registry's `nextId()`
 
+**`(getDocById id)` / `getDocById(id)`**
+- Retrieves doc-node by its `id` attribute
+- Accepts string or number (numbers normalized to strings)
+- Returns the doc-node or `undefined` if not found
+- Works for any live doc-node, even if disconnected from rendering tree
+- See [`id` attribute documentation](MWIDocNode-document-node.md#id---node-id-attribute) for important behaviors
+
 **`rxNANOS(...args)`**
 - Creates reactive NANOS instance
 - Helper for creating reactive storage

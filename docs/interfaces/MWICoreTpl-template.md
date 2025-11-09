@@ -2,6 +2,7 @@
 
 **Interface:** `MWICoreTpl`  
 **Component Type:** (assigned to template components)  
+**Attributes:** Container, slotting source
 **Source:** [`src/mwi-core-comp.msjs`](../src/mwi-core-comp.msjs) (lines 308-363)  
 **Extends:** [`MWIDocNode`](MWIDocNode-document-node.md)  
 **Status:** ACTIVE

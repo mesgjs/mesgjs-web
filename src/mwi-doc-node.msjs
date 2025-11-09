@@ -1,7 +1,7 @@
 [(
 modpath='mwi/mwi-doc-node'
 version='0.5.0'
-featreq='MWIDocument'
+featreq=''
 featpro='MWIDocNode'
 modcaps=''
 )]
@@ -140,7 +140,7 @@ modcaps=''
 		hasAttr (name) { return this('hasAttr', [ name ]); },
 		hasClass (name) { return this('hasClass', [ name ]); },
 		get jsv () { return this; },
-		setAttr (name, value) { return this('setAttr', [ name, value ]); },
+		setAttr (name, value, options = {}) { return this('setAttr', new NANOS([ name, value ], options)); },
 		setDOMAttrs,
 		setSpec (spec) { return this('setSpec', [ spec ]); },
 		setSubSpec (...params) { return this('setSubSpec', (params.length === 1) ? params[0] : params); },
@@ -180,7 +180,7 @@ modcaps=''
 		attrs.set('m.coat', value);
 		for (const [target, spec] of value.namedEntries()) {
 			const value = computeAttr(d, spec);
-			d.rr('setAttr', [ target, value ]);
+			d.rr('setAttr', ls([, target, , value, 'coat', false ]));
 		}
 	}
 
@@ -190,10 +190,10 @@ modcaps=''
 		if (!(value instanceof NANOS)) return;
 		const p = d.p, attrs = p.at('attrs'), slotSrc = p.at('slotSrc');
 		attrs.set('m.slat', value);
-		if (slotSrc) for (const [target, spec] of value.namedEntries()) {
+		for (const [target, spec] of value.namedEntries()) {
 			const source = spec.at(0, target);
-			const value = slotSrc('getAttr', [ source ]) ?? spec.at('else');
-			d.rr('setAttr', [ target, value ]);
+			const value = slotSrc?.('getAttr', [ source ]) ?? spec.at('else');
+			d.rr('setAttr', ls([, target, , value, 'coat', false ]));
 		}
 	}
 
@@ -217,17 +217,28 @@ modcaps=''
 		return d.rr;
 	}
 
-	// Return the final (string) value for a computed (m.coat) attribute
+	// Return the final (string) value for a computed (e.g. m.coat) attribute
 	function computeAttr (d, spec) {
 		const slotSrc = d.p.at('slotSrc');
+		// Handle first-pass shortcuts: `@@` for component id, `@#` for doc-node id
+		// Use functional replacement to only access attributes when/if referenced
+		spec = spec.replace(/@@|@#/g, (match) => {
+			switch (match) {
+			case '@@': return slotSrc?.('getAttr', 'm.ci') || '';
+			case '@#': return slotSrc?.('getAttr', 'm.id') || '';
+			default: return match;
+			}
+		});
 		let retUndef = false;
 		const getVal = (name) => {
 			switch (name) { // Handle escapes, e.g. <.lt>
-			case '.lt': return '<';
-			case '.gt': return '>';
-			case '.qm': return '?';
-			case '.vb': return '|';
-			case '.un': retUndef = true; return;
+			case '.aa': return '@@'; // @@ (at-at) escape
+			case '.ap': return '@#'; // @# (at-pound) escape
+			case '.gt': return '>'; // Greater-than
+			case '.lt': return '<'; // Less-than
+			case '.qm': return '?'; // Question mark
+			case '.un': retUndef = true; return; // Return undefined
+			case '.vb': return '|'; // Vertical bar
 			}
 			if (slotSrc) return slotSrc('getAttr', [ name ]);
 		};
@@ -280,6 +291,12 @@ modcaps=''
 		if (!retUndef) return output.join('');
 	}
 
+	// Update the id index when an id changes
+	function updateIdIndex (d, oldId, newId) {
+		const doc = d.p.at('doc');
+		d.sm(doc, 'updIdIndex', ls([, oldId, , newId]));
+	}
+
 	// Delete attribute
 	function opDelAttr (d) {
 		const p = d.p, m = d.mp;
@@ -292,6 +309,15 @@ modcaps=''
 		case 'class':
 			p.at('classes').clear();
 			setClass(d, '+');
+			break;
+		case 'id':
+			{
+			const attrs = p.at('attrs');
+			const oldId = attrs.at('id');
+			attrs.set('id', undefined);
+			// Update id index
+			updateIdIndex(d, oldId, undefined);
+			}
 			break;
 		case 'style':
 			setStyle(d, '==');
@@ -450,12 +476,14 @@ modcaps=''
 	// Set attribute value
 	function opSetAttr (d) {
 		const p = d.p, m = d.mp;
-		const name = m.at(0), value = m.at(1);
+		const name = m.at(0), coat = m.at('coat');
+		let value = m.at(1);
 		switch (name) {
 		case 'm.coat':
 			applyCoat(d, value);
 			break;
 		case 'm.percl':
+			if (coat !== false) value = computeAttr(d, value);
 			setPermClass(d, value);
 			setClass(d, '+');
 			break;
@@ -463,7 +491,28 @@ modcaps=''
 			applySlat(d, value);
 			break;
 		case 'class':
+			if (coat !== false) value = computeAttr(d, value);
 			setClass(d, value);
+			break;
+		case 'id':
+			// Type check and normalize
+			if (typeof value === 'string' || typeof value === 'number') {
+				if (coat !== false) value = computeAttr(d, value);
+				value = String(value); // Normalize to string
+				const attrs = p.at('attrs');
+				const oldId = attrs.at('id');
+				attrs.set('id', value);
+				// Update id index
+				updateIdIndex(d, oldId, value);
+			} else if (value === undefined || value === null || value === false) {
+				// Clear id
+				const attrs = p.at('attrs');
+				const oldId = attrs.at('id');
+				attrs.set('id', undefined);
+				// Update id index
+				updateIdIndex(d, oldId, undefined);
+			}
+			// Ignore any other types
 			break;
 		case 'style':
 			setStyle(d, value);

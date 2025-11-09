@@ -2,7 +2,46 @@
 
 Permanent note: In general, please do not hyper-link test files. Reasonable exceptions include *while* troubleshooting test cases in a specific file.
 
-**CONTEXT:** Scoped CSS test suite COMPLETE. Fixed SLID boundary markers in test/core/scoped-css.test.js and updated test plan documentation to reflect 100% completion of all scoped CSS test coverage.
+**CONTEXT:** Implemented computed attribute enhancements and id attribute system. All code changes complete for `m.percl`/`class` computed attributes, `@@`/`@#` shortcuts with escapes, and full `id` attribute functionality including type checking, computed attribute support, and `document.getDocById()` with WeakRef index tracking.
+
+**COMPLETED ACTIONS (2025-11-08):**
+
+**Computed Attribute Enhancements:**
+1. **Updated `computeAttr()` function** in [`src/mwi-doc-node.msjs`](src/mwi-doc-node.msjs:220-232)
+   - Implemented functional replacement for `@@` and `@#` shortcuts using switch/case
+   - `@@` expands to slot-source component ID (`m.ci`)
+   - `@#` expands to slot-source doc-node ID (`m.id`)
+   - Only accesses attributes when/if referenced in the computed string
+
+2. **Added escape sequences** in [`getVal()`](src/mwi-doc-node.msjs:234-243)
+   - `<.aa>` → `@@` (at-at escape)
+   - `<.ap>` → `@#` (at-pound escape)
+
+3. **Updated documentation** in [`docs/MWIDocNode-document-node.md`](docs/MWIDocNode-document-node.md) and AI training docs
+   - Documented that `m.percl` and `class` are computed attributes (unless `coat: false`)
+   - Added shortcuts and escapes to `m.coat` section
+   - Noted that unlike `m.coat`, only the result is stored (not the expression)
+
+**ID Attribute System:**
+1. **Implemented type checking and normalization** in [`opSetAttr()`](src/mwi-doc-node.msjs:478-497)
+   - Accepts string or number (normalized to string)
+   - Clears on undefined/null/false
+   - Ignores other types
+   - Made `id` a computed attribute (unless `coat: false`)
+
+2. **Created id index system**
+   - Added Map of WeakRefs in [`MWIDocument.opInit()`](src/mwi-document.msjs:68)
+   - Implemented [`document.getDocById(id)`](src/mwi-document.msjs:206-219) with numeric id normalization
+   - Created [`document.updIdIndex()`](src/mwi-document.msjs:221-238) internal message handler
+   - Implemented [`updateIdIndex()`](src/mwi-doc-node.msjs:290-293) helper function
+   - Updated [`opDelAttr()`](src/mwi-doc-node.msjs:308-315) to handle id deletion
+
+**REMAINING WORK:**
+- Update tests for `m.percl`/`class` computed attributes
+- Create tests for id attribute functionality
+- Document detailed id attribute behavior and patterns
+
+**PREVIOUS CONTEXT:** Scoped CSS test suite COMPLETE. Fixed SLID boundary markers in test/core/scoped-css.test.js and updated test plan documentation to reflect 100% completion of all scoped CSS test coverage.
 
 **COMPLETED ACTIONS (2025-11-07):**
 

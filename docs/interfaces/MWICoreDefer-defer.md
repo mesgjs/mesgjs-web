@@ -2,6 +2,7 @@
 
 **Interface:** `MWICoreDefer`  
 **Component Type:** `m.defer`  
+**Attributes:** Void
 **Source:** [`src/mwi-core-comp.msjs`](../src/mwi-core-comp.msjs) (lines 109-153)  
 **Extends:** [`MWIHTML`](MWIHTML-HTML-elements.md)  
 **Status:** ACTIVE

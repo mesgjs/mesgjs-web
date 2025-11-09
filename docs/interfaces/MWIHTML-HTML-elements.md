@@ -2,6 +2,7 @@
 
 **Interface:** `MWIHTML`  
 **Component Types:** `h.div`, `h.span`, `h.button`, etc. (all standard HTML elements)  
+**Attributes:** *(Varies)*
 **Source:** [`src/mwi-html-comp.msjs`](../src/mwi-html-comp.msjs) (lines 154-200)  
 **Extends:** [`MWIDocNode`](MWIDocNode-document-node.md)  
 **Status:** ACTIVE

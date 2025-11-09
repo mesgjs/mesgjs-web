@@ -132,6 +132,11 @@ modcaps=''
 			comps.set(name, entry);
 		}
 		entry.fromEntries(mp.at(1)?.namedEntries() || []);
+
+		// Convert SLID-format doc-specs for templates
+		const tpl = entry.at('tpl');
+		if (typeof tpl === 'string') entry.set('tpl', NANOS.parseSLID(tpl));
+
 		return d.rr; // Chainable
 	}
 

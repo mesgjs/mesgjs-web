@@ -562,3 +562,47 @@ Deno.test("MWIDocNode - CSR-DOM Edge Cases", async (t) => {
 		assertEquals(level1Elem.querySelectorAll('div').length, 2);
 	});
 });
+
+Deno.test("MWIDocNode - CSR-DOM Slotting Without Slot Source", async (t) => {
+	await t.step("(getDOM) - m.slat with no slot source uses else default", async () => {
+		const divNode = doc('createNode', ['h.div']);
+		divNode('setAttr', ['m.slat', ps('[(title=[missing else=DefaultValue])]')]);
+		const domNodes = divNode('getDOM');
+
+		await globalThis.reactive.wait();
+		const divElem = domNodes.at(0);
+		assertEquals(divElem.title, 'DefaultValue');
+	});
+
+	await t.step(".getDOM() - m.slat with no slot source uses else default via JS", async () => {
+		const divNode = doc.createNode('h.div');
+		divNode.setAttr('m.slat', ps('[(title=[missing else="JS DefaultValue"])]'));
+		const domNodes = divNode.getDOM();
+
+		await globalThis.reactive.wait();
+		const divElem = domNodes.at(0);
+		assertEquals(divElem.title, 'JS DefaultValue');
+	});
+
+	await t.step("(getDOM) - Multiple m.slat targets with no slot source", async () => {
+		const divNode = doc('createNode', ['h.div']);
+		divNode('setAttr', ['m.slat', ps('[(title=[src1 else=Default1] data-info=[src2 else=Default2])]')]);
+		const domNodes = divNode('getDOM');
+
+		await globalThis.reactive.wait();
+		const divElem = domNodes.at(0);
+		assertEquals(divElem.title, 'Default1');
+		assertEquals(divElem.getAttribute('data-info'), 'Default2');
+	});
+
+	await t.step(".getDOM() - Multiple m.slat targets with no slot source via JS", async () => {
+		const divNode = doc.createNode('h.div');
+		divNode.setAttr('m.slat', ps('[(title=[src1 else="JS Default1"] data-info=[src2 else="JS Default2"])]'));
+		const domNodes = divNode.getDOM();
+
+		await globalThis.reactive.wait();
+		const divElem = domNodes.at(0);
+		assertEquals(divElem.title, 'JS Default1');
+		assertEquals(divElem.getAttribute('data-info'), 'JS Default2');
+	});
+});
