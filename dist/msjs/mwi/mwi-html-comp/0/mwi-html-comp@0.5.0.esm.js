@@ -1,0 +1,312 @@
+export async function loadMsjs(mid){const{d,ls,m,na}=$modScope(),{mp,sm}=d;0&&await 0;
+
+	if (!mid) throw new Error('MWIHTML requires Mesgjs module management to be active');
+
+	const INTERFACE = 'if';
+	const SCHEMA = 'schema';
+	const VOID = 'void';
+
+	const REG_IF = 'MWIRegistry';
+	const REG_OPEN_FT = 'mwi.compRegOpen';
+	const SUPER_IF = 'MWIDocNode';
+	const SUPER_FT = SUPER_IF;
+	const BASE_IF = 'MWIHTML';
+	const READY_FT = 'mwi.comp.' + BASE_IF;
+
+	const DOCTYPE_IF = BASE_IF + 'DocType';
+	const SCRIPT_IF = BASE_IF + 'Script';
+	const TITLE_IF = BASE_IF + 'Title';
+
+	const { fready, fwait, getInstance, getInterface } = globalThis.$c;
+
+	const html5Config = {
+		'h.a': ls([INTERFACE, BASE_IF]),
+		'h.abbr': ls([INTERFACE, BASE_IF]),
+		'h.address': ls([INTERFACE, BASE_IF]),
+		'h.area': ls([INTERFACE, BASE_IF, SCHEMA, ls([VOID, true])]),
+		'h.article': ls([INTERFACE, BASE_IF]),
+		'h.aside': ls([INTERFACE, BASE_IF]),
+		'h.audio': ls([INTERFACE, BASE_IF]),
+		'h.b': ls([INTERFACE, BASE_IF]),
+		'h.base': ls([INTERFACE, BASE_IF, SCHEMA, ls([VOID, true])]),
+		'h.bdi': ls([INTERFACE, BASE_IF]),
+		'h.bdo': ls([INTERFACE, BASE_IF]),
+		'h.blockquote': ls([INTERFACE, BASE_IF]),
+		'h.body': ls([INTERFACE, BASE_IF]),
+		'h.br': ls([INTERFACE, BASE_IF, SCHEMA, ls([VOID, true])]),
+		'h.button': ls([INTERFACE, BASE_IF]),
+		'h.canvas': ls([INTERFACE, BASE_IF]),
+		'h.caption': ls([INTERFACE, BASE_IF]),
+		'h.cite': ls([INTERFACE, BASE_IF]),
+		'h.code': ls([INTERFACE, BASE_IF]),
+		'h.col': ls([INTERFACE, BASE_IF, SCHEMA, ls([VOID, true])]),
+		'h.colgroup': ls([INTERFACE, BASE_IF]),
+		'h.data': ls([INTERFACE, BASE_IF]),
+		'h.datalist': ls([INTERFACE, BASE_IF]),
+		'h.dd': ls([INTERFACE, BASE_IF]),
+		'h.del': ls([INTERFACE, BASE_IF]),
+		'h.details': ls([INTERFACE, BASE_IF]),
+		'h.dfn': ls([INTERFACE, BASE_IF]),
+		'h.dialog': ls([INTERFACE, BASE_IF]),
+		'h.div': ls([INTERFACE, BASE_IF]),
+		'h.dl': ls([INTERFACE, BASE_IF]),
+		'h.doctype': ls([INTERFACE, DOCTYPE_IF]),
+		'h.dt': ls([INTERFACE, BASE_IF]),
+		'h.em': ls([INTERFACE, BASE_IF]),
+		'h.embed': ls([INTERFACE, BASE_IF, SCHEMA, ls([VOID, true])]),
+		'h.fieldset': ls([INTERFACE, BASE_IF]),
+		'h.figcaption': ls([INTERFACE, BASE_IF]),
+		'h.figure': ls([INTERFACE, BASE_IF]),
+		'h.footer': ls([INTERFACE, BASE_IF]),
+		'h.form': ls([INTERFACE, BASE_IF]),
+		'h.h1': ls([INTERFACE, BASE_IF]),
+		'h.h2': ls([INTERFACE, BASE_IF]),
+		'h.h3': ls([INTERFACE, BASE_IF]),
+		'h.h4': ls([INTERFACE, BASE_IF]),
+		'h.h5': ls([INTERFACE, BASE_IF]),
+		'h.h6': ls([INTERFACE, BASE_IF]),
+		'h.head': ls([INTERFACE, BASE_IF]),
+		'h.header': ls([INTERFACE, BASE_IF]),
+		'h.hgroup': ls([INTERFACE, BASE_IF]),
+		'h.hr': ls([INTERFACE, BASE_IF, SCHEMA, ls([VOID, true])]),
+		'h.html': ls([INTERFACE, BASE_IF]),
+		'h.i': ls([INTERFACE, BASE_IF]),
+		'h.iframe': ls([INTERFACE, BASE_IF]),
+		'h.img': ls([INTERFACE, BASE_IF, SCHEMA, ls([VOID, true])]),
+		'h.input': ls([INTERFACE, BASE_IF, SCHEMA, ls([VOID, true])]),
+		'h.ins': ls([INTERFACE, BASE_IF]),
+		'h.kbd': ls([INTERFACE, BASE_IF]),
+		'h.label': ls([INTERFACE, BASE_IF]),
+		'h.legend': ls([INTERFACE, BASE_IF]),
+		'h.li': ls([INTERFACE, BASE_IF]),
+		'h.link': ls([INTERFACE, BASE_IF, SCHEMA, ls([VOID, true])]),
+		'h.main': ls([INTERFACE, BASE_IF]),
+		'h.map': ls([INTERFACE, BASE_IF]),
+		'h.mark': ls([INTERFACE, BASE_IF]),
+		'h.menu': ls([INTERFACE, BASE_IF]),
+		'h.meta': ls([INTERFACE, BASE_IF, SCHEMA, ls([VOID, true])]),
+		'h.meter': ls([INTERFACE, BASE_IF]),
+		'h.nav': ls([INTERFACE, BASE_IF]),
+		'h.noscript': ls([INTERFACE, BASE_IF]),
+		'h.object': ls([INTERFACE, BASE_IF]),
+		'h.ol': ls([INTERFACE, BASE_IF]),
+		'h.optgroup': ls([INTERFACE, BASE_IF]),
+		'h.option': ls([INTERFACE, BASE_IF]),
+		'h.output': ls([INTERFACE, BASE_IF]),
+		'h.p': ls([INTERFACE, BASE_IF]),
+		'h.picture': ls([INTERFACE, BASE_IF]),
+		'h.pre': ls([INTERFACE, BASE_IF]),
+		'h.progress': ls([INTERFACE, BASE_IF]),
+		'h.q': ls([INTERFACE, BASE_IF]),
+		'h.rp': ls([INTERFACE, BASE_IF]),
+		'h.rt': ls([INTERFACE, BASE_IF]),
+		'h.ruby': ls([INTERFACE, BASE_IF]),
+		'h.s': ls([INTERFACE, BASE_IF]),
+		'h.samp': ls([INTERFACE, BASE_IF]),
+		'h.script': ls([INTERFACE, SCRIPT_IF]),
+		'h.search': ls([INTERFACE, BASE_IF]),
+		'h.section': ls([INTERFACE, BASE_IF]),
+		'h.select': ls([INTERFACE, BASE_IF]),
+		'h.slot': ls([INTERFACE, BASE_IF]),
+		'h.small': ls([INTERFACE, BASE_IF]),
+		'h.source': ls([INTERFACE, BASE_IF, SCHEMA, ls([VOID, true])]),
+		'h.span': ls([INTERFACE, BASE_IF]),
+		'h.strong': ls([INTERFACE, BASE_IF]),
+		'h.style': ls([INTERFACE, SCRIPT_IF]), 
+		'h.sub': ls([INTERFACE, BASE_IF]),
+		'h.summary': ls([INTERFACE, BASE_IF]),
+		'h.sup': ls([INTERFACE, BASE_IF]),
+		'h.table': ls([INTERFACE, BASE_IF]),
+		'h.tbody': ls([INTERFACE, BASE_IF]),
+		'h.td': ls([INTERFACE, BASE_IF]),
+		'h.template': ls([INTERFACE, BASE_IF]),
+		'h.textarea': ls([INTERFACE, BASE_IF]),
+		'h.tfoot': ls([INTERFACE, BASE_IF]),
+		'h.th': ls([INTERFACE, BASE_IF]),
+		'h.thead': ls([INTERFACE, BASE_IF]),
+		'h.time': ls([INTERFACE, BASE_IF]),
+		'h.title': ls([INTERFACE, TITLE_IF]),
+		'h.tr': ls([INTERFACE, BASE_IF]),
+		'h.track': ls([INTERFACE, BASE_IF, SCHEMA, ls([VOID, true])]),
+		'h.u': ls([INTERFACE, BASE_IF]),
+		'h.ul': ls([INTERFACE, BASE_IF]),
+		'h.var': ls([INTERFACE, BASE_IF]),
+		'h.video': ls([INTERFACE, BASE_IF]),
+		'h.wbr': ls([INTERFACE, BASE_IF, SCHEMA, ls([VOID, true])]),
+	};
+
+	
+	await fwait(SUPER_FT);
+
+	
+	(() => {
+		function opGetDOM (d) {
+			if (typeof document !== 'object' || typeof document.createElement !== 'function') return new NANOS();
+			const p = d.p;
+			if (p.has('dom')) return p.at('dom');
+			const type = p.at('type').replace(/^h\./, ''), node = document.createElement(type), nodes = new NANOS(node);
+			p.set('dom', nodes);
+			d.rr.setDOMAttrs(node, p.at('attrs'), p.at(SCHEMA));
+			if (!p.at([SCHEMA, VOID])) getInstance('@reactive')('set', {
+				eager: true, def: () => {
+					const children = d.sm(d, 'redis');
+					d.rr.domSyncChildren(node, children);
+				}
+			})('rv'); 
+			return nodes;
+		}
+
+		
+		function opGetHTML (d) {
+			const p = d.p, type = p.at('type').replace(/^h\./, '');
+			const m = d.mp, hasIn = m.has('in'), html = m.at('in', []);
+			
+			html.push(`<${type}${d.rr('getAttrHTML')}>`);
+			if (!p.at([SCHEMA, VOID])) {
+				
+				for (const node of p.at('subDoc', []).values()) {
+					node('getHTML', { in: html });
+				}
+				
+				html.push(`</${type}>`);
+			}
+			if (!hasIn) return html.join('');
+		}
+
+		getInterface(BASE_IF).set({
+			pristine: true, 
+			lock: true,		
+			
+			
+			chain: [ SUPER_IF ],
+			handlers: {
+				getDOM: opGetDOM,
+				getHTML: opGetHTML,
+				subSlotSrc: (d) => d.p.at('slotSrc'), 
+			}
+		});
+	})();
+
+	
+	
+	(() => {
+		function opGetHTML (d) {
+			const m = d.mp, output = m.at('in');;
+			const html = `<!DOCTYPE html>`; 
+			if (output) output.push(html);
+			return html;
+		}
+
+		getInterface(DOCTYPE_IF).set({
+			pristine: true, lock: true,
+			chain: [ BASE_IF ],
+			handlers: {
+				getDOM: (_d) => new NANOS(),
+				getHTML: opGetHTML,
+				getSubSpec: (_d) => new NANOS(),
+				setSubSpec: (d) => d.rr,
+			}
+		});
+	})();
+
+	
+	
+	
+	(() => {
+		function opGetDOM (d) {
+			if (typeof document !== 'object' || typeof document.createElement !== 'function') return new NANOS();
+			const p = d.p, doc = p.at('doc'), type = p.at('type').replace(/^h\./, '');
+			const node = document.createElement(type);
+			const nodes = new NANOS(node);
+			d.rr.setDOMAttrs(node, p.at('attrs'), p.at(SCHEMA));
+			getInstance('@reactive')('set', {
+				eager: true, def: () => {
+					const text = d.rr('getAttr', [ 'm.text' ]) || '';
+					node.textContent = text;
+				}
+			})('rv');
+			return nodes;
+		}
+
+		function opGetHTML (d) {
+			const p = d.p, type = p.at('type').replace(/^h\./, '');
+			const m = d.mp, output = m.at('in');;
+			const raw = d.rr('getAttr', [ 'm.text' ]) || '';
+			let sanzd = '';
+			
+			switch (type) {
+			case 'script':
+				
+				sanzd = raw.replace(/<(?=\s*\/\s*script)/g, '\\x3c');
+				break;
+			case 'style':
+				
+				sanzd = raw.replace(/<(?=\s*\/\s*style)/g, '\\3c ');
+				break;
+			}
+			const html = `<${type}${d.rr('getAttrHTML')}>${sanzd}</${type}>`;
+			if (output) output.push(html);
+			return html;
+		}
+
+		getInterface(SCRIPT_IF).set({
+			pristine: true, lock: true,
+			chain: [ BASE_IF ],
+			handlers: {
+				getDOM: opGetDOM,
+				getHTML: opGetHTML,
+				getSubSpec: (_d) => new NANOS(),
+				setSubSpec: (d) => d.rr,
+			}
+		});
+	})();
+
+	
+	
+	(() => {
+		function opGetDOM (d) {
+			if (typeof document !== 'object' || typeof document.createElement !== 'function') return new NANOS();
+			const p = d.p, doc = p.at('doc');
+			const node = document.createElement('title');
+			const nodes = new NANOS(node);
+			getInstance('@reactive')('set', {
+				eager: true, def: () => {
+					const text = d.rr('getAttr', [ 'm.text' ]) || '';
+					node.textContent = text;
+				}
+			})('rv');
+			return nodes;
+		}
+
+		function opGetHTML (d) {
+			const m = d.mp, output = m.at('in');;
+			const text = d.rr('getAttr', [ 'm.text' ]) || '';
+			const html = `<title${d.rr('getAttrHTML')}>${d.rr.textToHTML(text)}</title>`;
+			if (output) output.push(html);
+			return html;
+		}
+
+		getInterface(TITLE_IF).set({
+			pristine: true, lock: true,
+			chain: [ BASE_IF ],
+			handlers: {
+				getDOM: opGetDOM,
+				getHTML: opGetHTML,
+				getSubSpec: (_d) => new NANOS(),
+				setSubSpec: (d) => d.rr,
+			}
+		});
+	})();
+
+	
+	await fwait(REG_OPEN_FT);
+	const registry = getInstance(REG_IF);
+	for (const [name, entry] of Object.entries(html5Config)) {
+		registry.register(name, entry);
+	}
+
+	
+	fready(mid, READY_FT);
+}if(!globalThis.msjsNoSelfLoad)loadMsjs();
+
+//# sourceMappingURL=mwi-html-comp@0.5.0.esm.js.map

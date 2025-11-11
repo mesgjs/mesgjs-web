@@ -1,0 +1,260 @@
+export async function loadMsjs(mid){const{d,ls,m,na}=$modScope(),{mp,sm}=d;0&&await 0;
+
+	if (!mid) throw new Error('MWIDocument requires Mesgjs module management to be active');
+
+	const IF_NAME = 'MWIDocument';
+	const READY_FT = IF_NAME;
+	const REG_IF = 'MWIRegistry';
+	const REG_READY_FT = 'mwi.compRegReady';
+	const NODE_IF = 'MWIDocNode';
+	const NODE_READY_FT = NODE_IF;
+	const CORE_READY_FT = 'mwi.comp.MWICore'
+	const FRAG_TYPE = 'm.frg';
+	const TPL_IF = 'MWICoreTpl';
+
+	const INTERFACE = 'if';
+	const TEMPLATE = 'tpl';
+	const FEATURE = 'ftr';
+
+	const { fready, fwait, getInstance, getInterface, setRO, typeChains } = globalThis.$c;
+
+	await fwait(REG_READY_FT, NODE_READY_FT, CORE_READY_FT);
+
+	function rxNANOS (...args) {
+		const rxn = new NANOS();
+		rxn.setOpts({ autoReactive: true });
+		rxn.rio = getInstance('@reactive')('rio');
+		if (args.length) rxn.push(...args);
+		return rxn;
+	}
+
+	
+	const docProto = Object.setPrototypeOf({
+		
+		
+		append (...params) { return this('append', (params.length === 1) ? params[0] : params); },
+		 appendWait (params) { return this('appendWait', params); },
+		compIdStr (id) { return '_MC_' + id.toString(36); },
+		createNode (type, { slotSrc } = {}) { return this('createNode', { 0: type, slotSrc }); },
+		 createNodeWait (type, { slotSrc } = {}) { return this('createNodeWait', { 0: type, slotSrc }); },
+		from (params) { return this('from', params); },
+		 fromWait (params) { return this('fromWait', params); },
+		getDocById (id) { return this('getDocById', [ id ]); },
+		getDOM () { return this('getDOM'); },
+		getHTML () { return this('getHTML'); },
+		getId () { return this('getElemId'); },
+		get jsv () { return this; },
+		registry () { return this('registry'); },
+		get root () { return this('root'); },
+		rxNANOS,
+		valueOf () { return this; },
+	}, Function.prototype);
+
+	function opInit (d) {
+		const p = d.p;
+		const registry = getInstance(REG_IF);
+		p.set('registry', registry);
+		p.set('typesUsed', rxNANOS()); 
+		p.set('idIndex', new Map()); 
+		
+		Object.setPrototypeOf(d.rr, docProto);
+		
+		const root = d.rr('createNode', ['m.frg']);
+		p.set('root', root);
+	}
+
+	
+	
+	
+	function opAppend (d) {
+		const p = d.p, root = p.at('root'), m = d.mp;
+		const item = m.has('item'), list = m.has('list');
+		let content = m;
+		if (item) {
+			content = [ d.rr('from', m) ];
+		} else if (list) {
+			content = d.rr('from', m);
+		}
+		root('append', content);
+		return d.rr;
+	}
+
+	
+	
+	
+	async function opAppendWait (d) {
+		const p = d.p, root = p.at('root'), m = d.mp;
+		const item = m.has('item'), list = m.has('list');
+		let content = m;
+		if (item) {
+			content = [ await d.rr('fromWait', m) ];
+		} else if (list) {
+			content = await d.rr('fromWait', m);
+		}
+		root('append', content);
+		return d.rr;
+	}
+
+	
+	function createNodeCommon (d, entry, type, registry) {
+		if (!entry) throw new TypeError(`No MWI registry entry found for component type "${type}"`);
+		const { p, mp } = d;
+		const used = p.at('typesUsed');
+		if (!used.has(type)) used.set(type, 1);
+		
+		const hasInterface = entry.has(INTERFACE) || entry.has(TEMPLATE);
+		const hasFeature = entry.has(FEATURE);
+
+		
+		if (!hasInterface && hasFeature) entry = registry.get('m.defer');
+
+		
+		const slotSrc = mp.at('slotSrc');
+		const nodeIfName = entry.at(INTERFACE, TPL_IF);
+		const config = new NANOS({ type, slotSrc }, entry);
+		const nodeIf = getInterface(nodeIfName);
+		const node = d.sm(nodeIf, 'instance', config);
+		return node;
+	}
+
+	
+	function opCreateNode (d) {
+		const p = d.p, m = d.mp;
+		const registry = p.at('registry'), type = m.at(0);
+		const entry = registry.get(type);
+		return createNodeCommon(d, entry, type, registry);
+	}
+
+	
+	async function opCreateNodeWait (d) {
+		const p = d.p, m = d.mp;
+		const registry = p.at('registry'), type = m.at(0);
+		const entry = await registry.getWait(type);
+		return createNodeCommon(d, entry, type, registry);
+	}
+
+	
+	
+	function opFrom (d) {
+		const m = d.mp, slotSrc = m.at('slotSrc');
+		const fromItem = (spec) => {
+			if (typeof spec === 'string') {
+				const node = d.sm(d.rr, 'createNode', [ 'm.t' ]);
+				node('setAttr', [ 't', spec ]);
+				return node;
+			}
+			if (spec instanceof NANOS) {
+				const type = spec.at(0);
+				const node = d.sm(d.rr, 'createNode', { 0: type, slotSrc });
+				node('setSpec', [ spec ]);
+				return node;
+			}
+		};
+		const item = m.at('item');
+		if (item) {
+			return fromItem(item);
+		}
+		const rawList = m.at('list');
+		const list = (typeof rawList === 'string') ? NANOS.parseSLID(rawList) : rawList;
+		if (typeof list?.values === 'function') {
+			return [...list.values()].map((item) => fromItem(item));
+		}
+		throw new TypeError(`${IF_NAME}(from) without "item" or "list"`);
+	}
+
+	
+	
+	async function opFromWait (d) {
+		const m = d.mp, slotSrc = m.at('slotSrc');
+		const fromItem = async (spec) => {
+			if (typeof spec === 'string') {
+				const node = await d.sm(d.rr, 'createNodeWait', [ 'm.t' ]);
+				node('setAttr', [ 't', spec ]);
+				return node;
+			}
+			if (spec instanceof NANOS) {
+				const type = spec.at(0);
+				const node = await d.sm(d.rr, 'createNodeWait', { 0: type, slotSrc });
+				await node('setSpec', [ spec ]);
+				return node;
+			}
+		};
+		const item = m.at('item');
+		if (item) {
+			return fromItem(item);
+		}
+		const rawList = m.at('list');
+		const list = (typeof rawList === 'string') ? NANOS.parseSLID(rawList) : rawList;
+		if (typeof list?.values === 'function') {
+			const items = [...list.values()].map((item) => fromItem(item));
+			const collect = getInstance('@promise');
+			const res = await collect.all(items);
+			return res;
+		}
+		throw new TypeError(`${IF_NAME}(fromWait) without "item" or "list"`);
+	}
+
+	
+	
+	function opGetDocById (d) {
+		const m = d.mp, id = m.at(0);
+		
+		const normalId = (typeof id === 'number') ? String(id) : id;
+		if (typeof normalId !== 'string') return undefined;
+		const idIndex = d.p.at('idIndex');
+		const weakRef = idIndex.get(normalId);
+		
+		return weakRef?.deref();
+	}
+
+	
+	
+	function opUpdIdIndex (d) {
+		
+		if (!typeChains(d.st, NODE_IF)) throw new TypeError(`${IF_NAME}(updIdIndex) is only permitted by ${NODE_IF} instances`);
+
+		const node = d.sr; 
+		const p = d.p, idIndex = p.at('idIndex');
+		const m = d.mp, oldId = m.at(0), newId = m.at(1);
+
+		
+		if (oldId && typeof oldId === 'string' && idIndex.get(oldId)?.deref() === node) {
+			idIndex.delete(oldId);
+		}
+
+		
+		if (newId && typeof newId === 'string') {
+			idIndex.set(newId, new WeakRef(node));
+		}
+	}
+
+	
+	getInterface(IF_NAME).set({
+		pristine: true, lock: true, final: true,
+		
+		
+		handlers: {
+			'@init': opInit,
+			'@jsv': (d) => d.rr,
+			append: opAppend,
+			 appendWait: opAppendWait,
+			createNode: opCreateNode,
+			 createNodeWait: opCreateNodeWait,
+			from: opFrom,
+			 fromWait: opFromWait,
+			getDocById: opGetDocById,
+			getDOM: (d) => d.p.at('root')('getDOM'),
+			getHTML: (d) => d.p.at('root')('getHTML'),
+			nextId: (d) => d.p.at('registry')('nextId'),
+			registry: (d) => d.p.at('registry'),
+			root: (d) => d.p.at('root'),
+			rxNANOS: (_d) => rxNANOS().fromEntries(d.mp.entries()),
+			typesUsed: (d) => [...d.p.at('typesUsed').keys()],
+			updIdIndex: opUpdIdIndex,
+		}
+	});
+
+	fready(mid, READY_FT);
+}if(!globalThis.msjsNoSelfLoad)loadMsjs();
+
+//# sourceMappingURL=mwi-document@0.5.0.esm.js.map
