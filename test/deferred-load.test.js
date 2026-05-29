@@ -73,7 +73,7 @@ Deno.test('Deferred components in MWI auto-load upon registry access', async (t)
 	assertEquals(fcheck(DEFER_FT), false, 'fcheck returns *false* *before* access');
 
 	// Request the registry entry
-	const entry = await registry.get(DEFER_TYPE);
+	const entry = await registry.getWait(DEFER_TYPE);
 	assert(entry, 'registry returned component entry');
 	assertEquals(deferLoaded, true, 'module *is* loaded *after* access');
 	assertEquals(fcheck(DEFER_FT), true, 'fcheck returns *true* *after* access');

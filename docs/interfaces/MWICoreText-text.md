@@ -102,7 +102,7 @@ const text = doc.from({ item: 'Hello' });
 
 // From spec
 const text = doc.from({ 
-    item: ps('[m.t t="Hello"]')
+    item: ps('[(m.t t="Hello")]')
 });
 ```
 

@@ -133,7 +133,7 @@ const node = doc.from({ item: 'Hello' });
 
 // From spec
 const node = doc.from({ 
-    item: ps('[h.div class=box "Content"]')
+    item: ps('[(h.div class=box "Content")]')
 });
 
 // From list

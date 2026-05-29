@@ -123,7 +123,7 @@ img.setAttr('alt', 'Description');
 
 ```javascript
 const div = doc.from({ 
-    item: ps('[h.div class=box [h.span "Content"]]')
+    item: ps('[(h.div class=box [h.span "Content"])]')
 });
 
 // Creates h.div with h.span child

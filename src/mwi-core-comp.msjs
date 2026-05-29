@@ -127,14 +127,7 @@ modcaps=''
 			d.rr('setAttr', ['data-mwi-defer', deferType]);
 		}
 
-		function opGetDOM (d) {
-			// Ensure ID is assigned before rendering
-			d.rr('getAttr', ['m.id']); // Auto-assign ID if not present
-			// Redispatch to MWIHTML
-			return d.sm(d, 'redis');
-		}
-
-		function opGetHTML (d) {
+		function opGetDOMHTML (d) {
 			// Ensure ID is assigned before rendering
 			d.rr('getAttr', ['m.id']); // Auto-assign ID if not present
 			// Redispatch to MWIHTML
@@ -147,8 +140,8 @@ modcaps=''
 			handlers: {
 				'@init': opInit,
 				append: (d) => d.rr, // Don't add children
-				getDOM: opGetDOM,
-				getHTML: opGetHTML,
+				getDOM: opGetDOMHTML,
+				getHTML: opGetDOMHTML,
 				getSubSpec: (_d) => new NANOS(),
 				setSubSpec: (d) => d.rr,
 			}
@@ -308,10 +301,12 @@ modcaps=''
 				const frag = getFrag(d);
 				frag('setSubSpec', spec);
 				frag('getHTML', { in: html });
+				d.rr('setAttr', [ 'm.rns', frag('getSubSpec') ]); // Rendered node spec (for CSR sync)
 				if (!hasIn) return html.join('');
 			};
 			if (attrOK) return specHTML(slotAttr);
 			if (subOK) return specHTML(slotSrc('getSubSpec'));
+			d.rr('delAttr', [ 'm.rns' ]); // No alternate children; natural children rendered
 			return d.sm(d, 'redis'); // Fall back to rendering m.slot's natural children
 		}
 
@@ -412,7 +407,9 @@ modcaps=''
 
 		function opGetHTML (d) {
 			const frag = tplFrag(d);
-			return frag('getHTML', d.mp);
+			const result = frag('getHTML', d.mp);
+			d.rr('setAttr', [ 'm.rns', frag('getSubSpec') ]); // Rendered node spec (for CSR sync)
+			return result;
 		}
 
 		function tplFrag (d) {

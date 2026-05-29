@@ -164,11 +164,11 @@ script.setAttr('m.text', `
 
 ```javascript
 const script = doc.from({ 
-    item: ps('[h.script m.text="console.log(\\"Hello\\");"]')
+    item: ps('[(h.script m.text="console.log(\\"Hello\\");")]')
 });
 
 const style = doc.from({ 
-    item: ps('[h.style m.text=".box { color: red; }"]')
+    item: ps('[(h.style m.text=".box { color: red; }")]')
 });
 ```
 

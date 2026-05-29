@@ -59,14 +59,14 @@ const doc = getInstance('MWIDocument');
 
 doc.append(
     doc.createNode('h.doctype'),
-    doc.from({ item: ps(`[h.html
+    doc.from({ item: ps(`[(h.html
         [h.head
             [h.title m.text="Page Title"]
         ]
         [h.body
             [h.h1 "Hello, World!"]
         ]
-    ]`)})
+    )]`)})
 );
 
 const html = doc.getHTML();
@@ -80,7 +80,7 @@ const html = doc.getHTML();
 ### From Spec
 
 ```javascript
-const doctype = doc.from({ item: ps('[h.doctype]') });
+const doctype = doc.from({ item: ps('[(h.doctype)]') });
 ```
 
 ### Attributes Ignored

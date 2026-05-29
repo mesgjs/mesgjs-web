@@ -116,7 +116,7 @@ const node = doc.createNode('my.heavy');
 
 ```javascript
 // Original spec with attributes
-const spec = ps('[my.heavy class=widget data-value=42]');
+const spec = ps('[(my.heavy class=widget data-value=42)]');
 const node = doc.from({ item: spec });
 
 // Attributes preserved internally but not rendered

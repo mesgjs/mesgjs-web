@@ -102,12 +102,12 @@ comment.setAttr('t', 'Updated');
 ```javascript
 // Using doc.from()
 const comment = doc.from({ 
-    item: ps('[m.com t="Debug marker"]')
+    item: ps('[(m.com t="Debug marker")]')
 });
 
 // Direct creation
 const comment = doc.createNode('m.com');
-comment.setSpec(ps('[m.com t="Debug marker"]'));
+comment.setSpec(ps('[(m.com t="Debug marker")]'));
 ```
 
 ## Related Interfaces

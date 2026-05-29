@@ -67,10 +67,10 @@ title.setAttr('m.text', 'My Page Title');
 ```javascript
 const doc = getInstance('MWIDocument');
 
-const head = doc.from({ item: ps(`[h.head
+const head = doc.from({ item: ps(`[(h.head
     [h.title m.text="Welcome"]
     [h.meta charset=utf-8]
-]`)});
+)]`)});
 
 doc.append(head);
 ```
@@ -103,7 +103,7 @@ title.setAttr('m.text', 'Products < $100 & "Special" Offers');
 
 ```javascript
 const title = doc.from({ 
-    item: ps('[h.title m.text="Page Title"]')
+    item: ps('[(h.title m.text="Page Title")]')
 });
 ```
 

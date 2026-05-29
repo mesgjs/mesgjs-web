@@ -2,7 +2,7 @@
 
 **Interface:** `MWICoreScpCSS`  
 **Component Type:** `m.scpcss`  
-**Attributes:** Void
+**Attributes:** Void  
 **Source:** [`src/mwi-core-comp.msjs`](../src/mwi-core-comp.msjs) (lines 172-241)  
 **Extends:** [`MWIDocNode`](MWIDocNode-document-node.md)  
 **Status:** ACTIVE
