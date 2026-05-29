@@ -61,22 +61,39 @@ Deno.test("MWICoreText (m.t) - Core Interface Tests", async (t) => {
 		assertEquals(textNode.getAttr('t'), 'Another Sample');
 	});
 
-	await t.step("(getSpec) - Get node specification", () => {
+	await t.step("(getSpec) - Get simplified spec (text only)", () => {
 		textNode('setAttr', ls([, 't', , 'Spec Test']));
 		const spec = textNode('getSpec');
-		assertEquals(spec.at(0), 'm.t');
-		assertEquals(spec.at('t'), 'Spec Test');
-		// Test using toSLID for string representation
-		const slidStr = spec.toSLID();
-		assert(slidStr.includes('m.t'));
-		assert(slidStr.includes('Spec Test'));
+		// When spec only has type and text, it's simplified to just the text string
+		assertEquals(spec, 'Spec Test');
 	});
 
-	await t.step(".getSpec() - Get node specification via JS", () => {
+	await t.step(".getSpec() - Get simplified spec via JS (text only)", () => {
 		textNode.setAttr('t', 'JS Spec Test');
 		const spec = textNode.getSpec();
+		// When spec only has type and text, it's simplified to just the text string
+		assertEquals(spec, 'JS Spec Test');
+	});
+
+	await t.step("(getSpec) - Get full spec with additional attributes", () => {
+		textNode('setAttr', ls([, 't', , 'Full Spec']));
+		textNode('setAttr', ls([, 'custom', , 'attr']));
+		const spec = textNode('getSpec');
+		// With additional attributes, should return full NANOS spec
 		assertEquals(spec.at(0), 'm.t');
-		assertEquals(spec.at('t'), 'JS Spec Test');
+		assertEquals(spec.at('t'), 'Full Spec');
+		assertEquals(spec.at('custom'), 'attr');
+	});
+
+	await t.step(".getSpec() - Get full spec with additional attributes via JS", () => {
+		const textNode2 = doc.createNode('m.t');
+		textNode2.setAttr('t', 'JS Full Spec');
+		textNode2.setAttr('custom', 'value');
+		const spec = textNode2.getSpec();
+		// With additional attributes, should return full NANOS spec
+		assertEquals(spec.at(0), 'm.t');
+		assertEquals(spec.at('t'), 'JS Full Spec');
+		assertEquals(spec.at('custom'), 'value');
 	});
 
 	await t.step("(getSubSpec) - Should return empty NANOS", () => {

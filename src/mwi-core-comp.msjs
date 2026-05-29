@@ -362,12 +362,20 @@ modcaps=''
 			return html;
 		}
 
+		function opGetSpec (d) {
+			// Simplify typical [m.t t=text] spec to plain string
+			const spec = d.sm(d, 'redis');
+			const text = spec.at('t');
+			return (spec.size === 2 && typeof text === 'string') ? text : spec;
+		}
+
 		getInterface(TEXT_IF).set({
 			pristine: true, lock: true,
 			chain: [ BASE_IF ],
 			handlers: {
 				getDOM: opGetDOM,
 				getHTML: opGetHTML,
+				getSpec: opGetSpec,
 				getSubSpec: (_d) => new NANOS(),
 				setSubSpec: (d) => d.rr,
 			}

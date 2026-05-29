@@ -167,7 +167,7 @@ Deno.test("MWICoreFrag (m.frg) - Spec Management", async (t) => {
 		fragNode('append', ls([, textNode]));
 		const subSpec = fragNode('getSubSpec');
 		assertEquals(subSpec.size, 1);
-		assertEquals(subSpec.at([0, 0]), 'm.t');
+		assertEquals(subSpec.at(0), 'Child text'); // Simplified text spec
 	});
 
 	await t.step(".getSubSpec() - Fragment with children returns child specs via JS", () => {
@@ -177,7 +177,7 @@ Deno.test("MWICoreFrag (m.frg) - Spec Management", async (t) => {
 		fragNode.append(textNode);
 		const subSpec = fragNode.getSubSpec();
 		assertEquals(subSpec.size, 1);
-		assertEquals(subSpec.at([0, 0]), 'm.t');
+		assertEquals(subSpec.at(0), 'JS child text'); // Simplified text spec
 	});
 
 	await t.step("(setSpec) - Set attributes from spec", () => {
@@ -202,8 +202,8 @@ Deno.test("MWICoreFrag (m.frg) - Spec Management", async (t) => {
 		fragNode('setSpec', ls([, spec]));
 		const subSpec = fragNode('getSubSpec');
 		assertEquals(subSpec.size, 2);
-		assertEquals(subSpec.at([0, 't']), 'Child 1');
-		assertEquals(subSpec.at([1, 't']), 'Child 2');
+		assertEquals(subSpec.at(0), 'Child 1'); // Simplified text spec
+		assertEquals(subSpec.at(1), 'Child 2'); // Simplified text spec
 	});
 
 	await t.step(".setSpec() - Set children from spec via JS", () => {
@@ -212,8 +212,8 @@ Deno.test("MWICoreFrag (m.frg) - Spec Management", async (t) => {
 		fragNode.setSpec(spec);
 		const subSpec = fragNode.getSubSpec();
 		assertEquals(subSpec.size, 2);
-		assertEquals(subSpec.at([0, 't']), 'JS Child 1');
-		assertEquals(subSpec.at([1, 't']), 'JS Child 2');
+		assertEquals(subSpec.at(0), 'JS Child 1'); // Simplified text spec
+		assertEquals(subSpec.at(1), 'JS Child 2'); // Simplified text spec
 	});
 
 	await t.step("(setSubSpec) - Set children with NANOS list", () => {
@@ -222,8 +222,8 @@ Deno.test("MWICoreFrag (m.frg) - Spec Management", async (t) => {
 		fragNode('setSubSpec', ls(['subSpec', subList]));
 		const subSpec = fragNode('getSubSpec');
 		assertEquals(subSpec.size, 2);
-		assertEquals(subSpec.at([0, 't']), 'Sub 1');
-		assertEquals(subSpec.at([1, 't']), 'Sub 2');
+		assertEquals(subSpec.at(0), 'Sub 1'); // Simplified text spec
+		assertEquals(subSpec.at(1), 'Sub 2'); // Simplified text spec
 	});
 
 	await t.step(".setSubSpec() - Set children with NANOS list via JS", () => {
@@ -232,8 +232,8 @@ Deno.test("MWICoreFrag (m.frg) - Spec Management", async (t) => {
 		fragNode.setSubSpec({ subSpec: subList });
 		const subSpec = fragNode.getSubSpec();
 		assertEquals(subSpec.size, 2);
-		assertEquals(subSpec.at([0, 't']), 'JS Sub 1');
-		assertEquals(subSpec.at([1, 't']), 'JS Sub 2');
+		assertEquals(subSpec.at(0), 'JS Sub 1'); // Simplified text spec
+		assertEquals(subSpec.at(1), 'JS Sub 2'); // Simplified text spec
 	});
 
 	await t.step("(setSubSpec) - Set children with spec parameter", () => {
@@ -242,7 +242,7 @@ Deno.test("MWICoreFrag (m.frg) - Spec Management", async (t) => {
 		fragNode('setSubSpec', ls(['spec', fullSpec]));
 		const subSpec = fragNode('getSubSpec');
 		assertEquals(subSpec.size, 1);
-		assertEquals(subSpec.at([0, 't']), 'Spec Child');
+		assertEquals(subSpec.at(0), 'Spec Child'); // Simplified text spec
 	});
 
 	await t.step(".setSubSpec() - Set children with spec parameter via JS", () => {
@@ -251,7 +251,7 @@ Deno.test("MWICoreFrag (m.frg) - Spec Management", async (t) => {
 		fragNode.setSubSpec({ spec: fullSpec });
 		const subSpec = fragNode.getSubSpec();
 		assertEquals(subSpec.size, 1);
-		assertEquals(subSpec.at([0, 't']), 'JS Spec Child');
+		assertEquals(subSpec.at(0), 'JS Spec Child'); // Simplified text spec
 	});
 });
 
@@ -261,8 +261,7 @@ Deno.test("MWICoreFrag (m.frg) - Content Aggregation", async (t) => {
 		fragNode('append', ls([, 'Plain text']));
 		const subSpec = fragNode('getSubSpec');
 		assertEquals(subSpec.size, 1);
-		assertEquals(subSpec.at([0, 0]), 'm.t');
-		assertEquals(subSpec.at([0, 't']), 'Plain text');
+		assertEquals(subSpec.at(0), 'Plain text'); // Simplified text spec
 	});
 
 	await t.step(".append() - Append text string via JS (auto-converts to m.t)", () => {
@@ -270,8 +269,7 @@ Deno.test("MWICoreFrag (m.frg) - Content Aggregation", async (t) => {
 		fragNode.append('JS plain text');
 		const subSpec = fragNode.getSubSpec();
 		assertEquals(subSpec.size, 1);
-		assertEquals(subSpec.at([0, 0]), 'm.t');
-		assertEquals(subSpec.at([0, 't']), 'JS plain text');
+		assertEquals(subSpec.at(0), 'JS plain text'); // Simplified text spec
 	});
 
 	await t.step("(append) - Append doc-node", () => {
@@ -281,7 +279,7 @@ Deno.test("MWICoreFrag (m.frg) - Content Aggregation", async (t) => {
 		fragNode('append', ls([, textNode]));
 		const subSpec = fragNode('getSubSpec');
 		assertEquals(subSpec.size, 1);
-		assertEquals(subSpec.at([0, 't']), 'Appended node');
+		assertEquals(subSpec.at(0), 'Appended node'); // Simplified text spec
 	});
 
 	await t.step(".append() - Append doc-node via JS", () => {
@@ -291,7 +289,7 @@ Deno.test("MWICoreFrag (m.frg) - Content Aggregation", async (t) => {
 		fragNode.append(textNode);
 		const subSpec = fragNode.getSubSpec();
 		assertEquals(subSpec.size, 1);
-		assertEquals(subSpec.at([0, 't']), 'JS appended node');
+		assertEquals(subSpec.at(0), 'JS appended node'); // Simplified text spec
 	});
 
 	await t.step("(append) - Append multiple items at once", () => {
@@ -303,8 +301,8 @@ Deno.test("MWICoreFrag (m.frg) - Content Aggregation", async (t) => {
 		fragNode('append', ls([, text1, , text2]));
 		const subSpec = fragNode('getSubSpec');
 		assertEquals(subSpec.size, 2);
-		assertEquals(subSpec.at([0, 't']), 'First');
-		assertEquals(subSpec.at([1, 't']), 'Second');
+		assertEquals(subSpec.at(0), 'First'); // Simplified text spec
+		assertEquals(subSpec.at(1), 'Second'); // Simplified text spec
 	});
 
 	await t.step(".append() - Append multiple items at once via JS", () => {
@@ -316,8 +314,8 @@ Deno.test("MWICoreFrag (m.frg) - Content Aggregation", async (t) => {
 		fragNode.append(text1, text2);
 		const subSpec = fragNode.getSubSpec();
 		assertEquals(subSpec.size, 2);
-		assertEquals(subSpec.at([0, 't']), 'JS First');
-		assertEquals(subSpec.at([1, 't']), 'JS Second');
+		assertEquals(subSpec.at(0), 'JS First'); // Simplified text spec
+		assertEquals(subSpec.at(1), 'JS Second'); // Simplified text spec
 	});
 
 	await t.step("(append) - Append mixed text and nodes", () => {
@@ -327,8 +325,8 @@ Deno.test("MWICoreFrag (m.frg) - Content Aggregation", async (t) => {
 		fragNode('append', ls([, 'String text', , textNode]));
 		const subSpec = fragNode('getSubSpec');
 		assertEquals(subSpec.size, 2);
-		assertEquals(subSpec.at([0, 't']), 'String text');
-		assertEquals(subSpec.at([1, 't']), 'Node text');
+		assertEquals(subSpec.at(0), 'String text'); // Simplified text spec
+		assertEquals(subSpec.at(1), 'Node text'); // Simplified text spec
 	});
 
 	await t.step(".append() - Append mixed text and nodes via JS", () => {
@@ -338,8 +336,8 @@ Deno.test("MWICoreFrag (m.frg) - Content Aggregation", async (t) => {
 		fragNode.append('JS String text', textNode);
 		const subSpec = fragNode.getSubSpec();
 		assertEquals(subSpec.size, 2);
-		assertEquals(subSpec.at([0, 't']), 'JS String text');
-		assertEquals(subSpec.at([1, 't']), 'JS Node text');
+		assertEquals(subSpec.at(0), 'JS String text'); // Simplified text spec
+		assertEquals(subSpec.at(1), 'JS Node text'); // Simplified text spec
 	});
 
 	await t.step("(append) - Returns fragment for chaining", () => {
@@ -366,7 +364,7 @@ Deno.test("MWICoreFrag (m.frg) - Transparent Container Behavior", async (t) => {
 		const subSpec = fragNode.getSubSpec();
 		assertEquals(subSpec.size, 5);
 		for (let i = 0; i < 5; i++) {
-			assertEquals(subSpec.at(i).at('t'), `Child ${i}`);
+			assertEquals(subSpec.at(i), `Child ${i}`); // Simplified text spec
 		}
 	});
 
@@ -379,7 +377,7 @@ Deno.test("MWICoreFrag (m.frg) - Transparent Container Behavior", async (t) => {
 		const subSpec = fragNode.getSubSpec();
 		assertEquals(subSpec.size, children.length);
 		for (let i = 0; i < children.length; i++) {
-			assertEquals(subSpec.at(i).at('t'), children[i]);
+			assertEquals(subSpec.at(i), children[i]); // Simplified text spec
 		}
 	});
 
@@ -392,7 +390,8 @@ Deno.test("MWICoreFrag (m.frg) - Transparent Container Behavior", async (t) => {
 		assertEquals(subSpec.size, 1);
 		assertEquals(subSpec.at([0, 0]), 'm.frg');
 		const innerSubSpec = subSpec.at(0);
-		assertEquals(innerSubSpec.at([1, 't']), 'Inner text');
+		// The inner fragment's children are simplified text specs
+		assertEquals(innerSubSpec.at(1), 'Inner text'); // Simplified text spec (index 1 because 0 is type)
 	});
 
 	await t.step("Fragment attributes don't interfere with children", () => {
@@ -403,7 +402,7 @@ Deno.test("MWICoreFrag (m.frg) - Transparent Container Behavior", async (t) => {
 		fragNode.append('Child text');
 		const subSpec = fragNode.getSubSpec();
 		assertEquals(subSpec.size, 1);
-		assertEquals(subSpec.at([0, 't']), 'Child text');
+		assertEquals(subSpec.at(0), 'Child text'); // Simplified text spec
 		// Fragment's own attributes exist
 		assertEquals(fragNode.getAttr('id'), 'frag-id');
 		assert(fragNode.getAttr('class').includes('frag-class'));

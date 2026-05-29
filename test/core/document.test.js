@@ -569,8 +569,8 @@ Deno.test('MWIDocument - Document Root Operations', async (t) => {
 
 		const first = subSpec.at(0);
 		const second = subSpec.at(1);
-		assertEquals(first.at('t'), 'First', 'First child should have correct text');
-		assertEquals(second.at('t'), 'Second', 'Second child should have correct text');
+		assertEquals(first, 'First', 'First child should be simplified text spec');
+		assertEquals(second, 'Second', 'Second child should be simplified text spec');
 	});
 
 	await t.step('(appendWait) - Append text string', async () => {

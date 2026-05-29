@@ -1,0 +1,6 @@
+[(
+	modreq='
+		mwi/mwi-registry 0.5;
+		mwi/mwi-doc-node 0.5;
+	'
+)]

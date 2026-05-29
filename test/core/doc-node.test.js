@@ -1376,7 +1376,8 @@ Deno.test("MWIDocNode - Spec Management", async (t) => {
 		divNode('append', ls([, textNode]));
 		const spec = divNode('getSpec');
 		assertEquals(spec.at(0), 'h.div');
-		assertEquals(spec.at([1, 0]), 'm.t');
+		// Text node getSpec is simplified to just the string
+		assertEquals(spec.at(1), 'Child text');
 	});
 
 	await t.step(".getSpec() - With children via JS", async () => {
@@ -1386,7 +1387,8 @@ Deno.test("MWIDocNode - Spec Management", async (t) => {
 		divNode.append(textNode);
 		const spec = divNode.getSpec();
 		assertEquals(spec.at(0), 'h.div');
-		assertEquals(spec.at([1, 0]), 'm.t');
+		// Text node getSpec is simplified to just the string
+		assertEquals(spec.at(1), 'JS Child text');
 	});
 
 	await t.step("(getSubSpec) - No children", async () => {
@@ -1408,7 +1410,8 @@ Deno.test("MWIDocNode - Spec Management", async (t) => {
 		divNode('append', ls([, textNode]));
 		const subSpec = divNode('getSubSpec');
 		assertEquals(subSpec.size, 1);
-		assertEquals(subSpec.at([0, 0]), 'm.t');
+		// Text node getSpec is simplified to just the string
+		assertEquals(subSpec.at(0), 'Child');
 	});
 
 	await t.step(".getSubSpec() - With children via JS", async () => {
@@ -1418,7 +1421,8 @@ Deno.test("MWIDocNode - Spec Management", async (t) => {
 		divNode.append(textNode);
 		const subSpec = divNode.getSubSpec();
 		assertEquals(subSpec.size, 1);
-		assertEquals(subSpec.at([0, 0]), 'm.t');
+		// Text node getSpec is simplified to just the string
+		assertEquals(subSpec.at(0), 'JS Child');
 	});
 
 	await t.step("(getSubSpec) - Void node always empty", async () => {
@@ -1475,8 +1479,9 @@ Deno.test("MWIDocNode - Spec Management", async (t) => {
 		await divNode('setSpec', ls([, spec]));
 		const subSpec = divNode('getSubSpec');
 		assertEquals(subSpec.size, 2);
-		assertEquals(subSpec.at([0, 't']), 'Child 1');
-		assertEquals(subSpec.at([1, 't']), 'Child 2');
+		// Text node getSpec is simplified to just the string
+		assertEquals(subSpec.at(0), 'Child 1');
+		assertEquals(subSpec.at(1), 'Child 2');
 	});
 
 	await t.step(".setSpec() - Set children via JS", async () => {
@@ -1485,8 +1490,9 @@ Deno.test("MWIDocNode - Spec Management", async (t) => {
 		divNode.setSpec(spec);
 		const subSpec = divNode.getSubSpec();
 		assertEquals(subSpec.size, 2);
-		assertEquals(subSpec.at([0, 't']), 'JS Child 1');
-		assertEquals(subSpec.at([1, 't']), 'JS Child 2');
+		// Text node getSpec is simplified to just the string
+		assertEquals(subSpec.at(0), 'JS Child 1');
+		assertEquals(subSpec.at(1), 'JS Child 2');
 	});
 
 	await t.step("(setSubSpec) - With NANOS list", () => {
@@ -1495,8 +1501,9 @@ Deno.test("MWIDocNode - Spec Management", async (t) => {
 		divNode('setSubSpec', ls(['subSpec', subList]));
 		const subSpec = divNode('getSubSpec');
 		assertEquals(subSpec.size, 2);
-		assertEquals(subSpec.at([0, 't']), 'Sub 1');
-		assertEquals(subSpec.at([1, 't']), 'Sub 2');
+		// Text node getSpec is simplified to just the string
+		assertEquals(subSpec.at(0), 'Sub 1');
+		assertEquals(subSpec.at(1), 'Sub 2');
 	});
 
 	await t.step(".setSubSpec() - With NANOS list via JS", () => {
@@ -1505,8 +1512,9 @@ Deno.test("MWIDocNode - Spec Management", async (t) => {
 		divNode.setSubSpec({ subSpec: subList });
 		const subSpec = divNode.getSubSpec();
 		assertEquals(subSpec.size, 2);
-		assertEquals(subSpec.at([0, 't']), 'JS Sub 1');
-		assertEquals(subSpec.at([1, 't']), 'JS Sub 2');
+		// Text node getSpec is simplified to just the string
+		assertEquals(subSpec.at(0), 'JS Sub 1');
+		assertEquals(subSpec.at(1), 'JS Sub 2');
 	});
 
 	await t.step("(setSubSpec) - With spec parameter", () => {
@@ -1515,7 +1523,8 @@ Deno.test("MWIDocNode - Spec Management", async (t) => {
 		divNode('setSubSpec', ls(['spec', fullSpec]));
 		const subSpec = divNode('getSubSpec');
 		assertEquals(subSpec.size, 1);
-		assertEquals(subSpec.at([0, 't']), 'Spec Child');
+		// Text node getSpec is simplified to just the string
+		assertEquals(subSpec.at(0), 'Spec Child');
 	});
 
 	await t.step(".setSubSpec() - With spec parameter via JS", () => {
@@ -1524,7 +1533,8 @@ Deno.test("MWIDocNode - Spec Management", async (t) => {
 		divNode.setSubSpec({ spec: fullSpec });
 		const subSpec = divNode.getSubSpec();
 		assertEquals(subSpec.size, 1);
-		assertEquals(subSpec.at([0, 't']), 'JS Spec Child');
+		// Text node getSpec is simplified to just the string
+		assertEquals(subSpec.at(0), 'JS Spec Child');
 	});
 
 	await t.step("(setSubSpec) - With multiple positional parameters", () => {
@@ -1534,8 +1544,9 @@ Deno.test("MWIDocNode - Spec Management", async (t) => {
 		divNode('setSubSpec', ls([, spec1, , spec2]));
 		const subSpec = divNode('getSubSpec');
 		assertEquals(subSpec.size, 2);
-		assertEquals(subSpec.at([0, 't']), 'Pos 1');
-		assertEquals(subSpec.at([1, 't']), 'Pos 2');
+		// Text node getSpec is simplified to just the string
+		assertEquals(subSpec.at(0), 'Pos 1');
+		assertEquals(subSpec.at(1), 'Pos 2');
 	});
 
 	await t.step(".setSubSpec() - With multiple positional parameters via JS", () => {
@@ -1545,8 +1556,9 @@ Deno.test("MWIDocNode - Spec Management", async (t) => {
 		divNode.setSubSpec(spec1, spec2);
 		const subSpec = divNode.getSubSpec();
 		assertEquals(subSpec.size, 2);
-		assertEquals(subSpec.at([0, 't']), 'JS Pos 1');
-		assertEquals(subSpec.at([1, 't']), 'JS Pos 2');
+		// Text node getSpec is simplified to just the string
+		assertEquals(subSpec.at(0), 'JS Pos 1');
+		assertEquals(subSpec.at(1), 'JS Pos 2');
 	});
 
 	await t.step("(setSubSpec) - Void node ignores children", () => {
@@ -1572,8 +1584,8 @@ Deno.test("MWIDocNode - Content Operations", async (t) => {
 		divNode('append', ls([, 'Plain text']));
 		const subSpec = divNode('getSubSpec');
 		assertEquals(subSpec.size, 1);
-		assertEquals(subSpec.at([0, 0]), 'm.t');
-		assertEquals(subSpec.at([0, 't']), 'Plain text');
+		// Text node getSpec is simplified to just the string
+		assertEquals(subSpec.at(0), 'Plain text');
 	});
 
 	await t.step(".append() - Text string auto-converts to m.t via JS", async () => {
@@ -1581,8 +1593,8 @@ Deno.test("MWIDocNode - Content Operations", async (t) => {
 		divNode.append('JS plain text');
 		const subSpec = divNode.getSubSpec();
 		assertEquals(subSpec.size, 1);
-		assertEquals(subSpec.at([0, 0]), 'm.t');
-		assertEquals(subSpec.at([0, 't']), 'JS plain text');
+		// Text node getSpec is simplified to just the string
+		assertEquals(subSpec.at(0), 'JS plain text');
 	});
 
 	await t.step("(append) - Doc-node", async () => {
@@ -1592,7 +1604,8 @@ Deno.test("MWIDocNode - Content Operations", async (t) => {
 		divNode('append', ls([, textNode]));
 		const subSpec = divNode('getSubSpec');
 		assertEquals(subSpec.size, 1);
-		assertEquals(subSpec.at([0, 't']), 'Appended node');
+		// Text node getSpec is simplified to just the string
+		assertEquals(subSpec.at(0), 'Appended node');
 	});
 
 	await t.step(".append() - Doc-node via JS", async () => {
@@ -1602,7 +1615,8 @@ Deno.test("MWIDocNode - Content Operations", async (t) => {
 		divNode.append(textNode);
 		const subSpec = divNode.getSubSpec();
 		assertEquals(subSpec.size, 1);
-		assertEquals(subSpec.at([0, 't']), 'JS appended node');
+		// Text node getSpec is simplified to just the string
+		assertEquals(subSpec.at(0), 'JS appended node');
 	});
 
 	await t.step("(append) - Multiple items at once", async () => {
@@ -1614,8 +1628,9 @@ Deno.test("MWIDocNode - Content Operations", async (t) => {
 		divNode('append', ls([, text1, , text2]));
 		const subSpec = divNode('getSubSpec');
 		assertEquals(subSpec.size, 2);
-		assertEquals(subSpec.at([0, 't']), 'First');
-		assertEquals(subSpec.at([1, 't']), 'Second');
+		// Text node getSpec is simplified to just the string
+		assertEquals(subSpec.at(0), 'First');
+		assertEquals(subSpec.at(1), 'Second');
 	});
 
 	await t.step(".append() - Multiple items at once via JS", async () => {
@@ -1627,8 +1642,9 @@ Deno.test("MWIDocNode - Content Operations", async (t) => {
 		divNode.append(text1, text2);
 		const subSpec = divNode.getSubSpec();
 		assertEquals(subSpec.size, 2);
-		assertEquals(subSpec.at([0, 't']), 'JS First');
-		assertEquals(subSpec.at([1, 't']), 'JS Second');
+		// Text node getSpec is simplified to just the string
+		assertEquals(subSpec.at(0), 'JS First');
+		assertEquals(subSpec.at(1), 'JS Second');
 	});
 
 	await t.step("(append) - Mixed text and nodes", async () => {
@@ -1638,8 +1654,9 @@ Deno.test("MWIDocNode - Content Operations", async (t) => {
 		divNode('append', ls([, 'String text', , textNode]));
 		const subSpec = divNode('getSubSpec');
 		assertEquals(subSpec.size, 2);
-		assertEquals(subSpec.at([0, 't']), 'String text');
-		assertEquals(subSpec.at([1, 't']), 'Node text');
+		// Text node getSpec is simplified to just the string
+		assertEquals(subSpec.at(0), 'String text');
+		assertEquals(subSpec.at(1), 'Node text');
 	});
 
 	await t.step(".append() - Mixed text and nodes via JS", async () => {
@@ -1649,8 +1666,9 @@ Deno.test("MWIDocNode - Content Operations", async (t) => {
 		divNode.append('JS String text', textNode);
 		const subSpec = divNode.getSubSpec();
 		assertEquals(subSpec.size, 2);
-		assertEquals(subSpec.at([0, 't']), 'JS String text');
-		assertEquals(subSpec.at([1, 't']), 'JS Node text');
+		// Text node getSpec is simplified to just the string
+		assertEquals(subSpec.at(0), 'JS String text');
+		assertEquals(subSpec.at(1), 'JS Node text');
 	});
 
 	await t.step("(append) - Returns node for chaining", async () => {
