@@ -58,6 +58,57 @@ modcaps=''
 		else while (child = parent.firstChild) parent.removeChild(child);
 	}
 
+	// Locate the managed-region boundary markers within a parent element
+	function getManagedRegion (parent) {
+		let begin = null, end = null;
+		for (const child of parent.children) {
+			if (child.tagName !== 'SCRIPT') continue;
+			switch (child.dataset.mwi) {
+			case 'begin': begin = child; break;
+			case 'end': end = child; break;
+			}
+			if (begin && end) break;
+		}
+		return { begin, end };
+	}
+
+	// Create a managed-region boundary marker element
+	function createDOMBoundary (type) {
+		const script = document.createElement('script');
+		script.type = 'x';
+		script.dataset.mwi = type;
+		return script;
+	}
+
+	// Synchronize children within the managed region (between begin/end boundary markers)
+	function domSyncManagedChildren (parent, children) {
+		let { begin, end } = getManagedRegion(parent);
+
+		// Add managed-region boundary-markers if absent
+		if (!begin) {
+			begin = createDOMBoundary('begin');
+			if (end) parent.insertBefore(begin, end);
+			else parent.append(begin);
+		}
+		if (!end) {
+			end = createDOMBoundary('end');
+			parent.insertBefore(end, begin.nextSibling);
+		}
+
+		// Synchronize children within the managed region (only)
+		let prev = begin, child = null;
+		for (child of children.values()) {
+			domAppendAfter(parent, child, prev);
+			prev = child;
+		}
+
+		// Remove stale children from the managed region
+		// deno-lint-ignore no-cond-assign
+		while ((child = prev.nextSibling) && child !== end) {
+			parent.removeChild(child);
+		}
+	}
+
 	// Set/sync DOM node attributes from HTML subset of doc-node attributes
 	function setDOMAttrs (node, attrs, schema = null) {
 		const flux = {};
@@ -127,13 +178,16 @@ modcaps=''
 		append (...content) { return this('append', content); },
 		get compId () { return this('compId'); },
 		[globalThis.$c.symbols.convert] () { return this; },
+		createDOMBoundary,
 		delAttr (name) { return this('delAttr', [ name ]); },
 		get document () { return this('document'); },
 		domAppendAfter,
 		domSyncChildren,
+		domSyncManagedChildren,
 		getAttr (name) { return this('getAttr', [ name ]); },
 		getDOM () { return this('getDOM'); },
 		getHTML () { return this('getHTML'); },
+		getManagedRegion,
 		getSpec () { return this('getSpec'); },
 		getSubDoc () { return this('getSubDoc'); },
 		getSubSpec () { return this('getSubSpec'); },

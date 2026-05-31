@@ -79,6 +79,8 @@ All standard HTML5 elements are registered with `h.` prefix:
 
 **Metadata:** `h.html`, `h.head`, `h.body`, `h.link`, `h.meta`, `h.base`
 
+> **Note on `h.head` and `h.body`:** For browser-bound use, prefer [`m.head` and `m.body`](MWICoreHeadBody-head-body.md) over `h.head` and `h.body`. The `m.*` variants use managed-region boundary markers to protect externally-injected content (e.g., from Google Tag Manager or browser extensions) from being removed by MWI reactive updates. `h.head` and `h.body` are appropriate only for contexts where client-side rendering is not used.
+
 **Other:** `h.a`, `h.abbr`, `h.address`, `h.b`, `h.bdi`, `h.bdo`, `h.br`, `h.cite`, `h.data`, `h.datalist`, `h.dfn`, `h.figure`, `h.figcaption`, `h.hr`, `h.i`, `h.kbd`, `h.map`, `h.meter`, `h.noscript`, `h.output`, `h.progress`, `h.q`, `h.rp`, `h.rt`, `h.ruby`, `h.s`, `h.samp`, `h.search`, `h.slot`, `h.template`, `h.time`, `h.u`, `h.var`, `h.wbr`
 
 ## Usage Examples
@@ -192,6 +194,7 @@ Some HTML elements have specialized interfaces:
 - [`h.doctype`](MWIHTMLDocType-doctype.md) - `MWIHTMLDocType`
 - [`h.script`, `h.style`](MWIHTMLScript-script-style.md) - `MWIHTMLScript`
 - [`h.title`](MWIHTMLTitle-title.md) - `MWIHTMLTitle`
+- [`m.head`, `m.body`](MWICoreHeadBody-head-body.md) - `MWICoreHeadBody` (preferred over `h.head`/`h.body` for browser-bound use)
 
 ## Related Interfaces
 
@@ -199,3 +202,4 @@ Some HTML elements have specialized interfaces:
 - [`MWIHTMLDocType`](MWIHTMLDocType-doctype.md) - Doctype element
 - [`MWIHTMLScript`](MWIHTMLScript-script-style.md) - Script and style elements
 - [`MWIHTMLTitle`](MWIHTMLTitle-title.md) - Title element
+- [`MWICoreHeadBody`](MWICoreHeadBody-head-body.md) - Head and body elements with protected regions

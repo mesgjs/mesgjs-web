@@ -34,6 +34,9 @@ modcaps=''
 	const DEFER_TYPE = 'm.defer';
 	const FRAG_IF = CORE_IF + 'Frag';
 	const FRAG_TYPE = 'm.frg';
+	const HEADBODY_IF = CORE_IF + 'HeadBody';
+	const HEAD_TYPE = 'm.head';
+	const BODY_TYPE = 'm.body';
 	const TEXT_IF = CORE_IF + 'Text';
 	const TEXT_TYPE = 'm.t';
 	const TPL_IF = CORE_IF + 'Tpl';
@@ -45,9 +48,11 @@ modcaps=''
 	const { fready, fwait, getInstance, getInterface, getModMeta, setRO, modHasCap } = globalThis.$c;
 
 	const coreConfig = {
+		[BODY_TYPE]: ls([INTERFACE, HEADBODY_IF]),
 		[COM_TYPE]: ls([INTERFACE, COM_IF, SCHEMA, ls([VOID, true])]),
 		[DEFER_TYPE]: ls([INTERFACE, DEFER_IF, SCHEMA, ls([AUTO_DOC, false, 'htmlAllowAttr', new Set(['id', 'data-mwi-defer'])])]),
 		[FRAG_TYPE]: ls([INTERFACE, FRAG_IF]),
+		[HEAD_TYPE]: ls([INTERFACE, HEADBODY_IF]),
 		[SCPCSS_TYPE]: ls([INTERFACE, SCPCSS_IF, SCHEMA, ls([VOID, true])]),
 		[SLOT_TYPE]: ls([INTERFACE, SLOT_IF]),
 		[TEXT_TYPE]: ls([INTERFACE, TEXT_IF, SCHEMA, ls([VOID, true])]),
@@ -158,6 +163,106 @@ modcaps=''
 			chain: [ BASE_IF ],
 			handlers: {
 				subSlotSrc: (d) => d.p.at('slotSrc'), // non-source; pass through
+			}
+		});
+	})();
+
+	// MWICoreHeadBody (m.head / m.body) interface
+	// `[m.head m.ssrStatic=[...] m.csrStatic=[...] content...]`
+	// `[m.body m.ssrStatic=[...] m.csrStatic=[...] content...]`
+	// Renders a managed <head> or <body> element with boundary markers isolating
+	// MWI-managed children from externally-injected content.
+	(() => {
+		const BEGIN_MARKER = '<script type="x" data-mwi="begin"></script>';
+		const END_MARKER = '<script type="x" data-mwi="end"></script>';
+
+		function opGetHTML (d) {
+			const p = d.p, type = p.at('type').replace(/^m\./, '');
+			const m = d.mp, hasIn = m.has('in'), html = m.at('in', []);
+
+			// Opening tag with HTML attributes (m.ssrStatic and m.csrStatic are filtered as dot-prefixed)
+			html.push(`<${type}${d.rr('getAttrHTML')}>`);
+
+			// Begin boundary marker
+			html.push(BEGIN_MARKER);
+
+			// Managed region: normal children
+			for (const node of p.at('subDoc', []).values()) {
+				node('getHTML', { in: html });
+			}
+
+			// End boundary marker
+			html.push(END_MARKER);
+
+			// m.ssrStatic content (rendered statically after end marker; not reactive)
+			const ssrStatic = d.rr('getAttr', [ 'm.ssrStatic' ]);
+			if (ssrStatic instanceof NANOS) {
+				const doc = p.at('doc'), frag = doc.createNode('m.frg');
+				frag('setSubSpec', ssrStatic);
+				frag('getHTML', { in: html });
+			}
+
+			// Closing tag
+			html.push(`</${type}>`);
+
+			if (!hasIn) return html.join('');
+		}
+
+		function opGetDOM (d) {
+			if (typeof document !== 'object' || typeof document.head !== 'object') return new NANOS();
+			const p = d.p;
+			if (p.has('dom')) return p.at('dom');
+
+			// Adopt the existing document.head or document.body element
+			const type = p.at('type');
+			const targetElement = (type === HEAD_TYPE) ? document.head : document.body;
+			if (!targetElement) return new NANOS();
+
+			const nodes = new NANOS(targetElement);
+			p.set('dom', nodes);
+
+			// Set HTML attributes on the adopted element
+			d.rr.setDOMAttrs(targetElement, p.at('attrs'), p.at(SCHEMA));
+
+			// Reactively synchronize managed children
+			const relay = getInstance('@reactive', {
+				eager: true, def: () => {
+					const children = d.rr('getSubDOM'); // sub-DOM children
+					d.rr.domSyncManagedChildren(targetElement, children);
+				}
+			});
+			relay('rv');
+
+			// Append m.csrStatic content once (non-reactively) after the end marker
+			const csrStatic = d.rr('getAttr', [ 'm.csrStatic' ]);
+			if (csrStatic instanceof NANOS) {
+				const doc = p.at('doc'), frag = doc.createNode('m.frg');
+				frag('setSubSpec', csrStatic);
+				const csrNodes = frag('getDOM');
+				// Find the end marker and append after it
+				const { end } = d.rr.getManagedRegion(targetElement);
+				const insertAfter = end || targetElement.lastChild;
+				for (const node of csrNodes.values()) {
+					if (insertAfter) {
+						const next = insertAfter.nextSibling;
+						if (next) targetElement.insertBefore(node, next);
+						else targetElement.append(node);
+					} else {
+						targetElement.append(node);
+					}
+				}
+			}
+
+			return nodes;
+		}
+
+		getInterface(HEADBODY_IF).set({
+			pristine: true, lock: true,
+			chain: [ HTML_IF ],
+			handlers: {
+				getDOM: opGetDOM,
+				getHTML: opGetHTML,
+				subSlotSrc: (d) => d.p.at('slotSrc'), // pass-through (like MWIHTML)
 			}
 		});
 	})();
