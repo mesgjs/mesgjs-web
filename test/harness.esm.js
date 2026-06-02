@@ -21,7 +21,7 @@ export async function setupRuntime ({ modules, standard = true } = {}) {
 		},
 		'mwi/mwi-doc-node': {
 			url: './src/mwi-doc-node.msjs',
-			featpro: 'MWIDocNode',
+			featpro: 'MWIDocNode MWIDOMSync',
 		},
 		'mwi/mwi-html-comp': {
 			url: './src/mwi-html-comp.msjs',

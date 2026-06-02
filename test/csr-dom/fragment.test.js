@@ -42,11 +42,11 @@ Deno.test("MWICoreFrag (m.frg) - CSR-DOM Tests", async (t) => {
 		fragNode('append', [textNode]);
 		const domNodes = await fragNode('getDOM');
 
-		// Should have one <output> element from the text node
-		const outputElem = domNodes.at(0);
-		assertExists(outputElem);
-		assertEquals(outputElem.tagName, 'OUTPUT');
-		assertEquals(outputElem.textContent, 'Hello World');
+		// Should have one text node from the text node
+		const textDomNode = domNodes.at(0);
+		assertExists(textDomNode);
+		assertEquals(textDomNode.nodeType, 3); // Text node
+		assertEquals(textDomNode.nodeValue, 'Hello World');
 		assertEquals(domNodes.size, 1);
 	});
 
@@ -57,9 +57,9 @@ Deno.test("MWICoreFrag (m.frg) - CSR-DOM Tests", async (t) => {
 		fragNode.append(textNode);
 		const domNodes = await fragNode.getDOM();
 
-		const outputElem = domNodes.at(0);
-		assertEquals(outputElem.tagName, 'OUTPUT');
-		assertEquals(outputElem.textContent, 'JS Hello World');
+		const textDomNode = domNodes.at(0);
+		assertEquals(textDomNode.nodeType, 3); // Text node
+		assertEquals(textDomNode.nodeValue, 'JS Hello World');
 		assertEquals(domNodes.size, 1);
 	});
 
@@ -74,11 +74,11 @@ Deno.test("MWICoreFrag (m.frg) - CSR-DOM Tests", async (t) => {
 		fragNode('append', [text1, text2, text3]);
 		const domNodes = await fragNode('getDOM');
 
-		// Should have three <output> elements
+		// Should have three text nodes
 		assertEquals(domNodes.size, 3);
-		assertEquals(domNodes.at(0).textContent, 'First');
-		assertEquals(domNodes.at(1).textContent, 'Second');
-		assertEquals(domNodes.at(2).textContent, 'Third');
+		assertEquals(domNodes.at(0).nodeValue, 'First');
+		assertEquals(domNodes.at(1).nodeValue, 'Second');
+		assertEquals(domNodes.at(2).nodeValue, 'Third');
 	});
 
 	await t.step(".getDOM() - Fragment with multiple text children via JS", async () => {
@@ -93,9 +93,9 @@ Deno.test("MWICoreFrag (m.frg) - CSR-DOM Tests", async (t) => {
 		const domNodes = await fragNode.getDOM();
 
 		assertEquals(domNodes.size, 3);
-		assertEquals(domNodes.at(0).textContent, 'JS First');
-		assertEquals(domNodes.at(1).textContent, 'JS Second');
-		assertEquals(domNodes.at(2).textContent, 'JS Third');
+		assertEquals(domNodes.at(0).nodeValue, 'JS First');
+		assertEquals(domNodes.at(1).nodeValue, 'JS Second');
+		assertEquals(domNodes.at(2).nodeValue, 'JS Third');
 	});
 
 	await t.step("(getDOM) - Fragment with mixed content (text and comment)", async () => {
@@ -107,10 +107,10 @@ Deno.test("MWICoreFrag (m.frg) - CSR-DOM Tests", async (t) => {
 		fragNode('append', [textNode, commentNode]);
 		const domNodes = await fragNode('getDOM');
 
-		// Should have two nodes: output and comment
+		// Should have two nodes: text node and comment
 		assertEquals(domNodes.size, 2);
-		assertEquals(domNodes.at(0).tagName, 'OUTPUT');
-		assertEquals(domNodes.at(0).textContent, 'Text content');
+		assertEquals(domNodes.at(0).nodeType, 3); // Text node
+		assertEquals(domNodes.at(0).nodeValue, 'Text content');
 		assertEquals(domNodes.at(1).nodeType, 8); // Comment node
 		assertEquals(domNodes.at(1).nodeValue, 'Comment content');
 	});
@@ -125,7 +125,8 @@ Deno.test("MWICoreFrag (m.frg) - CSR-DOM Tests", async (t) => {
 		const domNodes = await fragNode.getDOM();
 
 		assertEquals(domNodes.size, 2);
-		assertEquals(domNodes.at(0).textContent, 'JS Text');
+		assertEquals(domNodes.at(0).nodeType, 3); // Text node
+		assertEquals(domNodes.at(0).nodeValue, 'JS Text');
 		assertEquals(domNodes.at(1).nodeValue, 'JS Comment');
 	});
 
@@ -138,9 +139,9 @@ Deno.test("MWICoreFrag (m.frg) - CSR-DOM Tests", async (t) => {
 		outerFrag('append', [innerFrag]);
 		const domNodes = await outerFrag('getDOM');
 
-		// Should have one output element (fragments are transparent)
+		// Should have one text node (fragments are transparent)
 		assertEquals(domNodes.size, 1);
-		assertEquals(domNodes.at(0).textContent, 'Inner content');
+		assertEquals(domNodes.at(0).nodeValue, 'Inner content');
 	});
 
 	await t.step(".getDOM() - Nested fragments via JS", async () => {
@@ -153,7 +154,7 @@ Deno.test("MWICoreFrag (m.frg) - CSR-DOM Tests", async (t) => {
 		const domNodes = await outerFrag.getDOM();
 
 		assertEquals(domNodes.size, 1);
-		assertEquals(domNodes.at(0).textContent, 'JS Inner');
+		assertEquals(domNodes.at(0).nodeValue, 'JS Inner');
 	});
 
 	await t.step("(getDOM) - Reactive child update", async () => {
@@ -163,16 +164,16 @@ Deno.test("MWICoreFrag (m.frg) - CSR-DOM Tests", async (t) => {
 		fragNode('append', [textNode]);
 		const domNodes = await fragNode('getDOM');
 
-		const outputElem = domNodes.at(0);
-		assertEquals(outputElem.textContent, 'Initial');
+		const textDomNode = domNodes.at(0);
+		assertEquals(textDomNode.nodeValue, 'Initial');
 		assertEquals(domNodes.size, 1);
 
 		// Update child text
 		textNode('setAttr', ['t', 'Updated']);
 		await globalThis.reactive.wait();
 
-		// Same element, updated content
-		assertEquals(outputElem.textContent, 'Updated');
+		// Same node, updated content
+		assertEquals(textDomNode.nodeValue, 'Updated');
 		assertEquals(domNodes.size, 1);
 	});
 
@@ -183,13 +184,13 @@ Deno.test("MWICoreFrag (m.frg) - CSR-DOM Tests", async (t) => {
 		fragNode.append(textNode);
 		const domNodes = await fragNode.getDOM();
 
-		const outputElem = domNodes.at(0);
-		assertEquals(outputElem.textContent, 'Initial');
+		const textDomNode = domNodes.at(0);
+		assertEquals(textDomNode.nodeValue, 'Initial');
 
 		textNode.setAttr('t', 'Updated');
 		await globalThis.reactive.wait();
 
-		assertEquals(outputElem.textContent, 'Updated');
+		assertEquals(textDomNode.nodeValue, 'Updated');
 		assertEquals(domNodes.size, 1);
 	});
 
@@ -209,9 +210,9 @@ Deno.test("MWICoreFrag (m.frg) - CSR-DOM Tests", async (t) => {
 		await globalThis.reactive.wait();
 		assertEquals(await fragNode('getDOM'), domNodes, 'always same DOM-node list');
 
-		// Should now have one output element
+		// Should now have one text node
 		assertEquals(domNodes.size, 1);
-		assertEquals(domNodes.at(0)?.textContent, 'Now has text');
+		assertEquals(domNodes.at(0)?.nodeValue, 'Now has text');
 	});
 
 	await t.step(".getDOM() - Reactive child empty to non-empty via JS", async () => {
@@ -228,7 +229,7 @@ Deno.test("MWICoreFrag (m.frg) - CSR-DOM Tests", async (t) => {
 		await globalThis.reactive.wait();
 
 		assertEquals(domNodes.size, 1);
-		assertEquals(domNodes.at(0)?.textContent, 'Now has text');
+		assertEquals(domNodes.at(0)?.nodeValue, 'Now has text');
 	});
 
 	await t.step("(getDOM) - Fragment with empty text nodes", async () => {
@@ -245,7 +246,7 @@ Deno.test("MWICoreFrag (m.frg) - CSR-DOM Tests", async (t) => {
 		// Only the non-empty text node should contribute a DOM node
 		await globalThis.reactive.wait();
 		assertEquals(domNodes.size, 1);
-		assertEquals(domNodes.at(0).textContent, 'Content');
+		assertEquals(domNodes.at(0).nodeValue, 'Content');
 	});
 
 	await t.step(".getDOM() - Fragment with empty text nodes via JS", async () => {
@@ -261,6 +262,6 @@ Deno.test("MWICoreFrag (m.frg) - CSR-DOM Tests", async (t) => {
 
 		await globalThis.reactive.wait();
 		assertEquals(domNodes.size, 1);
-		assertEquals(domNodes.at(0).textContent, 'Content');
+		assertEquals(domNodes.at(0).nodeValue, 'Content');
 	});
 });

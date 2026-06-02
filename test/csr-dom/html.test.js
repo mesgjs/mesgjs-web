@@ -98,10 +98,11 @@ Deno.test("MWIHTML (h.*) - CSR-DOM Element with Children", async (t) => {
 
 		const divElem = domNodes.at(0);
 		assertEquals(divElem.tagName, 'DIV');
-		// The div should contain an <output> element from the text node
-		assertEquals(divElem.children.length, 1);
-		assertEquals(divElem.children[0].tagName, 'OUTPUT');
-		assertEquals(divElem.children[0].textContent, 'Hello World');
+		// The div should contain a text node from the text node
+		assertEquals(divElem.children.length, 0);
+		assertEquals(divElem.childNodes.length, 1);
+		assertEquals(divElem.childNodes[0].nodeType, 3); // Text node
+		assertEquals(divElem.childNodes[0].nodeValue, 'Hello World');
 		assertEquals(domNodes.size, 1);
 	});
 
@@ -113,8 +114,10 @@ Deno.test("MWIHTML (h.*) - CSR-DOM Element with Children", async (t) => {
 		const domNodes = divNode.getDOM();
 
 		const divElem = domNodes.at(0);
-		assertEquals(divElem.children.length, 1);
-		assertEquals(divElem.children[0].textContent, 'JS Hello');
+		assertEquals(divElem.children.length, 0);
+		assertEquals(divElem.childNodes.length, 1);
+		assertEquals(divElem.childNodes[0].nodeType, 3); // Text node
+		assertEquals(divElem.childNodes[0].nodeValue, 'JS Hello');
 		assertEquals(domNodes.size, 1);
 	});
 
@@ -128,9 +131,10 @@ Deno.test("MWIHTML (h.*) - CSR-DOM Element with Children", async (t) => {
 		const domNodes = divNode('getDOM');
 
 		const divElem = domNodes.at(0);
-		assertEquals(divElem.children.length, 2);
-		assertEquals(divElem.children[0].textContent, 'First');
-		assertEquals(divElem.children[1].textContent, 'Second');
+		assertEquals(divElem.children.length, 0);
+		assertEquals(divElem.childNodes.length, 2);
+		assertEquals(divElem.childNodes[0].nodeValue, 'First');
+		assertEquals(divElem.childNodes[1].nodeValue, 'Second');
 		assertEquals(domNodes.size, 1);
 	});
 
@@ -144,9 +148,10 @@ Deno.test("MWIHTML (h.*) - CSR-DOM Element with Children", async (t) => {
 		const domNodes = divNode.getDOM();
 
 		const divElem = domNodes.at(0);
-		assertEquals(divElem.children.length, 2);
-		assertEquals(divElem.children[0].textContent, 'JS First');
-		assertEquals(divElem.children[1].textContent, 'JS Second');
+		assertEquals(divElem.children.length, 0);
+		assertEquals(divElem.childNodes.length, 2);
+		assertEquals(divElem.childNodes[0].nodeValue, 'JS First');
+		assertEquals(divElem.childNodes[1].nodeValue, 'JS Second');
 		assertEquals(domNodes.size, 1);
 	});
 
@@ -167,7 +172,7 @@ Deno.test("MWIHTML (h.*) - CSR-DOM Element with Children", async (t) => {
 		const innerElem = outerElem.children[0];
 		assertEquals(innerElem.tagName, 'DIV');
 		assertEquals(innerElem.className, 'inner');
-		assertEquals(innerElem.children[0].textContent, 'Nested content');
+		assertEquals(innerElem.childNodes[0].nodeValue, 'Nested content');
 		assertEquals(domNodes.size, 1);
 	});
 
@@ -186,7 +191,7 @@ Deno.test("MWIHTML (h.*) - CSR-DOM Element with Children", async (t) => {
 		assertEquals(outerElem.className, 'js-outer');
 		const innerElem = outerElem.children[0];
 		assertEquals(innerElem.className, 'js-inner');
-		assertEquals(innerElem.children[0].textContent, 'JS Nested');
+		assertEquals(innerElem.childNodes[0].nodeValue, 'JS Nested');
 		assertEquals(domNodes.size, 1);
 	});
 });
@@ -297,14 +302,14 @@ Deno.test("MWIHTML (h.*) - CSR-DOM Reactive Updates", async (t) => {
 		const domNodes = divNode('getDOM');
 
 		const divElem = domNodes.at(0);
-		assertEquals(divElem.children[0].textContent, 'Initial');
+		assertEquals(divElem.childNodes[0].nodeValue, 'Initial');
 
 		// Update child text
 		textNode('setAttr', ['t', 'Updated']);
 		await globalThis.reactive.wait();
 
 		// Same div, updated child content
-		assertEquals(divElem.children[0].textContent, 'Updated');
+		assertEquals(divElem.childNodes[0].nodeValue, 'Updated');
 		assertEquals(domNodes.size, 1);
 	});
 
@@ -316,12 +321,12 @@ Deno.test("MWIHTML (h.*) - CSR-DOM Reactive Updates", async (t) => {
 		const domNodes = divNode.getDOM();
 
 		const divElem = domNodes.at(0);
-		assertEquals(divElem.children[0].textContent, 'JS Initial');
+		assertEquals(divElem.childNodes[0].nodeValue, 'JS Initial');
 
 		textNode.setAttr('t', 'JS Updated');
 		await globalThis.reactive.wait();
 
-		assertEquals(divElem.children[0].textContent, 'JS Updated');
+		assertEquals(divElem.childNodes[0].nodeValue, 'JS Updated');
 		assertEquals(domNodes.size, 1);
 	});
 
@@ -335,15 +340,16 @@ Deno.test("MWIHTML (h.*) - CSR-DOM Reactive Updates", async (t) => {
 		const divElem = domNodes.at(0);
 		// Initially empty - no children
 		await globalThis.reactive.wait();
-		assertEquals(divElem.children.length, 0);
+		assertEquals(divElem.childNodes.length, 0);
 
 		// Update to non-empty
 		textNode('setAttr', ['t', 'Now has text']);
 		await globalThis.reactive.wait();
 
-		// Should now have one child
-		assertEquals(divElem.children.length, 1);
-		assertEquals(divElem.children[0].textContent, 'Now has text');
+		// Should now have one text node child
+		assertEquals(divElem.childNodes.length, 1);
+		assertEquals(divElem.childNodes[0].nodeType, 3); // Text node
+		assertEquals(divElem.childNodes[0].nodeValue, 'Now has text');
 		assertEquals(domNodes.size, 1);
 	});
 
@@ -356,13 +362,14 @@ Deno.test("MWIHTML (h.*) - CSR-DOM Reactive Updates", async (t) => {
 
 		const divElem = domNodes.at(0);
 		await globalThis.reactive.wait();
-		assertEquals(divElem.children.length, 0);
+		assertEquals(divElem.childNodes.length, 0);
 
 		textNode.setAttr('t', 'Now has text');
 		await globalThis.reactive.wait();
 
-		assertEquals(divElem.children.length, 1);
-		assertEquals(divElem.children[0].textContent, 'Now has text');
+		assertEquals(divElem.childNodes.length, 1);
+		assertEquals(divElem.childNodes[0].nodeType, 3); // Text node
+		assertEquals(divElem.childNodes[0].nodeValue, 'Now has text');
 		assertEquals(domNodes.size, 1);
 	});
 });
@@ -377,7 +384,7 @@ Deno.test("MWIHTML (h.*) - CSR-DOM Various Element Types", async (t) => {
 
 		const pElem = domNodes.at(0);
 		assertEquals(pElem.tagName, 'P');
-		assertEquals(pElem.children[0].textContent, 'Paragraph text');
+		assertEquals(pElem.childNodes[0].nodeValue, 'Paragraph text');
 		assertEquals(domNodes.size, 1);
 	});
 
@@ -390,7 +397,7 @@ Deno.test("MWIHTML (h.*) - CSR-DOM Various Element Types", async (t) => {
 
 		const pElem = domNodes.at(0);
 		assertEquals(pElem.tagName, 'P');
-		assertEquals(pElem.children[0].textContent, 'JS Paragraph');
+		assertEquals(pElem.childNodes[0].nodeValue, 'JS Paragraph');
 		assertEquals(domNodes.size, 1);
 	});
 
@@ -405,7 +412,7 @@ Deno.test("MWIHTML (h.*) - CSR-DOM Various Element Types", async (t) => {
 		const spanElem = domNodes.at(0);
 		assertEquals(spanElem.tagName, 'SPAN');
 		assertEquals(spanElem.className, 'highlight');
-		assertEquals(spanElem.children[0].textContent, 'Highlighted');
+		assertEquals(spanElem.childNodes[0].nodeValue, 'Highlighted');
 		assertEquals(domNodes.size, 1);
 	});
 
@@ -420,7 +427,7 @@ Deno.test("MWIHTML (h.*) - CSR-DOM Various Element Types", async (t) => {
 		const spanElem = domNodes.at(0);
 		assertEquals(spanElem.tagName, 'SPAN');
 		assertEquals(spanElem.className, 'js-highlight');
-		assertEquals(spanElem.children[0].textContent, 'JS Highlighted');
+		assertEquals(spanElem.childNodes[0].nodeValue, 'JS Highlighted');
 		assertEquals(domNodes.size, 1);
 	});
 });

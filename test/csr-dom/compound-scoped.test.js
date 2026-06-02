@@ -29,7 +29,7 @@ Deno.test("MWICoreScpCSS CSR Compound - Card Component with m.coat", async (t) =
 		]));
 
 		const doc = getInstance('MWIDocument');
-		
+
 		// Create m.scpcss node
 		const scpNode = doc.createNode('m.scpcss');
 		doc('append', scpNode);
@@ -38,7 +38,7 @@ Deno.test("MWICoreScpCSS CSR Compound - Card Component with m.coat", async (t) =
 		const cardNode = doc.createNode('test.csr.compound.card');
 		cardNode('setAttr', ls([, 'header', , ps('[([m.t t="Card Title"])]')]));
 		cardNode('setAttr', ls([, 'body', , ps('[([m.t t="Card content goes here"])]')]));
-		
+
 		doc('append', cardNode);
 
 		await globalThis.reactive.wait();
@@ -57,10 +57,10 @@ Deno.test("MWICoreScpCSS CSR Compound - Card Component with m.coat", async (t) =
 		// Verify card DOM structure
 		const cardDom = cardNode('getDOM');
 		assert(cardDom.size > 0, "Card should have DOM elements");
-		
+
 		const cardDiv = cardDom.at(0);
 		assert(cardDiv instanceof globalThis.window.HTMLDivElement, "Should be div element");
-		
+
 		// Verify m.percl was applied (component ID should be in class)
 		const classes = cardDiv.className.split(' ');
 		const hasComponentId = classes.some(c => c.startsWith('_MO_'));
@@ -119,7 +119,7 @@ Deno.test("MWICoreScpCSS CSR Compound - Nested Components", async (t) => {
 
 		// Create parent with nested children
 		const parentNode = doc.createNode('test.csr.compound.parent');
-		
+
 		const child1 = doc.createNode('test.csr.compound.child');
 		child1('setAttr', ls([, 'content', , ps('[([m.t t="Child 1"])]')]));
 
@@ -223,7 +223,7 @@ Deno.test("MWICoreScpCSS CSR Compound - Template with Scoped CSS", async (t) => 
 		doc('append', scpNode);
 
 		const tplNode = doc.createNode('test.csr.compound.tpl');
-		
+
 		// Add slotted content via attributes
 		tplNode('setAttr', ls([, 'item1', , ps('[([m.t t="Item 1"])]')]));
 		tplNode('setAttr', ls([, 'item2', , ps('[([m.t t="Item 2"])]')]));
@@ -245,10 +245,10 @@ Deno.test("MWICoreScpCSS CSR Compound - Template with Scoped CSS", async (t) => 
 		// Verify DOM structure
 		const tplDom = tplNode('getDOM');
 		assert(tplDom.size > 0, "Template should have DOM elements");
-		
+
 		const containerDiv = tplDom.at(0);
 		assert(containerDiv instanceof globalThis.window.HTMLDivElement, "Should be div element");
-		
+
 		// Verify component ID class is applied
 		const classes = containerDiv.className.split(' ');
 		const hasComponentId = classes.some(c => c.startsWith('_MO_'));
@@ -317,15 +317,15 @@ Deno.test("MWICoreScpCSS CSR Compound - Component Library Pattern", async (t) =>
 
 		// Create a form using all components
 		const cardNode = doc.createNode('test.csr.compound.libcard');
-		
+
 		const inputNode = doc.createNode('test.csr.compound.input');
 		const buttonNode = doc.createNode('test.csr.compound.button');
 		buttonNode('setAttr', ls([, 'label', , ps('[([m.t t="Submit"])]')]));
-		
+
 		const formFrag = doc.createNode('m.frg');
 		formFrag('append', inputNode);
 		formFrag('append', buttonNode);
-		
+
 		cardNode('setAttr', ls([, 'content', , formFrag]));
 		doc('append', cardNode);
 
@@ -424,12 +424,12 @@ Deno.test("MWICoreScpCSS CSR Compound - CSS Deduplication", async (t) => {
 		const parent = doc.createNode('test.csr.compound.reuse');
 		const child1 = doc.createNode('test.csr.compound.reuse');
 		const child2 = doc.createNode('test.csr.compound.reuse');
-		
+
 		const childFrag = doc.createNode('m.frg');
 		childFrag('append', child1);
 		childFrag('append', child2);
 		parent('setAttr', ls([, 'content', , childFrag]));
-		
+
 		doc('append', parent);
 
 		await globalThis.reactive.wait();
@@ -452,7 +452,7 @@ Deno.test("MWICoreScpCSS CSR Compound - Multiple m.scpcss Nodes", async (t) => {
 		]));
 
 		const doc = getInstance('MWIDocument');
-		
+
 		// Add first m.scpcss
 		const scpNode1 = doc.createNode('m.scpcss');
 		doc('append', scpNode1);
@@ -543,7 +543,7 @@ Deno.test("MWICoreScpCSS CSR Compound - Edge Cases", async (t) => {
 		const styleElem = styleDom.at(0);
 
 		assert(styleElem.textContent.includes('transition: all 0.3s'), "Should include CSS after rapid additions");
-		
+
 		// CSS should appear only once
 		const matches = styleElem.textContent.match(/transition: all 0\.3s/g);
 		assertEquals(matches?.length, 1, "CSS should appear only once despite 10 instances");

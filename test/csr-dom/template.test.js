@@ -32,9 +32,9 @@ Deno.test("MWICoreTpl (template handler) - CSR-DOM Basic Rendering", async (t) =
 
 		await globalThis.reactive.wait();
 		assertEquals(domNodes.size, 1);
-		const outputElem = domNodes.at(0);
-		assertEquals(outputElem.tagName, 'OUTPUT');
-		assertEquals(outputElem.textContent, 'Simple template');
+		const textDomNode = domNodes.at(0);
+		assertEquals(textDomNode.nodeType, 3); // Text node
+		assertEquals(textDomNode.nodeValue, 'Simple template');
 	});
 
 	await t.step(".getDOM() - Renders simple template content via JS", async () => {
@@ -139,12 +139,12 @@ Deno.test("MWICoreTpl (template handler) - CSR-DOM Mixed Content Types", async (
 
 		await globalThis.reactive.wait();
 		assertEquals(domNodes.size, 3);
-		assertEquals(domNodes.at(0).tagName, 'OUTPUT');
-		assertEquals(domNodes.at(0).textContent, 'Text');
+		assertEquals(domNodes.at(0).nodeType, 3); // Text node
+		assertEquals(domNodes.at(0).nodeValue, 'Text');
 		assertEquals(domNodes.at(1).nodeType, 8); // Comment node
 		assertEquals(domNodes.at(1).textContent, 'Comment');
-		assertEquals(domNodes.at(2).tagName, 'OUTPUT');
-		assertEquals(domNodes.at(2).textContent, 'Fragment');
+		assertEquals(domNodes.at(2).nodeType, 3); // Text node
+		assertEquals(domNodes.at(2).nodeValue, 'Fragment');
 	});
 
 	await t.step(".getDOM() - Renders text, comment, and fragment via JS", async () => {

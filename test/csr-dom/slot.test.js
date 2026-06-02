@@ -27,12 +27,12 @@ Deno.test("MWICoreSlot (m.slot) - CSR-DOM Default Content", async (t) => {
 		slotNode('append', ['Default']);
 		const domNodes = slotNode('getDOM');
 
-		// Should have one <output> element from the text node
+		// Should have one text node from the text node
 		await globalThis.reactive.wait();
 		assertEquals(domNodes.size, 1);
-		const outputElem = domNodes.at(0);
-		assertEquals(outputElem.tagName, 'OUTPUT');
-		assertEquals(outputElem.textContent, 'Default');
+		const textDomNode = domNodes.at(0);
+		assertEquals(textDomNode.nodeType, 3); // Text node
+		assertEquals(textDomNode.nodeValue, 'Default');
 	});
 
 	await t.step(".getDOM() - Renders default content in absence of slot source via JS", async () => {
@@ -42,8 +42,9 @@ Deno.test("MWICoreSlot (m.slot) - CSR-DOM Default Content", async (t) => {
 
 		await globalThis.reactive.wait();
 		assertEquals(domNodes.size, 1);
-		const outputElem = domNodes.at(0);
-		assertEquals(outputElem.textContent, 'JS Default');
+		const textDomNode = domNodes.at(0);
+		assertEquals(textDomNode.nodeType, 3); // Text node
+		assertEquals(textDomNode.nodeValue, 'JS Default');
 	});
 
 	await t.step("(getDOM) - Multiple default content items", async () => {

@@ -183,11 +183,13 @@ Deno.test("Compound CSR - Complex Document Structures", async (t) => {
 		const divElem = domNodes.at(0);
 		assertEquals(divElem.tagName, 'DIV');
 		assertEquals(divElem.textContent, 'TextSpanMore text');
-		// Text renders as <output>, span as <span>, text as <output>
-		assertEquals(divElem.children.length, 3);
-		assertEquals(divElem.children[0].tagName, 'OUTPUT');
-		assertEquals(divElem.children[1].tagName, 'SPAN');
-		assertEquals(divElem.children[2].tagName, 'OUTPUT');
+		// Text renders as text nodes, span as <span>
+		assertEquals(divElem.children.length, 1);
+		assertEquals(divElem.childNodes[0].nodeType, 3); // Text node
+		assertEquals(divElem.childNodes[0].nodeValue, 'Text');
+		assertEquals(divElem.childNodes[1].tagName, 'SPAN');
+		assertEquals(divElem.childNodes[2].nodeType, 3); // Text node
+		assertEquals(divElem.childNodes[2].nodeValue, 'More text');
 	});
 
 	await t.step("Multiple siblings with attributes", async () => {
@@ -281,9 +283,11 @@ Deno.test("Compound CSR - Core Components Integration", async (t) => {
 		await globalThis.reactive.wait();
 		const divElem = domNodes.at(0);
 		assertEquals(divElem.textContent, 'Explicit text node');
-		// Text renders as <output> element
-		assertEquals(divElem.children.length, 1);
-		assertEquals(divElem.children[0].tagName, 'OUTPUT');
+		// Text renders as text node
+		assertEquals(divElem.children.length, 0);
+		assertEquals(divElem.childNodes.length, 1);
+		assertEquals(divElem.childNodes[0].nodeType, 3); // Text node
+		assertEquals(divElem.childNodes[0].nodeValue, 'Explicit text node');
 	});
 
 	await t.step("Comments (m.com) in HTML", async () => {
@@ -293,7 +297,8 @@ Deno.test("Compound CSR - Core Components Integration", async (t) => {
 		assertEquals(divElem.childNodes.length, 2);
 		assertEquals(divElem.childNodes[0].nodeType, 8); // Comment node
 		assertEquals(divElem.childNodes[0].textContent, 'This is a comment');
-		assertEquals(divElem.childNodes[1].textContent, 'Content');
+		assertEquals(divElem.childNodes[1].nodeType, 3); // Text node
+		assertEquals(divElem.childNodes[1].nodeValue, 'Content');
 	});
 
 	await t.step("Fragments (m.frg) flatten into parent", async () => {
@@ -301,8 +306,11 @@ Deno.test("Compound CSR - Core Components Integration", async (t) => {
 		await globalThis.reactive.wait();
 		const divElem = domNodes.at(0);
 		assertEquals(divElem.textContent, 'Text1Text2');
-		// Two text nodes rendered as <output> elements
-		assertEquals(divElem.children.length, 2);
+		// Two text nodes rendered as text nodes (no element children)
+		assertEquals(divElem.children.length, 0);
+		assertEquals(divElem.childNodes.length, 2);
+		assertEquals(divElem.childNodes[0].nodeType, 3); // Text node
+		assertEquals(divElem.childNodes[1].nodeType, 3); // Text node
 	});
 
 	await t.step("Mixed HTML and core components", async () => {
@@ -316,13 +324,15 @@ Deno.test("Compound CSR - Core Components Integration", async (t) => {
 		await globalThis.reactive.wait();
 		const divElem = domNodes.at(0);
 
-		// Should have: comment, p, 2 outputs (from fragment), comment
+		// Should have: comment, p, 2 text nodes (from fragment), comment
 		assertEquals(divElem.childNodes.length, 5);
 		assertEquals(divElem.childNodes[0].nodeType, 8);
 		assertEquals(divElem.childNodes[0].textContent, 'Section start');
 		assertEquals(divElem.childNodes[1].tagName, 'P');
-		assertEquals(divElem.childNodes[2].tagName, 'OUTPUT');
-		assertEquals(divElem.childNodes[3].tagName, 'OUTPUT');
+		assertEquals(divElem.childNodes[2].nodeType, 3); // Text node
+		assertEquals(divElem.childNodes[2].nodeValue, 'Fragment');
+		assertEquals(divElem.childNodes[3].nodeType, 3); // Text node
+		assertEquals(divElem.childNodes[3].nodeValue, ' content');
 		assertEquals(divElem.childNodes[4].nodeType, 8);
 		assertEquals(divElem.childNodes[4].textContent, 'Section end');
 	});
@@ -450,9 +460,13 @@ Deno.test("Compound CSR - Edge Cases", async (t) => {
 		const pElem = divElem.children[0];
 		assertEquals(pElem.tagName, 'P');
 		assertEquals(pElem.textContent, 'TextMore');
-		// Should have: <output>Text</output>, <br>, <output>More</output>
+		// Should have: text node "Text", <br>, text node "More"
 		assertEquals(pElem.childNodes.length, 3);
+		assertEquals(pElem.childNodes[0].nodeType, 3); // Text node
+		assertEquals(pElem.childNodes[0].nodeValue, 'Text');
 		assertEquals(pElem.childNodes[1].tagName, 'BR');
+		assertEquals(pElem.childNodes[2].nodeType, 3); // Text node
+		assertEquals(pElem.childNodes[2].nodeValue, 'More');
 	});
 
 	await t.step("Empty fragment", async () => {

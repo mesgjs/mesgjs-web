@@ -18,16 +18,16 @@ await simulateBrowser();
 const doc = getInstance('MWIDocument');
 
 Deno.test("MWICoreText (m.t) - CSR-DOM Tests", async (t) => {
-	await t.step("(getDOM) - Simple text in output element", async () => {
+	await t.step("(getDOM) - Simple text as text node", async () => {
 		const textNode = doc('createNode', ['m.t']);
 		textNode('setAttr', ['t', 'Hello World']);
 		const domNodes = textNode('getDOM');
 
-		// Should return a reactive NANOS with one <output> element
-		const outputElem = domNodes.at(0);
-		assertExists(outputElem);
-		assertEquals(outputElem.tagName, 'OUTPUT');
-		assertEquals(outputElem.textContent, 'Hello World');
+		// Should return a reactive NANOS with one text node
+		const textDomNode = domNodes.at(0);
+		assertExists(textDomNode);
+		assertEquals(textDomNode.nodeType, 3); // Text node
+		assertEquals(textDomNode.nodeValue, 'Hello World');
 		assertEquals(domNodes.size, 1);
 	});
 
@@ -36,9 +36,9 @@ Deno.test("MWICoreText (m.t) - CSR-DOM Tests", async (t) => {
 		textNode.setAttr('t', 'Simple text content');
 		const domNodes = textNode.getDOM();
 
-		const outputElem = domNodes.at(0);
-		assertEquals(outputElem.tagName, 'OUTPUT');
-		assertEquals(outputElem.textContent, 'Simple text content');
+		const textDomNode = domNodes.at(0);
+		assertEquals(textDomNode.nodeType, 3); // Text node
+		assertEquals(textDomNode.nodeValue, 'Simple text content');
 		assertEquals(domNodes.size, 1);
 	});
 
@@ -68,8 +68,9 @@ Deno.test("MWICoreText (m.t) - CSR-DOM Tests", async (t) => {
 		const domNodes = textNode('getDOM');
 
 		// DOM text content doesn't need escaping
-		const outputElem = domNodes.at(0);
-		assertEquals(outputElem.textContent, '<tag> & "quotes"');
+		const textDomNode = domNodes.at(0);
+		assertEquals(textDomNode.nodeType, 3); // Text node
+		assertEquals(textDomNode.nodeValue, '<tag> & "quotes"');
 		assertEquals(domNodes.size, 1);
 	});
 
@@ -78,8 +79,9 @@ Deno.test("MWICoreText (m.t) - CSR-DOM Tests", async (t) => {
 		textNode.setAttr('t', '<tag> & "quotes"');
 		const domNodes = textNode.getDOM();
 
-		const outputElem = domNodes.at(0);
-		assertEquals(outputElem.textContent, '<tag> & "quotes"');
+		const textDomNode = domNodes.at(0);
+		assertEquals(textDomNode.nodeType, 3); // Text node
+		assertEquals(textDomNode.nodeValue, '<tag> & "quotes"');
 		assertEquals(domNodes.size, 1);
 	});
 
@@ -88,8 +90,8 @@ Deno.test("MWICoreText (m.t) - CSR-DOM Tests", async (t) => {
 		textNode('setAttr', ['t', 'Initial text']);
 		const domNodes = textNode('getDOM');
 
-		const outputElem = domNodes.at(0);
-		assertEquals(outputElem.textContent, 'Initial text');
+		const textDomNode = domNodes.at(0);
+		assertEquals(textDomNode.nodeValue, 'Initial text');
 		assertEquals(domNodes.size, 1);
 
 		// Update the text attribute
@@ -97,7 +99,7 @@ Deno.test("MWICoreText (m.t) - CSR-DOM Tests", async (t) => {
 		await globalThis.reactive.wait();
 
 		// The same DOM node should be updated reactively
-		assertEquals(outputElem.textContent, 'Updated text');
+		assertEquals(textDomNode.nodeValue, 'Updated text');
 		assertEquals(domNodes.size, 1); // Still just one node
 	});
 
@@ -106,8 +108,8 @@ Deno.test("MWICoreText (m.t) - CSR-DOM Tests", async (t) => {
 		textNode.setAttr('t', 'Initial text');
 		const domNodes = textNode.getDOM();
 
-		const outputElem = domNodes.at(0);
-		assertEquals(outputElem.textContent, 'Initial text');
+		const textDomNode = domNodes.at(0);
+		assertEquals(textDomNode.nodeValue, 'Initial text');
 		assertEquals(domNodes.size, 1);
 
 		// Update the text attribute
@@ -115,7 +117,7 @@ Deno.test("MWICoreText (m.t) - CSR-DOM Tests", async (t) => {
 		await globalThis.reactive.wait();
 
 		// The same DOM node should be updated reactively
-		assertEquals(outputElem.textContent, 'Updated text');
+		assertEquals(textDomNode.nodeValue, 'Updated text');
 		assertEquals(domNodes.size, 1); // Still just one node
 	});
 
@@ -132,10 +134,10 @@ Deno.test("MWICoreText (m.t) - CSR-DOM Tests", async (t) => {
 		textNode('setAttr', ['t', 'Now has text']);
 		await globalThis.reactive.wait();
 
-		// Should now have one output element
-		const outputElem = domNodes.at(0);
-		assertEquals(outputElem.tagName, 'OUTPUT');
-		assertEquals(outputElem.textContent, 'Now has text');
+		// Should now have one text node
+		const textDomNode = domNodes.at(0);
+		assertEquals(textDomNode.nodeType, 3); // Text node
+		assertEquals(textDomNode.nodeValue, 'Now has text');
 		assertEquals(domNodes.size, 1);
 	});
 
@@ -150,8 +152,8 @@ Deno.test("MWICoreText (m.t) - CSR-DOM Tests", async (t) => {
 		textNode.setAttr('t', 'Now has text');
 		await globalThis.reactive.wait();
 
-		const outputElem = domNodes.at(0);
-		assertEquals(outputElem.textContent, 'Now has text');
+		const textDomNode = domNodes.at(0);
+		assertEquals(textDomNode.nodeValue, 'Now has text');
 		assertEquals(domNodes.size, 1);
 	});
 
@@ -161,7 +163,7 @@ Deno.test("MWICoreText (m.t) - CSR-DOM Tests", async (t) => {
 		const domNodes = textNode('getDOM');
 
 		// Initially has one node
-		const outputElem = domNodes.at(0);
+		const textDomNode = domNodes.at(0);
 		assertEquals(domNodes.size, 1);
 
 		// Update to empty text
@@ -177,7 +179,7 @@ Deno.test("MWICoreText (m.t) - CSR-DOM Tests", async (t) => {
 		textNode.setAttr('t', 'Has text');
 		const domNodes = textNode.getDOM();
 
-		const outputElem = domNodes.at(0);
+		const textDomNode = domNodes.at(0);
 		assertEquals(domNodes.size, 1);
 
 		textNode.setAttr('t', '');

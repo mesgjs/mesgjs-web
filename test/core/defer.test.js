@@ -283,7 +283,7 @@ Deno.test("MWICoreDefer (m.defer) - Complex Scenarios", async (t) => {
 		const deferNode = doc.createNode('m.defer');
 		deferNode.setAttr('class', 'test-class');
 		deferNode.setAttr('id', 'test-id');
-		
+
 		// Should not render anything
 		assertEquals(deferNode('getHTML'), '');
 		assertEquals(deferNode('getDOM').size, 0);

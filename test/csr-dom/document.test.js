@@ -90,12 +90,12 @@ Deno.test('MWIDocument - CSR-DOM Multiple Content Items', async (t) => {
 
 		await globalThis.reactive.wait();
 		assertEquals(domNodes.size, 3);
-		assertEquals(domNodes.at(0).tagName, 'OUTPUT');
-		assertEquals(domNodes.at(0).textContent, 'First');
-		assertEquals(domNodes.at(1).tagName, 'OUTPUT');
-		assertEquals(domNodes.at(1).textContent, 'Second');
-		assertEquals(domNodes.at(2).tagName, 'OUTPUT');
-		assertEquals(domNodes.at(2).textContent, 'Third');
+		assertEquals(domNodes.at(0).nodeType, 3); // Text node
+		assertEquals(domNodes.at(0).nodeValue, 'First');
+		assertEquals(domNodes.at(1).nodeType, 3); // Text node
+		assertEquals(domNodes.at(1).nodeValue, 'Second');
+		assertEquals(domNodes.at(2).nodeType, 3); // Text node
+		assertEquals(domNodes.at(2).nodeValue, 'Third');
 	});
 
 	await t.step('.getDOM() - Multiple text nodes via JS', async () => {
@@ -105,9 +105,9 @@ Deno.test('MWIDocument - CSR-DOM Multiple Content Items', async (t) => {
 
 		await globalThis.reactive.wait();
 		assertEquals(domNodes.size, 3);
-		assertEquals(domNodes.at(0).textContent, 'A');
-		assertEquals(domNodes.at(1).textContent, 'B');
-		assertEquals(domNodes.at(2).textContent, 'C');
+		assertEquals(domNodes.at(0).nodeValue, 'A');
+		assertEquals(domNodes.at(1).nodeValue, 'B');
+		assertEquals(domNodes.at(2).nodeValue, 'C');
 	});
 
 	await t.step('(getDOM) - Multiple HTML elements', async () => {
@@ -144,8 +144,8 @@ Deno.test('MWIDocument - CSR-DOM Multiple Content Items', async (t) => {
 
 		await globalThis.reactive.wait();
 		assertEquals(domNodes.size, 3);
-		assertEquals(domNodes.at(0).tagName, 'OUTPUT');
-		assertEquals(domNodes.at(0).textContent, 'Text');
+		assertEquals(domNodes.at(0).nodeType, 3); // Text node
+		assertEquals(domNodes.at(0).nodeValue, 'Text');
 		assertEquals(domNodes.at(1).tagName, 'DIV');
 		assertEquals(domNodes.at(1).textContent, 'Element');
 		assertEquals(domNodes.at(2).nodeType, 8); // Comment node
@@ -159,7 +159,7 @@ Deno.test('MWIDocument - CSR-DOM Multiple Content Items', async (t) => {
 
 		await globalThis.reactive.wait();
 		assertEquals(domNodes.size, 3);
-		assertEquals(domNodes.at(0).tagName, 'OUTPUT');
+		assertEquals(domNodes.at(0).nodeType, 3); // Text node
 		assertEquals(domNodes.at(1).tagName, 'SPAN');
 		assertEquals(domNodes.at(2).nodeType, 8);
 	});

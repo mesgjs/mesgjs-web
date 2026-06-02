@@ -39,21 +39,22 @@ MWI uses a **synchronous DOM assimilation** strategy via the [`MWIDOMSync`](#2-m
   - Accepts the sync node (a DOM node) where the instance should begin matching.
   - Returns the `MWIDOMSync` instance.
 
-### 2.2 Core Operation: `sync(docSpec)`
+### 2.2 Core Operation: `sync(tag docNode)`
 
-- **Mesgjs:** `(sync docSpec)`
-- **JavaScript:** `.sync(docSpec)`
+- **Mesgjs:** `(sync tag docNode)`
+- **JavaScript:** `.sync(tag, docNode)`
 - **Parameters:** 
-  - `docSpec` — a doc-spec for the desired node
+  - `tag` — `m.t` (for text), `m.com` (for comments), or an HTML tag name (e.g. `DIV`, `SPAN`)
+  - `docNode` — a doc-node for the desired node
 - **Returns:** A matching DOM node if found, `undefined` otherwise
 - **Side Effect:** Advances the internal sync cursor position when a match is found
 
 #### Matching Strategy
 
-The `sync` operation attempts to match the next sync (DOM) node to the provided doc-spec:
+The `sync` operation attempts to match the next sync (DOM) node to the provided doc-node:
 
 1. **Text/Comment Match:**
-   - If the spec is a text or comment node and the sync node matches both type *and content*:
+   - If the doc-node is a text or comment node and the sync node matches both type *and content*:
      - Advance sync cursor to `.nextSibling`
      - Return the matching DOM node
 
@@ -61,12 +62,12 @@ The `sync` operation attempts to match the next sync (DOM) node to the provided 
    - While the sync node is a text or comment node (that didn't match in step 1), advance to `.nextSibling`
 
 3. **Tag Match:**
-   - If the sync node's tag matches the spec's (post-`.`) tag:
+   - If the sync node's tag matches the tag parameter:
      - Advance sync cursor to `.nextSibling`
      - Return the matching DOM node
 
 4. **ID-based Resync:**
-   - If the spec includes an `id` attribute and `getElementById` locates the node:
+   - If the doc-node includes an `id` attribute and `getElementById` locates the node:
      - Advance sync cursor to `.nextSibling` of the located node
      - Return the located DOM node
 

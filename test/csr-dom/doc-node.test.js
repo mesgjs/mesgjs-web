@@ -315,12 +315,12 @@ Deno.test("MWIDocNode - CSR-DOM Child Content Rendering", async (t) => {
 		await globalThis.reactive.wait();
 		const divElem = domNodes.at(0);
 		assertEquals(divElem.textContent, 'TextSpan');
-		// Text renders as <output>, so we have 2 children: <output> and <span>
-		assertEquals(divElem.children.length, 2);
-		assertEquals(divElem.children[0].tagName, 'OUTPUT');
-		assertEquals(divElem.children[0].textContent, 'Text');
-		assertEquals(divElem.children[1].tagName, 'SPAN');
-		assertEquals(divElem.children[1].textContent, 'Span');
+		// Text renders as text node, so we have 1 element child (<span>) and 1 text node child
+		assertEquals(divElem.children.length, 1);
+		assertEquals(divElem.childNodes[0].nodeType, 3); // Text node
+		assertEquals(divElem.childNodes[0].nodeValue, 'Text');
+		assertEquals(divElem.children[0].tagName, 'SPAN');
+		assertEquals(divElem.children[0].textContent, 'Span');
 	});
 
 	await t.step(".getDOM() - Mixed content via JS", async () => {
@@ -333,14 +333,14 @@ Deno.test("MWIDocNode - CSR-DOM Child Content Rendering", async (t) => {
 		await globalThis.reactive.wait();
 		const divElem = domNodes.at(0);
 		assertEquals(divElem.textContent, 'BeforeSpan contentAfter');
-		// Text renders as <output>, so we have 3 children: <output>, <span>, <output>
-		assertEquals(divElem.children.length, 3);
-		assertEquals(divElem.children[0].tagName, 'OUTPUT');
-		assertEquals(divElem.children[0].textContent, 'Before');
-		assertEquals(divElem.children[1].tagName, 'SPAN');
-		assertEquals(divElem.children[1].textContent, 'Span content');
-		assertEquals(divElem.children[2].tagName, 'OUTPUT');
-		assertEquals(divElem.children[2].textContent, 'After');
+		// Text renders as text nodes, so we have 1 element child (<span>) and 2 text node children
+		assertEquals(divElem.children.length, 1);
+		assertEquals(divElem.childNodes[0].nodeType, 3); // Text node
+		assertEquals(divElem.childNodes[0].nodeValue, 'Before');
+		assertEquals(divElem.childNodes[1].tagName, 'SPAN');
+		assertEquals(divElem.childNodes[1].textContent, 'Span content');
+		assertEquals(divElem.childNodes[2].nodeType, 3); // Text node
+		assertEquals(divElem.childNodes[2].nodeValue, 'After');
 	});
 
 	await t.step("(getDOM) - Nested elements", async () => {

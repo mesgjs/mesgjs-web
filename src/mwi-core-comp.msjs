@@ -416,19 +416,20 @@ modcaps=''
 	// `text` or `[m.t t=text?]`
 	(() => {
 		function opGetDOM (d) {
-			if (typeof document !== 'object' || typeof document.createElement !== 'function') return new NANOS();
+			if (typeof document !== 'object' || typeof document.createTextNode !== 'function') return new NANOS();
 			const p = d.p;
 			if (p.has('dom')) return p.at('dom');
-			const output = document.createElement('output'), doc = p.at('doc'), nodes = doc.rxNANOS();
+			const output = document.createTextNode(''), doc = p.at('doc'), nodes = doc.rxNANOS();
 			p.set('dom', nodes);
 			const relay = getInstance('@reactive', {
 				eager: true, def: () => {
 					const text = d.rr('getAttr', [ 't' ]) || '';
 					relay('untr', () => {
 						if (text !== '') {
-							output.textContent = text;
+							output.data = text;
 							if (!nodes.has(0)) nodes.set(0, output);
 						} else {
+							output.data = '';
 							if (nodes.has(0)) nodes.clear();
 						}
 					});

@@ -545,10 +545,10 @@ Deno.test("MWIDocNode - Computed Attributes: m.percl with @@", async (t) => {
 		]));
 		const tplNode = doc.createNode('test.ssr.percl.aa1');
 		const html = tplNode.getHTML();
-		
+
 		// Get the component ID
 		const compId = tplNode.getAttr('m.ci');
-		
+
 		// HTML should contain the component ID as a class
 		assert(html.includes(`class="${compId}"`), 'Should have component ID as class');
 	});
@@ -561,7 +561,7 @@ Deno.test("MWIDocNode - Computed Attributes: m.percl with @@", async (t) => {
 		]));
 		const tplNode = doc.createNode('test.ssr.percl.aa2');
 		const html = tplNode.getHTML();
-		
+
 		const compId = tplNode.getAttr('m.ci');
 		assert(html.includes(`class="${compId}"`), 'Should have component ID as class');
 	});
@@ -574,7 +574,7 @@ Deno.test("MWIDocNode - Computed Attributes: m.percl with @@", async (t) => {
 		]));
 		const tplNode = doc.createNode('test.ssr.percl.aa3');
 		const html = tplNode.getHTML();
-		
+
 		const compId = tplNode.getAttr('m.ci');
 		assert(html.includes(`class="${compId}__custom"`), 'Should have component ID with suffix');
 	});
@@ -587,7 +587,7 @@ Deno.test("MWIDocNode - Computed Attributes: m.percl with @@", async (t) => {
 		]));
 		const tplNode = doc.createNode('test.ssr.percl.aa4');
 		const html = tplNode.getHTML();
-		
+
 		const compId = tplNode.getAttr('m.ci');
 		assert(html.includes(`class="${compId}__suffix"`), 'Should have component ID with suffix');
 	});
@@ -603,7 +603,7 @@ Deno.test("MWIDocNode - Computed Attributes: class with @@", async (t) => {
 		]));
 		const tplNode = doc.createNode('test.ssr.class.aa1');
 		const html = tplNode.getHTML();
-		
+
 		const compId = tplNode.getAttr('m.ci');
 		assert(html.includes(`class="${compId}"`), 'Should have component ID as class');
 	});
@@ -616,7 +616,7 @@ Deno.test("MWIDocNode - Computed Attributes: class with @@", async (t) => {
 		]));
 		const tplNode = doc.createNode('test.ssr.class.aa2');
 		const html = tplNode.getHTML();
-		
+
 		const compId = tplNode.getAttr('m.ci');
 		assert(html.includes(`class="${compId}"`), 'Should have component ID as class');
 	});
@@ -629,7 +629,7 @@ Deno.test("MWIDocNode - Computed Attributes: class with @@", async (t) => {
 		]));
 		const tplNode = doc.createNode('test.ssr.class.aa3');
 		const html = tplNode.getHTML();
-		
+
 		const compId = tplNode.getAttr('m.ci');
 		assert(html.includes(compId), 'Should include component ID');
 		assert(html.includes('extra-class'), 'Should include extra class');
@@ -643,7 +643,7 @@ Deno.test("MWIDocNode - Computed Attributes: class with @@", async (t) => {
 		]));
 		const tplNode = doc.createNode('test.ssr.class.aa4');
 		const html = tplNode.getHTML();
-		
+
 		const compId = tplNode.getAttr('m.ci');
 		assert(html.includes(compId), 'Should include component ID');
 		assert(html.includes('js-extra'), 'Should include extra class');
@@ -654,44 +654,44 @@ Deno.test("MWIDocNode - Computed Attributes: id with @#", async (t) => {
 	await t.step("(getHTML) - id with @# expands to m.id", () => {
 		const fragNode = doc.createNode('m.frg');
 		fragNode.setAttr('id', 'parent-id');
-		
+
 		const divNode = doc.createNode('h.div', { slotSrc: fragNode });
 		divNode.setAttr('id', '@#');
 		const html = divNode.getHTML();
-		
+
 		assert(html.includes('id="parent-id"'), 'Should have parent id');
 	});
 
 	await t.step(".getHTML() - id with @# expands to m.id via JS", () => {
 		const fragNode = doc.createNode('m.frg');
 		fragNode.setAttr('id', 'js-parent-id');
-		
+
 		const divNode = doc.createNode('h.div', { slotSrc: fragNode });
 		divNode.setAttr('id', '@#');
 		const html = divNode.getHTML();
-		
+
 		assert(html.includes('id="js-parent-id"'), 'Should have parent id');
 	});
 
 	await t.step("(getHTML) - id with @# for hierarchical id pattern", () => {
 		const fragNode = doc.createNode('m.frg');
 		fragNode.setAttr('id', 'parent-id');
-		
+
 		const divNode = doc.createNode('h.div', { slotSrc: fragNode });
 		divNode.setAttr('id', '@#-child-id');
 		const html = divNode.getHTML();
-		
+
 		assert(html.includes('id="parent-id-child-id"'), 'Should have hierarchical id');
 	});
 
 	await t.step(".getHTML() - id with @# for hierarchical id pattern via JS", () => {
 		const fragNode = doc.createNode('m.frg');
 		fragNode.setAttr('id', 'js-parent');
-		
+
 		const divNode = doc.createNode('h.div', { slotSrc: fragNode });
 		divNode.setAttr('id', '@#-sub-id');
 		const html = divNode.getHTML();
-		
+
 		assert(html.includes('id="js-parent-sub-id"'), 'Should have hierarchical id');
 	});
 
@@ -699,7 +699,7 @@ Deno.test("MWIDocNode - Computed Attributes: id with @#", async (t) => {
 		const divNode = doc.createNode('h.div');
 		divNode.setAttr('id', '<.ap>');
 		const html = divNode.getHTML();
-		
+
 		assert(html.includes('id="@#"'), 'Should have literal @# as id');
 	});
 
@@ -707,40 +707,40 @@ Deno.test("MWIDocNode - Computed Attributes: id with @#", async (t) => {
 		const divNode = doc.createNode('h.div');
 		divNode.setAttr('id', '<.ap>');
 		const html = divNode.getHTML();
-		
+
 		assert(html.includes('id="@#"'), 'Should have literal @# as id');
 	});
 
 	await t.step("(getHTML) - id with coat:false disables computation", () => {
 		const fragNode = doc.createNode('m.frg');
 		fragNode.setAttr('id', 'parent-id');
-		
+
 		const divNode = doc.createNode('h.div', { slotSrc: fragNode });
 		divNode.setAttr('id', '@#', { coat: false });
 		const html = divNode.getHTML();
-		
+
 		assert(html.includes('id="@#"'), 'Should not compute when coat:false');
 	});
 
 	await t.step(".getHTML() - id with coat:false disables computation via JS", () => {
 		const fragNode = doc.createNode('m.frg');
 		fragNode.setAttr('id', 'js-parent-id');
-		
+
 		const divNode = doc.createNode('h.div', { slotSrc: fragNode });
 		divNode.setAttr('id', '@#', { coat: false });
 		const html = divNode.getHTML();
-		
+
 		assert(html.includes('id="@#"'), 'Should not compute when coat:false');
 	});
 
 	await t.step(".getHTML() - id with coat:false disables computation via JS", () => {
 		const fragNode = doc.createNode('m.frg');
 		fragNode.setAttr('id', 'js-parent-id');
-		
+
 		const divNode = doc.createNode('h.div', { slotSrc: fragNode });
 		divNode.setAttr('id', '@#', { coat: false });
 		const html = divNode.getHTML();
-		
+
 		assert(html.includes('id="@#"'), 'Should not compute when coat:false');
 	});
 });
@@ -750,7 +750,7 @@ Deno.test("MWIDocNode - Computed Attributes: m.coat with escapes", async (t) => 
 		const divNode = doc.createNode('h.div');
 		divNode.setAttr('m.coat', ps('[(data-test="<.aa>")]'));
 		const html = divNode.getHTML();
-		
+
 		assert(html.includes('data-test="@@"'), 'Should have literal @@ in attribute');
 	});
 
@@ -758,7 +758,7 @@ Deno.test("MWIDocNode - Computed Attributes: m.coat with escapes", async (t) => 
 		const divNode = doc.createNode('h.div');
 		divNode.setAttr('m.coat', ps('[(data-test="<.aa>")]'));
 		const html = divNode.getHTML();
-		
+
 		assert(html.includes('data-test="@@"'), 'Should have literal @@ in attribute');
 	});
 
@@ -766,7 +766,7 @@ Deno.test("MWIDocNode - Computed Attributes: m.coat with escapes", async (t) => 
 		const divNode = doc.createNode('h.div');
 		divNode.setAttr('m.coat', ps('[(data-test="<.ap>")]'));
 		const html = divNode.getHTML();
-		
+
 		assert(html.includes('data-test="@#"'), 'Should have literal @# in attribute');
 	});
 
@@ -774,7 +774,7 @@ Deno.test("MWIDocNode - Computed Attributes: m.coat with escapes", async (t) => 
 		const divNode = doc.createNode('h.div');
 		divNode.setAttr('m.coat', ps('[(data-test="<.ap>")]'));
 		const html = divNode.getHTML();
-		
+
 		assert(html.includes('data-test="@#"'), 'Should have literal @# in attribute');
 	});
 });

@@ -631,7 +631,7 @@ Deno.test("MWIDocNode - document.getDocById()", async (t) => {
 	await t.step("(getDocById) - Find node by string id", () => {
 		const divNode = doc.createNode('h.div');
 		divNode('setAttr', ls([, 'id', , 'test-node-1']));
-		
+
 		const found = doc('getDocById', ls([, 'test-node-1']));
 		assertStrictEquals(found, divNode);
 	});
@@ -639,7 +639,7 @@ Deno.test("MWIDocNode - document.getDocById()", async (t) => {
 	await t.step(".getDocById() - Find node by string id via JS", () => {
 		const divNode = doc.createNode('h.div');
 		divNode.setAttr('id', 'js-test-node-2');
-		
+
 		const found = doc.getDocById('js-test-node-2');
 		assertStrictEquals(found, divNode);
 	});
@@ -647,7 +647,7 @@ Deno.test("MWIDocNode - document.getDocById()", async (t) => {
 	await t.step("(getDocById) - Find node by numeric id", () => {
 		const divNode = doc.createNode('h.div');
 		divNode('setAttr', ls([, 'id', , 12345]));
-		
+
 		const found = doc('getDocById', ls([, 12345]));
 		assertStrictEquals(found, divNode);
 	});
@@ -655,7 +655,7 @@ Deno.test("MWIDocNode - document.getDocById()", async (t) => {
 	await t.step(".getDocById() - Find node by numeric id via JS", () => {
 		const divNode = doc.createNode('h.div');
 		divNode.setAttr('id', 45678);
-		
+
 		const found = doc.getDocById(45678);
 		assertStrictEquals(found, divNode);
 	});
@@ -663,7 +663,7 @@ Deno.test("MWIDocNode - document.getDocById()", async (t) => {
 	await t.step("(getDocById) - Numeric id normalized to string for lookup", () => {
 		const divNode = doc.createNode('h.div');
 		divNode('setAttr', ls([, 'id', , '78901']));
-		
+
 		// Should find with numeric lookup
 		const found = doc('getDocById', ls([, 78901]));
 		assertStrictEquals(found, divNode);
@@ -677,7 +677,7 @@ Deno.test("MWIDocNode - document.getDocById()", async (t) => {
 	await t.step("(getDocById) - Works with disconnected nodes", () => {
 		const divNode = doc.createNode('h.div');
 		divNode('setAttr', ls([, 'id', , 'disconnected-node']));
-		
+
 		// Node is not in any rendering tree
 		const found = doc('getDocById', ls([, 'disconnected-node']));
 		assertStrictEquals(found, divNode);
@@ -686,10 +686,10 @@ Deno.test("MWIDocNode - document.getDocById()", async (t) => {
 	await t.step(".getDocById() - Last assignment wins on collision", () => {
 		const div1 = doc.createNode('h.div');
 		div1.setAttr('id', 'shared-id-test');
-		
+
 		const div2 = doc.createNode('h.div');
 		div2.setAttr('id', 'shared-id-test');
-		
+
 		// Should return the last one assigned
 		const found = doc.getDocById('shared-id-test');
 		assertStrictEquals(found, div2);
@@ -698,10 +698,10 @@ Deno.test("MWIDocNode - document.getDocById()", async (t) => {
 	await t.step("(getDocById) - Cleared id removes from index", () => {
 		const divNode = doc.createNode('h.div');
 		divNode('setAttr', ls([, 'id', , 'temp-id-test']));
-		
+
 		let found = doc('getDocById', ls([, 'temp-id-test']));
 		assertStrictEquals(found, divNode);
-		
+
 		// Clear the id
 		divNode('delAttr', ls([, 'id']));
 		found = doc('getDocById', ls([, 'temp-id-test']));
@@ -711,16 +711,16 @@ Deno.test("MWIDocNode - document.getDocById()", async (t) => {
 	await t.step(".getDocById() - Changed id updates index", () => {
 		const divNode = doc.createNode('h.div');
 		divNode.setAttr('id', 'old-id-test');
-		
+
 		let found = doc.getDocById('old-id-test');
 		assertStrictEquals(found, divNode);
-		
+
 		// Change the id
 		divNode.setAttr('id', 'new-id-test');
-		
+
 		found = doc.getDocById('old-id-test');
 		assertEquals(found, undefined, 'Old id should not find node');
-		
+
 		found = doc.getDocById('new-id-test');
 		assertStrictEquals(found, divNode, 'New id should find node');
 	});

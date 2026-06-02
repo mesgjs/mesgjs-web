@@ -115,10 +115,10 @@ Deno.test("MWICoreDefer (m.defer) - CSR-DOM Real-World Scenarios", async (t) => 
 		await globalThis.reactive.wait();
 		// Should only see content from text nodes (2 nodes)
 		assertEquals(domNodes.size, 2, 'Should only have nodes from text elements');
-		assertEquals(domNodes.at(0).tagName, 'OUTPUT');
-		assertEquals(domNodes.at(0).textContent, 'Before');
-		assertEquals(domNodes.at(1).tagName, 'OUTPUT');
-		assertEquals(domNodes.at(1).textContent, 'After');
+		assertEquals(domNodes.at(0).nodeType, 3); // Text node
+		assertEquals(domNodes.at(0).nodeValue, 'Before');
+		assertEquals(domNodes.at(1).nodeType, 3); // Text node
+		assertEquals(domNodes.at(1).nodeValue, 'After');
 	});
 
 	await t.step(".getDOM() - Mixed content with defer node via JS", async () => {
@@ -128,10 +128,10 @@ Deno.test("MWICoreDefer (m.defer) - CSR-DOM Real-World Scenarios", async (t) => 
 
 		await globalThis.reactive.wait();
 		assertEquals(domNodes.size, 2, 'Should only have nodes from text elements');
-		assertEquals(domNodes.at(0).tagName, 'OUTPUT');
-		assertEquals(domNodes.at(0).textContent, 'Start');
-		assertEquals(domNodes.at(1).tagName, 'OUTPUT');
-		assertEquals(domNodes.at(1).textContent, 'End');
+		assertEquals(domNodes.at(0).nodeType, 3); // Text node
+		assertEquals(domNodes.at(0).nodeValue, 'Start');
+		assertEquals(domNodes.at(1).nodeType, 3); // Text node
+		assertEquals(domNodes.at(1).nodeValue, 'End');
 	});
 });
 
