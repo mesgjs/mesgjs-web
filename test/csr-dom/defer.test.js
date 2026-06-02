@@ -1,7 +1,6 @@
 import {
 	assert,
 	assertEquals,
-	assertExists,
 	assertStrictEquals,
 } from "https://deno.land/std@0.152.0/testing/asserts.ts";
 
@@ -33,187 +32,70 @@ const deferredEntry = ls([
 ]);
 registry.register('test.deferred.csr', deferredEntry);
 
-Deno.test("MWICoreDefer (m.defer) - CSR-DOM Basic Rendering", async (t) => {
-	await t.step("(getDOM) - Renders as slot element", async () => {
+Deno.test("MWICoreDefer (m.defer) - CSR-DOM No Rendering", async (t) => {
+	await t.step("(getDOM) - Returns empty NANOS (no rendering)", async () => {
 		const deferNode = doc('createNode', ['m.defer']);
 		const domNodes = deferNode('getDOM');
 
 		await globalThis.reactive.wait();
-		assertEquals(domNodes.size, 1);
-		const slotElem = domNodes.at(0);
-		assertEquals(slotElem.tagName, 'SLOT');
+		assertEquals(domNodes.size, 0, 'Should return empty NANOS');
 	});
 
-	await t.step(".getDOM() - Renders as slot element via JS", async () => {
+	await t.step(".getDOM() - Returns empty NANOS via JS", async () => {
 		const deferNode = doc.createNode('m.defer');
 		const domNodes = deferNode.getDOM();
 
 		await globalThis.reactive.wait();
-		assertEquals(domNodes.size, 1);
-		assertEquals(domNodes.at(0).tagName, 'SLOT');
+		assertEquals(domNodes.size, 0, 'Should return empty NANOS');
 	});
 
-	await t.step("(getDOM) - Includes auto-assigned ID", async () => {
+	await t.step("(getDOM) - No rendering even with attributes", async () => {
 		const deferNode = doc('createNode', ['m.defer']);
+		deferNode('setAttr', ['class', 'test-class']);
+		deferNode('setAttr', ['id', 'test-id']);
+		deferNode('setAttr', ['data-custom', 'value']);
 		const domNodes = deferNode('getDOM');
 
 		await globalThis.reactive.wait();
-		const slotElem = domNodes.at(0);
-		assert(slotElem.id, 'Should have id attribute');
-		assert(slotElem.id.length > 0, 'ID should not be empty');
+		assertEquals(domNodes.size, 0, 'Should return empty NANOS regardless of attributes');
 	});
 
-	await t.step(".getDOM() - Includes auto-assigned ID via JS", async () => {
+	await t.step(".getDOM() - No rendering even with attributes via JS", async () => {
 		const deferNode = doc.createNode('m.defer');
+		deferNode.setAttr('class', 'test-class');
+		deferNode.setAttr('style', 'color: red');
 		const domNodes = deferNode.getDOM();
 
 		await globalThis.reactive.wait();
-		const slotElem = domNodes.at(0);
-		assert(slotElem.id, 'Should have id attribute');
-		assert(slotElem.id.length > 0, 'ID should not be empty');
-	});
-
-	await t.step("(getDOM) - Includes data-mwi-defer attribute", async () => {
-		const deferNode = doc('createNode', ['m.defer']);
-		const domNodes = deferNode('getDOM');
-
-		await globalThis.reactive.wait();
-		const slotElem = domNodes.at(0);
-		assertEquals(slotElem.getAttribute('data-mwi-defer'), 'm.defer');
-	});
-
-	await t.step(".getDOM() - Includes data-mwi-defer attribute via JS", async () => {
-		const deferNode = doc.createNode('m.defer');
-		const domNodes = deferNode.getDOM();
-
-		await globalThis.reactive.wait();
-		const slotElem = domNodes.at(0);
-		assertEquals(slotElem.getAttribute('data-mwi-defer'), 'm.defer');
-	});
-
-	await t.step("(getDOM) - Only renders allowed attributes (id and data-mwi-defer)", async () => {
-		const deferNode = doc('createNode', ['m.defer']);
-		deferNode('setAttr', ['class', 'should-not-render']);
-		deferNode('setAttr', ['style', 'color: red']);
-		deferNode('setAttr', ['aria-label', 'should-not-render']);
-		const domNodes = deferNode('getDOM');
-
-		await globalThis.reactive.wait();
-		const slotElem = domNodes.at(0);
-
-		// Should have id and data-mwi-defer
-		assert(slotElem.id, 'Should have id');
-		assertEquals(slotElem.getAttribute('data-mwi-defer'), 'm.defer');
-
-		// Should NOT have other attributes
-		assertEquals(slotElem.hasAttribute('class'), false, 'Should not have class attribute');
-		assertEquals(slotElem.hasAttribute('style'), false, 'Should not have style attribute');
-		assertEquals(slotElem.hasAttribute('aria-label'), false, 'Should not have aria-label attribute');
-	});
-
-	await t.step(".getDOM() - Only renders allowed attributes via JS", async () => {
-		const deferNode = doc.createNode('m.defer');
-		deferNode.setAttr('class', 'should-not-render');
-		deferNode.setAttr('data-custom', 'should-not-render');
-		const domNodes = deferNode.getDOM();
-
-		await globalThis.reactive.wait();
-		const slotElem = domNodes.at(0);
-
-		assert(slotElem.id, 'Should have id');
-		assertEquals(slotElem.getAttribute('data-mwi-defer'), 'm.defer');
-		assertEquals(slotElem.hasAttribute('class'), false, 'Should not have class attribute');
-		assertEquals(slotElem.hasAttribute('data-custom'), false, 'Should not have data-custom attribute');
-	});
-});
-
-Deno.test("MWICoreDefer (m.defer) - CSR-DOM with Explicit ID", async (t) => {
-	await t.step("(getDOM) - Preserves explicit ID", async () => {
-		const spec = ps('[(m.defer id=my-defer-id)]');
-		const deferNode = doc('from', { item: spec });
-		const domNodes = deferNode('getDOM');
-
-		await globalThis.reactive.wait();
-		const slotElem = domNodes.at(0);
-		assertEquals(slotElem.id, 'my-defer-id');
-	});
-
-	await t.step(".getDOM() - Preserves explicit ID via JS", async () => {
-		const spec = ps('[(m.defer id=custom-id-123)]');
-		const deferNode = doc.from({ item: spec });
-		const domNodes = deferNode.getDOM();
-
-		await globalThis.reactive.wait();
-		const slotElem = domNodes.at(0);
-		assertEquals(slotElem.id, 'custom-id-123');
+		assertEquals(domNodes.size, 0, 'Should return empty NANOS regardless of attributes');
 	});
 });
 
 Deno.test("MWICoreDefer (m.defer) - CSR-DOM Real-World Scenarios", async (t) => {
-	await t.step("(getDOM) - Defer node created via document for unloaded component", async () => {
+	await t.step("(getDOM) - Defer node created for unloaded component", async () => {
 		const node = doc('createNode', ['test.deferred.csr']);
 		const domNodes = node('getDOM');
 
 		await globalThis.reactive.wait();
-		assertEquals(domNodes.size, 1);
-		const slotElem = domNodes.at(0);
-		assertEquals(slotElem.tagName, 'SLOT');
-		assertEquals(slotElem.getAttribute('data-mwi-defer'), 'test.deferred.csr');
-		assert(slotElem.id, 'Should have auto-assigned ID');
+		assertEquals(domNodes.size, 0, 'Should return empty NANOS (no rendering)');
 	});
 
-	await t.step(".getDOM() - Defer node created via document for unloaded component via JS", async () => {
+	await t.step(".getDOM() - Defer node created for unloaded component via JS", async () => {
 		const node = doc.createNode('test.deferred.csr');
 		const domNodes = node.getDOM();
 
 		await globalThis.reactive.wait();
-		assertEquals(domNodes.size, 1);
-		const slotElem = domNodes.at(0);
-		assertEquals(slotElem.tagName, 'SLOT');
-		assertEquals(slotElem.getAttribute('data-mwi-defer'), 'test.deferred.csr');
-		assert(slotElem.id, 'Should have auto-assigned ID');
+		assertEquals(domNodes.size, 0, 'Should return empty NANOS (no rendering)');
 	});
 
-	await t.step("(getDOM) - Multiple defer nodes have unique IDs", async () => {
-		const defer1 = doc('createNode', ['m.defer']);
-		const defer2 = doc('createNode', ['m.defer']);
-		const dom1 = defer1('getDOM');
-		const dom2 = defer2('getDOM');
-
-		await globalThis.reactive.wait();
-		const id1 = dom1.at(0).id;
-		const id2 = dom2.at(0).id;
-
-		assert(id1, 'First defer should have ID');
-		assert(id2, 'Second defer should have ID');
-		assert(id1 !== id2, 'IDs should be unique');
-	});
-
-	await t.step(".getDOM() - Multiple defer nodes have unique IDs via JS", async () => {
-		const defer1 = doc.createNode('m.defer');
-		const defer2 = doc.createNode('m.defer');
-		const dom1 = defer1.getDOM();
-		const dom2 = defer2.getDOM();
-
-		await globalThis.reactive.wait();
-		const id1 = dom1.at(0).id;
-		const id2 = dom2.at(0).id;
-
-		assert(id1, 'First defer should have ID');
-		assert(id2, 'Second defer should have ID');
-		assert(id1 !== id2, 'IDs should be unique');
-	});
-
-	await t.step("(getDOM) - Defer node in document fragment", async () => {
+	await t.step("(getDOM) - Defer node in document fragment (not visible in DOM)", async () => {
 		const testDoc = getInstance('MWIDocument');
 		testDoc('append', { list: '[([test.deferred.csr])]' });
 		const domNodes = testDoc('getDOM');
 
 		await globalThis.reactive.wait();
-		assertEquals(domNodes.size, 1);
-		const slotElem = domNodes.at(0);
-		assertEquals(slotElem.tagName, 'SLOT');
-		assertEquals(slotElem.getAttribute('data-mwi-defer'), 'test.deferred.csr');
+		// Defer node contributes no DOM nodes
+		assertEquals(domNodes.size, 0, 'Document with only defer node should produce empty DOM');
 	});
 
 	await t.step(".getDOM() - Defer node in document fragment via JS", async () => {
@@ -222,38 +104,34 @@ Deno.test("MWICoreDefer (m.defer) - CSR-DOM Real-World Scenarios", async (t) => 
 		const domNodes = testDoc.getDOM();
 
 		await globalThis.reactive.wait();
-		assertEquals(domNodes.size, 1);
-		const slotElem = domNodes.at(0);
-		assertEquals(slotElem.tagName, 'SLOT');
-		assertEquals(slotElem.getAttribute('data-mwi-defer'), 'test.deferred.csr');
+		assertEquals(domNodes.size, 0, 'Document with only defer node should produce empty DOM');
 	});
 
-	await t.step("(getDOM) - Mixed content with defer and regular nodes", async () => {
+	await t.step("(getDOM) - Mixed content with defer node (defer invisible)", async () => {
 		const testDoc = getInstance('MWIDocument');
 		testDoc('append', { list: '[([m.t t=Before] [test.deferred.csr] [m.t t=After])]' });
 		const domNodes = testDoc('getDOM');
 
 		await globalThis.reactive.wait();
-		assertEquals(domNodes.size, 3);
+		// Should only see content from text nodes (2 nodes)
+		assertEquals(domNodes.size, 2, 'Should only have nodes from text elements');
 		assertEquals(domNodes.at(0).tagName, 'OUTPUT');
 		assertEquals(domNodes.at(0).textContent, 'Before');
-		assertEquals(domNodes.at(1).tagName, 'SLOT');
-		assertEquals(domNodes.at(2).tagName, 'OUTPUT');
-		assertEquals(domNodes.at(2).textContent, 'After');
+		assertEquals(domNodes.at(1).tagName, 'OUTPUT');
+		assertEquals(domNodes.at(1).textContent, 'After');
 	});
 
-	await t.step(".getDOM() - Mixed content with defer and regular nodes via JS", async () => {
+	await t.step(".getDOM() - Mixed content with defer node via JS", async () => {
 		const testDoc = getInstance('MWIDocument');
 		testDoc.append({ list: '[([m.t t=Start] [test.deferred.csr] [m.t t=End])]' });
 		const domNodes = testDoc.getDOM();
 
 		await globalThis.reactive.wait();
-		assertEquals(domNodes.size, 3);
+		assertEquals(domNodes.size, 2, 'Should only have nodes from text elements');
 		assertEquals(domNodes.at(0).tagName, 'OUTPUT');
 		assertEquals(domNodes.at(0).textContent, 'Start');
-		assertEquals(domNodes.at(1).tagName, 'SLOT');
-		assertEquals(domNodes.at(2).tagName, 'OUTPUT');
-		assertEquals(domNodes.at(2).textContent, 'End');
+		assertEquals(domNodes.at(1).tagName, 'OUTPUT');
+		assertEquals(domNodes.at(1).textContent, 'End');
 	});
 });
 
@@ -264,11 +142,7 @@ Deno.test("MWICoreDefer (m.defer) - CSR-DOM Empty Content", async (t) => {
 		const domNodes = deferNode('getDOM');
 
 		await globalThis.reactive.wait();
-		assertEquals(domNodes.size, 1);
-		const slotElem = domNodes.at(0);
-		assertEquals(slotElem.tagName, 'SLOT');
-		// Slot should be empty (no child nodes)
-		assertEquals(slotElem.childNodes.length, 0);
+		assertEquals(domNodes.size, 0, 'Should return empty NANOS');
 	});
 
 	await t.step(".getDOM() - Defer node ignores appended content via JS", async () => {
@@ -277,71 +151,57 @@ Deno.test("MWICoreDefer (m.defer) - CSR-DOM Empty Content", async (t) => {
 		const domNodes = deferNode.getDOM();
 
 		await globalThis.reactive.wait();
-		assertEquals(domNodes.size, 1);
-		const slotElem = domNodes.at(0);
-		assertEquals(slotElem.tagName, 'SLOT');
-		assertEquals(slotElem.childNodes.length, 0);
+		assertEquals(domNodes.size, 0, 'Should return empty NANOS');
+	});
+
+	await t.step("(getDOM) - Defer node with setSubSpec still renders nothing", async () => {
+		const deferNode = doc('createNode', ['m.defer']);
+		deferNode('setSubSpec', { subSpec: ls([, 'child1', , 'child2']) });
+		const domNodes = deferNode('getDOM');
+
+		await globalThis.reactive.wait();
+		assertEquals(domNodes.size, 0, 'Should return empty NANOS even with sub-spec');
+	});
+
+	await t.step(".getDOM() - Defer node with setSubSpec still renders nothing via JS", async () => {
+		const deferNode = doc.createNode('m.defer');
+		deferNode.setSubSpec({ subSpec: ls([, 'child1', , 'child2']) });
+		const domNodes = deferNode.getDOM();
+
+		await globalThis.reactive.wait();
+		assertEquals(domNodes.size, 0, 'Should return empty NANOS even with sub-spec');
 	});
 });
 
 Deno.test("MWICoreDefer (m.defer) - CSR-DOM Reactive Behavior", async (t) => {
-	await t.step("(getDOM) - Defer node DOM is stable across calls", async () => {
-		const deferNode = doc('createNode', ['m.defer']);
-		const dom1 = deferNode('getDOM');
-		const dom2 = deferNode('getDOM');
-
-		await globalThis.reactive.wait();
-		assertStrictEquals(dom1, dom2, 'Should return same NANOS instance');
-		assertStrictEquals(dom1.at(0), dom2.at(0), 'Should return same slot element');
-	});
-
-	await t.step(".getDOM() - Defer node DOM is stable across calls via JS", async () => {
-		const deferNode = doc.createNode('m.defer');
-		const dom1 = deferNode.getDOM();
-		const dom2 = deferNode.getDOM();
-
-		await globalThis.reactive.wait();
-		assertStrictEquals(dom1, dom2, 'Should return same NANOS instance');
-		assertStrictEquals(dom1.at(0), dom2.at(0), 'Should return same slot element');
-	});
-
-	await t.step("(getDOM) - Attribute changes don't affect rendered attributes (filtered)", async () => {
+	await t.step("(getDOM) - Attribute changes don't affect rendering (still empty)", async () => {
 		const deferNode = doc('createNode', ['m.defer']);
 		const domNodes = deferNode('getDOM');
 
 		await globalThis.reactive.wait();
-		const slotElem = domNodes.at(0);
-		const originalId = slotElem.id;
+		assertEquals(domNodes.size, 0, 'Should be empty initially');
 
 		// Try to change attributes
 		deferNode('setAttr', ['class', 'new-class']);
+		deferNode('setAttr', ['id', 'new-id']);
 		deferNode('setAttr', ['data-custom', 'custom-value']);
 
 		await globalThis.reactive.wait();
-		// ID should remain the same
-		assertEquals(slotElem.id, originalId);
-		// Filtered attributes should not appear
-		assertEquals(slotElem.hasAttribute('class'), false);
-		assertEquals(slotElem.hasAttribute('data-custom'), false);
-		// Only allowed attributes should be present
-		assertEquals(slotElem.getAttribute('data-mwi-defer'), 'm.defer');
+		// Still no rendering
+		assertEquals(domNodes.size, 0, 'Should still be empty after attribute changes');
 	});
 
-	await t.step(".getDOM() - Attribute changes don't affect rendered attributes via JS", async () => {
+	await t.step(".getDOM() - Attribute changes don't affect rendering via JS", async () => {
 		const deferNode = doc.createNode('m.defer');
 		const domNodes = deferNode.getDOM();
 
 		await globalThis.reactive.wait();
-		const slotElem = domNodes.at(0);
-		const originalId = slotElem.id;
+		assertEquals(domNodes.size, 0, 'Should be empty initially');
 
 		deferNode.setAttr('style', 'color: red');
 		deferNode.setAttr('aria-label', 'test');
 
 		await globalThis.reactive.wait();
-		assertEquals(slotElem.id, originalId);
-		assertEquals(slotElem.hasAttribute('style'), false);
-		assertEquals(slotElem.hasAttribute('aria-label'), false);
-		assertEquals(slotElem.getAttribute('data-mwi-defer'), 'm.defer');
+		assertEquals(domNodes.size, 0, 'Should still be empty after attribute changes');
 	});
 });

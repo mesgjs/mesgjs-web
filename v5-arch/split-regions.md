@@ -261,7 +261,7 @@ The `MWICoreHeadBody` interface chains from `MWIHTML` (for attribute handling an
 
 ## 7. Interaction with Hydration
 
-When SSR-to-CSR hydration is active (see [`v5-arch/ssr-csr-hydration.md`](ssr-csr-hydration.md)):
+When SSR-to-CSR hydration is active (see [`v5-arch/ssr-csr-hydration-v2.md`](ssr-csr-hydration-v2.md)):
 
 - The `m.head` / `m.body` CSR handler adopts the existing `document.head` / `document.body` DOM element rather than creating a new one. This is inherently "hydration-compatible" — no replacement is needed.
 - The boundary markers emitted during SSR are found by `getManagedRegion` during CSR, so the managed region is correctly identified without needing to re-insert markers.
@@ -271,7 +271,7 @@ When SSR-to-CSR hydration is active (see [`v5-arch/ssr-csr-hydration.md`](ssr-cs
 
 ## 8. Interaction with Aggregate Content
 
-The `m.head` component is the natural rendering point for aggregated `m.script` and `m.style` content (see [`v5-arch/aggregate-content.md`](aggregate-content.md)). Aggregated content rendered via `[m.script from=head]` or `[m.style from=head]` will appear in the managed region of `m.head`, just like any other child node.
+The `m.head` component is the natural rendering point for aggregated `m.script` and `m.style` content (see [`v5-arch/aggregate-content-v2.md`](aggregate-content-v2.md)). Aggregated content rendered via `[m.script from=head]` or `[m.style from=head]` will appear in the managed region of `m.head`, just like any other child node.
 
 This means aggregated scripts and styles are:
 - **SSR:** Rendered between the `begin` and `end` boundary markers
@@ -336,8 +336,8 @@ The `<html>` element itself does not need a managed-region treatment because bro
 
 ## 11. Related Documents
 
-- [`v5-arch/ssr-csr-hydration.md`](ssr-csr-hydration.md) — SSR-to-CSR hydration strategy
-- [`v5-arch/aggregate-content.md`](aggregate-content.md) — Aggregate content (m.script, m.style)
+- [`v5-arch/ssr-csr-hydration-v2.md`](ssr-csr-hydration-v2.md) — SSR-to-CSR hydration strategy
+- [`v5-arch/aggregate-content-v2.md`](aggregate-content-v2.md) — Aggregate content (m.script, m.style)
 - [`v5-arch/reactive-dom.md`](reactive-dom.md) — Reactive DOM system
 - [`src/mwi-doc-node.msjs`](../src/mwi-doc-node.msjs) — `domAppendAfter`, `domSyncChildren`
 - [`src/mwi-html-comp.msjs`](../src/mwi-html-comp.msjs) — HTML component implementations

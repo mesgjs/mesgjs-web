@@ -12,7 +12,7 @@ For nodes where natural children ≠ rendered output, the SSR pass would store t
 
 1. **Fits the existing spec model.** Attributes already carry list-valued content (e.g., named slot attributes like `c.header`). `m.rns` would just be another list-valued attribute, reconstructed by `getSpec()` alongside everything else.
 
-2. **Minimal sync-walk complexity.** The parallel tree walk (Section 5.3 of [`v5-arch/ssr-csr-hydration.md`](v5-arch/ssr-csr-hydration.md)) already needs to handle virtual nodes (`m.frg`, template types, slot types) by recursing into children. With `m.rns`, the walk rule becomes: *"if the node has `m.rns`, walk `m.rns` as the rendered children; otherwise walk natural children."* This is a single, clean branch.
+2. **Minimal sync-walk complexity.** The MWIDOMSync interface (see [`v5-arch/ssr-csr-hydration-v2.md`](ssr-csr-hydration-v2.md)) already needs to handle virtual nodes (`m.frg`, template types, slot types) by recursing into children. With `m.rns`, the walk rule becomes: *"if the node has `m.rns`, walk `m.rns` as the rendered children; otherwise walk natural children."* This is a single, clean branch.
 
 3. **Covers both affected node types cleanly:**
    - **[`m.slot`](docs/interfaces/MWICoreSlot-slot.md):** The slot's *selected* content (whether from the slot source or fallback) is what was rendered. `m.rns` would hold that resolved content.

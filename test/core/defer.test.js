@@ -31,13 +31,13 @@ registry.register('test.deferred', deferredEntry);
 Deno.test("MWICoreDefer (m.defer) - Basic Interface Tests", async (t) => {
 	const deferNode = doc.createNode('m.defer');
 
-	await t.step("(type) - Get node type (should be h.slot after init)", () => {
-		// After @init, type changes from m.defer to h.slot
-		assertEquals(deferNode('type'), 'h.slot');
+	await t.step("(type) - Get node type (should be m.defer)", () => {
+		// Type is m.defer (placeholder node)
+		assertEquals(deferNode('type'), 'm.defer');
 	});
 
-	await t.step(".type - Get node type via JS (should be h.slot after init)", () => {
-		assertEquals(deferNode.type, 'h.slot');
+	await t.step(".type - Get node type via JS (should be m.defer)", () => {
+		assertEquals(deferNode.type, 'm.defer');
 	});
 
 	await t.step(".msjsType - Get Mesgjs type", () => {
@@ -62,46 +62,18 @@ Deno.test("MWICoreDefer (m.defer) - Basic Interface Tests", async (t) => {
 	});
 });
 
-Deno.test("MWICoreDefer (m.defer) - Defer Type Capture", async (t) => {
-	await t.step("Captures original type in m.deferType attribute", () => {
+Deno.test("MWICoreDefer (m.defer) - Placeholder Behavior", async (t) => {
+	await t.step("Type remains m.defer (placeholder node)", () => {
 		const deferNode = doc.createNode('m.defer');
-		// The original type 'm.defer' should be captured in m.deferType
-		assertEquals(deferNode('getAttr', ls([, 'm.deferType'])), 'm.defer');
+		assertEquals(deferNode('type'), 'm.defer');
 	});
 
-	await t.step("Captures original type in data-mwi-defer attribute", () => {
+	await t.step("Placeholder node doesn't render",  () => {
 		const deferNode = doc.createNode('m.defer');
-		assertEquals(deferNode('getAttr', ls([, 'data-mwi-defer'])), 'm.defer');
-	});
-
-	await t.step("Type changes to h.slot after init", () => {
-		const deferNode = doc.createNode('m.defer');
-		// After @init, the type should be h.slot for rendering
-		assertEquals(deferNode('type'), 'h.slot');
-	});
-});
-
-Deno.test("MWICoreDefer (m.defer) - Auto-ID Assignment", async (t) => {
-	await t.step("Auto-assigns ID if not present", () => {
-		const deferNode = doc.createNode('m.defer');
-		const id = deferNode('getAttr', ls([, 'm.id']));
-		assert(id, "ID should be auto-assigned");
-		assert(typeof id === 'string', "ID should be a string");
-		assert(id.length > 0, "ID should not be empty");
-	});
-
-	await t.step("Preserves explicit ID if provided", () => {
-		const spec = ps('[(m.defer id=custom-defer-id)]');
-		const deferNode = doc.from({ item: spec });
-		assertEquals(deferNode('getAttr', ls([, 'm.id'])), 'custom-defer-id');
-	});
-
-	await t.step("Auto-assigned IDs are unique", () => {
-		const defer1 = doc.createNode('m.defer');
-		const defer2 = doc.createNode('m.defer');
-		const id1 = defer1('getAttr', ls([, 'm.id']));
-		const id2 = defer2('getAttr', ls([, 'm.id']));
-		assert(id1 !== id2, "Auto-assigned IDs should be unique");
+		// getHTML should return empty string
+		assertEquals(deferNode('getHTML'), '');
+		// getDOM should return empty NANOS
+		assertEquals(deferNode('getDOM').size, 0);
 	});
 });
 
@@ -169,32 +141,22 @@ Deno.test("MWICoreDefer (m.defer) - Inherited MWIDocNode Operations", async (t) 
 });
 
 Deno.test("MWICoreDefer (m.defer) - Spec Management", async (t) => {
-	await t.step("(getSpec) - Get spec with defer attributes", () => {
+	await t.step("(getSpec) - Get spec", () => {
 		const deferNode = doc.createNode('m.defer');
-		deferNode('getAttr', ['m.id']);
 		const spec = deferNode('getSpec');
-		// Type should be h.slot after init
-		assertEquals(spec.at(0), 'h.slot');
-		// Should have m.deferType attribute
-		assertEquals(spec.at('m.deferType'), 'm.defer');
-		assertEquals(spec.at('data-mwi-defer'), 'm.defer');
-		// Should have auto-assigned ID
-		assert(spec.at('id'), "Should have auto-assigned ID");
+		// Type should be m.defer (placeholder node)
+		assertEquals(spec.at(0), 'm.defer');
 	});
 
-	await t.step(".getSpec() - Get spec with defer attributes via JS", () => {
+	await t.step(".getSpec() - Get spec via JS", () => {
 		const deferNode = doc.createNode('m.defer');
-		deferNode.getAttr('m.id');
 		const spec = deferNode.getSpec();
-		assertEquals(spec.at(0), 'h.slot');
-		assertEquals(spec.at('m.deferType'), 'm.defer');
-		assertEquals(spec.at('data-mwi-defer'), 'm.defer');
-		assert(spec.at('id'), "Should have auto-assigned ID");
+		assertEquals(spec.at(0), 'm.defer');
 	});
 
 	await t.step("(setSpec) - Set attributes from spec", () => {
 		const deferNode = doc.createNode('m.defer');
-		const spec = ps('[(h.slot data-test=value class=defer-class)]');
+		const spec = ps('[(m.defer data-test=value class=defer-class)]');
 		deferNode('setSpec', ls([, spec]));
 		assertEquals(deferNode('getAttr', ls([, 'data-test'])), 'value');
 		assert(deferNode('getAttr', ls([, 'class'])).includes('defer-class'));
@@ -202,7 +164,7 @@ Deno.test("MWICoreDefer (m.defer) - Spec Management", async (t) => {
 
 	await t.step(".setSpec() - Set attributes from spec via JS", () => {
 		const deferNode = doc.createNode('m.defer');
-		const spec = ps('[(h.slot data-custom=custom-value)]');
+		const spec = ps('[(m.defer data-custom=custom-value)]');
 		deferNode.setSpec(spec);
 		assertEquals(deferNode.getAttr('data-custom'), 'custom-value');
 	});
@@ -221,21 +183,21 @@ Deno.test("MWICoreDefer (m.defer) - Sub-Spec Behavior", async (t) => {
 		assertEquals(subSpec.size, 0);
 	});
 
-	await t.step("(append) - Append content (getSubSpec still empty)", () => {
+	await t.step("(append) - Append content (ignored, getSubSpec still empty)", () => {
 		const deferNode = doc.createNode('m.defer');
 		deferNode('append', ls([, 'ignored content']));
 		const subSpec = deferNode('getSubSpec');
 		assertEquals(subSpec.size, 0);
 	});
 
-	await t.step(".append() - Append content via JS (getSubSpec still empty)", () => {
+	await t.step(".append() - Append content via JS (ignored, getSubSpec still empty)", () => {
 		const deferNode = doc.createNode('m.defer');
 		deferNode.append('ignored content');
 		const subSpec = deferNode.getSubSpec();
 		assertEquals(subSpec.size, 0);
 	});
 
-	await t.step("(setSubSpec) - Set sub-spec (getSubSpec still empty)", () => {
+	await t.step("(setSubSpec) - Set sub-spec (ignored, getSubSpec still empty)", () => {
 		const deferNode = doc.createNode('m.defer');
 		const subSpec = ls([, 'child1', , 'child2']);
 		deferNode('setSubSpec', ls(['subSpec', subSpec]));
@@ -243,7 +205,7 @@ Deno.test("MWICoreDefer (m.defer) - Sub-Spec Behavior", async (t) => {
 		assertEquals(resultSubSpec.size, 0);
 	});
 
-	await t.step(".setSubSpec() - Set sub-spec via JS (getSubSpec still empty)", () => {
+	await t.step(".setSubSpec() - Set sub-spec via JS (ignored, getSubSpec still empty)", () => {
 		const deferNode = doc.createNode('m.defer');
 		const subSpec = ls([, 'child1', , 'child2']);
 		deferNode.setSubSpec({ subSpec });
@@ -258,36 +220,13 @@ Deno.test("MWICoreDefer (m.defer) - Schema Properties", async (t) => {
 		const schema = entry.at('schema');
 		assertEquals(schema.at('autoDoc'), false);
 	});
-
-	await t.step("Schema has htmlAllowAttr filter", () => {
-		const entry = registry.get('m.defer');
-		const schema = entry.at('schema');
-		const allowAttr = schema.at('htmlAllowAttr');
-		assert(allowAttr, "Should have htmlAllowAttr");
-		// Check if it's a Set (JS) or has .jsv accessor (Mesgjs @set)
-		const attrSet = allowAttr instanceof Set ? allowAttr : allowAttr.jsv;
-		assert(attrSet.has('id'), "Should allow 'id' attribute");
-		assert(attrSet.has('data-mwi-defer'), "Should allow 'data-mwi-defer' attribute");
-		// Should NOT allow other attributes
-		assertEquals(attrSet.size, 2, "Should only allow 2 attributes");
-	});
-});
-
-Deno.test("MWICoreDefer (m.defer) - Redispatch to MWIHTML", async (t) => {
-	await t.step("Chains to MWIHTML interface", () => {
-		const deferNode = doc.createNode('m.defer');
-		// After init, type is h.slot, which should be handled by MWIHTML
-		assertEquals(deferNode('type'), 'h.slot');
-		// The node should respond to MWIHTML operations
-		// (Detailed rendering behavior is tested in SSR/CSR tests)
-	});
 });
 
 Deno.test("MWICoreDefer (m.defer) - Real-World Creation via Document", async (t) => {
 	await t.step("Document creates defer node for unloaded component", () => {
 		const node = doc.createNode('test.deferred');
 		assertEquals(node.msjsType, 'MWICoreDefer', 'Should be MWICoreDefer');
-		assertEquals(node('getAttr', ls([, 'm.deferType'])), 'test.deferred');
+		assertEquals(node('type'), 'test.deferred');
 	});
 
 	await t.step("Document.from() creates defer nodes from specs", () => {
@@ -321,30 +260,11 @@ Deno.test("MWICoreDefer (m.defer) - Complex Scenarios", async (t) => {
 		const spec = ps('[(m.defer class="defer-placeholder loading" data-priority=high id=defer-123)]');
 		const deferNode = doc.from({ item: spec });
 
-		// Check defer-specific attributes
-		assertEquals(deferNode('getAttr', ls([, 'm.deferType'])), 'm.defer');
-		assertEquals(deferNode('getAttr', ls([, 'data-mwi-defer'])), 'm.defer');
+		// Check that attributes can be set
 		assertEquals(deferNode('getAttr', ls([, 'id'])), 'defer-123');
-
-		// Check other attributes
 		assert(deferNode('getAttr', ls([, 'class'])).includes('defer-placeholder'));
 		assert(deferNode('getAttr', ls([, 'class'])).includes('loading'));
 		assertEquals(deferNode('getAttr', ls([, 'data-priority'])), 'high');
-	});
-
-	await t.step("Multiple defer nodes with unique IDs", () => {
-		const defer1 = doc.createNode('m.defer');
-		const defer2 = doc.createNode('m.defer');
-		const defer3 = doc.createNode('m.defer');
-
-		const id1 = defer1('getAttr', ls([, 'm.id']));
-		const id2 = defer2('getAttr', ls([, 'm.id']));
-		const id3 = defer3('getAttr', ls([, 'm.id']));
-
-		// All IDs should be unique
-		assert(id1 !== id2, "ID1 and ID2 should be different");
-		assert(id2 !== id3, "ID2 and ID3 should be different");
-		assert(id1 !== id3, "ID1 and ID3 should be different");
 	});
 
 	await t.step("Defer node attribute modifications", () => {
@@ -357,9 +277,15 @@ Deno.test("MWICoreDefer (m.defer) - Complex Scenarios", async (t) => {
 		// Verify modifications
 		assertEquals(deferNode('getAttr', ls([, 'class'])), 'updated-class');
 		assertEquals(deferNode('getAttr', ls([, 'data-status'])), 'loading');
+	});
 
-		// Defer-specific attributes should remain unchanged
-		assertEquals(deferNode('getAttr', ls([, 'm.deferType'])), 'm.defer');
-		assertEquals(deferNode('getAttr', ls([, 'data-mwi-defer'])), 'm.defer');
+	await t.step("Defer node doesn't render (placeholder only)", () => {
+		const deferNode = doc.createNode('m.defer');
+		deferNode.setAttr('class', 'test-class');
+		deferNode.setAttr('id', 'test-id');
+		
+		// Should not render anything
+		assertEquals(deferNode('getHTML'), '');
+		assertEquals(deferNode('getDOM').size, 0);
 	});
 });

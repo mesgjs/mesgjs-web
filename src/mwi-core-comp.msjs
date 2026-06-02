@@ -50,7 +50,7 @@ modcaps=''
 	const coreConfig = {
 		[BODY_TYPE]: ls([INTERFACE, HEADBODY_IF]),
 		[COM_TYPE]: ls([INTERFACE, COM_IF, SCHEMA, ls([VOID, true])]),
-		[DEFER_TYPE]: ls([INTERFACE, DEFER_IF, SCHEMA, ls([AUTO_DOC, false, 'htmlAllowAttr', new Set(['id', 'data-mwi-defer'])])]),
+		[DEFER_TYPE]: ls([INTERFACE, DEFER_IF, SCHEMA, ls([AUTO_DOC, false])]),
 		[FRAG_TYPE]: ls([INTERFACE, FRAG_IF]),
 		[HEAD_TYPE]: ls([INTERFACE, HEADBODY_IF]),
 		[SCPCSS_TYPE]: ls([INTERFACE, SCPCSS_IF, SCHEMA, ls([VOID, true])]),
@@ -116,37 +116,16 @@ modcaps=''
 
 	// MWICoreDefer (deferred component placeholder) interface
 	// `[m.defer type=originalType ...]`
-	// Represents a component that hasn't been loaded yet
-	// Renders as <slot id="..."> for easy location and future replacement
+	// Place-holder node representing a component that hasn't been loaded yet
+	// Does not render anything
 	(() => {
-		function opInit (d) {
-			const p = d.p, m = d.mp;
-			// Capture the original deferred type before changing p.type
-			const deferType = m.at('type');
-			// Redispatch for MWIHTML init
-			d.sm(d, 'redis');
-			// Change type to h.slot for HTML and DOM rendering
-			p.set('type', 'h.slot');
-			// Store defer type in attributes
-			d.rr('setAttr', ['m.deferType', deferType]);
-			d.rr('setAttr', ['data-mwi-defer', deferType]);
-		}
-
-		function opGetDOMHTML (d) {
-			// Ensure ID is assigned before rendering
-			d.rr('getAttr', ['m.id']); // Auto-assign ID if not present
-			// Redispatch to MWIHTML
-			return d.sm(d, 'redis');
-		}
-
 		getInterface(DEFER_IF).set({
 			pristine: true, lock: true,
 			chain: [ HTML_IF ],  // Sub-interface MWIHTML for h.slot rendering
 			handlers: {
-				'@init': opInit,
 				append: (d) => d.rr, // Don't add children
-				getDOM: opGetDOMHTML,
-				getHTML: opGetDOMHTML,
+				getDOM: (_d) => new NANOS(),
+				getHTML: (_d) => '',
 				getSubSpec: (_d) => new NANOS(),
 				setSubSpec: (d) => d.rr,
 			}

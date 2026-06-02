@@ -52,10 +52,8 @@ modcaps=''
 			prev = child;
 		}
 		// Remove any "extra nodes left over" after the last child
-		// deno-lint-ignore no-cond-assign
-		if (prev) while (child = prev.nextSibling) parent.removeChild(child);
-		// deno-lint-ignore no-cond-assign
-		else while (child = parent.firstChild) parent.removeChild(child);
+		if (prev) while (prev.nextSibling) parent.removeChild(prev.nextSibling);
+		else while (parent.firstChild) parent.removeChild(parent.firstChild);
 	}
 
 	// Locate the managed-region boundary markers within a parent element
@@ -103,8 +101,7 @@ modcaps=''
 		}
 
 		// Remove stale children from the managed region
-		// deno-lint-ignore no-cond-assign
-		while ((child = prev.nextSibling) && child !== end) {
+		for (child = prev.nextSibling; child && child !== end; child = prev.nextSibling) {
 			parent.removeChild(child);
 		}
 	}
