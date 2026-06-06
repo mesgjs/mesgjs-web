@@ -15,17 +15,17 @@ await fwait(REG_READY_FT);
 const ps = globalThis.ps;
 
 Deno.test("Compound SSR - Variety of HTML Tags", async (t) => {
-	await t.step("Simple div with text", () => {
+	await t.step("Simple div with text", async () => {
 		const html = renderHTML(ps('[([h.div "Hello World"])]'));
 		assertEquals(html, '<div>Hello World</div>');
 	});
 
-	await t.step("Nested divs", () => {
+	await t.step("Nested divs", async () => {
 		const html = renderHTML(ps('[([h.div [h.div "Nested"]])]'));
 		assertEquals(html, '<div><div>Nested</div></div>');
 	});
 
-	await t.step("Div with attributes", () => {
+	await t.step("Div with attributes", async () => {
 		const html = renderHTML(ps('[([h.div id=test data-index=42 class=container "Content"])]'));
 		assert(html.includes('<div'));
 		assert(html.includes('id="test"'));
@@ -34,31 +34,31 @@ Deno.test("Compound SSR - Variety of HTML Tags", async (t) => {
 		assert(html.includes('>Content</div>'));
 	});
 
-	await t.step("Paragraph tag", () => {
+	await t.step("Paragraph tag", async () => {
 		const html = renderHTML(ps('[([h.p "Paragraph text"])]'));
 		assertEquals(html, '<p>Paragraph text</p>');
 	});
 
-	await t.step("Heading tags (h1-h6)", () => {
+	await t.step("Heading tags (h1-h6)", async () => {
 		const html = renderHTML(ps('[([h.h1 "Heading 1"] [h.h2 "Heading 2"] [h.h3 "Heading 3"])]'));
 		assert(html.includes('<h1>Heading 1</h1>'));
 		assert(html.includes('<h2>Heading 2</h2>'));
 		assert(html.includes('<h3>Heading 3</h3>'));
 	});
 
-	await t.step("Span tag", () => {
+	await t.step("Span tag", async () => {
 		const html = renderHTML(ps('[([h.span "Inline text"])]'));
 		assertEquals(html, '<span>Inline text</span>');
 	});
 
-	await t.step("Link (anchor) tag", () => {
+	await t.step("Link (anchor) tag", async () => {
 		const html = renderHTML(ps('[([h.a href="https://example.com" "Link text"])]'));
 		assert(html.includes('<a'));
 		assert(html.includes('href="https://example.com"'));
 		assert(html.includes('>Link text</a>'));
 	});
 
-	await t.step("Image tag (void element)", () => {
+	await t.step("Image tag (void element)", async () => {
 		const html = renderHTML(ps('[([h.img src=image.jpg alt="Description"])]'));
 		assert(html.includes('<img'));
 		assert(html.includes('src="image.jpg"'));
@@ -67,17 +67,17 @@ Deno.test("Compound SSR - Variety of HTML Tags", async (t) => {
 		assert(!html.includes('</img>'));
 	});
 
-	await t.step("Line break (void element)", () => {
+	await t.step("Line break (void element)", async () => {
 		const html = renderHTML(ps('[([h.br])]'));
 		assertEquals(html, '<br>');
 	});
 
-	await t.step("Horizontal rule (void element)", () => {
+	await t.step("Horizontal rule (void element)", async () => {
 		const html = renderHTML(ps('[([h.hr])]'));
 		assertEquals(html, '<hr>');
 	});
 
-	await t.step("List elements (ul, ol, li)", () => {
+	await t.step("List elements (ul, ol, li)", async () => {
 		const html = renderHTML(ps('[([h.ul [h.li "Item 1"] [h.li "Item 2"]])]'));
 		assert(html.includes('<ul>'));
 		assert(html.includes('<li>Item 1</li>'));
@@ -85,7 +85,7 @@ Deno.test("Compound SSR - Variety of HTML Tags", async (t) => {
 		assert(html.includes('</ul>'));
 	});
 
-	await t.step("Table elements", () => {
+	await t.step("Table elements", async () => {
 		const html = renderHTML(ps('[([h.table [h.tr [h.td "Cell"]]])]'));
 		assert(html.includes('<table>'));
 		assert(html.includes('<tr>'));
@@ -94,7 +94,7 @@ Deno.test("Compound SSR - Variety of HTML Tags", async (t) => {
 		assert(html.includes('</table>'));
 	});
 
-	await t.step("Form elements", () => {
+	await t.step("Form elements", async () => {
 		const html = renderHTML(ps('[([h.form [h.input type=text name=username] [h.button "Submit"]])]'));
 		assert(html.includes('<form>'));
 		assert(html.includes('<input'));
@@ -104,7 +104,7 @@ Deno.test("Compound SSR - Variety of HTML Tags", async (t) => {
 		assert(html.includes('</form>'));
 	});
 
-	await t.step("Semantic HTML5 elements", () => {
+	await t.step("Semantic HTML5 elements", async () => {
 		const html = renderHTML(ps('[([h.header "Header"] [h.nav "Nav"] [h.main "Main"] [h.footer "Footer"])]'));
 		assert(html.includes('<header>Header</header>'));
 		assert(html.includes('<nav>Nav</nav>'));
@@ -112,7 +112,7 @@ Deno.test("Compound SSR - Variety of HTML Tags", async (t) => {
 		assert(html.includes('<footer>Footer</footer>'));
 	});
 
-	await t.step("Article and section", () => {
+	await t.step("Article and section", async () => {
 		const html = renderHTML(ps('[([h.article [h.section "Section content"]])]'));
 		assert(html.includes('<article>'));
 		assert(html.includes('<section>Section content</section>'));
@@ -121,12 +121,12 @@ Deno.test("Compound SSR - Variety of HTML Tags", async (t) => {
 });
 
 Deno.test("Compound SSR - Complex Document Structures", async (t) => {
-	await t.step("Multi-level nesting", () => {
+	await t.step("Multi-level nesting", async () => {
 		const html = renderHTML(ps('[([h.div [h.div [h.div [h.div "Deep"]]]])]'));
 		assertEquals(html, '<div><div><div><div>Deep</div></div></div></div>');
 	});
 
-	await t.step("Mixed content types", () => {
+	await t.step("Mixed content types", async () => {
 		const html = renderHTML(ps('[([h.div "Text" [h.span "Span"] "More text"])]'));
 		assert(html.includes('<div>'));
 		assert(html.includes('Text'));
@@ -135,7 +135,7 @@ Deno.test("Compound SSR - Complex Document Structures", async (t) => {
 		assert(html.includes('</div>'));
 	});
 
-	await t.step("Multiple siblings with attributes", () => {
+	await t.step("Multiple siblings with attributes", async () => {
 		const html = renderHTML(ps('[([h.div id=first class=box "First"] [h.div id=second class=box "Second"])]'));
 		assert(html.includes('id="first"'));
 		assert(html.includes('id="second"'));
@@ -144,7 +144,7 @@ Deno.test("Compound SSR - Complex Document Structures", async (t) => {
 		assert(html.includes('>Second</div>'));
 	});
 
-	await t.step("Complex form structure", () => {
+	await t.step("Complex form structure", async () => {
 		const spec = ps(`[([h.form action=/submit method=post
 			[h.label for=name "Name:"]
 			[h.input type=text id=name name=name]
@@ -165,7 +165,7 @@ Deno.test("Compound SSR - Complex Document Structures", async (t) => {
 		assert(html.includes('type="submit"'));
 	});
 
-	await t.step("Navigation menu structure", () => {
+	await t.step("Navigation menu structure", async () => {
 		const spec = ps(`[([h.nav class=main-nav
 			[h.ul
 				[h.li [h.a href=/ "Home"]]
@@ -185,7 +185,7 @@ Deno.test("Compound SSR - Complex Document Structures", async (t) => {
 		assert(html.includes('href="/contact"'));
 	});
 
-	await t.step("Article with header and sections", () => {
+	await t.step("Article with header and sections", async () => {
 		const spec = ps(`[([h.article
 			[h.header [h.h1 "Article Title"]]
 			[h.section [h.p "First paragraph"]]
@@ -204,23 +204,23 @@ Deno.test("Compound SSR - Complex Document Structures", async (t) => {
 });
 
 Deno.test("Compound SSR - Core Components Integration", async (t) => {
-	await t.step("Text nodes (m.t) in HTML", () => {
+	await t.step("Text nodes (m.t) in HTML", async () => {
 		const html = renderHTML(ps('[([h.div [m.t t="Explicit text node"]])]'));
 		assertEquals(html, '<div>Explicit text node</div>');
 	});
 
-	await t.step("Comments (m.com) in HTML", () => {
+	await t.step("Comments (m.com) in HTML", async () => {
 		const html = renderHTML(ps('[([h.div [m.com t="This is a comment"] "Content"])]'));
 		assert(html.includes('<!--This is a comment-->'));
 		assert(html.includes('Content'));
 	});
 
-	await t.step("Fragments (m.frg) flatten into parent", () => {
+	await t.step("Fragments (m.frg) flatten into parent", async () => {
 		const html = renderHTML(ps('[([h.div [m.frg "Text1" "Text2"]])]'));
 		assertEquals(html, '<div>Text1Text2</div>');
 	});
 
-	await t.step("Mixed HTML and core components", () => {
+	await t.step("Mixed HTML and core components", async () => {
 		const spec = ps(`[([h.div
 			[m.com t="Section start"]
 			[h.p "Paragraph"]
@@ -236,7 +236,7 @@ Deno.test("Compound SSR - Core Components Integration", async (t) => {
 });
 
 Deno.test("Compound SSR - Special Attributes", async (t) => {
-	await t.step("Boolean attributes", () => {
+	await t.step("Boolean attributes", async () => {
 		const html = renderHTML(ps('[([h.input type=checkbox checked=@t disabled=@t])]'));
 		assert(html.includes('<input'));
 		assert(html.includes('type="checkbox"'));
@@ -246,29 +246,29 @@ Deno.test("Compound SSR - Special Attributes", async (t) => {
 		assert(!html.includes('disabled="'));
 	});
 
-	await t.step("Data attributes", () => {
+	await t.step("Data attributes", async () => {
 		const html = renderHTML(ps('[([h.div data-id=123 data-name=test "Content"])]'));
 		assert(html.includes('data-id="123"'));
 		assert(html.includes('data-name="test"'));
 	});
 
-	await t.step("ARIA attributes", () => {
+	await t.step("ARIA attributes", async () => {
 		const html = renderHTML(ps('[([h.button aria-label="Close" aria-pressed=@t "X"])]'));
 		assert(html.includes('aria-label="Close"'));
 		assert(html.includes(' aria-pressed'));
 	});
 
-	await t.step("Class attribute", () => {
+	await t.step("Class attribute", async () => {
 		const html = renderHTML(ps('[([h.div class="btn btn-primary active" "Button"])]'));
 		assert(html.includes('class="btn btn-primary active"'));
 	});
 
-	await t.step("Style attribute", () => {
+	await t.step("Style attribute", async () => {
 		const html = renderHTML(ps('[([h.div style="color: red; margin: 10px" "Styled"])]'));
 		assert(html.includes('style="color:red;margin:10px"'));
 	});
 
-	await t.step("Multiple attributes on nested elements", () => {
+	await t.step("Multiple attributes on nested elements", async () => {
 		const spec = ps(`[([h.div id=outer class=container
 			[h.div id=inner class=box data-value=42 "Content"]
 		])]`);
@@ -280,13 +280,13 @@ Deno.test("Compound SSR - Special Attributes", async (t) => {
 		assert(html.includes('data-value="42"'));
 	});
 
-	await t.step("Numeric attributes via setAttr with JS numbers", () => {
+	await t.step("Numeric attributes via setAttr with JS numbers", async () => {
 		const doc = getInstance('MWIDocument');
 		const divNode = doc.createNode('h.div');
 		divNode.setAttr('data-count', 100);
 		divNode.setAttr('data-index', 0);
 		divNode.setAttr('tabindex', -1);
-		divNode.append('Content');
+		divNode.setSubSpec('Content');
 		const html = divNode.getHTML();
 
 		assert(html.includes('data-count="100"'), 'Should render positive number');
@@ -294,7 +294,7 @@ Deno.test("Compound SSR - Special Attributes", async (t) => {
 		assert(html.includes('tabindex="-1"'), 'Should render negative number');
 	});
 
-	await t.step("Numeric attributes in nested SLID spec", () => {
+	await t.step("Numeric attributes in nested SLID spec", async () => {
 		const spec = ps(`[([h.div data-outer=1
 			[h.div data-inner=2 data-zero=0 data-neg=-5 "Nested"]
 		])]`);
@@ -308,22 +308,22 @@ Deno.test("Compound SSR - Special Attributes", async (t) => {
 });
 
 Deno.test("Compound SSR - Edge Cases", async (t) => {
-	await t.step("Empty elements", () => {
+	await t.step("Empty elements", async () => {
 		const html = renderHTML(ps('[([h.div])]'));
 		assertEquals(html, '<div></div>');
 	});
 
-	await t.step("Element with only whitespace", () => {
+	await t.step("Element with only whitespace", async () => {
 		const html = renderHTML(ps('[([h.div "   "])]'));
 		assertEquals(html, '<div>   </div>');
 	});
 
-	await t.step("Multiple void elements", () => {
+	await t.step("Multiple void elements", async () => {
 		const html = renderHTML(ps('[([h.br] [h.hr] [h.br])]'));
 		assertEquals(html, '<br><hr><br>');
 	});
 
-	await t.step("Deeply nested with void elements", () => {
+	await t.step("Deeply nested with void elements", async () => {
 		const html = renderHTML(ps('[([h.div [h.p "Text" [h.br] "More"]])]'));
 		assert(html.includes('<div>'));
 		assert(html.includes('<p>'));
@@ -334,19 +334,19 @@ Deno.test("Compound SSR - Edge Cases", async (t) => {
 		assert(html.includes('</div>'));
 	});
 
-	await t.step("Empty fragment", () => {
+	await t.step("Empty fragment", async () => {
 		const html = renderHTML(ps('[([h.div [m.frg]])]'));
 		assertEquals(html, '<div></div>');
 	});
 
-	await t.step("Multiple empty elements", () => {
+	await t.step("Multiple empty elements", async () => {
 		const html = renderHTML(ps('[([h.div] [h.span] [h.p])]'));
 		assertEquals(html, '<div></div><span></span><p></p>');
 	});
 });
 
 Deno.test("Compound SSR - Real-World Patterns", async (t) => {
-	await t.step("Card component pattern", () => {
+	await t.step("Card component pattern", async () => {
 		const spec = ps(`[([h.div class=card
 			[h.div class=card-header [h.h3 "Card Title"]]
 			[h.div class=card-body [h.p "Card content goes here."]]
@@ -362,7 +362,7 @@ Deno.test("Compound SSR - Real-World Patterns", async (t) => {
 		assert(html.includes('<button>Action</button>'));
 	});
 
-	await t.step("Hero section pattern", () => {
+	await t.step("Hero section pattern", async () => {
 		const spec = ps(`[([h.section class=hero
 			[h.div class=hero-content
 				[h.h1 "Welcome"]
@@ -377,7 +377,7 @@ Deno.test("Compound SSR - Real-World Patterns", async (t) => {
 		assert(html.includes('class="cta"'));
 	});
 
-	await t.step("Grid layout pattern", () => {
+	await t.step("Grid layout pattern", async () => {
 		const spec = ps(`[([h.div class=grid
 			[h.div class=grid-item "Item 1"]
 			[h.div class=grid-item "Item 2"]
@@ -390,7 +390,7 @@ Deno.test("Compound SSR - Real-World Patterns", async (t) => {
 		assertEquals(itemCount, 4);
 	});
 
-	await t.step("Modal dialog pattern", () => {
+	await t.step("Modal dialog pattern", async () => {
 		const spec = ps(`[([h.div class=modal
 			[h.div class=modal-overlay]
 			[h.div class=modal-content

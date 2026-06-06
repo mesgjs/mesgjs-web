@@ -19,7 +19,7 @@ await fwait(REG_READY_FT);
 const registry = getInstance('MWIRegistry');
 
 Deno.test("MWICoreScpCSS SSR Compound - Complete Page with Scoped CSS", async (t) => {
-	await t.step("Card component with scoped styles and m.coat/m.percl", () => {
+	await t.step("Card component with scoped styles and m.coat/m.percl", async () => {
 		registry.register('test.ssr.compound.card', ls([
 			'allowLate', true,
 			'scopedCSS', '.@@ { border: 1px solid #ccc; padding: 1rem; } .@@ .header { font-weight: bold; }',

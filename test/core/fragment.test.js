@@ -151,31 +151,37 @@ Deno.test("MWICoreFrag (m.frg) - Spec Management", async (t) => {
 	await t.step("(getSubSpec) - Empty fragment returns empty NANOS", () => {
 		const fragNode = doc.createNode('m.frg');
 		const subSpec = fragNode('getSubSpec');
+		assert(subSpec instanceof NANOS, 'Sub-spec should be a NANOS list');
 		assertEquals(subSpec.size, 0);
 	});
 
 	await t.step(".getSubSpec() - Empty fragment returns empty NANOS via JS", () => {
 		const fragNode = doc.createNode('m.frg');
 		const subSpec = fragNode.getSubSpec();
+		assert(subSpec instanceof NANOS, 'Sub-spec should be a NANOS list');
 		assertEquals(subSpec.size, 0);
 	});
 
-	await t.step("(getSubSpec) - Fragment with children returns child specs", () => {
+	await t.step("(getAttr m.rns) - Fragment with appended children returns child specs via m.rns", async () => {
 		const fragNode = doc.createNode('m.frg');
 		const textNode = doc.createNode('m.t');
 		textNode('setAttr', ls([, 't', , 'Child text']));
 		fragNode('append', ls([, textNode]));
+		await reactive.wait();
 		const subSpec = fragNode('getSubSpec');
+		assert(subSpec instanceof NANOS, 'Sub-spec should be a NANOS list');
 		assertEquals(subSpec.size, 1);
 		assertEquals(subSpec.at(0), 'Child text'); // Simplified text spec
 	});
 
-	await t.step(".getSubSpec() - Fragment with children returns child specs via JS", () => {
+	await t.step(".getAttr('m.rns') - Fragment with appended children returns child specs via m.rns via JS", async () => {
 		const fragNode = doc.createNode('m.frg');
 		const textNode = doc.createNode('m.t');
 		textNode.setAttr('t', 'JS child text');
 		fragNode.append(textNode);
+		await reactive.wait();
 		const subSpec = fragNode.getSubSpec();
+		assert(subSpec instanceof NANOS, 'Sub-spec should be a NANOS list');
 		assertEquals(subSpec.size, 1);
 		assertEquals(subSpec.at(0), 'JS child text'); // Simplified text spec
 	});
@@ -198,143 +204,165 @@ Deno.test("MWICoreFrag (m.frg) - Spec Management", async (t) => {
 
 	await t.step("(setSpec) - Set children from spec", () => {
 		const fragNode = doc.createNode('m.frg');
-		const spec = ps('[(m.frg [m.t t="Child 1"] [m.t t="Child 2"])]');
+		const spec = ps('[(m.frg "Child 1" "Child 2")]');
 		fragNode('setSpec', ls([, spec]));
 		const subSpec = fragNode('getSubSpec');
+		assert(subSpec instanceof NANOS, 'Sub-spec should be a NANOS list');
 		assertEquals(subSpec.size, 2);
-		assertEquals(subSpec.at(0), 'Child 1'); // Simplified text spec
-		assertEquals(subSpec.at(1), 'Child 2'); // Simplified text spec
+		assertEquals(subSpec.at(0), 'Child 1');
+		assertEquals(subSpec.at(1), 'Child 2');
 	});
 
 	await t.step(".setSpec() - Set children from spec via JS", () => {
 		const fragNode = doc.createNode('m.frg');
-		const spec = ps('[(m.frg [m.t t="JS Child 1"] [m.t t="JS Child 2"])]');
+		const spec = ps('[(m.frg "JS Child 1" "JS Child 2")]');
 		fragNode.setSpec(spec);
 		const subSpec = fragNode.getSubSpec();
+		assert(subSpec instanceof NANOS, 'Sub-spec should be a NANOS list');
 		assertEquals(subSpec.size, 2);
-		assertEquals(subSpec.at(0), 'JS Child 1'); // Simplified text spec
-		assertEquals(subSpec.at(1), 'JS Child 2'); // Simplified text spec
+		assertEquals(subSpec.at(0), 'JS Child 1');
+		assertEquals(subSpec.at(1), 'JS Child 2');
 	});
 
 	await t.step("(setSubSpec) - Set children with NANOS list", () => {
 		const fragNode = doc.createNode('m.frg');
-		const subList = ps('[([m.t t="Sub 1"] [m.t t="Sub 2"])]');
+		const subList = ps('[("Sub 1" "Sub 2")]');
 		fragNode('setSubSpec', ls(['subSpec', subList]));
 		const subSpec = fragNode('getSubSpec');
+		assert(subSpec instanceof NANOS, 'Sub-spec should be a NANOS list');
 		assertEquals(subSpec.size, 2);
-		assertEquals(subSpec.at(0), 'Sub 1'); // Simplified text spec
-		assertEquals(subSpec.at(1), 'Sub 2'); // Simplified text spec
+		assertEquals(subSpec.at(0), 'Sub 1');
+		assertEquals(subSpec.at(1), 'Sub 2');
 	});
 
 	await t.step(".setSubSpec() - Set children with NANOS list via JS", () => {
 		const fragNode = doc.createNode('m.frg');
-		const subList = ps('[([m.t t="JS Sub 1"] [m.t t="JS Sub 2"])]');
+		const subList = ps('[("JS Sub 1" "JS Sub 2")]');
 		fragNode.setSubSpec({ subSpec: subList });
 		const subSpec = fragNode.getSubSpec();
+		assert(subSpec instanceof NANOS, 'Sub-spec should be a NANOS list');
 		assertEquals(subSpec.size, 2);
-		assertEquals(subSpec.at(0), 'JS Sub 1'); // Simplified text spec
-		assertEquals(subSpec.at(1), 'JS Sub 2'); // Simplified text spec
+		assertEquals(subSpec.at(0), 'JS Sub 1');
+		assertEquals(subSpec.at(1), 'JS Sub 2');
 	});
 
 	await t.step("(setSubSpec) - Set children with spec parameter", () => {
 		const fragNode = doc.createNode('m.frg');
-		const fullSpec = ps('[(m.frg [m.t t="Spec Child"])]');
+		const fullSpec = ps('[(m.frg "Spec Child")]');
 		fragNode('setSubSpec', ls(['spec', fullSpec]));
 		const subSpec = fragNode('getSubSpec');
+		assert(subSpec instanceof NANOS, 'Sub-spec should be a NANOS list');
 		assertEquals(subSpec.size, 1);
-		assertEquals(subSpec.at(0), 'Spec Child'); // Simplified text spec
+		assertEquals(subSpec.at(0), 'Spec Child');
 	});
 
 	await t.step(".setSubSpec() - Set children with spec parameter via JS", () => {
 		const fragNode = doc.createNode('m.frg');
-		const fullSpec = ps('[(m.frg [m.t t="JS Spec Child"])]');
+		const fullSpec = ps('[(m.frg "JS Spec Child")]');
 		fragNode.setSubSpec({ spec: fullSpec });
 		const subSpec = fragNode.getSubSpec();
+		assert(subSpec instanceof NANOS, 'Sub-spec should be a NANOS list');
 		assertEquals(subSpec.size, 1);
-		assertEquals(subSpec.at(0), 'JS Spec Child'); // Simplified text spec
+		assertEquals(subSpec.at(0), 'JS Spec Child');
 	});
 });
 
 Deno.test("MWICoreFrag (m.frg) - Content Aggregation", async (t) => {
-	await t.step("(append) - Append text string (auto-converts to m.t)", () => {
+	await t.step("(append) - Append text string (auto-converts to m.t)", async () => {
 		const fragNode = doc.createNode('m.frg');
 		fragNode('append', ls([, 'Plain text']));
+		await reactive.wait();
 		const subSpec = fragNode('getSubSpec');
+		assert(subSpec instanceof NANOS, 'Sub-spec should be a NANOS list');
 		assertEquals(subSpec.size, 1);
 		assertEquals(subSpec.at(0), 'Plain text'); // Simplified text spec
 	});
 
-	await t.step(".append() - Append text string via JS (auto-converts to m.t)", () => {
+	await t.step(".append() - Append text string via JS (auto-converts to m.t)", async () => {
 		const fragNode = doc.createNode('m.frg');
 		fragNode.append('JS plain text');
+		await reactive.wait();
 		const subSpec = fragNode.getSubSpec();
+		assert(subSpec instanceof NANOS, 'Sub-spec should be a NANOS list');
 		assertEquals(subSpec.size, 1);
 		assertEquals(subSpec.at(0), 'JS plain text'); // Simplified text spec
 	});
 
-	await t.step("(append) - Append doc-node", () => {
+	await t.step("(append) - Append doc-node", async () => {
 		const fragNode = doc.createNode('m.frg');
 		const textNode = doc.createNode('m.t');
 		textNode('setAttr', ls([, 't', , 'Appended node']));
 		fragNode('append', ls([, textNode]));
+		await reactive.wait();
 		const subSpec = fragNode('getSubSpec');
+		assert(subSpec instanceof NANOS, 'Sub-spec should be a NANOS list');
 		assertEquals(subSpec.size, 1);
 		assertEquals(subSpec.at(0), 'Appended node'); // Simplified text spec
 	});
 
-	await t.step(".append() - Append doc-node via JS", () => {
+	await t.step(".append() - Append doc-node via JS", async () => {
 		const fragNode = doc.createNode('m.frg');
 		const textNode = doc.createNode('m.t');
 		textNode.setAttr('t', 'JS appended node');
 		fragNode.append(textNode);
+		await reactive.wait();
 		const subSpec = fragNode.getSubSpec();
+		assert(subSpec instanceof NANOS, 'Sub-spec should be a NANOS list');
 		assertEquals(subSpec.size, 1);
 		assertEquals(subSpec.at(0), 'JS appended node'); // Simplified text spec
 	});
 
-	await t.step("(append) - Append multiple items at once", () => {
+	await t.step("(append) - Append multiple items at once", async () => {
 		const fragNode = doc.createNode('m.frg');
 		const text1 = doc.createNode('m.t');
 		text1('setAttr', ls([, 't', , 'First']));
 		const text2 = doc.createNode('m.t');
 		text2('setAttr', ls([, 't', , 'Second']));
 		fragNode('append', ls([, text1, , text2]));
+		await reactive.wait();
 		const subSpec = fragNode('getSubSpec');
+		assert(subSpec instanceof NANOS, 'Sub-spec should be a NANOS list');
 		assertEquals(subSpec.size, 2);
 		assertEquals(subSpec.at(0), 'First'); // Simplified text spec
 		assertEquals(subSpec.at(1), 'Second'); // Simplified text spec
 	});
 
-	await t.step(".append() - Append multiple items at once via JS", () => {
+	await t.step(".append() - Append multiple items at once via JS", async () => {
 		const fragNode = doc.createNode('m.frg');
 		const text1 = doc.createNode('m.t');
 		text1.setAttr('t', 'JS First');
 		const text2 = doc.createNode('m.t');
 		text2.setAttr('t', 'JS Second');
 		fragNode.append(text1, text2);
+		await reactive.wait();
 		const subSpec = fragNode.getSubSpec();
+		assert(subSpec instanceof NANOS, 'Sub-spec should be a NANOS list');
 		assertEquals(subSpec.size, 2);
 		assertEquals(subSpec.at(0), 'JS First'); // Simplified text spec
 		assertEquals(subSpec.at(1), 'JS Second'); // Simplified text spec
 	});
 
-	await t.step("(append) - Append mixed text and nodes", () => {
+	await t.step("(append) - Append mixed text and nodes", async () => {
 		const fragNode = doc.createNode('m.frg');
 		const textNode = doc.createNode('m.t');
 		textNode('setAttr', ls([, 't', , 'Node text']));
 		fragNode('append', ls([, 'String text', , textNode]));
+		await reactive.wait();
 		const subSpec = fragNode('getSubSpec');
+		assert(subSpec instanceof NANOS, 'Sub-spec should be a NANOS list');
 		assertEquals(subSpec.size, 2);
 		assertEquals(subSpec.at(0), 'String text'); // Simplified text spec
 		assertEquals(subSpec.at(1), 'Node text'); // Simplified text spec
 	});
 
-	await t.step(".append() - Append mixed text and nodes via JS", () => {
+	await t.step(".append() - Append mixed text and nodes via JS", async () => {
 		const fragNode = doc.createNode('m.frg');
 		const textNode = doc.createNode('m.t');
 		textNode.setAttr('t', 'JS Node text');
 		fragNode.append('JS String text', textNode);
+		await reactive.wait();
 		const subSpec = fragNode.getSubSpec();
+		assert(subSpec instanceof NANOS, 'Sub-spec should be a NANOS list');
 		assertEquals(subSpec.size, 2);
 		assertEquals(subSpec.at(0), 'JS String text'); // Simplified text spec
 		assertEquals(subSpec.at(1), 'JS Node text'); // Simplified text spec
@@ -354,53 +382,64 @@ Deno.test("MWICoreFrag (m.frg) - Content Aggregation", async (t) => {
 });
 
 Deno.test("MWICoreFrag (m.frg) - Transparent Container Behavior", async (t) => {
-	await t.step("Fragment can hold multiple children", () => {
+	await t.step("Fragment can hold multiple children", async () => {
 		const fragNode = doc.createNode('m.frg');
 		for (let i = 0; i < 5; i++) {
 			const textNode = doc.createNode('m.t');
 			textNode.setAttr('t', `Child ${i}`);
 			fragNode.append(textNode);
 		}
+		// doc-spec captures live doc state after append
+		await reactive.wait();
 		const subSpec = fragNode.getSubSpec();
+		assert(subSpec instanceof NANOS, 'Sub-spec should be a NANOS list');
 		assertEquals(subSpec.size, 5);
 		for (let i = 0; i < 5; i++) {
 			assertEquals(subSpec.at(i), `Child ${i}`); // Simplified text spec
 		}
 	});
 
-	await t.step("Fragment maintains child order", () => {
+	await t.step("Fragment maintains child order", async () => {
 		const fragNode = doc.createNode('m.frg');
 		const children = ['First', 'Second', 'Third', 'Fourth'];
 		for (const text of children) {
 			fragNode.append(text);
 		}
+		await reactive.wait();
 		const subSpec = fragNode.getSubSpec();
+		assert(subSpec instanceof NANOS, 'Sub-spec should be a NANOS list');
 		assertEquals(subSpec.size, children.length);
 		for (let i = 0; i < children.length; i++) {
 			assertEquals(subSpec.at(i), children[i]); // Simplified text spec
 		}
 	});
 
-	await t.step("Fragment containing fragments (nested)", () => {
+	await t.step("Fragment containing fragments (nested)", async () => {
 		const outerFrag = doc.createNode('m.frg');
 		const innerFrag = doc.createNode('m.frg');
 		innerFrag.append('Inner text');
 		outerFrag.append(innerFrag);
-		const subSpec = outerFrag.getSubSpec();
-		assertEquals(subSpec.size, 1);
-		assertEquals(subSpec.at([0, 0]), 'm.frg');
-		const innerSubSpec = subSpec.at(0);
-		// The inner fragment's children are simplified text specs
-		assertEquals(innerSubSpec.at(1), 'Inner text'); // Simplified text spec (index 1 because 0 is type)
+		await reactive.wait();
+		const outerSpec = outerFrag.getSubSpec();
+		console.log(outerSpec.toSLID());
+		assert(outerSpec instanceof NANOS, 'Outer sub-spec should be a NANOS list');
+		assertEquals(outerSpec.size, 1);
+		assertEquals(outerSpec.at([0, 0]), 'm.frg');
+		const innerSpec = outerSpec.at(0);
+		assert(innerSpec instanceof NANOS, 'Inner sub-spec should be a NANOS list');
+		assertEquals(innerSpec.size, 2);
+		assertEquals(innerSpec.at(1), 'Inner text'); // Simplified text spec
 	});
 
-	await t.step("Fragment attributes don't interfere with children", () => {
+	await t.step("Fragment attributes don't interfere with children", async () => {
 		const fragNode = doc.createNode('m.frg');
 		fragNode.setAttr('id', 'frag-id');
 		fragNode.setAttr('class', 'frag-class');
 		fragNode.setAttr('data-test', 'value');
 		fragNode.append('Child text');
+		await reactive.wait();
 		const subSpec = fragNode.getSubSpec();
+		assert(subSpec instanceof NANOS, 'Sub-spec should be a NANOS list');
 		assertEquals(subSpec.size, 1);
 		assertEquals(subSpec.at(0), 'Child text'); // Simplified text spec
 		// Fragment's own attributes exist

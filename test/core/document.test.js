@@ -514,9 +514,10 @@ Deno.test('MWIDocument - Content Creation from Specs (Async)', async (t) => {
 Deno.test('MWIDocument - Document Root Operations', async (t) => {
 	await fwait('MWIDocument');
 
-	await t.step('(append) - Append text string', () => {
+	await t.step('(append) - Append text string', async () => {
 		const doc = getInstance('MWIDocument');
 		const result = doc('append', ls(['item', 'Hello']));
+		await reactive.wait();
 		assertStrictEquals(result, doc, 'Should return document for chaining');
 
 		const root = doc('root');
@@ -524,12 +525,13 @@ Deno.test('MWIDocument - Document Root Operations', async (t) => {
 		assertEquals(subSpec.size, 1, 'Root should have one child');
 	});
 
-	await t.step('(append) - Append single node', () => {
+	await t.step('(append) - Append single node', async () => {
 		const doc = getInstance('MWIDocument');
 		const node = doc('createNode', ls([, 'm.t']));
 		node('setAttr', ls(['t', 'Test']));
 
 		const result = doc('append', ls([, node]));
+		await reactive.wait();
 		assertStrictEquals(result, doc, 'Should return document for chaining');
 
 		const root = doc('root');
@@ -537,12 +539,13 @@ Deno.test('MWIDocument - Document Root Operations', async (t) => {
 		assertEquals(subSpec.size, 1, 'Root should have one child');
 	});
 
-	await t.step('(append) - Append multiple nodes', () => {
+	await t.step('(append) - Append multiple nodes', async () => {
 		const doc = getInstance('MWIDocument');
 		const node1 = doc('createNode', ls([, 'm.t']));
 		const node2 = doc('createNode', ls([, 'm.t']));
 
 		const result = doc('append', ls([, node1, , node2]));
+		await reactive.wait();
 		assertStrictEquals(result, doc, 'Should return document for chaining');
 
 		const root = doc('root');
@@ -550,18 +553,20 @@ Deno.test('MWIDocument - Document Root Operations', async (t) => {
 		assertEquals(subSpec.size, 2, 'Root should have two children');
 	});
 
-	await t.step('(append) - Append SLID spec', () => {
+	await t.step('(append) - Append SLID spec', async () => {
 		const doc = getInstance('MWIDocument');
 		doc('append', ls(['list', '[([m.t t=A] [m.t t=B])]']));
+		await reactive.wait();
 
 		const root = doc('root');
 		const subSpec = root('getSubSpec');
 		assertEquals(subSpec.size, 2, 'Root should have two children');
 	});
 
-	await t.step('(append) - Root sub-spec reflects content', () => {
+	await t.step('(append) - Root sub-spec reflects content', async () => {
 		const doc = getInstance('MWIDocument');
 		doc('append', ls(['list', '[([m.t t=First] [m.t t=Second])]']));
+		await reactive.wait();
 
 		const root = doc('root');
 		const subSpec = root('getSubSpec');
@@ -576,6 +581,7 @@ Deno.test('MWIDocument - Document Root Operations', async (t) => {
 	await t.step('(appendWait) - Append text string', async () => {
 		const doc = getInstance('MWIDocument');
 		const result = await doc('appendWait', ls(['item', 'Hello']));
+		await reactive.wait();
 		assertStrictEquals(result, doc, 'Should return document for chaining');
 
 		const root = doc('root');
@@ -586,6 +592,7 @@ Deno.test('MWIDocument - Document Root Operations', async (t) => {
 	await t.step('.appendWait() - Append text string', async () => {
 		const doc = getInstance('MWIDocument');
 		const result = await doc.appendWait({ item: 'Hello' });
+		await reactive.wait();
 		assertStrictEquals(result, doc, 'Should return document for chaining');
 
 		const root = doc('root');
@@ -596,6 +603,7 @@ Deno.test('MWIDocument - Document Root Operations', async (t) => {
 	await t.step('(appendWait) - Append SLID spec', async () => {
 		const doc = getInstance('MWIDocument');
 		await doc('appendWait', ls(['list', '[([m.t t=A] [m.t t=B])]']));
+		await reactive.wait();
 
 		const root = doc('root');
 		const subSpec = root('getSubSpec');
@@ -605,6 +613,7 @@ Deno.test('MWIDocument - Document Root Operations', async (t) => {
 	await t.step('.appendWait() - Append SLID spec', async () => {
 		const doc = getInstance('MWIDocument');
 		await doc.appendWait({ list: '[([m.t t=A] [m.t t=B])]' });
+		await reactive.wait();
 
 		const root = doc('root');
 		const subSpec = root('getSubSpec');

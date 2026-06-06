@@ -159,12 +159,10 @@ modcaps=''
 			const type = p.at('type').replace(/^h\./, ''), node = document.createElement(type), nodes = new NANOS(node);
 			p.set('dom', nodes);
 			d.rr.setDOMAttrs(node, p.at('attrs'), p.at(SCHEMA));
-			if (!p.at([SCHEMA, VOID])) getInstance('@reactive')('set', {
-				eager: true, def: () => {
-					const children = d.sm(d, 'redis');
-					d.rr.domSyncChildren(node, children);
-				}
-			})('rv'); // Wait for first execution
+			if (!p.at([SCHEMA, VOID])) reactive({ eager: true, def: () => {
+				const children = d.sm(d, 'redis');
+				d.rr.domSyncChildren(node, children);
+			}}).rv;
 			return nodes;
 		}
 
@@ -231,12 +229,10 @@ modcaps=''
 			const node = document.createElement(type);
 			const nodes = new NANOS(node);
 			d.rr.setDOMAttrs(node, p.at('attrs'), p.at(SCHEMA));
-			getInstance('@reactive')('set', {
-				eager: true, def: () => {
-					const text = d.rr('getAttr', [ 'm.text' ]) || '';
-					node.textContent = text;
-				}
-			})('rv');
+			reactive({ eager: true, def: () => {
+				const text = d.rr('getAttr', [ 'm.text' ]) || '';
+				node.textContent = text;
+			}}).rv;
 			return nodes;
 		}
 
@@ -281,12 +277,10 @@ modcaps=''
 			const p = d.p, doc = p.at('doc');
 			const node = document.createElement('title');
 			const nodes = new NANOS(node);
-			getInstance('@reactive')('set', {
-				eager: true, def: () => {
-					const text = d.rr('getAttr', [ 'm.text' ]) || '';
-					node.textContent = text;
-				}
-			})('rv');
+			reactive({ eager: true, def: () => {
+				const text = d.rr('getAttr', [ 'm.text' ]) || '';
+				node.textContent = text;
+			}}).rv;
 			return nodes;
 		}
 

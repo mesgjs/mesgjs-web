@@ -32,6 +32,9 @@ modcaps=''
 
 	await fwait(REG_READY_FT, NODE_READY_FT, CORE_READY_FT);
 
+	// Helper to create a reactive NANOS
+	// **IMPORTANT:**
+	// Any operation that returns a reactive NANOS should probably be returning the same one every time!
 	function rxNANOS (...args) {
 		const rxn = new NANOS();
 		rxn.setOpts({ autoReactive: true });
@@ -80,12 +83,12 @@ modcaps=''
 	// (append item=text|[node]? list='[(SLID spec)]':[[node]...] slotSrc=source?)
 	function opAppend (d) {
 		const p = d.p, root = p.at('root'), m = d.mp;
-		const item = m.has('item'), list = m.has('list');
+		const hasItem = m.has('item'), hasList = m.has('list');
 		let content = m;
-		if (item) {
-			content = [ d.rr('from', m) ];
-		} else if (list) {
-			content = d.rr('from', m);
+		if (hasItem) {
+			content = [ d.rr('from', { item: m.at('item') }) ];
+		} else if (hasList) {
+			content = d.rr('from', { list: m.at('list') });
 		}
 		root('append', content);
 		return d.rr;
@@ -96,12 +99,12 @@ modcaps=''
 	// (appendWait item=text|[node]? list='[(SLID spec)]':[[node]...] slotSrc=source?)
 	async function opAppendWait (d) {
 		const p = d.p, root = p.at('root'), m = d.mp;
-		const item = m.has('item'), list = m.has('list');
+		const hasItem = m.has('item'), hasList = m.has('list');
 		let content = m;
-		if (item) {
-			content = [ await d.rr('fromWait', m) ];
-		} else if (list) {
-			content = await d.rr('fromWait', m);
+		if (hasItem) {
+			content = [ await d.rr('fromWait', { item: m.at('item') }) ];
+		} else if (hasList) {
+			content = await d.rr('fromWait', { list: m.at('list') });
 		}
 		root('append', content);
 		return d.rr;
@@ -117,8 +120,8 @@ modcaps=''
 		const hasInterface = entry.has(INTERFACE) || entry.has(TEMPLATE);
 		const hasFeature = entry.has(FEATURE);
 
-		// Create an m.defer node instead of needed
-		if (!hasInterface && hasFeature) entry = registry.get('m.defer');
+		// Create an m.defer node instead if needed
+		if (!hasInterface && hasFeature) [type, entry] = ['m.defer', registry.get('m.defer')];
 
 		// Normal component - create it directly
 		const slotSrc = mp.at('slotSrc');
@@ -149,6 +152,7 @@ modcaps=''
 	// (from item=text|[node]? list='[(SLID string)]'|[[node] ...]? slotSrc=source?)
 	function opFrom (d) {
 		const m = d.mp, slotSrc = m.at('slotSrc');
+		const DEFER_TYPE = 'm.defer';
 		const fromItem = (spec) => {
 			if (typeof spec === 'string') {
 				const node = d.sm(d.rr, 'createNode', [ 'm.t' ]);
@@ -158,7 +162,13 @@ modcaps=''
 			if (spec instanceof NANOS) {
 				const type = spec.at(0);
 				const node = d.sm(d.rr, 'createNode', { 0: type, slotSrc });
-				node('setSpec', [ spec ]);
+				// If createNode returned an m.defer placeholder for a different type,
+				// enrich it with the original spec as its sub-spec (for CSR feature-gating)
+				if (node('type') === DEFER_TYPE && type !== DEFER_TYPE) {
+					node('setSubSpec', [ spec ]);
+				} else {
+					node('setSpec', [ spec ]);
+				}
 				return node;
 			}
 		};

@@ -87,7 +87,7 @@ Deno.test("MWIDocNode - Basic HTML Rendering", async (t) => {
 		const divNode = doc.createNode('h.div');
 		divNode.setAttr('id', 'js-container');
 		divNode.setAttr('data-test', 'value');
-		divNode.append('JS Content');
+		divNode.setSubSpec('JS Content');
 		const html = divNode.getHTML();
 		assert(html.includes('<div'));
 		assert(html.includes('id="js-container"'));
@@ -315,7 +315,7 @@ Deno.test("MWIDocNode - Child Content Rendering", async (t) => {
 
 	await t.step(".getHTML() - Single text child via JS", () => {
 		const divNode = doc.createNode('h.div');
-		divNode.append('JS single child');
+		divNode.setSubSpec('JS single child');
 		const html = divNode.getHTML();
 		assertEquals(html, '<div>JS single child</div>');
 	});
@@ -345,7 +345,7 @@ Deno.test("MWIDocNode - Child Content Rendering", async (t) => {
 		const textNode = doc('createNode', ls([, 'm.t']));
 		textNode('setAttr', ls([, 't', , 'Text']));
 		const spanNode = doc('createNode', ls([, 'h.span']));
-		spanNode('append', ls([, 'Span']));
+		spanNode('setSubSpec', ls([, 'Span']));
 		divNode('append', ls([, textNode, , spanNode]));
 		const html = divNode('getHTML');
 		assertEquals(html, '<div>Text<span>Span</span></div>');
@@ -354,7 +354,7 @@ Deno.test("MWIDocNode - Child Content Rendering", async (t) => {
 	await t.step(".getHTML() - Mixed content via JS", () => {
 		const divNode = doc.createNode('h.div');
 		const spanNode = doc.createNode('h.span');
-		spanNode.append('Span content');
+		spanNode.setSubSpec('Span content');
 		divNode.append('Before', spanNode, 'After');
 		const html = divNode.getHTML();
 		assertEquals(html, '<div>Before<span>Span content</span>After</div>');
@@ -374,7 +374,7 @@ Deno.test("MWIDocNode - Child Content Rendering", async (t) => {
 	await t.step(".getHTML() - Nested elements via JS", () => {
 		const outerDiv = doc.createNode('h.div');
 		const innerDiv = doc.createNode('h.div');
-		innerDiv.append('Inner content');
+		innerDiv.setSubSpec('Inner content');
 		outerDiv.append(innerDiv);
 		const html = outerDiv.getHTML();
 		assertEquals(html, '<div><div>Inner content</div></div>');
@@ -383,7 +383,7 @@ Deno.test("MWIDocNode - Child Content Rendering", async (t) => {
 	await t.step("(getHTML) - Void element has no children in output", () => {
 		const brNode = doc('createNode', ls([, 'h.br']));
 		// Try to append (should be ignored)
-		brNode('append', ls([, 'text']));
+		brNode('setSubSpec', ls([, 'text']));
 		const html = brNode('getHTML');
 		assertEquals(html, '<br>');
 		assert(!html.includes('text'));
@@ -410,7 +410,7 @@ Deno.test("MWIDocNode - Edge Cases", async (t) => {
 
 	await t.step(".getHTML() - Element with only whitespace text children via JS", () => {
 		const divNode = doc.createNode('h.div');
-		divNode.append('   ');
+		divNode.setSubSpec('   ');
 		const html = divNode.getHTML();
 		assertEquals(html, '<div>   </div>');
 	});
@@ -454,7 +454,7 @@ Deno.test("MWIDocNode - Edge Cases", async (t) => {
 		const level1 = doc.createNode('h.div');
 		const level2 = doc.createNode('h.div');
 		const level3 = doc.createNode('h.div');
-		level3.append('Deep content');
+		level3.setSubSpec('Deep content');
 		level2.append(level3);
 		level1.append(level2);
 		const html = level1.getHTML();
@@ -496,7 +496,7 @@ Deno.test("MWIDocNode - Edge Cases", async (t) => {
 		const divNode = doc.createNode('h.div');
 		const listVal = ps('[(alpha beta gamma)]');
 		divNode.setAttr('c.data', listVal);
-		divNode.append('Content');
+		divNode.setSubSpec('Content');
 		const html = divNode.getHTML();
 		assert(!html.includes('c.data'));
 		assert(!html.includes('alpha'));

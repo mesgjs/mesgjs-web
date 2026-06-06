@@ -21,22 +21,26 @@ Deno.test("MWICoreText (m.t) - Core Interface Tests", async (t) => {
 	const textNode = doc.createNode('m.t');
 
 	await t.step("(setAttr) - Set text attribute", () => {
+		const textNode = doc.createNode('m.t');
 		textNode('setAttr', ls([, 't', , 'Hello World']));
 		assertEquals(textNode('getAttr', ls([, 't'])), 'Hello World');
 	});
 
 	await t.step(".setAttr() - Set text attribute via JS", () => {
+		const textNode = doc.createNode('m.t');
 		textNode.setAttr('t', 'Updated Text');
 		assertEquals(textNode.getAttr('t'), 'Updated Text');
 	});
 
 	await t.step("(delAttr) - Delete text attribute", () => {
+		const textNode = doc.createNode('m.t');
 		textNode('setAttr', ls([, 't', , 'Test']));
 		textNode('delAttr', ls([, 't']));
 		assertEquals(textNode('hasAttr', ls([, 't'])), false);
 	});
 
 	await t.step(".delAttr() - Delete text attribute via JS", () => {
+		const textNode = doc.createNode('m.t');
 		textNode.setAttr('t', 'Test');
 		textNode.delAttr('t');
 		assertEquals(textNode.hasAttr('t'), false);
@@ -52,16 +56,19 @@ Deno.test("MWICoreText (m.t) - Core Interface Tests", async (t) => {
 	});
 
 	await t.step("(getAttr) - Get text attribute", () => {
+		const textNode = doc.createNode('m.t');
 		textNode('setAttr', ls([, 't', , 'Sample Text']));
 		assertEquals(textNode('getAttr', ls([, 't'])), 'Sample Text');
 	});
 
 	await t.step(".getAttr() - Get text attribute via JS", () => {
+		const textNode = doc.createNode('m.t');
 		textNode.setAttr('t', 'Another Sample');
 		assertEquals(textNode.getAttr('t'), 'Another Sample');
 	});
 
 	await t.step("(getSpec) - Get simplified spec (text only)", () => {
+		const textNode = doc.createNode('m.t');
 		textNode('setAttr', ls([, 't', , 'Spec Test']));
 		const spec = textNode('getSpec');
 		// When spec only has type and text, it's simplified to just the text string
@@ -69,6 +76,7 @@ Deno.test("MWICoreText (m.t) - Core Interface Tests", async (t) => {
 	});
 
 	await t.step(".getSpec() - Get simplified spec via JS (text only)", () => {
+		const textNode = doc.createNode('m.t');
 		textNode.setAttr('t', 'JS Spec Test');
 		const spec = textNode.getSpec();
 		// When spec only has type and text, it's simplified to just the text string
@@ -76,6 +84,7 @@ Deno.test("MWICoreText (m.t) - Core Interface Tests", async (t) => {
 	});
 
 	await t.step("(getSpec) - Get full spec with additional attributes", () => {
+		const textNode = doc.createNode('m.t');
 		textNode('setAttr', ls([, 't', , 'Full Spec']));
 		textNode('setAttr', ls([, 'custom', , 'attr']));
 		const spec = textNode('getSpec');
@@ -86,6 +95,7 @@ Deno.test("MWICoreText (m.t) - Core Interface Tests", async (t) => {
 	});
 
 	await t.step(".getSpec() - Get full spec with additional attributes via JS", () => {
+		const textNode = doc.createNode('m.t');
 		const textNode2 = doc.createNode('m.t');
 		textNode2.setAttr('t', 'JS Full Spec');
 		textNode2.setAttr('custom', 'value');
@@ -107,44 +117,53 @@ Deno.test("MWICoreText (m.t) - Core Interface Tests", async (t) => {
 	});
 
 	await t.step("(hasAttr) - Check attribute existence", () => {
+		const textNode = doc.createNode('m.t');
 		textNode('setAttr', ls([, 't', , 'Test']));
 		assertEquals(textNode('hasAttr', ls([, 't'])), true);
 		assertEquals(textNode('hasAttr', ls([, 'nonexistent'])), false);
 	});
 
 	await t.step(".hasAttr() - Check attribute existence via JS", () => {
+		const textNode = doc.createNode('m.t');
 		textNode.setAttr('t', 'Test');
 		assertEquals(textNode.hasAttr('t'), true);
 		assertEquals(textNode.hasAttr('nonexistent'), false);
 	});
 
 	await t.step("(setSpec) - Set node specification", () => {
+		const textNode = doc.createNode('m.t');
 		const spec = ps('[(m.t t="Spec Set Test")]');
 		textNode('setSpec', ls([, spec]));
 		assertEquals(textNode('getAttr', ls([, 't'])), 'Spec Set Test');
 	});
 
 	await t.step(".setSpec() - Set node specification via JS", () => {
+		const textNode = doc.createNode('m.t');
 		const spec = ps('[(m.t t="JS Spec Set Test")]');
 		textNode.setSpec(spec);
 		assertEquals(textNode.getAttr('t'), 'JS Spec Set Test');
 	});
 
-	await t.step("(append) - Append content (getSubSpec still empty)", () => {
+	await t.step("(append) - Append content (getSubDoc still empty)", async () => {
+		const textNode = doc.createNode('m.t');
 		textNode('setAttr', ls([, 't', , 'Base Text']));
 		textNode('append', ls([, 'ignored content']));
-		const subSpec = textNode('getSubSpec');
-		assertEquals(subSpec.size, 0);
+		await reactive.wait();
+		const subDoc = textNode('getSubDoc');
+		assertEquals(subDoc.size, 0);
 	});
 
-	await t.step(".append() - Append content via JS (getSubSpec still empty)", () => {
+	await t.step(".append() - Append content via JS (getSubDoc still empty)", async () => {
+		const textNode = doc.createNode('m.t');
 		textNode.setAttr('t', 'Base Text');
 		textNode.append('ignored content');
-		const subSpec = textNode.getSubSpec();
-		assertEquals(subSpec.size, 0);
+		await reactive.wait();
+		const subDoc = textNode.getSubDoc();
+		assertEquals(subDoc.size, 0);
 	});
 
 	await t.step("(setSubSpec) - Set sub-spec (getSubSpec still empty)", () => {
+		const textNode = doc.createNode('m.t');
 		const subSpec = ls([, 'child1', , 'child2']);
 		textNode('setSubSpec', ls(['subSpec', subSpec]));
 		const resultSubSpec = textNode('getSubSpec');
@@ -152,6 +171,7 @@ Deno.test("MWICoreText (m.t) - Core Interface Tests", async (t) => {
 	});
 
 	await t.step(".setSubSpec() - Set sub-spec via JS (getSubSpec still empty)", () => {
+		const textNode = doc.createNode('m.t');
 		const subSpec = ls([, 'child1', , 'child2']);
 		textNode.setSubSpec({ subSpec });
 		const resultSubSpec = textNode.getSubSpec();

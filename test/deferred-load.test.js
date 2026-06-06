@@ -77,8 +77,6 @@ Deno.test('Deferred components in MWI auto-load upon registry access', async (t)
 	assert(entry, 'registry returned component entry');
 	assertEquals(deferLoaded, true, 'module *is* loaded *after* access');
 	assertEquals(fcheck(DEFER_FT), true, 'fcheck returns *true* *after* access');
-	try { console.log('entry', entry.toSLID()); }
-	catch (e) { console.warn('Note: SLID display of returned entry failed'); }
 	assertEquals(entry.at(INTERFACE), DEFER_IF, 'interface merged into component entry');
 	assertEquals(entry.at(FEATURE), DEFER_FT, 'feature still present into component entry');
 	assert(entry.at('id')?.startsWith(COMP_ID_PRE), 'component has been assigned an id');

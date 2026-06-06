@@ -1,3 +1,4 @@
+// FAILING
 import {
 	assert,
 	assertEquals,
@@ -94,8 +95,11 @@ Deno.test("MWICoreSlot (m.slot) - Default Content and Slotting", async (t) => {
 	await t.step("(getHTML) - Renders natural children on default slot against non-empty-container source", () => {
 		const slotNode = doc('createNode', ls([, 'm.slot', 'slotSrc', divNode1]));
 		assertStrictEquals(slotNode('slotSrc'), divNode1, 'correct slot source is assigned');
-		slotNode('append', ls([, 'Default']));
+		slotNode('setSubSpec', ls([, 'Default']));
+		console.log('slot node', slotNode.getSpec().toSLID());
+		console.log('slot src node', divNode1.getSpec().toSLID());
 		const html = slotNode('getHTML');
+		console.log(html);
 		assertEquals(html, 'Natural child', 'source natural children rendered');
 	});
 

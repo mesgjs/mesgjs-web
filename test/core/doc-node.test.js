@@ -1374,10 +1374,11 @@ Deno.test("MWIDocNode - Spec Management", async (t) => {
 		const textNode = doc.createNode('m.t');
 		textNode('setAttr', ls([, 't', , 'Child text']));
 		divNode('append', ls([, textNode]));
+		await reactive.wait();
 		const spec = divNode('getSpec');
+		assertEquals(spec.size, 2);
 		assertEquals(spec.at(0), 'h.div');
-		// Text node getSpec is simplified to just the string
-		assertEquals(spec.at(1), 'Child text');
+		assertEquals(spec.at(1), 'Child text'); // Simplified text spec
 	});
 
 	await t.step(".getSpec() - With children via JS", async () => {
@@ -1385,10 +1386,11 @@ Deno.test("MWIDocNode - Spec Management", async (t) => {
 		const textNode = doc.createNode('m.t');
 		textNode.setAttr('t', 'JS Child text');
 		divNode.append(textNode);
+		await reactive.wait();
 		const spec = divNode.getSpec();
+		assertEquals(spec.size, 2);
 		assertEquals(spec.at(0), 'h.div');
-		// Text node getSpec is simplified to just the string
-		assertEquals(spec.at(1), 'JS Child text');
+		assertEquals(spec.at(1), 'JS Child text'); // Simplified text spec
 	});
 
 	await t.step("(getSubSpec) - No children", async () => {
@@ -1403,26 +1405,26 @@ Deno.test("MWIDocNode - Spec Management", async (t) => {
 		assertEquals(subSpec.size, 0);
 	});
 
-	await t.step("(getSubSpec) - With children", async () => {
+	await t.step("(getAttr m.rns) - With appended children", async () => {
 		const divNode = doc.createNode('h.div');
 		const textNode = doc.createNode('m.t');
 		textNode('setAttr', ls([, 't', , 'Child']));
 		divNode('append', ls([, textNode]));
+		await reactive.wait();
 		const subSpec = divNode('getSubSpec');
 		assertEquals(subSpec.size, 1);
-		// Text node getSpec is simplified to just the string
-		assertEquals(subSpec.at(0), 'Child');
+		assertEquals(subSpec.at(0), 'Child'); // Simplified text spec
 	});
 
-	await t.step(".getSubSpec() - With children via JS", async () => {
+	await t.step(".getAttr('m.rns') - With appended children via JS", async () => {
 		const divNode = doc.createNode('h.div');
 		const textNode = doc.createNode('m.t');
 		textNode.setAttr('t', 'JS Child');
 		divNode.append(textNode);
+		await reactive.wait();
 		const subSpec = divNode.getSubSpec();
 		assertEquals(subSpec.size, 1);
-		// Text node getSpec is simplified to just the string
-		assertEquals(subSpec.at(0), 'JS Child');
+		assertEquals(subSpec.at(0), 'JS Child'); // Simplified text spec
 	});
 
 	await t.step("(getSubSpec) - Void node always empty", async () => {
@@ -1582,19 +1584,23 @@ Deno.test("MWIDocNode - Content Operations", async (t) => {
 	await t.step("(append) - Text string auto-converts to m.t", async () => {
 		const divNode = doc.createNode('h.div');
 		divNode('append', ls([, 'Plain text']));
-		const subSpec = divNode('getSubSpec');
-		assertEquals(subSpec.size, 1);
-		// Text node getSpec is simplified to just the string
-		assertEquals(subSpec.at(0), 'Plain text');
+		await reactive.wait();
+		const subDoc = divNode('getSubDoc');
+		assertEquals(subDoc.size, 1);
+		const textNode = subDoc.at(0);
+		assertEquals(textNode('type'), 'm.t');
+		assertEquals(textNode('getAttr', ['t']), 'Plain text');
 	});
 
 	await t.step(".append() - Text string auto-converts to m.t via JS", async () => {
 		const divNode = doc.createNode('h.div');
 		divNode.append('JS plain text');
-		const subSpec = divNode.getSubSpec();
-		assertEquals(subSpec.size, 1);
-		// Text node getSpec is simplified to just the string
-		assertEquals(subSpec.at(0), 'JS plain text');
+		await reactive.wait();
+		const subDoc = divNode.getSubDoc();
+		assertEquals(subDoc.size, 1);
+		const textNode = subDoc.at(0);
+		assertEquals(textNode.type, 'm.t');
+		assertEquals(textNode.getAttr('t'), 'JS plain text');
 	});
 
 	await t.step("(append) - Doc-node", async () => {
@@ -1602,6 +1608,7 @@ Deno.test("MWIDocNode - Content Operations", async (t) => {
 		const textNode = doc.createNode('m.t');
 		textNode('setAttr', ls([, 't', , 'Appended node']));
 		divNode('append', ls([, textNode]));
+		await reactive.wait();
 		const subSpec = divNode('getSubSpec');
 		assertEquals(subSpec.size, 1);
 		// Text node getSpec is simplified to just the string
@@ -1613,6 +1620,7 @@ Deno.test("MWIDocNode - Content Operations", async (t) => {
 		const textNode = doc.createNode('m.t');
 		textNode.setAttr('t', 'JS appended node');
 		divNode.append(textNode);
+		await reactive.wait();
 		const subSpec = divNode.getSubSpec();
 		assertEquals(subSpec.size, 1);
 		// Text node getSpec is simplified to just the string
@@ -1626,6 +1634,7 @@ Deno.test("MWIDocNode - Content Operations", async (t) => {
 		const text2 = doc.createNode('m.t');
 		text2('setAttr', ls([, 't', , 'Second']));
 		divNode('append', ls([, text1, , text2]));
+		await reactive.wait();
 		const subSpec = divNode('getSubSpec');
 		assertEquals(subSpec.size, 2);
 		// Text node getSpec is simplified to just the string
@@ -1640,6 +1649,7 @@ Deno.test("MWIDocNode - Content Operations", async (t) => {
 		const text2 = doc.createNode('m.t');
 		text2.setAttr('t', 'JS Second');
 		divNode.append(text1, text2);
+		await reactive.wait();
 		const subSpec = divNode.getSubSpec();
 		assertEquals(subSpec.size, 2);
 		// Text node getSpec is simplified to just the string
@@ -1652,6 +1662,7 @@ Deno.test("MWIDocNode - Content Operations", async (t) => {
 		const textNode = doc.createNode('m.t');
 		textNode('setAttr', ls([, 't', , 'Node text']));
 		divNode('append', ls([, 'String text', , textNode]));
+		await reactive.wait();
 		const subSpec = divNode('getSubSpec');
 		assertEquals(subSpec.size, 2);
 		// Text node getSpec is simplified to just the string
@@ -1664,6 +1675,7 @@ Deno.test("MWIDocNode - Content Operations", async (t) => {
 		const textNode = doc.createNode('m.t');
 		textNode.setAttr('t', 'JS Node text');
 		divNode.append('JS String text', textNode);
+		await reactive.wait();
 		const subSpec = divNode.getSubSpec();
 		assertEquals(subSpec.size, 2);
 		// Text node getSpec is simplified to just the string
@@ -1686,6 +1698,7 @@ Deno.test("MWIDocNode - Content Operations", async (t) => {
 	await t.step("(append) - Void node is no-op", async () => {
 		const brNode = doc.createNode('h.br');
 		brNode('append', ls([, 'text']));
+		await reactive.wait();
 		const subSpec = brNode('getSubSpec');
 		assertEquals(subSpec.size, 0);
 	});
@@ -1693,6 +1706,7 @@ Deno.test("MWIDocNode - Content Operations", async (t) => {
 	await t.step(".append() - Void node is no-op via JS", async () => {
 		const brNode = doc.createNode('h.br');
 		brNode.append('text');
+		await reactive.wait();
 		const subSpec = brNode.getSubSpec();
 		assertEquals(subSpec.size, 0);
 	});

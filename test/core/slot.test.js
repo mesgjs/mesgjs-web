@@ -162,21 +162,19 @@ Deno.test("MWICoreSlot (m.slot) - Spec Management", async (t) => {
 
 	await t.step("(setSpec) - Set default content from spec", () => {
 		const slotNode = doc.createNode('m.slot');
-		const spec = ps('[(m.slot [m.t t="Default content"])]');
+		const spec = ps('[(m.slot "Default content")]');
 		slotNode('setSpec', ls([, spec]));
 		const subSpec = slotNode('getSubSpec');
 		assertEquals(subSpec.size, 1);
-		// Text node getSpec is simplified to just the string
 		assertEquals(subSpec.at(0), 'Default content');
 	});
 
 	await t.step(".setSpec() - Set default content from spec via JS", () => {
 		const slotNode = doc.createNode('m.slot');
-		const spec = ps('[(m.slot [m.t t="JS Default content"])]');
+		const spec = ps('[(m.slot "JS Default content")]');
 		slotNode.setSpec(spec);
 		const subSpec = slotNode.getSubSpec();
 		assertEquals(subSpec.size, 1);
-		// Text node getSpec is simplified to just the string
 		assertEquals(subSpec.at(0), 'JS Default content');
 	});
 });
@@ -185,19 +183,21 @@ Deno.test("MWICoreSlot (m.slot) - Default Content Management", async (t) => {
 	await t.step("(append) - Append text string (auto-converts to m.t)", () => {
 		const slotNode = doc.createNode('m.slot');
 		slotNode('append', ls([, 'Default text']));
-		const subSpec = slotNode('getSubSpec');
-		assertEquals(subSpec.size, 1);
-		// Text node getSpec is simplified to just the string
-		assertEquals(subSpec.at(0), 'Default text');
+		const subDoc = slotNode('getSubDoc');
+		assertEquals(subDoc.size, 1);
+		const textNode = subDoc.at(0);
+		assertEquals(textNode('type'), 'm.t');
+		assertEquals(textNode('getAttr', 't'), 'Default text');
 	});
 
 	await t.step(".append() - Append text string via JS (auto-converts to m.t)", () => {
 		const slotNode = doc.createNode('m.slot');
 		slotNode.append('JS default text');
-		const subSpec = slotNode.getSubSpec();
-		assertEquals(subSpec.size, 1);
-		// Text node getSpec is simplified to just the string
-		assertEquals(subSpec.at(0), 'JS default text');
+		const subDoc = slotNode.getSubDoc();
+		assert(subDoc.size, 1);
+		const textNode = subDoc.at(0);
+		assertEquals(textNode.type, 'm.t');
+		assertEquals(textNode.getAttr('t'), 'JS default text');
 	});
 
 	await t.step("(append) - Append doc-node", () => {
@@ -205,10 +205,14 @@ Deno.test("MWICoreSlot (m.slot) - Default Content Management", async (t) => {
 		const textNode = doc.createNode('m.t');
 		textNode('setAttr', ls([, 't', , 'Appended node']));
 		slotNode('append', ls([, textNode]));
-		const subSpec = slotNode('getSubSpec');
-		assertEquals(subSpec.size, 1);
+		// Appended nodes are live, not spec - check m.rns
+		const rns = slotNode('getAttr', ls([, 'm.rns']));
+		assertEquals(rns.size, 1);
 		// Text node getSpec is simplified to just the string
-		assertEquals(subSpec.at(0), 'Appended node');
+		assertEquals(rns.at(0), 'Appended node');
+		// getSubSpec returns original sub-spec (empty in this case)
+		const subSpec = slotNode('getSubSpec');
+		assertEquals(subSpec.size, 0);
 	});
 
 	await t.step(".append() - Append doc-node via JS", () => {
@@ -216,10 +220,14 @@ Deno.test("MWICoreSlot (m.slot) - Default Content Management", async (t) => {
 		const textNode = doc.createNode('m.t');
 		textNode.setAttr('t', 'JS appended node');
 		slotNode.append(textNode);
-		const subSpec = slotNode.getSubSpec();
-		assertEquals(subSpec.size, 1);
+		// Appended nodes are live, not spec - check m.rns
+		const rns = slotNode.getAttr('m.rns');
+		assertEquals(rns.size, 1);
 		// Text node getSpec is simplified to just the string
-		assertEquals(subSpec.at(0), 'JS appended node');
+		assertEquals(rns.at(0), 'JS appended node');
+		// getSubSpec returns original sub-spec (empty in this case)
+		const subSpec = slotNode.getSubSpec();
+		assertEquals(subSpec.size, 0);
 	});
 
 	await t.step("(append) - Append multiple default content items", () => {
@@ -229,11 +237,15 @@ Deno.test("MWICoreSlot (m.slot) - Default Content Management", async (t) => {
 		const text2 = doc.createNode('m.t');
 		text2('setAttr', ls([, 't', , 'Second']));
 		slotNode('append', ls([, text1, , text2]));
-		const subSpec = slotNode('getSubSpec');
-		assertEquals(subSpec.size, 2);
+		// Appended nodes are live, not spec - check m.rns
+		const rns = slotNode('getAttr', ls([, 'm.rns']));
+		assertEquals(rns.size, 2);
 		// Text node getSpec is simplified to just the string
-		assertEquals(subSpec.at(0), 'First');
-		assertEquals(subSpec.at(1), 'Second');
+		assertEquals(rns.at(0), 'First');
+		assertEquals(rns.at(1), 'Second');
+		// getSubSpec returns original sub-spec (empty in this case)
+		const subSpec = slotNode('getSubSpec');
+		assertEquals(subSpec.size, 0);
 	});
 
 	await t.step(".append() - Append multiple default content items via JS", () => {
@@ -243,31 +255,33 @@ Deno.test("MWICoreSlot (m.slot) - Default Content Management", async (t) => {
 		const text2 = doc.createNode('m.t');
 		text2.setAttr('t', 'JS Second');
 		slotNode.append(text1, text2);
-		const subSpec = slotNode.getSubSpec();
-		assertEquals(subSpec.size, 2);
+		// Appended nodes are live, not spec - check m.rns
+		const rns = slotNode.getAttr('m.rns');
+		assertEquals(rns.size, 2);
 		// Text node getSpec is simplified to just the string
-		assertEquals(subSpec.at(0), 'JS First');
-		assertEquals(subSpec.at(1), 'JS Second');
+		assertEquals(rns.at(0), 'JS First');
+		assertEquals(rns.at(1), 'JS Second');
+		// getSubSpec returns original sub-spec (empty in this case)
+		const subSpec = slotNode.getSubSpec();
+		assertEquals(subSpec.size, 0);
 	});
 
 	await t.step("(setSubSpec) - Set default content with NANOS list", () => {
 		const slotNode = doc.createNode('m.slot');
-		const subList = ps('[([m.t t="Sub 1"] [m.t t="Sub 2"])]');
+		const subList = ps('[("Sub 1" "Sub 2")]');
 		slotNode('setSubSpec', ls(['subSpec', subList]));
 		const subSpec = slotNode('getSubSpec');
 		assertEquals(subSpec.size, 2);
-		// Text node getSpec is simplified to just the string
 		assertEquals(subSpec.at(0), 'Sub 1');
 		assertEquals(subSpec.at(1), 'Sub 2');
 	});
 
 	await t.step(".setSubSpec() - Set default content with NANOS list via JS", () => {
 		const slotNode = doc.createNode('m.slot');
-		const subList = ps('[([m.t t="JS Sub 1"] [m.t t="JS Sub 2"])]');
+		const subList = ps('[("JS Sub 1" "JS Sub 2")]');
 		slotNode.setSubSpec({ subSpec: subList });
 		const subSpec = slotNode.getSubSpec();
 		assertEquals(subSpec.size, 2);
-		// Text node getSpec is simplified to just the string
 		assertEquals(subSpec.at(0), 'JS Sub 1');
 		assertEquals(subSpec.at(1), 'JS Sub 2');
 	});
@@ -319,20 +333,25 @@ Deno.test("MWICoreSlot (m.slot) - Name Attribute Behavior", async (t) => {
 	await t.step("Named slot without slotSrc has default content", () => {
 		const slotNode = doc.createNode('m.slot');
 		slotNode.setAttr('name', 'sidebar');
-		slotNode.append('Default sidebar');
-		const subSpec = slotNode.getSubSpec();
-		assertEquals(subSpec.size, 1);
-		assertEquals(subSpec.at(0), 'Default sidebar'); // Simplified text spec
+		slotNode.setSubSpec('Default sidebar');
+		const subDoc = slotNode.getSubDoc();
+		assertEquals(subDoc.size, 1);
+		const textNode = subDoc.at(0);
+		assertEquals(textNode.type, 'm.t');
+		assertEquals(textNode.getAttr('t'), 'Default sidebar');
 	});
 
-	await t.step("Unnamed slot (default slot) behavior", () => {
+	await t.step("Unnamed (default) slot without SlotSrc has default content", () => {
 		const slotNode = doc.createNode('m.slot');
 		// No name attribute set - this is the default slot
 		assertEquals(slotNode.hasAttr('name'), false);
-		slotNode.append('Default slot content');
-		const subSpec = slotNode.getSubSpec();
-		assertEquals(subSpec.size, 1);
-		assertEquals(subSpec.at(0), 'Default slot content'); // Simplified text spec
+		slotNode.setSubSpec('Default slot content');
+		// Appended nodes are live, not spec - check m.rns
+		const subDoc = slotNode.getSubDoc();
+		assertEquals(subDoc.size, 1);
+		const textNode = subDoc.at(0);
+		assertEquals(textNode.type, 'm.t');
+		assertEquals(textNode.getAttr('t'), 'Default slot content');
 	});
 });
 
@@ -340,12 +359,14 @@ Deno.test("MWICoreSlot (m.slot) - Slot Source Integration", async (t) => {
 	await t.step("Slot with void element as slotSrc", () => {
 		const brNode = doc.createNode('h.br');
 		const slotNode = doc.createNode('m.slot', { slotSrc: brNode });
-		slotNode.append('Fallback content');
+		slotNode.setSubSpec('Fallback content');
 		assertStrictEquals(slotNode.slotSrc, brNode);
 		// Void elements have no children, so slot should use fallback
-		const subSpec = slotNode.getSubSpec();
-		assertEquals(subSpec.size, 1);
-		assertEquals(subSpec.at(0), 'Fallback content'); // Simplified text spec
+		const subDoc = slotNode.getSubDoc();
+		assertEquals(subDoc.size, 1);
+		const textNode = subDoc.at(0);
+		assertEquals(textNode.type, 'm.t');
+		assertEquals(textNode.getAttr('t'), 'Fallback content');
 	});
 
 	await t.step("Slot with empty container as slotSrc", () => {
@@ -354,19 +375,25 @@ Deno.test("MWICoreSlot (m.slot) - Slot Source Integration", async (t) => {
 		slotNode.append('Fallback for empty');
 		assertStrictEquals(slotNode.slotSrc, divNode);
 		// Empty container has no children, so slot should use fallback
-		const subSpec = slotNode.getSubSpec();
-		assertEquals(subSpec.size, 1);
-		assertEquals(subSpec.at(0), 'Fallback for empty'); // Simplified text spec
+		const subDoc = slotNode.getSubDoc();
+		assertEquals(subDoc.size, 1);
+		const textNode = subDoc.at(0);
+		assertEquals(textNode.type, 'm.t');
+		assertEquals(textNode.getAttr('t'), 'Fallback for empty');
 	});
 
 	await t.step("Slot with non-empty container as slotSrc", () => {
 		const divNode = doc.createNode('h.div');
-		divNode.append('Source content');
+		divNode.setSubSpec('Source content');
 		const slotNode = doc.createNode('m.slot', { slotSrc: divNode });
-		slotNode.append('Fallback content');
+		slotNode.setSubSpec('Fallback content');
 		assertStrictEquals(slotNode.slotSrc, divNode);
 		// Non-empty container has children, so default slot should use them
-		// (This is verified in rendering tests, not spec tests)
+		const subDoc = slotNode.getSubDoc();
+		assertEquals(subDoc.size, 1);
+		const textNode = subDoc.at(0);
+		assertEquals(textNode.type, 'm.t');
+		assertEquals(textNode.getAttr('t'), 'Source content');
 	});
 
 	await t.step("Named slot with matching attribute in slotSrc", () => {
@@ -374,10 +401,14 @@ Deno.test("MWICoreSlot (m.slot) - Slot Source Integration", async (t) => {
 		divNode.setAttr('header-slot', ps('[([m.t t="Header from attr"])]'));
 		const slotNode = doc.createNode('m.slot', { slotSrc: divNode });
 		slotNode.setAttr('name', 'header-slot');
-		slotNode.append('Fallback header');
+		slotNode.setSubSpec('Fallback header');
 		assertStrictEquals(slotNode.slotSrc, divNode);
 		assertEquals(slotNode.getAttr('name'), 'header-slot');
-		// Attribute-based slotting is verified in rendering tests
+		const subDoc = slotNode.getSubDoc();
+		assertEquals(subDoc.size, 1);
+		const textNode = subDoc.at(0);
+		assertEquals(textNode.type, 'm.t');
+		assertEquals(textNode.getAttr('t'), 'Header from attr');
 	});
 
 	await t.step("Named slot without matching attribute in slotSrc", () => {
@@ -385,11 +416,13 @@ Deno.test("MWICoreSlot (m.slot) - Slot Source Integration", async (t) => {
 		divNode.setAttr('other-attr', 'value');
 		const slotNode = doc.createNode('m.slot', { slotSrc: divNode });
 		slotNode.setAttr('name', 'missing-slot');
-		slotNode.append('Fallback for missing');
+		slotNode.setSubSpec('Fallback for missing');
 		assertStrictEquals(slotNode.slotSrc, divNode);
 		// No matching attribute, so slot should use fallback
-		const subSpec = slotNode.getSubSpec();
-		assertEquals(subSpec.size, 1);
-		assertEquals(subSpec.at(0), 'Fallback for missing'); // Simplified text spec
+		const subDoc = slotNode.getSubDoc();
+		assertEquals(subDoc.size, 1);
+		const textNode = subDoc.at(0);
+		assertEquals(textNode.type, 'm.t');
+		assertEquals(textNode.getAttr('t'), 'Fallback for missing');
 	});
 });

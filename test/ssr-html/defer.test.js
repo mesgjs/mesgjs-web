@@ -106,32 +106,40 @@ Deno.test("MWICoreDefer (m.defer) - SSR-HTML Real-World Scenarios", async (t) =>
 	});
 });
 
-Deno.test("MWICoreDefer (m.defer) - SSR-HTML Empty Content", async (t) => {
-	await t.step("(getHTML) - Defer node ignores appended content", () => {
+Deno.test("MWICoreDefer (m.defer) - SSR-HTML Children Accepted But Not Rendered", async (t) => {
+	await t.step("(getHTML) - Defer node with children renders nothing", () => {
 		const deferNode = doc('createNode', ['m.defer']);
-		deferNode('append', ['ignored content']);
+		// Children are now accepted (stored in sub-spec) but not rendered during SSR
+		deferNode('setSubSpec', { subSpec: ps('[(hello)]') });
 		const html = deferNode('getHTML');
-		assertEquals(html, '', 'Should return empty string');
+		assertEquals(html, '', 'Should return empty string even with children');
 	});
 
-	await t.step(".getHTML() - Defer node ignores appended content via JS", () => {
+	await t.step(".getHTML() - Defer node with children renders nothing via JS", () => {
 		const deferNode = doc.createNode('m.defer');
-		deferNode.append('ignored content');
+		deferNode.setSubSpec({ subSpec: ps('[(world)]') });
 		const html = deferNode.getHTML();
-		assertEquals(html, '', 'Should return empty string');
+		assertEquals(html, '', 'Should return empty string even with children');
 	});
 
-	await t.step("(getHTML) - Defer node with setSubSpec still renders nothing", () => {
-		const deferNode = doc('createNode', ['m.defer']);
-		deferNode('setSubSpec', { subSpec: ls([, 'child1', , 'child2']) });
-		const html = deferNode('getHTML');
-		assertEquals(html, '', 'Should return empty string even with sub-spec');
+	await t.step("(getHTML) - from() defer node with original spec renders nothing", () => {
+		const nodes = doc('from', { list: '[([test.deferred.ssr class=widget])]' });
+		assert(Array.isArray(nodes), 'Should return array');
+		assertEquals(nodes.length, 1, 'Should create one node');
+		const deferNode = nodes[0];
+		assertEquals(deferNode.msjsType, 'MWICoreDefer', 'Should be defer');
+		// Sub-spec should contain the original spec
+		assertEquals(deferNode.getSubSpec().size, 1, 'Should have sub-spec');
+		// But rendering produces nothing
+		assertEquals(deferNode('getHTML'), '', 'Should render nothing');
 	});
 
-	await t.step(".getHTML() - Defer node with setSubSpec still renders nothing via JS", () => {
-		const deferNode = doc.createNode('m.defer');
-		deferNode.setSubSpec({ subSpec: ls([, 'child1', , 'child2']) });
-		const html = deferNode.getHTML();
-		assertEquals(html, '', 'Should return empty string even with sub-spec');
+	await t.step(".getHTML() - from() defer node with original spec renders nothing via JS", () => {
+		const nodes = doc.from({ list: '[([test.deferred.ssr class=widget])]' });
+		assert(Array.isArray(nodes), 'Should return array');
+		assertEquals(nodes.length, 1, 'Should create one node');
+		const deferNode = nodes[0];
+		assertEquals(deferNode.msjsType, 'MWICoreDefer', 'Should be defer');
+		assertEquals(deferNode.getHTML(), '', 'Should render nothing');
 	});
 });

@@ -68,12 +68,16 @@ Deno.test("MWICoreDefer (m.defer) - Placeholder Behavior", async (t) => {
 		assertEquals(deferNode('type'), 'm.defer');
 	});
 
-	await t.step("Placeholder node doesn't render",  () => {
+	await t.step("Placeholder node doesn't render HTML",  () => {
 		const deferNode = doc.createNode('m.defer');
 		// getHTML should return empty string
 		assertEquals(deferNode('getHTML'), '');
-		// getDOM should return empty NANOS
-		assertEquals(deferNode('getDOM').size, 0);
+	});
+
+	await t.step("Schema has autoDoc=false", () => {
+		const entry = registry.get('m.defer');
+		const schema = entry.at('schema');
+		assertEquals(schema.at('autoDoc'), false);
 	});
 });
 
@@ -170,47 +174,47 @@ Deno.test("MWICoreDefer (m.defer) - Spec Management", async (t) => {
 	});
 });
 
-Deno.test("MWICoreDefer (m.defer) - Sub-Spec Behavior", async (t) => {
-	await t.step("(getSubSpec) - Should return empty NANOS", () => {
+Deno.test("MWICoreDefer (m.defer) - Sub-Spec Behavior (new: children accepted)", async (t) => {
+	await t.step("(getSubSpec) - Returns empty NANOS when no children", () => {
 		const deferNode = doc.createNode('m.defer');
 		const subSpec = deferNode('getSubSpec');
 		assertEquals(subSpec.size, 0);
 	});
 
-	await t.step(".getSubSpec() - Should return empty NANOS via JS", () => {
+	await t.step(".getSubSpec() - Returns empty NANOS when no children via JS", () => {
 		const deferNode = doc.createNode('m.defer');
 		const subSpec = deferNode.getSubSpec();
 		assertEquals(subSpec.size, 0);
 	});
 
-	await t.step("(append) - Append content (ignored, getSubSpec still empty)", () => {
+	await t.step("(setSubSpec) - Children are stored in sub-spec", () => {
 		const deferNode = doc.createNode('m.defer');
-		deferNode('append', ls([, 'ignored content']));
+		const childSpec = ps('[(hello)]');
+		deferNode('setSubSpec', { subSpec: childSpec });
 		const subSpec = deferNode('getSubSpec');
-		assertEquals(subSpec.size, 0);
+		assertEquals(subSpec.size, 1);
 	});
 
-	await t.step(".append() - Append content via JS (ignored, getSubSpec still empty)", () => {
+	await t.step(".setSubSpec() - Children are stored in sub-spec via JS", () => {
 		const deferNode = doc.createNode('m.defer');
-		deferNode.append('ignored content');
+		const childSpec = ps('[(world)]');
+		deferNode.setSubSpec({ subSpec: childSpec });
 		const subSpec = deferNode.getSubSpec();
-		assertEquals(subSpec.size, 0);
+		assertEquals(subSpec.size, 1);
 	});
 
-	await t.step("(setSubSpec) - Set sub-spec (ignored, getSubSpec still empty)", () => {
+	await t.step("(getHTML) - Returns empty string even with children", () => {
 		const deferNode = doc.createNode('m.defer');
-		const subSpec = ls([, 'child1', , 'child2']);
-		deferNode('setSubSpec', ls(['subSpec', subSpec]));
-		const resultSubSpec = deferNode('getSubSpec');
-		assertEquals(resultSubSpec.size, 0);
+		const childSpec = ps('[(hello)]');
+		deferNode('setSubSpec', { subSpec: childSpec });
+		assertEquals(deferNode('getHTML'), '');
 	});
 
-	await t.step(".setSubSpec() - Set sub-spec via JS (ignored, getSubSpec still empty)", () => {
+	await t.step(".getHTML() - Returns empty string even with children via JS", () => {
 		const deferNode = doc.createNode('m.defer');
-		const subSpec = ls([, 'child1', , 'child2']);
-		deferNode.setSubSpec({ subSpec });
-		const resultSubSpec = deferNode.getSubSpec();
-		assertEquals(resultSubSpec.size, 0);
+		const childSpec = ps('[(world)]');
+		deferNode.setSubSpec({ subSpec: childSpec });
+		assertEquals(deferNode.getHTML(), '');
 	});
 });
 
@@ -226,15 +230,33 @@ Deno.test("MWICoreDefer (m.defer) - Real-World Creation via Document", async (t)
 	await t.step("Document creates defer node for unloaded component", () => {
 		const node = doc.createNode('test.deferred');
 		assertEquals(node.msjsType, 'MWICoreDefer', 'Should be MWICoreDefer');
-		assertEquals(node('type'), 'test.deferred');
+		assertEquals(node('type'), 'm.defer');
 	});
 
-	await t.step("Document.from() creates defer nodes from specs", () => {
+	await t.step("Document.from() creates defer nodes from specs with sub-spec", () => {
 		const nodes = doc('from', ls(['list', '[([test.deferred] [test.deferred])]']));
 		assert(Array.isArray(nodes), 'Should return array');
 		assertEquals(nodes.length, 2, 'Should create two nodes');
+		assertEquals(nodes[0]('type'), 'm.defer', 'First should be defer');
 		assertEquals(nodes[0].msjsType, 'MWICoreDefer', 'First should be defer');
+		assertEquals(nodes[1].type, 'm.defer', 'Second should be defer');
 		assertEquals(nodes[1].msjsType, 'MWICoreDefer', 'Second should be defer');
+		// Each defer node should have the original spec as its sub-spec
+		assertEquals(nodes[0].getSubSpec().size, 1, 'First defer should have sub-spec');
+		assertEquals(nodes[1].getSubSpec().size, 1, 'Second defer should have sub-spec');
+	});
+
+	await t.step("from() defer node sub-spec contains original component spec", () => {
+		const nodes = doc('from', ls(['list', '[([test.deferred class=widget data-value=42])]']));
+		assert(Array.isArray(nodes), 'Should return array');
+		assertEquals(nodes.length, 1, 'Should create one node');
+		const deferNode = nodes[0];
+		assertEquals(deferNode.msjsType, 'MWICoreDefer', 'Should be defer');
+		// Sub-spec item 0 should be the original spec
+		const subSpec = deferNode.getSubSpec();
+		assertEquals(subSpec.size, 1, 'Sub-spec should have one item');
+		const origSpec = subSpec.at(0);
+		assertEquals(origSpec.at(0), 'test.deferred', 'Sub-spec item 0 should be original type');
 	});
 
 	await t.step("Mixed content with defer and loaded components", () => {
@@ -246,9 +268,10 @@ Deno.test("MWICoreDefer (m.defer) - Real-World Creation via Document", async (t)
 		assertEquals(nodes[2]('type'), 'h.div', 'Third should be div');
 	});
 
-	await t.step("Defer nodes can be appended to document", () => {
+	await t.step("Defer nodes can be appended to document", async () => {
 		const testDoc = getInstance('MWIDocument');
 		testDoc('append', ls(['list', '[([test.deferred])]']));
+		await reactive.wait();
 		const root = testDoc('root');
 		const subSpec = root('getSubSpec');
 		assertEquals(subSpec.size, 1, 'Root should have one child');
@@ -279,13 +302,12 @@ Deno.test("MWICoreDefer (m.defer) - Complex Scenarios", async (t) => {
 		assertEquals(deferNode('getAttr', ls([, 'data-status'])), 'loading');
 	});
 
-	await t.step("Defer node doesn't render (placeholder only)", () => {
+	await t.step("Defer node doesn't render HTML (placeholder only)", () => {
 		const deferNode = doc.createNode('m.defer');
 		deferNode.setAttr('class', 'test-class');
 		deferNode.setAttr('id', 'test-id');
 
 		// Should not render anything
 		assertEquals(deferNode('getHTML'), '');
-		assertEquals(deferNode('getDOM').size, 0);
 	});
 });

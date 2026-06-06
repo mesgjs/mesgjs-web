@@ -72,8 +72,9 @@ Deno.test("MWICoreCom (m.com) - Core Interface Tests", async (t) => {
 		assert(slidStr.includes('Spec comment'));
 	});
 
-	await t.step(".getSpec() - Get node specification via JS", () => {
+	await t.step(".getSpec() - Get node specification via JS", async () => {
 		comNode.setAttr('t', 'JS spec comment');
+		await reactive.wait();
 		const spec = comNode.getSpec();
 		assertEquals(spec.at(0), 'm.com');
 		assertEquals(spec.at('t'), 'JS spec comment');
@@ -113,16 +114,18 @@ Deno.test("MWICoreCom (m.com) - Core Interface Tests", async (t) => {
 		assertEquals(comNode.getAttr('t'), 'JS spec set comment');
 	});
 
-	await t.step("(append) - Append content (getSubSpec still empty)", () => {
+	await t.step("(append) - Append content (getSubSpec still empty)", async () => {
 		comNode('setAttr', ls([, 't', , 'Base comment']));
 		comNode('append', ls([, 'ignored content']));
+		await reactive.wait();
 		const subSpec = comNode('getSubSpec');
 		assertEquals(subSpec.size, 0);
 	});
 
-	await t.step(".append() - Append content via JS (getSubSpec still empty)", () => {
+	await t.step(".append() - Append content via JS (getSubSpec still empty)", async () => {
 		comNode.setAttr('t', 'Base comment');
 		comNode.append('ignored content');
+		await reactive.wait();
 		const subSpec = comNode.getSubSpec();
 		assertEquals(subSpec.size, 0);
 	});

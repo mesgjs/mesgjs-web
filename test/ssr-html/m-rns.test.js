@@ -19,40 +19,42 @@ const ls = globalThis.ls;
 const ps = globalThis.ps;
 
 Deno.test("m.rns attribute - MWICoreSlot (m.slot)", async (t) => {
-	await t.step("(hasAttr m.rns) - Not set when no slotSrc and no rendering", () => {
+	await t.step("(hasAttr m.rns) - Not set when no slotSrc", async () => {
 		const slotNode = doc('createNode', ls([, 'm.slot']));
-		slotNode('append', ls([, 'Default content']));
+		slotNode('setSubSpec', ls([, 'Default content']));
+		slotNode('getHTML');
 		// m.rns is only set during getHTML() when alternate children are rendered
 		assertEquals(slotNode('hasAttr', ls([, 'm.rns'])), false);
 	});
 
-	await t.step(".hasAttr('m.rns') - Not set when no slotSrc and no rendering via JS", () => {
+	await t.step(".hasAttr('m.rns') - Not set when no slotSrc via JS", async () => {
 		const slotNode = doc.createNode('m.slot');
-		slotNode.append('Default content');
+		slotNode.setSubSpec('Default content');
+		slotNode.getHTML();
 		assertEquals(slotNode.hasAttr('m.rns'), false);
 	});
 
 	await t.step("(hasAttr m.rns) - Not set after getHTML() when rendering natural children (no slotSrc)", () => {
 		const slotNode = doc('createNode', ls([, 'm.slot']));
-		slotNode('append', ls([, 'Natural content']));
-		slotNode('getHTML'); // Trigger rendering
+		slotNode('setSubSpec', ls([, 'Natural content']));
+		slotNode('getHTML');
 		// m.rns is only set when alternate (non-natural) children are rendered
 		assertEquals(slotNode('hasAttr', ls([, 'm.rns'])), false, 'm.rns should not be set when rendering natural children');
 	});
 
 	await t.step(".hasAttr('m.rns') - Not set after getHTML() when rendering natural children (no slotSrc) via JS", () => {
 		const slotNode = doc.createNode('m.slot');
-		slotNode.append('Natural content JS');
+		slotNode.setSubSpec('Natural content JS');
 		slotNode.getHTML();
 		// m.rns is only set when alternate (non-natural) children are rendered
 		assertEquals(slotNode.hasAttr('m.rns'), false, 'm.rns should not be set when rendering natural children');
 	});
 
-	await t.step("(getAttr m.rns) - Set to rendered sub-spec when rendering from slotSrc natural children", () => {
+	await t.step("(getAttr m.rns) - Set to rendered sub-spec when rendering from slotSrc natural children", async () => {
 		const divNode = doc('createNode', ls([, 'h.div']));
-		divNode('append', ls([, 'Source content']));
+		divNode('setSubSpec', ls([, 'Source content']));
 		const slotNode = doc('createNode', ls([, 'm.slot', 'slotSrc', divNode]));
-		slotNode('append', ls([, 'Fallback']));
+		slotNode('setSubSpec', ls([, 'Fallback']));
 		slotNode('getHTML');
 		const rns = slotNode('getAttr', ls([, 'm.rns']));
 		assert(rns instanceof NANOS, 'm.rns should be a NANOS list');
@@ -60,11 +62,11 @@ Deno.test("m.rns attribute - MWICoreSlot (m.slot)", async (t) => {
 		assertEquals(rns.at(0), 'Source content', 'rendered child should be simplified text spec from slotSrc');
 	});
 
-	await t.step(".getAttr('m.rns') - Set to rendered sub-spec when rendering from slotSrc natural children via JS", () => {
+	await t.step(".getAttr('m.rns') - Set to rendered sub-spec when rendering from slotSrc natural children via JS", async () => {
 		const divNode = doc.createNode('h.div');
-		divNode.append('Source JS');
+		divNode.setSubSpec('Source JS');
 		const slotNode = doc.createNode('m.slot', { slotSrc: divNode });
-		slotNode.append('Fallback');
+		slotNode.setSubSpec('Fallback');
 		slotNode.getHTML();
 		const rns = slotNode.getAttr('m.rns');
 		assert(rns instanceof NANOS, 'm.rns should be a NANOS list');
@@ -77,7 +79,7 @@ Deno.test("m.rns attribute - MWICoreSlot (m.slot)", async (t) => {
 		divNode('setAttr', ls([, 'c.header', , ps('[([m.t t="Header from attr"])]')]));
 		const slotNode = doc('createNode', ls([, 'm.slot', 'slotSrc', divNode]));
 		slotNode('setAttr', ls([, 'name', , 'c.header']));
-		slotNode('append', ls([, 'Fallback']));
+		slotNode('setSubSpec', ls([, 'Fallback']));
 		slotNode('getHTML');
 		const rns = slotNode('getAttr', ls([, 'm.rns']));
 		assert(rns instanceof NANOS, 'm.rns should be a NANOS list');
@@ -90,7 +92,7 @@ Deno.test("m.rns attribute - MWICoreSlot (m.slot)", async (t) => {
 		divNode.setAttr('c.footer', ps('[([m.t t="Footer from attr"])]'));
 		const slotNode = doc.createNode('m.slot', { slotSrc: divNode });
 		slotNode.setAttr('name', 'c.footer');
-		slotNode.append('Fallback');
+		slotNode.setSubSpec('Fallback');
 		slotNode.getHTML();
 		const rns = slotNode.getAttr('m.rns');
 		assert(rns instanceof NANOS, 'm.rns should be a NANOS list');
@@ -102,7 +104,7 @@ Deno.test("m.rns attribute - MWICoreSlot (m.slot)", async (t) => {
 		const divNode = doc('createNode', ls([, 'h.div']));
 		// No children in divNode
 		const slotNode = doc('createNode', ls([, 'm.slot', 'slotSrc', divNode]));
-		slotNode('append', ls([, 'Fallback']));
+		slotNode('setSubSpec', ls([, 'Fallback']));
 		slotNode('getHTML');
 		// When rendering fallback (no alternate children), m.rns should not be set
 		assertEquals(slotNode('hasAttr', ls([, 'm.rns'])), false, 'm.rns should not be set for fallback');
@@ -111,7 +113,7 @@ Deno.test("m.rns attribute - MWICoreSlot (m.slot)", async (t) => {
 	await t.step(".hasAttr('m.rns') - Not set when rendering fallback (no alternate children) via JS", () => {
 		const divNode = doc.createNode('h.div');
 		const slotNode = doc.createNode('m.slot', { slotSrc: divNode });
-		slotNode.append('Fallback');
+		slotNode.setSubSpec('Fallback');
 		slotNode.getHTML();
 		assertEquals(slotNode.hasAttr('m.rns'), false, 'm.rns should not be set for fallback');
 	});
@@ -121,7 +123,7 @@ Deno.test("m.rns attribute - MWICoreSlot (m.slot)", async (t) => {
 		divNode('setAttr', ls([, 'c.items', , ps('[([m.t t="Item 1"] [m.t t="Item 2"] [m.t t="Item 3"])]')]));
 		const slotNode = doc('createNode', ls([, 'm.slot', 'slotSrc', divNode]));
 		slotNode('setAttr', ls([, 'name', , 'c.items']));
-		slotNode('getHTML');
+		slotNode.getHTML();
 		const rns = slotNode('getAttr', ls([, 'm.rns']));
 		assert(rns instanceof NANOS, 'm.rns should be a NANOS list');
 		assertEquals(rns.size, 3, 'should have three rendered child specs');
@@ -144,9 +146,9 @@ Deno.test("m.rns attribute - MWICoreSlot (m.slot)", async (t) => {
 		assertEquals(rns.at(2), 'C');
 	});
 
-	await t.step("(getSpec) - m.rns appears in slot node spec after rendering alternate children", () => {
+	await t.step("(getSpec) - m.rns appears in slot node spec after rendering alternate children", async () => {
 		const divNode = doc('createNode', ls([, 'h.div']));
-		divNode('append', ls([, 'Slotted text']));
+		divNode('setSubSpec', ls([, 'Slotted text']));
 		const slotNode = doc('createNode', ls([, 'm.slot', 'slotSrc', divNode]));
 		slotNode('getHTML');
 		const spec = slotNode('getSpec');
@@ -159,7 +161,7 @@ Deno.test("m.rns attribute - MWICoreSlot (m.slot)", async (t) => {
 
 	await t.step(".getSpec() - m.rns appears in slot node spec after rendering alternate children via JS", () => {
 		const divNode = doc.createNode('h.div');
-		divNode.append('Slotted JS text');
+		divNode.setSubSpec('Slotted JS text');
 		const slotNode = doc.createNode('m.slot', { slotSrc: divNode });
 		slotNode.getHTML();
 		const spec = slotNode.getSpec();
@@ -172,7 +174,7 @@ Deno.test("m.rns attribute - MWICoreSlot (m.slot)", async (t) => {
 
 	await t.step("(getSpec) - m.rns absent from slot node spec when rendering natural children", () => {
 		const slotNode = doc('createNode', ls([, 'm.slot']));
-		slotNode('append', ls([, 'Natural text']));
+		slotNode('setSubSpec', ls([, 'Natural text']));
 		slotNode('getHTML');
 		const spec = slotNode('getSpec');
 		assertEquals(spec.has('m.rns'), false, 'm.rns should not appear in spec when rendering natural children');
@@ -180,7 +182,7 @@ Deno.test("m.rns attribute - MWICoreSlot (m.slot)", async (t) => {
 
 	await t.step(".getSpec() - m.rns absent from slot node spec when rendering natural children via JS", () => {
 		const slotNode = doc.createNode('m.slot');
-		slotNode.append('Natural JS text');
+		slotNode.setSubSpec('Natural JS text');
 		slotNode.getHTML();
 		const spec = slotNode.getSpec();
 		assertEquals(spec.has('m.rns'), false, 'm.rns should not appear in spec when rendering natural children');
@@ -188,31 +190,31 @@ Deno.test("m.rns attribute - MWICoreSlot (m.slot)", async (t) => {
 });
 
 Deno.test("m.rns attribute - MWICoreTpl (template handler)", async (t) => {
-	await t.step("(hasAttr m.rns) - Not set before rendering", async () => {
+	await t.step("(hasAttr m.rns) - Not set before rendering", () => {
 		registry.register('test.tpl.rnd1', ls(['allowLate', true, 'tpl', ps('[([m.t t="Content"])]')]));
-		const tplNode = await doc('createNode', ls([, 'test.tpl.rnd1']));
+		const tplNode = doc('createNode', ls([, 'test.tpl.rnd1']));
 		assertEquals(tplNode('hasAttr', ls([, 'm.rns'])), false, 'm.rns not set before rendering');
 	});
 
-	await t.step(".hasAttr('m.rns') - Not set before rendering via JS", async () => {
+	await t.step(".hasAttr('m.rns') - Not set before rendering via JS", () => {
 		registry.register('test.tpl.rnd2', ls(['allowLate', true, 'tpl', ps('[([m.t t="Content"])]')]));
-		const tplNode = await doc.createNode('test.tpl.rnd2');
+		const tplNode = doc.createNode('test.tpl.rnd2');
 		assertEquals(tplNode.hasAttr('m.rns'), false, 'm.rns not set before rendering');
 	});
 
-	await t.step("(getAttr m.rns) - Set to rendered sub-spec after getHTML()", async () => {
+	await t.step("(getAttr m.rns) - Set to rendered sub-spec after getHTML()", () => {
 		registry.register('test.tpl.rnd3', ls(['allowLate', true, 'tpl', ps('[([m.t t="Template content"])]')]));
-		const tplNode = await doc('createNode', ls([, 'test.tpl.rnd3']));
-		tplNode('getHTML');
+		const tplNode = doc('createNode', ls([, 'test.tpl.rnd3']));
+		const html = tplNode('getHTML');
 		const rns = tplNode('getAttr', ls([, 'm.rns']));
 		assert(rns instanceof NANOS, 'm.rns should be a NANOS list');
 		assertEquals(rns.size, 1, 'should have one rendered child spec');
 		assertEquals(rns.at(0), 'Template content', 'rendered child should be simplified text spec matching template');
 	});
 
-	await t.step(".getAttr('m.rns') - Set to rendered sub-spec after getHTML() via JS", async () => {
+	await t.step(".getAttr('m.rns') - Set to rendered sub-spec after getHTML() via JS", () => {
 		registry.register('test.tpl.rnd4', ls(['allowLate', true, 'tpl', ps('[([m.t t="JS Template"])]')]));
-		const tplNode = await doc.createNode('test.tpl.rnd4');
+		const tplNode = doc.createNode('test.tpl.rnd4');
 		tplNode.getHTML();
 		const rns = tplNode.getAttr('m.rns');
 		assert(rns instanceof NANOS, 'm.rns should be a NANOS list');
@@ -220,12 +222,12 @@ Deno.test("m.rns attribute - MWICoreTpl (template handler)", async (t) => {
 		assertEquals(rns.at(0), 'JS Template', 'rendered child should be simplified text spec matching template');
 	});
 
-	await t.step("(getAttr m.rns) - Multiple rendered child specs", async () => {
+	await t.step("(getAttr m.rns) - Multiple rendered child specs", () => {
 		registry.register('test.tpl.rnd5', ls([
 			'allowLate', true,
 			'tpl', ps('[([m.t t="First"] [m.t t="Second"] [m.t t="Third"])]')
 		]));
-		const tplNode = await doc('createNode', ls([, 'test.tpl.rnd5']));
+		const tplNode = doc('createNode', ls([, 'test.tpl.rnd5']));
 		tplNode('getHTML');
 		const rns = tplNode('getAttr', ls([, 'm.rns']));
 		assert(rns instanceof NANOS, 'm.rns should be a NANOS list');
@@ -235,12 +237,12 @@ Deno.test("m.rns attribute - MWICoreTpl (template handler)", async (t) => {
 		assertEquals(rns.at(2), 'Third');
 	});
 
-	await t.step(".getAttr('m.rns') - Multiple rendered child specs via JS", async () => {
+	await t.step(".getAttr('m.rns') - Multiple rendered child specs via JS", () => {
 		registry.register('test.tpl.rnd6', ls([
 			'allowLate', true,
 			'tpl', ps('[([m.t t="A"] [m.t t="B"] [m.t t="C"])]')
 		]));
-		const tplNode = await doc.createNode('test.tpl.rnd6');
+		const tplNode = doc.createNode('test.tpl.rnd6');
 		tplNode.getHTML();
 		const rns = tplNode.getAttr('m.rns');
 		assert(rns instanceof NANOS, 'm.rns should be a NANOS list');
@@ -250,30 +252,30 @@ Deno.test("m.rns attribute - MWICoreTpl (template handler)", async (t) => {
 		assertEquals(rns.at(2), 'C');
 	});
 
-	await t.step("(getAttr m.rns) - Empty template has empty m.rns", async () => {
+	await t.step("(getAttr m.rns) - Empty template has empty m.rns", () => {
 		registry.register('test.tpl.rnd7', ls(['allowLate', true, 'tpl', ps('[()]')]));
-		const tplNode = await doc('createNode', ls([, 'test.tpl.rnd7']));
+		const tplNode = doc('createNode', ls([, 'test.tpl.rnd7']));
 		tplNode('getHTML');
 		const rns = tplNode('getAttr', ls([, 'm.rns']));
 		assert(rns instanceof NANOS, 'm.rns should be a NANOS list');
 		assertEquals(rns.size, 0, 'empty template should have empty m.rns');
 	});
 
-	await t.step(".getAttr('m.rns') - Empty template has empty m.rns via JS", async () => {
+	await t.step(".getAttr('m.rns') - Empty template has empty m.rns via JS", () => {
 		registry.register('test.tpl.rnd8', ls(['allowLate', true, 'tpl', ps('[()]')]));
-		const tplNode = await doc.createNode('test.tpl.rnd8');
+		const tplNode = doc.createNode('test.tpl.rnd8');
 		tplNode.getHTML();
 		const rns = tplNode.getAttr('m.rns');
 		assert(rns instanceof NANOS, 'm.rns should be a NANOS list');
 		assertEquals(rns.size, 0, 'empty template should have empty m.rns');
 	});
 
-	await t.step("(getAttr m.rns) - Template with slot shows slot node in rendered spec", async () => {
+	await t.step("(getAttr m.rns) - Template with slot shows slot node in rendered spec", () => {
 		registry.register('test.tpl.rnd9', ls([
 			'allowLate', true,
 			'tpl', ps('[([m.slot name=content [m.t t="Default"]])]')
 		]));
-		const tplNode = await doc('createNode', ls([, 'test.tpl.rnd9']));
+		const tplNode = doc('createNode', ls([, 'test.tpl.rnd9']));
 		// No content attribute set, so slot will use default
 		tplNode('getHTML');
 		const rns = tplNode('getAttr', ls([, 'm.rns']));
@@ -283,12 +285,12 @@ Deno.test("m.rns attribute - MWICoreTpl (template handler)", async (t) => {
 		assertEquals(rns.at([0, 0]), 'm.slot', 'child spec should be m.slot');
 	});
 
-	await t.step(".getAttr('m.rns') - Template with slot shows slot node in rendered spec via JS", async () => {
+	await t.step(".getAttr('m.rns') - Template with slot shows slot node in rendered spec via JS", () => {
 		registry.register('test.tpl.rnd10', ls([
 			'allowLate', true,
 			'tpl', ps('[([m.slot name=data [m.t t="Fallback"]])]')
 		]));
-		const tplNode = await doc.createNode('test.tpl.rnd10');
+		const tplNode = doc.createNode('test.tpl.rnd10');
 		tplNode.getHTML();
 		const rns = tplNode.getAttr('m.rns');
 		assert(rns instanceof NANOS, 'm.rns should be a NANOS list');
@@ -296,17 +298,16 @@ Deno.test("m.rns attribute - MWICoreTpl (template handler)", async (t) => {
 		assertEquals(rns.at([0, 0]), 'm.slot', 'child spec should be m.slot');
 	});
 
-	await t.step("(getAttr m.rns) - Template with unnamed slot filled by natural children", async () => {
+	await t.step("(getAttr m.rns) - Template with unnamed slot filled by natural children", () => {
 		// Template: `[m.t t="before"] [m.slot] [m.t t="after"]`
 		// Template call has natural child "middle" to fill the unnamed slot
 		registry.register('test.tpl.rnd10b', ls([
 			'allowLate', true,
-			'tpl', ps('[([m.t t="before"] [m.slot] [m.t t="after"])]')
+			'tpl', ps('[(before [m.slot] after)]')
 		]));
-		const tplNode = await doc('createNode', ls([, 'test.tpl.rnd10b']));
-		tplNode('append', ls([, 'middle'])); // Natural child fills unnamed slot
+		const tplNode = doc('createNode', ls([, 'test.tpl.rnd10b']));
+		tplNode('setSubSpec', ls([, 'middle'])); // Natural child fills unnamed slot
 		tplNode('getHTML');
-		console.log('spec', tplNode.getSpec().toSLID()); // KEEP FOR NOW
 		const rns = tplNode('getAttr', ls([, 'm.rns']));
 		assert(rns instanceof NANOS, 'm.rns should be a NANOS list');
 		assertEquals(rns.size, 3, 'should have three child specs (text, slot, text)');
@@ -325,15 +326,15 @@ Deno.test("m.rns attribute - MWICoreTpl (template handler)", async (t) => {
 		assertEquals(slotRns.at(0), 'middle', 'slot rendered child should be simplified "middle" text');
 	});
 
-	await t.step(".getAttr('m.rns') - Template with unnamed slot filled by natural children via JS", async () => {
+	await t.step(".getAttr('m.rns') - Template with unnamed slot filled by natural children via JS", () => {
 		// Template: `[m.t t="before"] [m.slot] [m.t t="after"]`
 		// Template call has natural child "middle" to fill the unnamed slot
 		registry.register('test.tpl.rnd10c', ls([
 			'allowLate', true,
-			'tpl', ps('[([m.t t="before"] [m.slot] [m.t t="after"])]')
+			'tpl', ps('[(before [m.slot] after)]')
 		]));
-		const tplNode = await doc.createNode('test.tpl.rnd10c');
-		tplNode.append('middle'); // Natural child fills unnamed slot
+		const tplNode = doc.createNode('test.tpl.rnd10c');
+		tplNode.setSubSpec('middle'); // Natural child fills unnamed slot
 		tplNode.getHTML();
 		const rns = tplNode.getAttr('m.rns');
 		assert(rns instanceof NANOS, 'm.rns should be a NANOS list');
@@ -350,12 +351,12 @@ Deno.test("m.rns attribute - MWICoreTpl (template handler)", async (t) => {
 		assertEquals(slotRns.at(0), 'middle', 'slot rendered child should be simplified "middle" text');
 	});
 
-	await t.step("(getAttr m.rns) - Template with slotted content", async () => {
+	await t.step("(getAttr m.rns) - Template with slotted content", () => {
 		registry.register('test.tpl.rnd11', ls([
 			'allowLate', true,
 			'tpl', ps('[([m.slot name=header] [m.t t="Body"] [m.slot name=footer])]')
 		]));
-		const tplNode = await doc('createNode', ls([, 'test.tpl.rnd11']));
+		const tplNode = doc('createNode', ls([, 'test.tpl.rnd11']));
 		tplNode('setAttr', ls([, 'header', , ps('[([m.t t="Header"])]')]));
 		tplNode('setAttr', ls([, 'footer', , ps('[([m.t t="Footer"])]')]));
 		tplNode('getHTML');
@@ -367,12 +368,12 @@ Deno.test("m.rns attribute - MWICoreTpl (template handler)", async (t) => {
 		assertEquals(rns.at([2, 0]), 'm.slot', 'third child spec should be m.slot');
 	});
 
-	await t.step(".getAttr('m.rns') - Template with slotted content via JS", async () => {
+	await t.step(".getAttr('m.rns') - Template with slotted content via JS", () => {
 		registry.register('test.tpl.rnd12', ls([
 			'allowLate', true,
 			'tpl', ps('[([m.slot name=top] [m.t t="Middle"] [m.slot name=bottom])]')
 		]));
-		const tplNode = await doc.createNode('test.tpl.rnd12');
+		const tplNode = doc.createNode('test.tpl.rnd12');
 		tplNode.setAttr('top', ps('[([m.t t="Top"])]'));
 		tplNode.setAttr('bottom', ps('[([m.t t="Bottom"])]'));
 		tplNode.getHTML();
@@ -384,12 +385,12 @@ Deno.test("m.rns attribute - MWICoreTpl (template handler)", async (t) => {
 		assertEquals(rns.at([2, 0]), 'm.slot', 'third child spec should be m.slot');
 	});
 
-	await t.step("(getAttr m.rns) - Template with HTML elements", async () => {
+	await t.step("(getAttr m.rns) - Template with HTML elements", () => {
 		registry.register('test.tpl.rnd13', ls([
 			'allowLate', true,
 			'tpl', ps('[([h.div [m.t t="Content"]])]')
 		]));
-		const tplNode = await doc('createNode', ls([, 'test.tpl.rnd13']));
+		const tplNode = doc('createNode', ls([, 'test.tpl.rnd13']));
 		tplNode('getHTML');
 		const rns = tplNode('getAttr', ls([, 'm.rns']));
 		assert(rns instanceof NANOS, 'm.rns should be a NANOS list');
@@ -397,12 +398,12 @@ Deno.test("m.rns attribute - MWICoreTpl (template handler)", async (t) => {
 		assertEquals(rns.at([0, 0]), 'h.div', 'child spec should be h.div');
 	});
 
-	await t.step(".getAttr('m.rns') - Template with HTML elements via JS", async () => {
+	await t.step(".getAttr('m.rns') - Template with HTML elements via JS", () => {
 		registry.register('test.tpl.rnd14', ls([
 			'allowLate', true,
 			'tpl', ps('[([h.span [m.t t="Text"]])]')
 		]));
-		const tplNode = await doc.createNode('test.tpl.rnd14');
+		const tplNode = doc.createNode('test.tpl.rnd14');
 		tplNode.getHTML();
 		const rns = tplNode.getAttr('m.rns');
 		assert(rns instanceof NANOS, 'm.rns should be a NANOS list');
@@ -410,9 +411,9 @@ Deno.test("m.rns attribute - MWICoreTpl (template handler)", async (t) => {
 		assertEquals(rns.at([0, 0]), 'h.span', 'child spec should be h.span');
 	});
 
-	await t.step("(getSpec) - m.rns appears in template node spec after rendering", async () => {
+	await t.step("(getSpec) - m.rns appears in template node spec after rendering", () => {
 		registry.register('test.tpl.rnd15', ls(['allowLate', true, 'tpl', ps('[([m.t t="Spec test"])]')]));
-		const tplNode = await doc('createNode', ls([, 'test.tpl.rnd15']));
+		const tplNode = doc('createNode', ls([, 'test.tpl.rnd15']));
 		tplNode('getHTML');
 		const spec = tplNode('getSpec');
 		assert(spec.has('m.rns'), 'm.rns should appear in template spec after rendering');
@@ -422,9 +423,9 @@ Deno.test("m.rns attribute - MWICoreTpl (template handler)", async (t) => {
 		assertEquals(rns.at(0), 'Spec test'); // Simplified text spec
 	});
 
-	await t.step(".getSpec() - m.rns appears in template node spec after rendering via JS", async () => {
+	await t.step(".getSpec() - m.rns appears in template node spec after rendering via JS", () => {
 		registry.register('test.tpl.rnd16', ls(['allowLate', true, 'tpl', ps('[([m.t t="JS Spec test"])]')]));
-		const tplNode = await doc.createNode('test.tpl.rnd16');
+		const tplNode = doc.createNode('test.tpl.rnd16');
 		tplNode.getHTML();
 		const spec = tplNode.getSpec();
 		assert(spec.has('m.rns'), 'm.rns should appear in template spec after rendering');

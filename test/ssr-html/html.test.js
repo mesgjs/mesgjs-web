@@ -19,7 +19,7 @@ const ls = globalThis.ls;
 Deno.test("MWIHTML interface renders standard and void elements", async (t) => {
 	const divNode = doc('createNode', ls([, 'h.div']));
 	divNode('setAttr', [ 'class', 'test' ]);
-	divNode('append', 'Content');
+	divNode('setSubSpec', 'Content');
 	const divHTML = divNode('getHTML');
 	assertEquals(divHTML, '<div class="test">Content</div>', 'standard element rendered');
 

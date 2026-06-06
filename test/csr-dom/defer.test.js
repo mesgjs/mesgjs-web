@@ -9,10 +9,10 @@ import { setupRuntime, simulateBrowser } from '../harness.esm.js';
 const REG_READY_FT = 'mwi.compRegReady';
 
 await setupRuntime({
-	features: ['test.deferred.csr'],
+	features: ['test.deferred.csr', 'test.deferred.csr2'],
 });
 
-const { fwait, getInstance } = globalThis.$c;
+const { fwait, fready, getInstance } = globalThis.$c;
 const ls = globalThis.ls;
 const ps = globalThis.ps;
 
@@ -25,54 +25,91 @@ await simulateBrowser();
 const doc = getInstance('MWIDocument');
 const registry = getInstance('MWIRegistry');
 
-// Register a deferred component for testing
+// Register a deferred component for testing (no interface/template yet)
 const deferredEntry = ls([
 	'allowLate', true,
 	'ftr', 'test.deferred.csr'
 ]);
 registry.register('test.deferred.csr', deferredEntry);
 
-Deno.test("MWICoreDefer (m.defer) - CSR-DOM No Rendering", async (t) => {
-	await t.step("(getDOM) - Returns empty NANOS (no rendering)", async () => {
+// Register a second deferred component (no ftr - unconditional suppression)
+const deferredNoFtrEntry = ls([
+	'allowLate', true,
+]);
+registry.register('test.deferred.noftr', deferredNoFtrEntry);
+
+Deno.test("MWICoreDefer (m.defer) - CSR-DOM No Gate (empty sub-spec)", async (t) => {
+	await t.step("(getDOM) - Returns empty NANOS when sub-spec is empty", async () => {
 		const deferNode = doc('createNode', ['m.defer']);
 		const domNodes = deferNode('getDOM');
+		console.log(domNodes.toSLID());
 
 		await globalThis.reactive.wait();
-		assertEquals(domNodes.size, 0, 'Should return empty NANOS');
+		assertEquals(domNodes.size, 0, 'Should return empty NANOS (no sub-spec)');
 	});
 
-	await t.step(".getDOM() - Returns empty NANOS via JS", async () => {
+	await t.step(".getDOM() - Returns empty NANOS when sub-spec is empty via JS", async () => {
 		const deferNode = doc.createNode('m.defer');
 		const domNodes = deferNode.getDOM();
 
 		await globalThis.reactive.wait();
-		assertEquals(domNodes.size, 0, 'Should return empty NANOS');
+		assertEquals(domNodes.size, 0, 'Should return empty NANOS (no sub-spec)');
 	});
+});
 
-	await t.step("(getDOM) - No rendering even with attributes", async () => {
+Deno.test("MWICoreDefer (m.defer) - CSR-DOM No Gate (component has no ftr)", async (t) => {
+	// Note: doc(from) with a no-ftr component won't create m.defer (createNode only defers if there's a feature).
+	// Test by creating m.defer directly and setting a sub-spec with a no-ftr component type.
+	await t.step("(getDOM) - Returns empty NANOS when sub-spec component has no ftr", async () => {
 		const deferNode = doc('createNode', ['m.defer']);
-		deferNode('setAttr', ['class', 'test-class']);
-		deferNode('setAttr', ['id', 'test-id']);
-		deferNode('setAttr', ['data-custom', 'value']);
+		// Set sub-spec to a component that has no ftr in registry
+		deferNode('setSubSpec', { subSpec: ps('[([test.deferred.noftr])]') });
 		const domNodes = deferNode('getDOM');
 
 		await globalThis.reactive.wait();
-		assertEquals(domNodes.size, 0, 'Should return empty NANOS regardless of attributes');
+		assertEquals(domNodes.size, 0, 'Should return empty NANOS (no ftr)');
 	});
 
-	await t.step(".getDOM() - No rendering even with attributes via JS", async () => {
+	await t.step(".getDOM() - Returns empty NANOS when sub-spec component has no ftr via JS", async () => {
 		const deferNode = doc.createNode('m.defer');
-		deferNode.setAttr('class', 'test-class');
-		deferNode.setAttr('style', 'color: red');
+		deferNode.setSubSpec({ subSpec: ps('[([test.deferred.noftr])]') });
 		const domNodes = deferNode.getDOM();
 
 		await globalThis.reactive.wait();
-		assertEquals(domNodes.size, 0, 'Should return empty NANOS regardless of attributes');
+		assertEquals(domNodes.size, 0, 'Should return empty NANOS (no ftr)');
+	});
+});
+
+Deno.test("MWICoreDefer (m.defer) - CSR-DOM With Gate (feature-gated rendering)", async (t) => {
+	await t.step("(getDOM) - Returns empty NANOS before gate opens", async () => {
+		const nodes = doc('from', { list: '[([test.deferred.csr])]' });
+		assert(Array.isArray(nodes), 'Should return array');
+		const deferNode = nodes[0];
+		assertEquals(deferNode.msjsType, 'MWICoreDefer', 'Should be defer');
+		const domNodes = deferNode('getDOM');
+
+		await globalThis.reactive.wait();
+		assertEquals(domNodes.size, 0, 'Should be empty before gate opens');
+	});
+
+	await t.step(".getDOM() - Returns empty NANOS before gate opens via JS", async () => {
+		console.log('doc.from...');
+		const nodes = doc.from({ list: '[([test.deferred.csr])]' });
+		assert(Array.isArray(nodes), 'Should return array');
+		const deferNode = nodes[0];
+		assertEquals(deferNode.msjsType, 'MWICoreDefer', 'Should be defer');
+		console.log('deferNode.getDOM...');
+		const domNodes = deferNode.getDOM();
+
+		console.log('reactive.wait...');
+		await globalThis.reactive.wait();
+		assertEquals(domNodes.size, 0, 'Should be empty before gate opens');
+		console.log('step complete');
 	});
 });
 
 Deno.test("MWICoreDefer (m.defer) - CSR-DOM Real-World Scenarios", async (t) => {
-	await t.step("(getDOM) - Defer node created for unloaded component", async () => {
+	await t.step("(getDOM) - Defer node created for unloaded component (no rendering)", async () => {
 		const node = doc('createNode', ['test.deferred.csr']);
 		const domNodes = node('getDOM');
 
@@ -135,44 +172,6 @@ Deno.test("MWICoreDefer (m.defer) - CSR-DOM Real-World Scenarios", async (t) => 
 	});
 });
 
-Deno.test("MWICoreDefer (m.defer) - CSR-DOM Empty Content", async (t) => {
-	await t.step("(getDOM) - Defer node ignores appended content", async () => {
-		const deferNode = doc('createNode', ['m.defer']);
-		deferNode('append', ['ignored content']);
-		const domNodes = deferNode('getDOM');
-
-		await globalThis.reactive.wait();
-		assertEquals(domNodes.size, 0, 'Should return empty NANOS');
-	});
-
-	await t.step(".getDOM() - Defer node ignores appended content via JS", async () => {
-		const deferNode = doc.createNode('m.defer');
-		deferNode.append('ignored content');
-		const domNodes = deferNode.getDOM();
-
-		await globalThis.reactive.wait();
-		assertEquals(domNodes.size, 0, 'Should return empty NANOS');
-	});
-
-	await t.step("(getDOM) - Defer node with setSubSpec still renders nothing", async () => {
-		const deferNode = doc('createNode', ['m.defer']);
-		deferNode('setSubSpec', { subSpec: ls([, 'child1', , 'child2']) });
-		const domNodes = deferNode('getDOM');
-
-		await globalThis.reactive.wait();
-		assertEquals(domNodes.size, 0, 'Should return empty NANOS even with sub-spec');
-	});
-
-	await t.step(".getDOM() - Defer node with setSubSpec still renders nothing via JS", async () => {
-		const deferNode = doc.createNode('m.defer');
-		deferNode.setSubSpec({ subSpec: ls([, 'child1', , 'child2']) });
-		const domNodes = deferNode.getDOM();
-
-		await globalThis.reactive.wait();
-		assertEquals(domNodes.size, 0, 'Should return empty NANOS even with sub-spec');
-	});
-});
-
 Deno.test("MWICoreDefer (m.defer) - CSR-DOM Reactive Behavior", async (t) => {
 	await t.step("(getDOM) - Attribute changes don't affect rendering (still empty)", async () => {
 		const deferNode = doc('createNode', ['m.defer']);
@@ -187,7 +186,7 @@ Deno.test("MWICoreDefer (m.defer) - CSR-DOM Reactive Behavior", async (t) => {
 		deferNode('setAttr', ['data-custom', 'custom-value']);
 
 		await globalThis.reactive.wait();
-		// Still no rendering
+		// Still no rendering (no sub-spec)
 		assertEquals(domNodes.size, 0, 'Should still be empty after attribute changes');
 	});
 
