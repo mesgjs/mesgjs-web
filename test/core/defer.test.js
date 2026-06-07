@@ -271,7 +271,6 @@ Deno.test("MWICoreDefer (m.defer) - Real-World Creation via Document", async (t)
 	await t.step("Defer nodes can be appended to document", async () => {
 		const testDoc = getInstance('MWIDocument');
 		testDoc('append', ls(['list', '[([test.deferred])]']));
-		await reactive.wait();
 		const root = testDoc('root');
 		const subSpec = root('getSubSpec');
 		assertEquals(subSpec.size, 1, 'Root should have one child');

@@ -192,7 +192,7 @@ Deno.test("MWICoreTpl (template handler) - Slot Integration (Template as SlotSrc
 		const tplNode = doc('createNode', ls([, 'test.tpl.slot.children']));
 		// The template itself is the slotSrc for its content
 		// Add natural children to the template
-		tplNode('append', ls([, 'Natural child content']));
+		tplNode('setSubSpec', ls([, 'Natural child content']));
 		const html = tplNode('getHTML');
 		assertEquals(html, 'Natural child content', 'default slot filled from template natural children');
 	});
@@ -204,7 +204,7 @@ Deno.test("MWICoreTpl (template handler) - Slot Integration (Template as SlotSrc
 		]));
 		const tplNode = doc.createNode('test.tpl.slot.children2');
 		// The template itself is the slotSrc for its content
-		tplNode.append('Child content');
+		tplNode.setSubSpec('Child content');
 		const html = tplNode.getHTML();
 		assertEquals(html, 'Child content', 'default slot filled from template natural children');
 	});

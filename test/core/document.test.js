@@ -517,7 +517,6 @@ Deno.test('MWIDocument - Document Root Operations', async (t) => {
 	await t.step('(append) - Append text string', async () => {
 		const doc = getInstance('MWIDocument');
 		const result = doc('append', ls(['item', 'Hello']));
-		await reactive.wait();
 		assertStrictEquals(result, doc, 'Should return document for chaining');
 
 		const root = doc('root');
@@ -531,7 +530,6 @@ Deno.test('MWIDocument - Document Root Operations', async (t) => {
 		node('setAttr', ls(['t', 'Test']));
 
 		const result = doc('append', ls([, node]));
-		await reactive.wait();
 		assertStrictEquals(result, doc, 'Should return document for chaining');
 
 		const root = doc('root');
@@ -545,7 +543,6 @@ Deno.test('MWIDocument - Document Root Operations', async (t) => {
 		const node2 = doc('createNode', ls([, 'm.t']));
 
 		const result = doc('append', ls([, node1, , node2]));
-		await reactive.wait();
 		assertStrictEquals(result, doc, 'Should return document for chaining');
 
 		const root = doc('root');
@@ -556,7 +553,6 @@ Deno.test('MWIDocument - Document Root Operations', async (t) => {
 	await t.step('(append) - Append SLID spec', async () => {
 		const doc = getInstance('MWIDocument');
 		doc('append', ls(['list', '[([m.t t=A] [m.t t=B])]']));
-		await reactive.wait();
 
 		const root = doc('root');
 		const subSpec = root('getSubSpec');
@@ -566,7 +562,6 @@ Deno.test('MWIDocument - Document Root Operations', async (t) => {
 	await t.step('(append) - Root sub-spec reflects content', async () => {
 		const doc = getInstance('MWIDocument');
 		doc('append', ls(['list', '[([m.t t=First] [m.t t=Second])]']));
-		await reactive.wait();
 
 		const root = doc('root');
 		const subSpec = root('getSubSpec');
@@ -581,7 +576,6 @@ Deno.test('MWIDocument - Document Root Operations', async (t) => {
 	await t.step('(appendWait) - Append text string', async () => {
 		const doc = getInstance('MWIDocument');
 		const result = await doc('appendWait', ls(['item', 'Hello']));
-		await reactive.wait();
 		assertStrictEquals(result, doc, 'Should return document for chaining');
 
 		const root = doc('root');
@@ -592,7 +586,6 @@ Deno.test('MWIDocument - Document Root Operations', async (t) => {
 	await t.step('.appendWait() - Append text string', async () => {
 		const doc = getInstance('MWIDocument');
 		const result = await doc.appendWait({ item: 'Hello' });
-		await reactive.wait();
 		assertStrictEquals(result, doc, 'Should return document for chaining');
 
 		const root = doc('root');
@@ -603,7 +596,6 @@ Deno.test('MWIDocument - Document Root Operations', async (t) => {
 	await t.step('(appendWait) - Append SLID spec', async () => {
 		const doc = getInstance('MWIDocument');
 		await doc('appendWait', ls(['list', '[([m.t t=A] [m.t t=B])]']));
-		await reactive.wait();
 
 		const root = doc('root');
 		const subSpec = root('getSubSpec');
@@ -613,7 +605,6 @@ Deno.test('MWIDocument - Document Root Operations', async (t) => {
 	await t.step('.appendWait() - Append SLID spec', async () => {
 		const doc = getInstance('MWIDocument');
 		await doc.appendWait({ list: '[([m.t t=A] [m.t t=B])]' });
-		await reactive.wait();
 
 		const root = doc('root');
 		const subSpec = root('getSubSpec');

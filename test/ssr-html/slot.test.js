@@ -1,4 +1,3 @@
-// FAILING
 import {
 	assert,
 	assertEquals,
@@ -24,12 +23,12 @@ Deno.test("MWICoreSlot (m.slot) - Default Content and Slotting", async (t) => {
 	const divNode0 = doc.createNode('h.div');
 	const divNode1 = doc.createNode('h.div');
 	divNode1('setAttr', ls([, 'c.present', , ps('[([h.p "Attr content"])]')]));
-	divNode1('append', ls([, "Natural child"]));
+	divNode1('setSubSpec', ls([, "Natural child"]));
 
 	await t.step("(getHTML) - Renders default content in absence of slot source", () => {
 		const slotNode = doc('createNode', ls([, 'm.slot']));
 		assert(slotNode, 'm.slot node created');
-		slotNode('append', ls([, 'Default']));
+		slotNode('setSubSpec', ls([, 'Default']));
 		const html = slotNode('getHTML');
 		assertEquals(html, 'Default', 'default content rendered');
 	});
@@ -37,7 +36,7 @@ Deno.test("MWICoreSlot (m.slot) - Default Content and Slotting", async (t) => {
 	await t.step(".getHTML() - Renders default content in absence of slot source via JS", () => {
 		const slotNode = doc.createNode('m.slot');
 		assert(slotNode, 'm.slot node created');
-		slotNode.append('Default');
+		slotNode.setSubSpec('Default');
 		const html = slotNode.getHTML();
 		assertEquals(html, 'Default', 'default content rendered');
 	});
@@ -45,7 +44,7 @@ Deno.test("MWICoreSlot (m.slot) - Default Content and Slotting", async (t) => {
 	await t.step("(getHTML) - Renders fall-back on default slot against void source", () => {
 		const slotNode = doc('createNode', ls([, 'm.slot', 'slotSrc', brNode]));
 		assertStrictEquals(slotNode('slotSrc'), brNode, 'correct slot source is assigned');
-		slotNode('append', ls([, 'Default']));
+		slotNode('setSubSpec', ls([, 'Default']));
 		const html = slotNode('getHTML');
 		assertEquals(html, 'Default', 'default content rendered');
 	});
@@ -53,7 +52,7 @@ Deno.test("MWICoreSlot (m.slot) - Default Content and Slotting", async (t) => {
 	await t.step(".getHTML() - Renders fall-back on default slot against void source via JS", () => {
 		const slotNode = doc.createNode('m.slot', { slotSrc: brNode });
 		assertStrictEquals(slotNode.slotSrc, brNode, 'correct slot source is assigned');
-		slotNode.append('Default');
+		slotNode.setSubSpec('Default');
 		const html = slotNode.getHTML();
 		assertEquals(html, 'Default', 'default content rendered');
 	});
@@ -61,7 +60,7 @@ Deno.test("MWICoreSlot (m.slot) - Default Content and Slotting", async (t) => {
 	await t.step("(getHTML) - Renders fall-back on default slot against empty-container source", () => {
 		const slotNode = doc('createNode', ls([, 'm.slot', 'slotSrc', divNode0]));
 		assertStrictEquals(slotNode('slotSrc'), divNode0, 'correct slot source is assigned');
-		slotNode('append', ls([, 'Default']));
+		slotNode('setSubSpec', ls([, 'Default']));
 		const html = slotNode('getHTML');
 		assertEquals(html, 'Default', 'default content rendered');
 	});
@@ -69,7 +68,7 @@ Deno.test("MWICoreSlot (m.slot) - Default Content and Slotting", async (t) => {
 	await t.step(".getHTML() - Renders fall-back on default slot against empty-container source via JS", () => {
 		const slotNode = doc.createNode('m.slot', { slotSrc: divNode0 });
 		assertStrictEquals(slotNode.slotSrc, divNode0, 'correct slot source is assigned');
-		slotNode.append('Default');
+		slotNode.setSubSpec('Default');
 		const html = slotNode.getHTML();
 		assertEquals(html, 'Default', 'default content rendered');
 	});
@@ -78,7 +77,7 @@ Deno.test("MWICoreSlot (m.slot) - Default Content and Slotting", async (t) => {
 		const slotNode = doc('createNode', ls([, 'm.slot', 'slotSrc', divNode1]));
 		assertStrictEquals(slotNode('slotSrc'), divNode1, 'correct slot source is assigned');
 		slotNode('setAttr', ls([, 'name', , 'c.absent']));
-		slotNode('append', ls([, 'Default']));
+		slotNode('setSubSpec', ls([, 'Default']));
 		const html = slotNode('getHTML');
 		assertEquals(html, 'Default', 'default content rendered');
 	});
@@ -87,7 +86,7 @@ Deno.test("MWICoreSlot (m.slot) - Default Content and Slotting", async (t) => {
 		const slotNode = doc.createNode('m.slot', { slotSrc: divNode1 });
 		assertStrictEquals(slotNode.slotSrc, divNode1, 'correct slot source is assigned');
 		slotNode.setAttr('name', 'c.absent');
-		slotNode.append('Default');
+		slotNode.setSubSpec('Default');
 		const html = slotNode.getHTML();
 		assertEquals(html, 'Default', 'default content rendered');
 	});
@@ -96,17 +95,14 @@ Deno.test("MWICoreSlot (m.slot) - Default Content and Slotting", async (t) => {
 		const slotNode = doc('createNode', ls([, 'm.slot', 'slotSrc', divNode1]));
 		assertStrictEquals(slotNode('slotSrc'), divNode1, 'correct slot source is assigned');
 		slotNode('setSubSpec', ls([, 'Default']));
-		console.log('slot node', slotNode.getSpec().toSLID());
-		console.log('slot src node', divNode1.getSpec().toSLID());
 		const html = slotNode('getHTML');
-		console.log(html);
 		assertEquals(html, 'Natural child', 'source natural children rendered');
 	});
 
 	await t.step(".getHTML() - Renders natural children on default slot against non-empty-container source via JS", () => {
 		const slotNode = doc.createNode('m.slot', { slotSrc: divNode1 });
 		assertStrictEquals(slotNode.slotSrc, divNode1, 'correct slot source is assigned');
-		slotNode.append('Default');
+		slotNode.setSubSpec('Default');
 		const html = slotNode.getHTML();
 		assertEquals(html, 'Natural child', 'source natural children rendered');
 	});
@@ -115,7 +111,7 @@ Deno.test("MWICoreSlot (m.slot) - Default Content and Slotting", async (t) => {
 		const slotNode = doc('createNode', ls([, 'm.slot', 'slotSrc', divNode1]));
 		assertStrictEquals(slotNode('slotSrc'), divNode1, 'correct slot source is assigned');
 		slotNode('setAttr', ls([, 'name', , 'c.present']));
-		slotNode('append', ls([, 'Default']));
+		slotNode('setSubSpec', ls([, 'Default']));
 		const html = slotNode('getHTML');
 		assertEquals(html, '<p>Attr content</p>', 'source attribute content rendered');
 	});
@@ -124,7 +120,7 @@ Deno.test("MWICoreSlot (m.slot) - Default Content and Slotting", async (t) => {
 		const slotNode = doc.createNode('m.slot', { slotSrc: divNode1 });
 		assertStrictEquals(slotNode.slotSrc, divNode1, 'correct slot source is assigned');
 		slotNode.setAttr('name', 'c.present');
-		slotNode.append('Default');
+		slotNode.setSubSpec('Default');
 		const html = slotNode.getHTML();
 		assertEquals(html, '<p>Attr content</p>', 'source attribute content rendered');
 	});

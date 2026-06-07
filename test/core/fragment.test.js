@@ -167,7 +167,6 @@ Deno.test("MWICoreFrag (m.frg) - Spec Management", async (t) => {
 		const textNode = doc.createNode('m.t');
 		textNode('setAttr', ls([, 't', , 'Child text']));
 		fragNode('append', ls([, textNode]));
-		await reactive.wait();
 		const subSpec = fragNode('getSubSpec');
 		assert(subSpec instanceof NANOS, 'Sub-spec should be a NANOS list');
 		assertEquals(subSpec.size, 1);
@@ -179,7 +178,6 @@ Deno.test("MWICoreFrag (m.frg) - Spec Management", async (t) => {
 		const textNode = doc.createNode('m.t');
 		textNode.setAttr('t', 'JS child text');
 		fragNode.append(textNode);
-		await reactive.wait();
 		const subSpec = fragNode.getSubSpec();
 		assert(subSpec instanceof NANOS, 'Sub-spec should be a NANOS list');
 		assertEquals(subSpec.size, 1);
@@ -271,7 +269,6 @@ Deno.test("MWICoreFrag (m.frg) - Content Aggregation", async (t) => {
 	await t.step("(append) - Append text string (auto-converts to m.t)", async () => {
 		const fragNode = doc.createNode('m.frg');
 		fragNode('append', ls([, 'Plain text']));
-		await reactive.wait();
 		const subSpec = fragNode('getSubSpec');
 		assert(subSpec instanceof NANOS, 'Sub-spec should be a NANOS list');
 		assertEquals(subSpec.size, 1);
@@ -281,7 +278,6 @@ Deno.test("MWICoreFrag (m.frg) - Content Aggregation", async (t) => {
 	await t.step(".append() - Append text string via JS (auto-converts to m.t)", async () => {
 		const fragNode = doc.createNode('m.frg');
 		fragNode.append('JS plain text');
-		await reactive.wait();
 		const subSpec = fragNode.getSubSpec();
 		assert(subSpec instanceof NANOS, 'Sub-spec should be a NANOS list');
 		assertEquals(subSpec.size, 1);
@@ -293,7 +289,6 @@ Deno.test("MWICoreFrag (m.frg) - Content Aggregation", async (t) => {
 		const textNode = doc.createNode('m.t');
 		textNode('setAttr', ls([, 't', , 'Appended node']));
 		fragNode('append', ls([, textNode]));
-		await reactive.wait();
 		const subSpec = fragNode('getSubSpec');
 		assert(subSpec instanceof NANOS, 'Sub-spec should be a NANOS list');
 		assertEquals(subSpec.size, 1);
@@ -305,7 +300,6 @@ Deno.test("MWICoreFrag (m.frg) - Content Aggregation", async (t) => {
 		const textNode = doc.createNode('m.t');
 		textNode.setAttr('t', 'JS appended node');
 		fragNode.append(textNode);
-		await reactive.wait();
 		const subSpec = fragNode.getSubSpec();
 		assert(subSpec instanceof NANOS, 'Sub-spec should be a NANOS list');
 		assertEquals(subSpec.size, 1);
@@ -319,7 +313,6 @@ Deno.test("MWICoreFrag (m.frg) - Content Aggregation", async (t) => {
 		const text2 = doc.createNode('m.t');
 		text2('setAttr', ls([, 't', , 'Second']));
 		fragNode('append', ls([, text1, , text2]));
-		await reactive.wait();
 		const subSpec = fragNode('getSubSpec');
 		assert(subSpec instanceof NANOS, 'Sub-spec should be a NANOS list');
 		assertEquals(subSpec.size, 2);
@@ -334,7 +327,6 @@ Deno.test("MWICoreFrag (m.frg) - Content Aggregation", async (t) => {
 		const text2 = doc.createNode('m.t');
 		text2.setAttr('t', 'JS Second');
 		fragNode.append(text1, text2);
-		await reactive.wait();
 		const subSpec = fragNode.getSubSpec();
 		assert(subSpec instanceof NANOS, 'Sub-spec should be a NANOS list');
 		assertEquals(subSpec.size, 2);
@@ -347,7 +339,6 @@ Deno.test("MWICoreFrag (m.frg) - Content Aggregation", async (t) => {
 		const textNode = doc.createNode('m.t');
 		textNode('setAttr', ls([, 't', , 'Node text']));
 		fragNode('append', ls([, 'String text', , textNode]));
-		await reactive.wait();
 		const subSpec = fragNode('getSubSpec');
 		assert(subSpec instanceof NANOS, 'Sub-spec should be a NANOS list');
 		assertEquals(subSpec.size, 2);
@@ -360,7 +351,6 @@ Deno.test("MWICoreFrag (m.frg) - Content Aggregation", async (t) => {
 		const textNode = doc.createNode('m.t');
 		textNode.setAttr('t', 'JS Node text');
 		fragNode.append('JS String text', textNode);
-		await reactive.wait();
 		const subSpec = fragNode.getSubSpec();
 		assert(subSpec instanceof NANOS, 'Sub-spec should be a NANOS list');
 		assertEquals(subSpec.size, 2);
@@ -390,7 +380,6 @@ Deno.test("MWICoreFrag (m.frg) - Transparent Container Behavior", async (t) => {
 			fragNode.append(textNode);
 		}
 		// doc-spec captures live doc state after append
-		await reactive.wait();
 		const subSpec = fragNode.getSubSpec();
 		assert(subSpec instanceof NANOS, 'Sub-spec should be a NANOS list');
 		assertEquals(subSpec.size, 5);
@@ -405,7 +394,6 @@ Deno.test("MWICoreFrag (m.frg) - Transparent Container Behavior", async (t) => {
 		for (const text of children) {
 			fragNode.append(text);
 		}
-		await reactive.wait();
 		const subSpec = fragNode.getSubSpec();
 		assert(subSpec instanceof NANOS, 'Sub-spec should be a NANOS list');
 		assertEquals(subSpec.size, children.length);
@@ -419,9 +407,7 @@ Deno.test("MWICoreFrag (m.frg) - Transparent Container Behavior", async (t) => {
 		const innerFrag = doc.createNode('m.frg');
 		innerFrag.append('Inner text');
 		outerFrag.append(innerFrag);
-		await reactive.wait();
 		const outerSpec = outerFrag.getSubSpec();
-		console.log(outerSpec.toSLID());
 		assert(outerSpec instanceof NANOS, 'Outer sub-spec should be a NANOS list');
 		assertEquals(outerSpec.size, 1);
 		assertEquals(outerSpec.at([0, 0]), 'm.frg');
@@ -437,7 +423,6 @@ Deno.test("MWICoreFrag (m.frg) - Transparent Container Behavior", async (t) => {
 		fragNode.setAttr('class', 'frag-class');
 		fragNode.setAttr('data-test', 'value');
 		fragNode.append('Child text');
-		await reactive.wait();
 		const subSpec = fragNode.getSubSpec();
 		assert(subSpec instanceof NANOS, 'Sub-spec should be a NANOS list');
 		assertEquals(subSpec.size, 1);

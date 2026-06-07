@@ -24,7 +24,7 @@ const ps = globalThis.ps;
 Deno.test("MWICoreSlot (m.slot) - CSR-DOM Default Content", async (t) => {
 	await t.step("(getDOM) - Renders default content in absence of slot source", async () => {
 		const slotNode = doc('createNode', ['m.slot']);
-		slotNode('append', ['Default']);
+		slotNode('setSubSpec', ['Default']);
 		const domNodes = slotNode('getDOM');
 
 		// Should have one text node from the text node
@@ -37,7 +37,7 @@ Deno.test("MWICoreSlot (m.slot) - CSR-DOM Default Content", async (t) => {
 
 	await t.step(".getDOM() - Renders default content in absence of slot source via JS", async () => {
 		const slotNode = doc.createNode('m.slot');
-		slotNode.append('JS Default');
+		slotNode.setSubSpec('JS Default');
 		const domNodes = slotNode.getDOM();
 
 		await globalThis.reactive.wait();
@@ -83,7 +83,7 @@ Deno.test("MWICoreSlot (m.slot) - CSR-DOM Slot Source Integration", async (t) =>
 		const brNode = doc('createNode', ['h.br']);
 		const slotNode = doc('createNode', ls([, 'm.slot', 'slotSrc', brNode]));
 		assertStrictEquals(slotNode('slotSrc'), brNode);
-		slotNode('append', ['Default']);
+		slotNode('setSubSpec', ['Default']);
 		const domNodes = slotNode('getDOM');
 
 		await globalThis.reactive.wait();
@@ -95,7 +95,7 @@ Deno.test("MWICoreSlot (m.slot) - CSR-DOM Slot Source Integration", async (t) =>
 		const brNode = doc.createNode('h.br');
 		const slotNode = doc.createNode('m.slot', { slotSrc: brNode });
 		assertStrictEquals(slotNode.slotSrc, brNode);
-		slotNode.append('JS Default');
+		slotNode.setSubSpec('JS Default');
 		const domNodes = slotNode.getDOM();
 
 		await globalThis.reactive.wait();
@@ -106,7 +106,7 @@ Deno.test("MWICoreSlot (m.slot) - CSR-DOM Slot Source Integration", async (t) =>
 	await t.step("(getDOM) - Renders fallback on default slot against empty container", async () => {
 		const divNode = doc('createNode', ['h.div']);
 		const slotNode = doc('createNode', ls([, 'm.slot', 'slotSrc', divNode]));
-		slotNode('append', ['Fallback']);
+		slotNode('setSubSpec', ['Fallback']);
 		const domNodes = slotNode('getDOM');
 
 		await globalThis.reactive.wait();
@@ -117,7 +117,7 @@ Deno.test("MWICoreSlot (m.slot) - CSR-DOM Slot Source Integration", async (t) =>
 	await t.step(".getDOM() - Renders fallback on default slot against empty container via JS", async () => {
 		const divNode = doc.createNode('h.div');
 		const slotNode = doc.createNode('m.slot', { slotSrc: divNode });
-		slotNode.append('JS Fallback');
+		slotNode.setSubSpec('JS Fallback');
 		const domNodes = slotNode.getDOM();
 
 		await globalThis.reactive.wait();
@@ -127,10 +127,12 @@ Deno.test("MWICoreSlot (m.slot) - CSR-DOM Slot Source Integration", async (t) =>
 
 	await t.step("(getDOM) - Renders natural children on default slot against non-empty container", async () => {
 		const divNode = doc('createNode', ['h.div']);
-		divNode('append', ['Natural child']);
+		divNode('setSubSpec', ['Natural child']);
 		const slotNode = doc('createNode', ls([, 'm.slot', 'slotSrc', divNode]));
-		slotNode('append', ['Fallback']);
+		slotNode('setSubSpec', ['Fallback']);
 		const domNodes = slotNode('getDOM');
+		console.log('divNode', divNode.getSpec().toSLID());
+		console.log('slotNode', slotNode.getSpec().toSLID());
 
 		await globalThis.reactive.wait();
 		assertEquals(domNodes.size, 1);
@@ -139,9 +141,9 @@ Deno.test("MWICoreSlot (m.slot) - CSR-DOM Slot Source Integration", async (t) =>
 
 	await t.step(".getDOM() - Renders natural children on default slot against non-empty container via JS", async () => {
 		const divNode = doc.createNode('h.div');
-		divNode.append('JS Natural child');
+		divNode.setSubSpec('JS Natural child');
 		const slotNode = doc.createNode('m.slot', { slotSrc: divNode });
-		slotNode.append('JS Fallback');
+		slotNode.setSubSpec('JS Fallback');
 		const domNodes = slotNode.getDOM();
 
 		await globalThis.reactive.wait();
@@ -156,7 +158,7 @@ Deno.test("MWICoreSlot (m.slot) - CSR-DOM Named Slots", async (t) => {
 		divNode('setAttr', ['header-slot', ps('[([m.t t="Header from attr"])]')]);
 		const slotNode = doc('createNode', ls([, 'm.slot', 'slotSrc', divNode]));
 		slotNode('setAttr', ['name', 'header-slot']);
-		slotNode('append', ['Fallback header']);
+		slotNode('setSubSpec', ['Fallback header']);
 		const domNodes = slotNode('getDOM');
 
 		await globalThis.reactive.wait();
@@ -169,7 +171,7 @@ Deno.test("MWICoreSlot (m.slot) - CSR-DOM Named Slots", async (t) => {
 		divNode.setAttr('footer-slot', ps('[([m.t t="Footer from attr"])]'));
 		const slotNode = doc.createNode('m.slot', { slotSrc: divNode });
 		slotNode.setAttr('name', 'footer-slot');
-		slotNode.append('Fallback footer');
+		slotNode.setSubSpec('Fallback footer');
 		const domNodes = slotNode.getDOM();
 
 		await globalThis.reactive.wait();
@@ -182,7 +184,7 @@ Deno.test("MWICoreSlot (m.slot) - CSR-DOM Named Slots", async (t) => {
 		divNode('setAttr', ['other-attr', 'value']);
 		const slotNode = doc('createNode', ls([, 'm.slot', 'slotSrc', divNode]));
 		slotNode('setAttr', ['name', 'missing-slot']);
-		slotNode('append', ['Fallback for missing']);
+		slotNode('setSubSpec', ['Fallback for missing']);
 		const domNodes = slotNode('getDOM');
 
 		await globalThis.reactive.wait();
@@ -195,7 +197,7 @@ Deno.test("MWICoreSlot (m.slot) - CSR-DOM Named Slots", async (t) => {
 		divNode.setAttr('other-attr', 'value');
 		const slotNode = doc.createNode('m.slot', { slotSrc: divNode });
 		slotNode.setAttr('name', 'absent-slot');
-		slotNode.append('JS Fallback');
+		slotNode.setSubSpec('JS Fallback');
 		const domNodes = slotNode.getDOM();
 
 		await globalThis.reactive.wait();
@@ -240,7 +242,7 @@ Deno.test("MWICoreSlot (m.slot) - CSR-DOM Reactive Updates", async (t) => {
 		assertEquals(domNodes.size, 1);
 	});
 
-	// HANGING HERE (in REQ3)
+	// CONTINUE HERE: HANGING HERE (in REQ3)
 	await t.step("(getDOM) - Reactive update to slotSrc natural children", async () => {
 		const divNode = doc('createNode', ['h.div']);
 		const textNode = doc('createNode', ['m.t']);
@@ -248,7 +250,7 @@ Deno.test("MWICoreSlot (m.slot) - CSR-DOM Reactive Updates", async (t) => {
 		divNode('append', [textNode]);
 
 		const slotNode = doc('createNode', ls([, 'm.slot', 'slotSrc', divNode]));
-		slotNode('append', ['Fallback']);
+		slotNode('setSubSpec', ['Fallback']);
 		const domNodes = slotNode('getDOM');
 
 		await globalThis.reactive.wait();
@@ -258,6 +260,7 @@ Deno.test("MWICoreSlot (m.slot) - CSR-DOM Reactive Updates", async (t) => {
 		textNode('setAttr', ['t', 'Updated child']);
 		await globalThis.reactive.wait();
 
+		console.log(textNode.getSpec());
 		assertEquals(domNodes.at(0).textContent, 'Updated child');
 		assertEquals(domNodes.size, 1);
 	});
@@ -269,7 +272,7 @@ Deno.test("MWICoreSlot (m.slot) - CSR-DOM Reactive Updates", async (t) => {
 		divNode.append(textNode);
 
 		const slotNode = doc.createNode('m.slot', { slotSrc: divNode });
-		slotNode.append('JS Fallback');
+		slotNode.setSubSpec('JS Fallback');
 		const domNodes = slotNode.getDOM();
 
 		await globalThis.reactive.wait();
@@ -285,7 +288,7 @@ Deno.test("MWICoreSlot (m.slot) - CSR-DOM Reactive Updates", async (t) => {
 	await t.step("(getDOM) - Reactive switch from fallback to natural children", async () => {
 		const divNode = doc('createNode', ['h.div']);
 		const slotNode = doc('createNode', ls([, 'm.slot', 'slotSrc', divNode]));
-		slotNode('append', ['Fallback']);
+		slotNode('setSubSpec', ['Fallback']);
 		const domNodes = slotNode('getDOM');
 
 		// Initially empty source - should show fallback
@@ -306,7 +309,7 @@ Deno.test("MWICoreSlot (m.slot) - CSR-DOM Reactive Updates", async (t) => {
 	await t.step(".getDOM() - Reactive switch from fallback to natural children via JS", async () => {
 		const divNode = doc.createNode('h.div');
 		const slotNode = doc.createNode('m.slot', { slotSrc: divNode });
-		slotNode.append('JS Fallback');
+		slotNode.setSubSpec('JS Fallback');
 		const domNodes = slotNode.getDOM();
 
 		await globalThis.reactive.wait();
@@ -335,7 +338,7 @@ Deno.test("MWICoreSlot (m.slot) - CSR-DOM Named Slot Reactivity", async (t) => {
 
 		const slotNode = doc('createNode', ls([, 'm.slot', 'slotSrc', divNode]));
 		slotNode('setAttr', ['name', 'header']);
-		slotNode('append', ['Fallback']);
+		slotNode('setSubSpec', ['Fallback']);
 
 		await globalThis.reactive.wait();
 		const domNodes = slotNode('getDOM');
@@ -359,7 +362,7 @@ Deno.test("MWICoreSlot (m.slot) - CSR-DOM Named Slot Reactivity", async (t) => {
 
 		const slotNode = doc.createNode('m.slot', { slotSrc: divNode });
 		slotNode.setAttr('name', 'footer');
-		slotNode.append('JS Fallback');
+		slotNode.setSubSpec('JS Fallback');
 		const domNodes = slotNode.getDOM();
 
 		await globalThis.reactive.wait();

@@ -148,7 +148,6 @@ Deno.test("MWICoreText (m.t) - Core Interface Tests", async (t) => {
 		const textNode = doc.createNode('m.t');
 		textNode('setAttr', ls([, 't', , 'Base Text']));
 		textNode('append', ls([, 'ignored content']));
-		await reactive.wait();
 		const subDoc = textNode('getSubDoc');
 		assertEquals(subDoc.size, 0);
 	});
@@ -157,7 +156,6 @@ Deno.test("MWICoreText (m.t) - Core Interface Tests", async (t) => {
 		const textNode = doc.createNode('m.t');
 		textNode.setAttr('t', 'Base Text');
 		textNode.append('ignored content');
-		await reactive.wait();
 		const subDoc = textNode.getSubDoc();
 		assertEquals(subDoc.size, 0);
 	});

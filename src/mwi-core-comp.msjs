@@ -15,6 +15,8 @@ modcaps=''
 	if (!mid) throw new Error('MWICore requires Mesgjs module management to be active');
 
 	const INTERFACE = 'if';
+	const TEMPLATE = 'tpl';
+	const FEATURE = 'ftr';
 	const SCHEMA = 'schema';
 	const AUTO_DOC = 'autoDoc'; // false -> Prevent sub-doc auto-generation from sub-spec
 	const MRNS = 'mrns'; // Virtual m.rns attribute opt-in
@@ -81,18 +83,21 @@ modcaps=''
 		function opGetDOM (d) {
 			if (typeof document !== 'object' || typeof document.createComment !== 'function') return new NANOS();
 			const p = d.p;
-			if (p.has('dom')) return p.at('dom'); // Return consistent result across calls
+
+			if (p.has('_dom')) return p.at('_dom').rv;
 
 			const comment = document.createComment('');
 			const nodes = new NANOS(comment);
-			p.set('dom', nodes);
-
-			reactive({ eager: true, def: () => {
+			const _dom = reactive({ eager: true, def: () => {
 				const text = d.rr('getAttr', [ 't' ]) || '';
 				comment.data = text;
-			}}).rv;
 
-			return nodes;
+				return nodes;
+			}});
+
+			p.set('_dom', _dom);
+
+			return _dom.rv;
 		}
 
 		function opGetHTML (d) {
@@ -122,36 +127,56 @@ modcaps=''
 	// component type (sub-spec item 0, item 0), then waits via `fwait`.
 	// If no feature can be derived, CSR does not render either.
 	(() => {
-		// Return reactive NANOS of DOM nodes
-		function opGetSubDOM (d) {
+		// Return reactive sub-doc
+		function opGetSubDoc (d) {
 			if (typeof document !== 'object') return new NANOS();
-			const p = d.p;
+			const p = d.p, subDoc = p.at('subDoc');
 
-			if (p.has('dom')) return p.at('dom'); // Always returns the same reactive object
+			if (p.has('_subDoc')) return p.at('_subDoc').rv;
 
-			const doc = p.at('doc'), nodes = doc.rxNANOS();
-			p.set('dom', nodes);
-
+			const rxs = p.at('rxState'), _subDoc = reactive({ eager: true, def: () => subDoc });
 			// Derive the feature name from the sub-spec's component type
-			const subSpec = d.rr('getSubSpec');
+			const slotSrc = p.at('slotSrc'), subSpec = p.at('subSpec');
 			const compType = subSpec?.at([0, 0]);  // item 0 of item 0 of sub-spec
 			const registry = getInstance(REG_IF);
 			const ftr = compType && registry.get(compType)?.at('ftr');
-			if (!ftr) return nodes; // No feature gate; never renders
+
+			rxs.set('live', true);
+			p.set('_subDoc', _subDoc);
 
 			// Wait for the feature, then render like a fragment
-			fwait(ftr).then(() => {
-				d.rr('getSubDOM', { into: nodes });
+			if (ftr) fwait(ftr).then(() => {
+				// Verify that the component is now resolvable
+				const regEntry = registry.get(compType);
+
+				if (!regEntry.has(INTERFACE) && !regEntry.has(TEMPLATE)) return;
+
+				const doc = p.at('doc'), rxs = p.at('rxState');
+
+				rxs.set('live', false); // Trigger transition when feature resolves
+				_subDoc.def = () => {
+					if (rxs.at('live')) return subDoc; // subDoc is already source of truth
+					
+					const nodes = doc('from', { list: subSpec, slotSrc });
+
+					reactive.unbatch(() => {
+						subDoc.clear();
+						subDoc.push(nodes);
+						rxs.push({ live: true, docEq: true });
+					});
+
+					return subDoc;
+				};
 			}, () => {});
 
-			return nodes;
+			return _subDoc.rv;
 		}
 
 		getInterface(DEFER_IF).set({
 			pristine: true, lock: true,
 			chain: [ BASE_IF ],
 			handlers: {
-				getSubDOM: opGetSubDOM,
+				getSubDoc: opGetSubDoc,
 				getHTML: (_d) => '',
 				subSlotSrc: (d) => d.p.at('slotSrc'), // non-source; pass-through
 			}
@@ -216,7 +241,11 @@ modcaps=''
 		function opGetDOM (d) {
 			if (typeof document !== 'object' || typeof document.head !== 'object') return new NANOS();
 			const p = d.p;
-			if (p.has('dom')) return p.at('dom');
+
+			if (p.has('_dom')) {
+				p.at('_domAttrs').rv;
+				return p.at('_dom').rv;
+			}
 
 			// Adopt the existing document.head or document.body element
 			const type = p.at('type');
@@ -224,20 +253,24 @@ modcaps=''
 			if (!targetElement) return new NANOS();
 
 			const nodes = new NANOS(targetElement);
-			p.set('dom', nodes);
+			const _dom = reactive({ eager: true }), _domAttrs = reactive();
+			p.push({ _dom, _domAttrs });
 
 			// Reactively set/sync HTML attributes on the adopted element
-			d.rr.setDOMAttrs(targetElement, p.at('attrs'), p.at(SCHEMA));
+			_domAttrs.def = d.rr.setDOMAttrs(targetElement, p.at('attrs'), p.at(SCHEMA));
 
 			// Reactively synchronize managed children
-			reactive({ eager: true, def: () => {
+			_dom.def = () => {
 				const children = d.rr('getSubDOM'); // sub-DOM children
 				d.rr.domSyncManagedChildren(targetElement, children);
-			}}).rv;
+				return nodes;
+			};
 
 			// Append m.csrStatic content once (non-reactively) after the end marker
 			const csrStatic = d.rr('getAttr', [ 'm.csrStatic' ]);
 			if (csrStatic instanceof NANOS) {
+				_dom.rv; // Make sure managed zone renders first and csrStatic appears after
+
 				const doc = p.at('doc'), frag = doc.createNode('m.frg');
 				frag('setSubSpec', csrStatic);
 				const csrNodes = frag('getSubDOM');
@@ -255,7 +288,8 @@ modcaps=''
 				}
 			}
 
-			return nodes;
+			_domAttrs.rv;
+			return _dom.rv;
 		}
 
 		getInterface(HEADBODY_IF).set({
@@ -305,18 +339,17 @@ modcaps=''
 		}
 
 		// Return reactive NANOS of DOM nodes
-		function opGetSubDOM (d) {
+		function opGetDOM (d) {
 			if (typeof document !== 'object' || typeof document.createElement !== 'function') return new NANOS();
 			const p = d.p;
 
-			if (p.has('subDom')) return p.at('subDom'); // Always return the same reactive object
+			if (p.has('_dom')) return p.at('_dom').rv;
 
 			const styleElem = document.createElement('style');
 			const doc = p.at('doc'), nodes = doc.rxNANOS();
-			p.set('subDom', nodes);
-
-			reactive({ eager: true, def: () => {
+			const _dom = reactive({ eager: true, def: () => {
 				const css = aggregateCSS(d);
+
 				reactive.untracked(() => {
 					if (css !== '') {
 						styleElem.textContent = css;
@@ -325,9 +358,13 @@ modcaps=''
 						if (nodes.has(0)) nodes.clear();
 					}
 				});
-			}}).rv;
 
-			return nodes;
+				return nodes;
+			}});
+
+			p.set('_dom', _dom);
+
+			return _dom.rv;
 		}
 
 		getInterface(SCPCSS_IF).set({
@@ -335,7 +372,7 @@ modcaps=''
 			chain: [ BASE_IF ],
 			handlers: {
 				getHTML: opGetHTML,
-				getSubDOM: opGetSubDOM,
+				getDOM: opGetDOM,
 				getSubSpec: (_d) => new NANOS(),
 				setSubSpec: (d) => d.rr,
 			}
@@ -351,44 +388,53 @@ modcaps=''
 		// Unnamed slot: Source natural children (if any), with fall-back to slot's natural children
 
 		// Determine the current source spec
-		// Returns null of the default fallback should be used
 		function getSourceSpec (d) {
-			const p = d.p, slotSrc = p.at('slotSrc');
+			const p = d.p, slotSrc = p.at('slotSrc'), defSpec = p.at('subSpec');
 
 			// No slot source; must use default fallback
-			if (!slotSrc) return null;
+			if (!slotSrc) return defSpec;
 
 			const name = d.rr('getAttr', ['name']);
 			if (typeof name === 'string') { // Named slot
 			 	// Use named source attribute if list-valued, or default fallback otherwise
 				const spec = slotSrc('getAttr', [name]);
-				return (spec instanceof NANOS) ? spec : null;
+				return (spec instanceof NANOS) ? spec : defSpec;
 			} else { // Unnamed slot
 			 	// Source natural children, if present, or default fallback otherwise
-				return slotSrc('hasChildren') ? slotSrc('getSubSpec') : null;
+				const sourceSubSpec = slotSrc('getSubSpec');
+				return sourceSubSpec.next ? sourceSubSpec : defSpec;
 			}
 		}
 
 		// Get the sub-doc for the current source
 		function opGetSubDoc (d) {
-			const p = d.p, curSource = p.at('curSource');
-			const rxs = p.at('rxState'), subDoc = p.at('subDoc');
-			const source = getSourceSpec(d);
+			const p = d.p;
 
-			// If the source is unchanged and the sub-doc is already live, just return it
-			if (curSource === source && rxs.at('live')) return subDoc;
+			if (p.has('_subDoc')) return p.at('_subDoc').rv;
 
-			// Populate the sub-doc from the current source
-			reactive.batch(() => {
-				const doc = p.at('doc');
-				p.set('curSource', source);
-				subDoc.clear();
-				const nodes = doc('from', { list: source ?? d.rr('getSubSpec'), slotSrc: d.rr });
-				subDoc.push(nodes);
-				rxs.push({ live: true, docEq: !source });
-			});
+			const doc = p.at('doc'), rxs = p.at('rxState');
+			const subDoc = p.at('subDoc'), subSpec = p.at('subSpec');
+			const _subDoc = reactive({ eager: true, def: () => {
+				const source = getSourceSpec(d);
 
-			return subDoc;
+				reactive.batch(() => {
+					rxs.set('live', false);
+
+					const nodes = doc('from', { list: source, slotSrc: d.rr });
+
+					reactive.untracked(() => {
+						subDoc.clear();
+						subDoc.push(nodes);
+						rxs.push({ live: true, docEq: source === subSpec });
+					});
+				});
+
+				return subDoc;
+			}});
+
+			p.set('_subDoc', _subDoc);
+
+			return _subDoc.rv;
 		}
 
 		function opHasChildren (d) {
@@ -414,13 +460,12 @@ modcaps=''
 			if (typeof document !== 'object' || typeof document.createTextNode !== 'function') return new NANOS();
 			const p = d.p;
 
-			if (p.has('dom')) return p.at('dom'); // Always return the same reactive object
+			if (p.has('_dom')) return p.at('_dom').rv;
 
 			const output = document.createTextNode(''), doc = p.at('doc'), nodes = doc.rxNANOS();
-			p.set('dom', nodes);
-
-			reactive({ eager: true, def: () => {
+			const _dom = reactive({ eager: true, def: () => {
 				const text = d.rr('getAttr', [ 't' ]) || '';
+
 				reactive.untracked(() => {
 					if (text !== '') {
 						output.data = text;
@@ -430,23 +475,29 @@ modcaps=''
 						if (nodes.has(0)) nodes.clear();
 					}
 				});
-			}}).rv;
 
-			return nodes;
+				return nodes;
+			}});
+
+			p.set('_dom', _dom);
+
+			return _dom.rv;
 		}
 
 		function opGetHTML (d) {
 			const m = d.mp, output = m.at('in');;
 			const text = d.rr('getAttr', [ 't' ]) || '';
 			const html = d.rr.textToHTML(text);
+
 			if (html !== '' && output) output.push(html);
 			return html;
 		}
 
 		function opGetSpec (d) {
 			// Simplify typical [m.t t=text] spec to plain string
-			const spec = d.sm(d, 'redis');
+			const spec = d.sm(d, 'redis'); // A reactively-calculated value (with deps)
 			const text = spec.at('t');
+
 			return (spec.size === 2 && typeof text === 'string') ? text : spec;
 		}
 
@@ -483,9 +534,12 @@ modcaps=''
 
 			if (rxs.at('live')) return subDoc; // Already live
 
+			// Template should be static; one-time setup
 			reactive.batch(() => {
-				const tpl = p.at('tpl'), doc = p.at('doc'), nodes = doc('from', { list: tpl, slotSrc: d.rr });
+				const tpl = p.at('tpl') ?? [], doc = p.at('doc'), nodes = doc('from', { list: tpl, slotSrc: d.rr });
 				subDoc.push(nodes);
+				// Doc-nodes derive from the template
+				// Natural children are used for unnamed slots
 				rxs.push({ live: true, docEq: false });
 			});
 

@@ -103,7 +103,6 @@ Deno.test("m.coat - Input Empty String Cases", async (t) => {
 
 	await t.step("m.coat=[out=<in?a>] in='' - empty input, SET test", async () => {
 		const html = renderHTML(ps('[([src in="" [h.div m.coat=[out=<in?a>]]])]'));
-		console.log(html);
 		assertEquals(html, '<div out="a"></div>');
 	});
 

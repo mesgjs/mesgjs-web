@@ -30,7 +30,6 @@ Deno.test("MWICoreTpl (template handler) - CSR-DOM Basic Rendering", async (t) =
 		const tplNode = doc('createNode', ['test.tpl.csr.simple']);
 		const domNodes = tplNode('getDOM');
 
-		await globalThis.reactive.wait();
 		assertEquals(domNodes.size, 1);
 		const textDomNode = domNodes.at(0);
 		assertEquals(textDomNode.nodeType, 3); // Text node
@@ -42,7 +41,6 @@ Deno.test("MWICoreTpl (template handler) - CSR-DOM Basic Rendering", async (t) =
 		const tplNode = doc.createNode('test.tpl.csr.simple2');
 		const domNodes = tplNode.getDOM();
 
-		await globalThis.reactive.wait();
 		assertEquals(domNodes.size, 1);
 		assertEquals(domNodes.at(0).textContent, 'Simple template 2');
 	});
@@ -52,7 +50,6 @@ Deno.test("MWICoreTpl (template handler) - CSR-DOM Basic Rendering", async (t) =
 		const tplNode = doc('createNode', ['test.tpl.csr.empty']);
 		const domNodes = tplNode('getDOM');
 
-		await globalThis.reactive.wait();
 		assertEquals(domNodes.size, 0);
 	});
 
@@ -61,7 +58,6 @@ Deno.test("MWICoreTpl (template handler) - CSR-DOM Basic Rendering", async (t) =
 		const tplNode = doc.createNode('test.tpl.csr.empty2');
 		const domNodes = tplNode.getDOM();
 
-		await globalThis.reactive.wait();
 		assertEquals(domNodes.size, 0);
 	});
 });
@@ -75,7 +71,6 @@ Deno.test("MWICoreTpl (template handler) - CSR-DOM Multiple Items", async (t) =>
 		const tplNode = doc('createNode', ['test.tpl.csr.multi']);
 		const domNodes = tplNode('getDOM');
 
-		await globalThis.reactive.wait();
 		assertEquals(domNodes.size, 3);
 		assertEquals(domNodes.at(0).textContent, 'First');
 		assertEquals(domNodes.at(1).textContent, 'Second');
@@ -90,7 +85,6 @@ Deno.test("MWICoreTpl (template handler) - CSR-DOM Multiple Items", async (t) =>
 		const tplNode = doc.createNode('test.tpl.csr.multi2');
 		const domNodes = tplNode.getDOM();
 
-		await globalThis.reactive.wait();
 		assertEquals(domNodes.size, 3);
 		assertEquals(domNodes.at(0).textContent, 'A');
 		assertEquals(domNodes.at(1).textContent, 'B');
@@ -107,7 +101,6 @@ Deno.test("MWICoreTpl (template handler) - CSR-DOM Nested Structure", async (t) 
 		const tplNode = doc('createNode', ['test.tpl.csr.nested']);
 		const domNodes = tplNode('getDOM');
 
-		await globalThis.reactive.wait();
 		assertEquals(domNodes.size, 2);
 		assertEquals(domNodes.at(0).textContent, 'Outer');
 		assertEquals(domNodes.at(1).textContent, 'Inner');
@@ -121,7 +114,6 @@ Deno.test("MWICoreTpl (template handler) - CSR-DOM Nested Structure", async (t) 
 		const tplNode = doc.createNode('test.tpl.csr.nested2');
 		const domNodes = tplNode.getDOM();
 
-		await globalThis.reactive.wait();
 		assertEquals(domNodes.size, 2);
 		assertEquals(domNodes.at(0).textContent, 'Level1');
 		assertEquals(domNodes.at(1).textContent, 'Level2');
@@ -137,7 +129,6 @@ Deno.test("MWICoreTpl (template handler) - CSR-DOM Mixed Content Types", async (
 		const tplNode = doc('createNode', ['test.tpl.csr.mixed']);
 		const domNodes = tplNode('getDOM');
 
-		await globalThis.reactive.wait();
 		assertEquals(domNodes.size, 3);
 		assertEquals(domNodes.at(0).nodeType, 3); // Text node
 		assertEquals(domNodes.at(0).nodeValue, 'Text');
@@ -155,7 +146,6 @@ Deno.test("MWICoreTpl (template handler) - CSR-DOM Mixed Content Types", async (
 		const tplNode = doc.createNode('test.tpl.csr.mixed2');
 		const domNodes = tplNode.getDOM();
 
-		await globalThis.reactive.wait();
 		assertEquals(domNodes.size, 3);
 		assertEquals(domNodes.at(0).textContent, 'A');
 		assertEquals(domNodes.at(1).nodeType, 8);
@@ -172,7 +162,6 @@ Deno.test("MWICoreTpl (template handler) - CSR-DOM Slot Integration", async (t) 
 		const tplNode = doc('createNode', ['test.tpl.csr.slot']);
 		const domNodes = tplNode('getDOM');
 
-		await globalThis.reactive.wait();
 		assertEquals(domNodes.size, 0);
 	});
 
@@ -184,7 +173,6 @@ Deno.test("MWICoreTpl (template handler) - CSR-DOM Slot Integration", async (t) 
 		const tplNode = doc.createNode('test.tpl.csr.slot2');
 		const domNodes = tplNode.getDOM();
 
-		await globalThis.reactive.wait();
 		assertEquals(domNodes.size, 0);
 	});
 
@@ -196,7 +184,6 @@ Deno.test("MWICoreTpl (template handler) - CSR-DOM Slot Integration", async (t) 
 		const tplNode = doc('createNode', ['test.tpl.csr.slot.default']);
 		const domNodes = tplNode('getDOM');
 
-		await globalThis.reactive.wait();
 		assertEquals(domNodes.size, 1);
 		assertEquals(domNodes.at(0).textContent, 'Default content');
 	});
@@ -209,7 +196,6 @@ Deno.test("MWICoreTpl (template handler) - CSR-DOM Slot Integration", async (t) 
 		const tplNode = doc.createNode('test.tpl.csr.slot.default2');
 		const domNodes = tplNode.getDOM();
 
-		await globalThis.reactive.wait();
 		assertEquals(domNodes.size, 1);
 		assertEquals(domNodes.at(0).textContent, 'Fallback');
 	});
@@ -224,7 +210,6 @@ Deno.test("MWICoreTpl (template handler) - CSR-DOM Slot Integration", async (t) 
 		tplNode('setAttr', ['footer', ps('[([m.t t="Footer content"])]')]);
 		const domNodes = tplNode('getDOM');
 
-		await globalThis.reactive.wait();
 		assertEquals(domNodes.size, 3);
 		assertEquals(domNodes.at(0).textContent, 'Header content');
 		assertEquals(domNodes.at(1).textContent, 'Body');
@@ -241,7 +226,6 @@ Deno.test("MWICoreTpl (template handler) - CSR-DOM Slot Integration", async (t) 
 		tplNode.setAttr('bottom', ps('[([m.t t="Bottom content"])]'));
 		const domNodes = tplNode.getDOM();
 
-		await globalThis.reactive.wait();
 		assertEquals(domNodes.size, 3);
 		assertEquals(domNodes.at(0).textContent, 'Top content');
 		assertEquals(domNodes.at(1).textContent, 'Middle');
@@ -254,10 +238,9 @@ Deno.test("MWICoreTpl (template handler) - CSR-DOM Slot Integration", async (t) 
 			'tpl', ps('[([m.slot [m.t t="Default"]])]')
 		]));
 		const tplNode = doc('createNode', ['test.tpl.csr.slot.children']);
-		tplNode('append', ['Natural child content']);
+		tplNode('setSubSpec', ['Natural child content']);
 		const domNodes = tplNode('getDOM');
 
-		await globalThis.reactive.wait();
 		assertEquals(domNodes.size, 1);
 		assertEquals(domNodes.at(0).textContent, 'Natural child content');
 	});
@@ -268,10 +251,9 @@ Deno.test("MWICoreTpl (template handler) - CSR-DOM Slot Integration", async (t) 
 			'tpl', ps('[([m.slot [m.t t="Fallback"]])]')
 		]));
 		const tplNode = doc.createNode('test.tpl.csr.slot.children2');
-		tplNode.append('Child content');
+		tplNode.setSubSpec('Child content');
 		const domNodes = tplNode.getDOM();
 
-		await globalThis.reactive.wait();
 		assertEquals(domNodes.size, 1);
 		assertEquals(domNodes.at(0).textContent, 'Child content');
 	});
@@ -286,7 +268,6 @@ Deno.test("MWICoreTpl (template handler) - CSR-DOM HTML Elements", async (t) => 
 		const tplNode = doc('createNode', ['test.tpl.csr.html']);
 		const domNodes = tplNode('getDOM');
 
-		await globalThis.reactive.wait();
 		assertEquals(domNodes.size, 1);
 		const divElem = domNodes.at(0);
 		assertEquals(divElem.tagName, 'DIV');
@@ -301,7 +282,6 @@ Deno.test("MWICoreTpl (template handler) - CSR-DOM HTML Elements", async (t) => 
 		const tplNode = doc.createNode('test.tpl.csr.html2');
 		const domNodes = tplNode.getDOM();
 
-		await globalThis.reactive.wait();
 		assertEquals(domNodes.size, 1);
 		const spanElem = domNodes.at(0);
 		assertEquals(spanElem.tagName, 'SPAN');
@@ -316,7 +296,6 @@ Deno.test("MWICoreTpl (template handler) - CSR-DOM HTML Elements", async (t) => 
 		const tplNode = doc('createNode', ['test.tpl.csr.complex']);
 		const domNodes = tplNode('getDOM');
 
-		await globalThis.reactive.wait();
 		assertEquals(domNodes.size, 1);
 		const divElem = domNodes.at(0);
 		assertEquals(divElem.tagName, 'DIV');
@@ -336,7 +315,6 @@ Deno.test("MWICoreTpl (template handler) - CSR-DOM HTML Elements", async (t) => 
 		const tplNode = doc.createNode('test.tpl.csr.complex2');
 		const domNodes = tplNode.getDOM();
 
-		await globalThis.reactive.wait();
 		assertEquals(domNodes.size, 1);
 		const sectionElem = domNodes.at(0);
 		assertEquals(sectionElem.tagName, 'SECTION');
@@ -361,12 +339,11 @@ Deno.test("MWICoreTpl (template handler) - CSR-DOM Reactive Updates", async (t) 
 		contentList.at(0).set('t', 'Initial');
 
 		const domNodes = tplNode('getDOM');
-		await globalThis.reactive.wait();
 		assertEquals(domNodes.at(0).textContent, 'Initial');
 
 		// Update content
 		contentList.at(0).set('t', 'Updated');
-		await globalThis.reactive.wait();
+		await reactive.wait();
 		assertEquals(domNodes.at(0).textContent, 'Updated');
 		assertEquals(domNodes.size, 1);
 	});
@@ -384,11 +361,10 @@ Deno.test("MWICoreTpl (template handler) - CSR-DOM Reactive Updates", async (t) 
 		dataList.at(0).set('t', 'JS Initial');
 
 		const domNodes = tplNode.getDOM();
-		await globalThis.reactive.wait();
 		assertEquals(domNodes.at(0).textContent, 'JS Initial');
 
 		dataList.at(0).set('t', 'JS Updated');
-		await globalThis.reactive.wait();
+		await reactive.wait();
 		assertEquals(domNodes.at(0).textContent, 'JS Updated');
 		assertEquals(domNodes.size, 1);
 	});
@@ -400,16 +376,12 @@ Deno.test("MWICoreTpl (template handler) - CSR-DOM Reactive Updates", async (t) 
 		]));
 		const tplNode = doc('createNode', ['test.tpl.csr.reactive.children']);
 
-		const textNode = doc('createNode', ['m.t']);
-		textNode('setAttr', ['t', 'Initial child']);
-		tplNode('append', [textNode]);
-
+		tplNode('setSubSpec', 'Initial child');
 		const domNodes = tplNode('getDOM');
-		await globalThis.reactive.wait();
 		assertEquals(domNodes.at(0).textContent, 'Initial child');
 
-		textNode('setAttr', ['t', 'Updated child']);
-		await globalThis.reactive.wait();
+		tplNode('setSubSpec', 'Updated child');
+		await reactive.wait();
 		assertEquals(domNodes.at(0).textContent, 'Updated child');
 		assertEquals(domNodes.size, 1);
 	});
@@ -421,16 +393,13 @@ Deno.test("MWICoreTpl (template handler) - CSR-DOM Reactive Updates", async (t) 
 		]));
 		const tplNode = doc.createNode('test.tpl.csr.reactive.children2');
 
-		const textNode = doc.createNode('m.t');
-		textNode.setAttr('t', 'JS Initial child');
-		tplNode.append(textNode);
+		tplNode.setSubSpec('JS Initial child');
 
 		const domNodes = tplNode.getDOM();
-		await globalThis.reactive.wait();
 		assertEquals(domNodes.at(0).textContent, 'JS Initial child');
 
-		textNode.setAttr('t', 'JS Updated child');
-		await globalThis.reactive.wait();
+		tplNode.setSubSpec('JS Updated child');
+		await reactive.wait();
 		assertEquals(domNodes.at(0).textContent, 'JS Updated child');
 		assertEquals(domNodes.size, 1);
 	});
@@ -447,14 +416,13 @@ Deno.test("MWICoreTpl (template handler) - CSR-DOM Reactive Slotting Cases", asy
 		// Set initial attribute
 		tplNode('setAttr', ['header', ps('[([m.t t="Initial Header"])]')]);
 		const domNodes = tplNode('getDOM');
-		await globalThis.reactive.wait();
 		assertEquals(domNodes.size, 2);
 		assertEquals(domNodes.at(0).textContent, 'Initial Header');
 		assertEquals(domNodes.at(1).textContent, 'Body');
 
 		// Change the attribute on the template node
 		tplNode('setAttr', ['header', ps('[([m.t t="Updated Header"])]')]);
-		await globalThis.reactive.wait();
+		await reactive.wait();
 		assertEquals(domNodes.size, 2);
 		assertEquals(domNodes.at(0).textContent, 'Updated Header');
 		assertEquals(domNodes.at(1).textContent, 'Body');
@@ -469,12 +437,11 @@ Deno.test("MWICoreTpl (template handler) - CSR-DOM Reactive Slotting Cases", asy
 
 		tplNode.setAttr('title', ps('[([m.t t="JS Initial"])]'));
 		const domNodes = tplNode.getDOM();
-		await globalThis.reactive.wait();
 		assertEquals(domNodes.size, 2);
 		assertEquals(domNodes.at(0).textContent, 'JS Initial');
 
 		tplNode.setAttr('title', ps('[([m.t t="JS Changed"])]'));
-		await globalThis.reactive.wait();
+		await reactive.wait();
 		assertEquals(domNodes.size, 2);
 		assertEquals(domNodes.at(0).textContent, 'JS Changed');
 	});
@@ -494,13 +461,12 @@ Deno.test("MWICoreTpl (template handler) - CSR-DOM Reactive Slotting Cases", asy
 		textNode.set('t', 'Initial Text');
 
 		const domNodes = tplNode('getDOM');
-		await globalThis.reactive.wait();
 		assertEquals(domNodes.size, 1);
 		assertEquals(domNodes.at(0).textContent, 'Initial Text');
 
 		// Change attribute within the sub-spec
 		textNode.set('t', 'Modified Text');
-		await globalThis.reactive.wait();
+		await reactive.wait();
 		assertEquals(domNodes.size, 1);
 		assertEquals(domNodes.at(0).textContent, 'Modified Text');
 	});
@@ -519,12 +485,11 @@ Deno.test("MWICoreTpl (template handler) - CSR-DOM Reactive Slotting Cases", asy
 		textNode.set('t', 'JS Start');
 
 		const domNodes = tplNode.getDOM();
-		await globalThis.reactive.wait();
 		assertEquals(domNodes.size, 1);
 		assertEquals(domNodes.at(0).textContent, 'JS Start');
 
 		textNode.set('t', 'JS Modified');
-		await globalThis.reactive.wait();
+		await reactive.wait();
 		assertEquals(domNodes.size, 1);
 		assertEquals(domNodes.at(0).textContent, 'JS Modified');
 	});
@@ -542,25 +507,24 @@ Deno.test("MWICoreTpl (template handler) - CSR-DOM Reactive Slotting Cases", asy
 		tplNode('append', [textNode1]);
 
 		const domNodes = tplNode('getDOM');
-		await globalThis.reactive.wait();
-		assertEquals(domNodes.size, 1);
-		assertEquals(domNodes.at(0).textContent, 'First Child');
+		assertEquals(domNodes.size, 2);
+		assertEquals(domNodes.at(1).textContent, 'First Child');
 
 		// Append another child
 		const textNode2 = doc('createNode', ['m.t']);
 		textNode2('setAttr', ['t', 'Second Child']);
 		tplNode('append', [textNode2]);
-		await globalThis.reactive.wait();
-		assertEquals(domNodes.size, 2);
-		assertEquals(domNodes.at(0).textContent, 'First Child');
-		assertEquals(domNodes.at(1).textContent, 'Second Child');
+		await reactive.wait();
+		assertEquals(domNodes.size, 3);
+		assertEquals(domNodes.at(1).textContent, 'First Child');
+		assertEquals(domNodes.at(2).textContent, 'Second Child');
 
 		// Modify first child
 		textNode1('setAttr', ['t', 'Modified First']);
-		await globalThis.reactive.wait();
-		assertEquals(domNodes.size, 2);
-		assertEquals(domNodes.at(0).textContent, 'Modified First');
-		assertEquals(domNodes.at(1).textContent, 'Second Child');
+		await reactive.wait();
+		assertEquals(domNodes.size, 3);
+		assertEquals(domNodes.at(1).textContent, 'Modified First');
+		assertEquals(domNodes.at(2).textContent, 'Second Child');
 	});
 
 	await t.step(".getDOM() - Reactive change to template's sub-doc using append via JS", async () => {
@@ -575,23 +539,22 @@ Deno.test("MWICoreTpl (template handler) - CSR-DOM Reactive Slotting Cases", asy
 		tplNode.append(textNode1);
 
 		const domNodes = tplNode.getDOM();
-		await globalThis.reactive.wait();
-		assertEquals(domNodes.size, 1);
-		assertEquals(domNodes.at(0).textContent, 'JS First');
+		assertEquals(domNodes.size, 2);
+		assertEquals(domNodes.at(1).textContent, 'JS First');
 
 		const textNode2 = doc.createNode('m.t');
 		textNode2.setAttr('t', 'JS Second');
 		tplNode.append(textNode2);
-		await globalThis.reactive.wait();
-		assertEquals(domNodes.size, 2);
-		assertEquals(domNodes.at(0).textContent, 'JS First');
-		assertEquals(domNodes.at(1).textContent, 'JS Second');
+		await reactive.wait();
+		assertEquals(domNodes.size, 3);
+		assertEquals(domNodes.at(1).textContent, 'JS First');
+		assertEquals(domNodes.at(2).textContent, 'JS Second');
 
 		textNode1.setAttr('t', 'JS Modified First');
-		await globalThis.reactive.wait();
-		assertEquals(domNodes.size, 2);
-		assertEquals(domNodes.at(0).textContent, 'JS Modified First');
-		assertEquals(domNodes.at(1).textContent, 'JS Second');
+		await reactive.wait();
+		assertEquals(domNodes.size, 3);
+		assertEquals(domNodes.at(1).textContent, 'JS Modified First');
+		assertEquals(domNodes.at(2).textContent, 'JS Second');
 	});
 });
 
@@ -609,7 +572,6 @@ Deno.test("MWICoreTpl (template handler) - CSR-DOM Attribute Slotting", async (t
 		tplNode('setAttr', ['m.slat', ps('[(title=[c.title])]')]);
 
 		const domNodes = tplNode('getDOM');
-		await globalThis.reactive.wait();
 		assertEquals(domNodes.size, 1);
 		assertEquals(domNodes.at(0).textContent, 'Custom Title');
 	});
@@ -627,7 +589,6 @@ Deno.test("MWICoreTpl (template handler) - CSR-DOM Attribute Slotting", async (t
 		tplNode.setAttr('m.slat', ps('[(content=[c.body])]'));
 
 		const domNodes = tplNode.getDOM();
-		await globalThis.reactive.wait();
 		assertEquals(domNodes.size, 1);
 		assertEquals(domNodes.at(0).textContent, 'Body Text');
 	});
@@ -642,7 +603,6 @@ Deno.test("MWICoreTpl (template handler) - CSR-DOM Special Characters", async (t
 		const tplNode = doc('createNode', ['test.tpl.csr.special']);
 		const domNodes = tplNode('getDOM');
 
-		await globalThis.reactive.wait();
 		assertEquals(domNodes.size, 1);
 		// DOM text content doesn't need escaping
 		assertEquals(domNodes.at(0).textContent, '<>&"\'');
@@ -656,7 +616,6 @@ Deno.test("MWICoreTpl (template handler) - CSR-DOM Special Characters", async (t
 		const tplNode = doc.createNode('test.tpl.csr.special2');
 		const domNodes = tplNode.getDOM();
 
-		await globalThis.reactive.wait();
 		assertEquals(domNodes.size, 1);
 		assertEquals(domNodes.at(0).textContent, 'Test & <test>');
 	});
