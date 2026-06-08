@@ -2,6 +2,7 @@
 
 **Status:** DRAFT  
 **Date:** 2026-05-31  
+**Last updated:** 2026-06-07  
 **Purpose:** Unified architectural plan for SSR and CSR content aggregation with resumability support
 
 ---
@@ -109,7 +110,7 @@ An aggregation-aware variant of the low-level `h.link` and `h.style` tags:
 
 ---
 
-## CSR Proposal: Central Store Pattern
+## CSR: Central Store Pattern
 
 ### Design Rationale
 
@@ -133,6 +134,7 @@ This is the natural fit for MWI because:
 - **Ordering:** Each content node has a reactively-computed `(nodePath)` which is a reactive list of zero-origin node indexes, top-down, from the root node.
   - These are dependent on reactive `subDoc` properties up to the root, triggering recalculation if impacted by structural changes.
   - Aggregate content is displayed in node order (example: content for a node with path `[1 1 3 5]` comes before one with path `[1 1 4]`).
+  - `(nodePath)` and related machinery have been implemented and tested.
 
 ---
 
@@ -198,26 +200,26 @@ WebSocket update:
   6. [m.aggr from=toc] reactively updates <nav> with new entry added (in tree-traversal order)
 ```
 
-### Integration with SSR Proposal
+### Integration with SSR
 
-The placeholder/string-surgery approach is still the right mechanism for **generating the initial HTML**. Resumability is a layer on top of it:
+The placeholder/string-surgery approach is the mechanism for **generating the initial HTML**. Resumability is a layer on top of it:
 
-1. **SSR (existing proposal):** `getHTML()` uses placeholder + string surgery to produce correct HTML
-2. **State serialization (new):** After `getHTML()` runs, serialize the ~~buffer contents (as doc specs, not HTML strings) into the page — e.g., as `<script type="application/json" id="mwi-state">...</script>`~~ document (buffer state will **not** be serialized)
-3. ~~**Client deserialization (new):** On startup, deserialize the buffer state and populate the reactive buffers on the document~~
-4. **DOM claiming (new):** Associate the `from` node's reactive DOM output with the existing server-rendered DOM nodes, using the server-assigned `m.id` values *and tree-walking*
+1. **SSR:** `getHTML()` uses placeholder + string surgery to produce correct HTML
+2. **State serialization:** After `getHTML()` runs, serialize the doc-spec into the page — e.g., as `<script id='mwi-doc-tree' type='text/vnd.mesgjs.slid'>` or similar. Buffer state will **not** be separately serialized (it is reconstructed from the doc-spec).
+3. **DOM claiming:** Associate the `from` node's reactive DOM output with the existing server-rendered DOM nodes, using the server-assigned `m.id` values *and tree-walking*
    - More generally, DOM elements from SSR-generated HTML will be adopted across the doc-tree
+   - The `MWIDOMSync` interface has been written and tested to perform this function
 
 ### Implementation Status
 
 | Piece | Status |
 |---|---|
 | SSR placeholder + string surgery | Proposed (this document) |
-| `m.id` server-client ID synchronization | ~~Already~~ `m.id` attribute exists |
+| `m.id` attribute | Exists |
 | Reactive doc tree | Already exists |
-| ~~Buffer as reactive NANOS on document~~ | New (follows `MWICoreScpCSS` pattern) |
-| ~~State~~ doc-spec serialization format | New (needs specification) - JSON or SLID |
-| DOM claiming on client startup | New (needs specification) |
+| Buffer as reactive NANOS on document | New (follows `MWICoreScpCSS` pattern) |
+| Doc-spec serialization format | New (needs specification) — JSON or SLID |
+| DOM claiming on client startup | New — `MWIDOMSync` exists, integration needs specification |
 
 ---
 
@@ -239,48 +241,20 @@ The placeholder/string-surgery approach is still the right mechanism for **gener
 
 **Question:** What is the exact format for serializing doc tree state into the HTML?
 
-**Options:**
-- Inline JSON in a `<script>` tag
-- ~~Data attributes on the `from` nodes~~
-- A separate SLID-format block
-
 **Current thinking:** `(getSpec)` can already serialize the doc tree. This can probably be packaged as `<script id='mwi-doc-tree' type='text/vnd.mesgjs.slid'>` or similar. This might be everything we need using this (e.g. non-island) approach. It should already have node ids where assigned.
 
 ### 2. DOM Claiming Mechanism
 
 **Question:** How does the client associate reconstructed doc nodes with existing DOM nodes?
 
-**Current thinking:** The `m.id` system provides the mapping (for nodes that have an id; not all do), but the claiming process needs to be specified. The exact process still remains to be determined.
-  - Likely some form of `m.id`-synchronized tree-walking.
-
-### 3. Partial Page Updates
-
-**Question:** If only a sub-tree is re-rendered (e.g., a new message is added to a thread), how does the aggregation buffer update?
-
-**Current thinking:** The reactive buffer handles this naturally — new `to` contributions are added, and the `from` node re-renders. This process is likely already addressed by the reactive system.
-
-### 4. Buffer Ordering
-
-**Question:** When multiple `to` nodes contribute to the same buffer, what determines the order of their content in the `from` output? Tree traversal order (SSR) vs. registration order (CSR) may differ.
-
-**Current thinking:** This is covered by the node path mechanism in the CSR proposal — content is ordered by tree position (node path).
-
-### 5. Unmount Behavior
-
-**Question:** When a `to` node is unmounted (e.g., a message is deleted), its content should be removed from the buffer. How is this tracked?
-
-**Options:**
-- Reactive NANOS key (for deduplicated content)
-- WeakRef-based approach (for non-deduplicated content)
-
-**Current thinking:** The node should remove itself from the associated content list. The rest should be emergent behavior of the reactive rendering process.
+**Current thinking:** The `m.id` system provides the mapping (for nodes that have an id; not all do). The `MWIDOMSync` interface has been written and tested to perform this function. The exact integration with aggregate content still needs to be specified.
 
 ---
 
 ## Next Steps
 
 1. **Finalize state serialization format** — Determine the exact format for serializing doc tree state into HTML
-2. **Specify DOM claiming mechanism** — Define how the client associates reconstructed doc nodes with existing DOM nodes
+2. **Specify DOM claiming integration** — Define how `MWIDOMSync` integrates with aggregate content reconstruction
 3. **Implement SSR aggregation** — Build the placeholder + string surgery mechanism in `MWIDocument`
 4. **Implement CSR aggregation** — Build the central store pattern with reactive buffers
 5. **Implement resumability** — Build the state serialization and DOM claiming mechanisms

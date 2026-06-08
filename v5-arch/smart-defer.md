@@ -1,6 +1,6 @@
 # Smart Defer: Revised `m.defer` Implementation
 
-**Status:** [DRAFT]
+**Status:** [APPROVED]
 **Created:** 2026-06-03
 **Author:** Architectural discussion — Brian Katzung + AI partner
 
@@ -127,6 +127,8 @@ At CSR, `getDOM()` reads the sub-spec, finds `my.component` as the component typ
 ## 5. Reactive CSR Implementation
 
 The CSR `getDOM` handler for the new `m.defer` uses the `getSubDOM` `into` parameter to render children into a pre-existing reactive NANOS after the gate opens:
+
+> Note: The following implemention is out of date.
 
 ```javascript
 function opGetDOM (d) {

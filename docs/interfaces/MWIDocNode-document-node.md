@@ -13,6 +13,7 @@
 - Attribute management (get/set/has)
 - Sub-spec and sub-doc management
 - Slot source tracking
+- Parent and node-path tracking
 - Special attribute processing (`m.id`, `m.percl`, `m.slat`, `m.coat`)
 - HTML and DOM rendering coordination
 
@@ -49,6 +50,7 @@
 - Clears existing sub-doc
 - Converts to sub-doc nodes if `autoDoc !== false`
 - Sets `subDoc.live = true` if conversion happens
+- Automatically sets `parent` and `index` on each created child node
 
 **`(getSpec)` / `getSpec()`**
 - Returns reactive spec for node and subtree
@@ -64,6 +66,7 @@
 - Appends doc-nodes to sub-doc
 - Sets `subDoc.live = true`
 - Accepts multiple nodes
+- Automatically sets `parent` and `index` on each appended node (index continues from current sub-doc size)
 
 **`(hasChildren)` / `hasChildren()`**
 - Returns `true` if node has sub-doc content
@@ -87,6 +90,36 @@
 **`(getSubDOM)` / `getSubDOM()`**
 - Returns reactive NANOS of sub-doc DOM nodes
 - Used internally for child rendering
+
+### Parent Tracking
+
+**`(getParent)` / `getParent()`**
+- Returns a NANOS with named values `parent` and `index`
+- `parent` - The parent doc-node, or `null` if unparented
+- `index` - The node's positional index within the parent's sub-doc, or `undefined` if not set
+
+**`(setParent parent index)` / `setParent(parent, index)`**
+- Sets the parent doc-node and positional index for this node
+- `parent` must be an `MWIDocNode` instance; non-`MWIDocNode` values are silently ignored
+- `index` must be a non-negative integer; negative or non-integer values are stored as `undefined`
+- Normally called automatically by `append()` and `setSubSpec()`; direct use is for advanced scenarios
+
+### Node Path
+
+**`(nodePath)` / `nodePath()`**
+- Returns a reactive NANOS of positional indexes tracing the path from the nearest unparented ancestor down to this node
+- An unparented node (or a node with no valid index) returns an empty NANOS
+- A node at index `i` in a parent whose path is `[a, b]` returns `[a, b, i]`
+- The same NANOS instance is returned on every call (identity-stable, reactive)
+- The path updates reactively (but not eagerly, so there must be reactive demand) when `parent` or `index` changes
+
+### Helper: setNodesParent
+
+**`setNodesParent(nodes, parent, offset = 0)`** (JS prototype helper)
+- Iterates over an array of doc-nodes and calls `setParent(parent, index)` on each
+- `index` starts at `offset` and increments by 1 for each node
+- Used internally by `append()` and `setSubSpec()` to bulk-assign parent/index
+- Available on any doc-node JS instance (e.g. `anyNode.setNodesParent(...)`)
 
 ### Properties
 
@@ -305,6 +338,13 @@ The `subDoc.live` property controls sub-content source of truth:
 - WeakMap tracks spec-to-node mappings for reuse
 - Nodes reused when same NANOS instance appears
 
+### Parent / Index Reactivity
+
+- `parent` and `index` are stored in a reactive NANOS (`rxState`)
+- `nodePath` is a non-eager reactive that recomputes when `parent` or `index` changes
+- Because `nodePath` is non-eager, reactive demand must be created (e.g. by calling `nodePath()` inside a reactive context, or by calling it again after a change) for the path NANOS to update
+- `append()` and `setSubSpec()` set parent/index inside a `reactive.batch()`, so all updates are applied atomically
+
 ## Usage Examples
 
 ### Basic Node Creation
@@ -362,6 +402,34 @@ parent.append(child2);
 
 // Get current sub-spec (reconstructed from sub-doc)
 const subSpec = parent.getSubSpec();
+```
+
+### Parent Tracking and Node Path
+
+```javascript
+const grandparent = doc.createNode('h.div');
+const parent = doc.createNode('h.section');
+const child = doc.createNode('m.t');
+child.setAttr('t', 'leaf');
+
+// append() automatically sets parent/index
+grandparent.append(parent);   // parent: index 0 in grandparent
+parent.append(child);         // child: index 0 in parent
+
+// getParent() returns a NANOS with parent and index
+const pi = child.getParent();
+// pi.at('parent') === parent
+// pi.at('index') === 0
+
+// nodePath() returns a NANOS of indexes from root to this node
+const path = child.nodePath();
+// path.size === 2
+// path.at(0) === 0  (parent's index in grandparent)
+// path.at(1) === 0  (child's index in parent)
+
+// Unparented nodes return an empty path
+const orphan = doc.createNode('h.div');
+orphan.nodePath().size; // 0
 ```
 
 ## Related Interfaces

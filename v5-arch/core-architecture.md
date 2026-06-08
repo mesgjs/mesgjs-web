@@ -108,9 +108,11 @@ The Mesgjs Web Interface (MWI) is a hybrid SSR/CSR rendering system that transfo
 - Lazy sub-spec conversion (autoDoc disabled)
 
 **MWICoreDefer** (`m.defer`)
-- Placeholder for not-yet-loaded components
-- Renders as `<slot>` with `data-mwi-defer` attribute
-- Filters attributes (only `id` and `data-mwi-defer` render)
+- Smart deferred-rendering placeholder for not-yet-loaded components
+- Accepts children: carries the full content spec of the deferred component
+- SSR: renders nothing (empty string); children preserved in doc-spec for hydration
+- CSR: derives required feature name from registry entry for the component type in sub-spec; waits via `fwait(ftr)`; renders children reactively when gate opens
+- `autoDoc: false`: children not auto-rendered; rendering is gated on the feature promise
 
 ### HTML Components (MWIHTML*)
 
@@ -281,9 +283,11 @@ All rendering operations are synchronous. Async operations are explicit and sepa
 ### Deferred Loading
 
 When a component is registered but not yet loaded:
-1. `createNode()` creates `MWICoreDefer` placeholder
-2. Placeholder renders as `<slot>` with metadata
-3. `createNodeWait()` waits for load, creates actual component
+1. `createNode()` creates `MWICoreDefer` placeholder (`m.defer` type)
+2. `opFrom` enriches the placeholder with the original spec as its sub-spec (children)
+3. SSR: placeholder renders nothing; children preserved in doc-spec for hydration
+4. CSR: `getDOM()` derives the required feature from the registry and waits via `fwait(ftr)`; children render reactively when the gate opens
+5. `createNodeWait()` bypasses the placeholder entirely — waits for load, creates actual component
 
 ## Module Coordination
 

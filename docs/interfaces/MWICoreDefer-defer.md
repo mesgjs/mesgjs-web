@@ -2,33 +2,34 @@
 
 **Interface:** `MWICoreDefer`  
 **Component Type:** `m.defer`  
-**Attributes:** None (placeholder only)  
-**Source:** [`src/mwi-core-comp.msjs`](../src/mwi-core-comp.msjs) (lines 117-133)  
+**Attributes:** Any (stored but not rendered)  
+**Source:** [`src/mwi-core-comp.msjs`](../src/mwi-core-comp.msjs)  
 **Extends:** [`MWIHTML`](MWIHTML-HTML-elements.md)  
 **Status:** ACTIVE
 
 ## Overview
 
-`MWICoreDefer` represents a non-rendering placeholder for components that haven't been loaded yet. It's created automatically by `(createNode ...)` when a component is registered but not yet loaded (has `ftr` but no `if` or `tpl`).
+`MWICoreDefer` is a **smart deferred-rendering placeholder** for components that haven't been loaded yet. It is created automatically by `(createNode ...)` when a component is registered but not yet loaded (has `ftr` but no `if` or `tpl`). Unlike a simple opaque placeholder, `m.defer` **carries the full content spec** of the deferred component as its children. When the required feature becomes available at CSR time, the children are rendered reactively.
 
 ## Behavior
 
-- **Automatic Creation:** Created by `createNode()` for deferred components
-- **No Rendering:** Does not render to HTML or DOM (placeholder in doc-tree only)
-- **No Children:** Cannot have children (`autoDoc = false`)
-- **Attribute Storage:** Can store attributes but they're not rendered
+- **Automatic Creation:** Created by `createNode()` for deferred components; `opFrom` enriches the node with the original child spec.
+- **Accepts Children:** Children are stored in the sub-spec and represent the content to render when the gate opens.
+- **SSR: No Rendering:** Returns an empty string. Children are preserved in the doc-spec for hydration but are not rendered to HTML.
+- **CSR: Feature-Gated Rendering:** Derives the required feature name from the registry entry for the component type found in the sub-spec. Waits via `fwait(ftr)`. When the gate opens, children are rendered reactively.
+- **`autoDoc: false`:** Children are stored in the sub-spec but are **not** auto-rendered. Rendering is gated on the feature promise.
 
 ## Schema
 
 ```javascript
 {
-  autoDoc: false  // Children not allowed
+  autoDoc: false  // Children not auto-rendered; rendering is gated on feature promise
 }
 ```
 
 ## Attributes
 
-All attributes are stored on the node but **not rendered** (since the node doesn't render at all). Attributes are available for the actual component when it loads.
+All attributes are stored on the node but **not rendered** (since the node doesn't render at all during SSR, and the children — not the `m.defer` wrapper — are rendered at CSR).
 
 ## Operations
 
@@ -39,76 +40,80 @@ See [`MWIDocNode`](MWIDocNode-document-node.md) for basic node operations (attri
 ### Defer-Specific
 
 **`(getHTML)` / `getHTML()`**
-- Returns empty string (no rendering)
+- Returns empty string (no rendering, even if children are present)
 
 **`(getDOM)` / `getDOM()`**
-- Returns empty NANOS (no rendering)
+- Returns a reactive NANOS (initially empty).
+- Derives the feature name: `subSpec.at([0, 0])` → component type → `registry.get(compType).at('ftr')`.
+- If no feature can be derived (empty sub-spec, component not in registry, or no `ftr`), returns an empty NANOS that is never populated.
+- Otherwise, starts an async task: `fwait(ftr)`. When resolved, calls `getSubDOM` with `into` to render children into the reactive NANOS.
 
 **`(append node...)` / `append(...nodes)`**
-- No-op (defer nodes don't accept children)
-- Returns self (chainable)
+- Appends children to the sub-spec normally (inherited behavior).
 
 **`(getSubSpec)` / `getSubSpec()`**
-- Always returns empty NANOS (no children)
+- Returns the actual sub-spec (the children as provided).
 
 **`(setSubSpec ...)` / `setSubSpec(...)`**
-- No-op (ignores children)
-- Returns self (chainable)
+- Sets the sub-spec normally (inherited behavior).
+
+## CSR Feature Derivation
+
+At `getDOM()` call time, the feature name is derived as follows:
+
+1. `subSpec = getSubSpec()` — the children stored in the sub-spec.
+2. `compType = subSpec.at([0, 0])` — item 0 of the sub-spec is the original component spec; item 0 of *that* spec is the component type string.
+3. `ftr = registry.get(compType)?.at('ftr')` — the feature promise name from the registry entry.
+
+If any step fails (no sub-spec, no component type, no registry entry, no `ftr`), `getDOM()` returns an empty NANOS that is never populated. This is the "no gate" case — the content is permanently suppressed.
 
 ## Usage Examples
 
-### Automatic Creation
+### Automatic Creation via `from()`
 
 ```javascript
 const doc = getInstance('MWIDocument');
 
-// Register deferred component
+// Register deferred component (feature, but no interface yet)
 registry.register('my.heavy', ls([
-    'ftr', 'mwi.comp.MyHeavy'  // Feature, but no interface yet
+    'ftr', 'mwi.comp.MyHeavy'
 ]));
 
-// Create node synchronously
-const node = doc.createNode('my.heavy');
-// Creates MWICoreDefer placeholder (doesn't render)
+// from() creates m.defer with the original spec as children
+const node = doc.from({ item: ps('[(my.heavy class=widget data-value=42)]') });
+// node is MWICoreDefer; sub-spec contains [my.heavy class=widget data-value=42]
 
 // SSR: (empty - no output)
-// CSR: (empty - no DOM nodes)
-```
-
-### With Attributes
-
-```javascript
-// Original spec with attributes
-const spec = ps('[(my.heavy class=widget data-value=42)]');
-const node = doc.from({ item: spec });
-
-// Attributes are stored on the node but not rendered
-node.getAttr('class'); // 'widget'
-node.getAttr('data-value'); // '42'
-
-// Rendering produces nothing
 node.getHTML(); // ''
-node.getDOM(); // empty NANOS
+
+// CSR: empty NANOS initially; populated when mwi.comp.MyHeavy resolves
+const domNodes = node.getDOM(); // reactive NANOS, initially empty
 ```
 
-### Async Loading
-
-```javascript
-// Synchronous - creates defer node
-const node1 = doc.createNode('my.heavy');
-// node1 is MWICoreDefer (doesn't render)
-
-// Asynchronous - waits for load
-const node2 = await doc.createNodeWait('my.heavy');
-// node2 is actual MyHeavy component (renders normally)
-```
-
-### In Document
+### Explicit Creation
 
 ```javascript
 const doc = getInstance('MWIDocument');
 
-// Mix of loaded and deferred components
+// Synchronous - creates defer node
+const node = doc.createNode('my.heavy');
+// node is MWICoreDefer (type is 'my.heavy', msjsType is 'MWICoreDefer')
+// sub-spec is empty (no children enriched via createNode alone)
+```
+
+### Async Loading (Bypass Defer)
+
+```javascript
+// Asynchronous - waits for load, returns actual component
+const node = await doc.createNodeWait('my.heavy');
+// node is actual MyHeavy component (renders normally)
+```
+
+### In Document (Mixed Content)
+
+```javascript
+const doc = getInstance('MWIDocument');
+
 doc.append({ list: ps(`[(
     [h.div class=container
         [h.h1 "Page Title"]
@@ -117,39 +122,49 @@ doc.append({ list: ps(`[(
     ]
 )]`)});
 
-// If my.heavy is deferred:
+// If my.heavy is deferred, SSR output:
 // <div class="container">
 //   <h1>Page Title</h1>
 //   (nothing from my.heavy - placeholder doesn't render)
 //   <p>More content</p>
 // </div>
+
+// At CSR, when mwi.comp.MyHeavy resolves, the widget appears reactively.
 ```
 
 ### Checking Node Type
 
 ```javascript
-// Identify defer nodes programmatically
 const node = doc.createNode('my.heavy');
 node.msjsType === 'MWICoreDefer';  // true
-node.type === 'my.heavy';  // true (keeps original type)
+node.type === 'm.defer';          // true
 
-// Check if rendering would produce output
-node.getHTML() === '';  // true (no output)
-node.getDOM().size === 0;  // true (no DOM nodes)
+node.getHTML() === '';             // true (no SSR output)
+node.getDOM().size === 0;          // true initially (gate not yet open)
 ```
 
 ## Design Rationale
 
-### Why No Rendering?
+### Why No SSR Rendering?
 
-- The final content isn't available until after the deferred component has loaded
-- MWI doesn't need it; CSR rendering will generate any required nodes and automatically put them in the correct place when `m.defer` is replaced in the doc-spec
-- An empty `<script>` element is the only placeholder that would be valid in both the `<head>` and `<body>` sections
-- Not rendering unnecessary, empty `<script>` elements keeps SSR-generated HTML smaller
+- The final content isn't available until after the deferred component has loaded.
+- SSR is a snapshot; deferred content is inherently a CSR concern.
+- Not rendering unnecessary placeholder elements keeps SSR-generated HTML smaller.
+- Per [`v5-arch/ssr-csr-hydration-v2.md`](../v5-arch/ssr-csr-hydration-v2.md), the sync walk skips `m.defer` nodes (no DOM nodes to assimilate).
+
+### Why Carry Children?
+
+- The new `m.defer` carries the full content spec so that when the gate opens, the content "just magically appears" — the system already has everything it needs to render it.
+- This eliminates the need for a feature-name attribute; the feature name is derived at CSR time from the registry entry for the component type in the sub-spec.
+
+### Why `autoDoc: false`?
+
+- Prevents premature rendering before the feature becomes available.
+- The sub-doc is not auto-populated from the sub-spec; the `getDOM` handler explicitly renders children only after `fwait(ftr)` resolves.
 
 ## Related Interfaces
 
 - [`MWIDocNode`](MWIDocNode-document-node.md) - Base interface
-- [`MWIHTML`](MWIHTML-HTML-elements.md) - Extended interface (but rendering methods overridden)
+- [`MWIHTML`](MWIHTML-HTML-elements.md) - Extended interface (rendering methods overridden)
 - [`MWIDocument`](MWIDocument-document.md) - Creates defer nodes automatically
-- [`MWIRegistry`](MWIRegistry-registry.md) - Determines when to create defer nodes
+- [`MWIRegistry`](MWIRegistry-registry.md) - Determines when to create defer nodes; provides `ftr` for feature derivation

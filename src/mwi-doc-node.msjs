@@ -297,6 +297,13 @@ modcaps=''
 			return rxAttr;
 		}
 
+		// Helper to set doc-node parent + index when appending
+		function setNodesParent (nodes, parent, offset = 0) {
+			for (const [index, node] of nodes.entries()) {
+				node('setParent', [parent, index + offset]);
+			}
+		};
+
 		// Set "permanent" classes to always be included in the `class` attribute
 		function setPermClass (d, classStr) {
 			const p = d.p, attrs = p.at('attrs'), classes = new Set();
@@ -397,6 +404,7 @@ modcaps=''
 			getDOM () { return this('getDOM'); },
 			getHTML () { return this('getHTML'); },
 			getManagedRegion,
+			getParent () { return this('getParent'); },
 			getSpec () { return this('getSpec'); },
 			getSubDoc () { return this('getSubDoc'); },
 			getSubSpec (view) { return this('getSubSpec', [ view ]); },
@@ -404,8 +412,11 @@ modcaps=''
 			hasChildren () { return this('hasChildren'); },
 			hasClass (name) { return this('hasClass', [ name ]); },
 			get jsv () { return this; },
+			nodePath () { return this('nodePath'); },
 			setAttr (name, value, options = {}) { return this('setAttr', new NANOS([ name, value ], options)); },
 			setDOMAttrs,
+			setNodesParent,
+			setParent (parent, index) { return this('setParent', [parent, index]); },
 			setSpec (spec) { return this('setSpec', [ spec ]); },
 			setSubSpec (...params) { return this('setSubSpec', (params.length === 1) ? params[0] : params); },
 			get slotSrc () { return this('slotSrc'); }, // (intended for testing)
@@ -434,6 +445,8 @@ modcaps=''
 				rxState: doc.rxNANOS({ // Reactive state
 				 	docEq: isVoid, // Sub-doc matches sub-spec
 					live: isVoid, // Sub-doc is live
+					parent: null, // Parent node
+					index: undefined, // Node index within parent
 				}),
 				subDoc: doc.rxNANOS(), // Doc-node children
 				subSpec: doc.rxNANOS(), // Sub-content spec
@@ -449,17 +462,23 @@ modcaps=''
 			const p = d.p;
 			if (p.at([ SCHEMA, VOID ])) return d.rr;
 			const m = d.mp, rxs = p.at('rxState'), subDoc = d.rr('getSubDoc');
-			const docNodes = [...m.values()].filter((n) => typeof n === 'string' || typeChains(n?.msjsType, IF_NAME));
+			const docNodes = [...m.values()].reduce((list, item) => {
+				if (typeof item === 'string') {
+					const node = doc.createNode('m.t');
+					node('setAttr', ['t', item]);
+					list.push(node);
+				} else if (typeChains(item?.msjsType, IF_NAME)) {
+					list.push(item);
+				}
+				return list;
+			}, []);
 
 			reactive.batch(() => {
 				if (docNodes.length) {
-					const doc = p.at('doc');
-					subDoc.push([...docNodes.map(orig => {
-						if (typeof orig !== 'string') return orig;
-						const node = doc.createNode('m.t');
-						node('setAttr', ['t', orig]);
-						return node;
-					})]);
+					const doc = p.at('doc'), offset = subDoc.next;
+
+					subDoc.push(docNodes);
+					setNodesParent(docNodes, d.rr, offset);
 				}
 				rxs.push({ live: true, docEq: false });
 			});
@@ -561,6 +580,37 @@ modcaps=''
 				node('getHTML', { in: html });
 			}
 			if (!hasIn) return html.join('');
+		}
+
+		// Return a reactive list of node indexes up to an unparented node
+		function opNodePath (d) {
+			const p = d.p, doc = p.at('doc');
+
+			if (p.has('_nodePath')) return p.at('_nodePath').rv;
+
+			const rxs = p.at('rxState'), nodePath = doc.rxNANOS();
+			const _nodePath = reactive({ def: () => {
+				const parent = rxs.at('parent'), index = rxs.at('index');
+				const parentPath = typeof index === 'number' && parent?.('nodePath');
+
+				reactive.unbatch(() => {
+					nodePath.clear();
+					if (parentPath) nodePath.push(parentPath, index);
+				});
+
+				return nodePath;
+			}});
+
+			p.set('_nodePath', _nodePath);
+			return _nodePath.rv;
+		}
+
+		// (getParent)
+		// Returns a NANOS containing the current parent and index
+		function opGetParent (d) {
+			const p = d.p, rxs = p.at('rxState');
+			const parent = rxs.at('parent'), index = rxs.at('index');
+			return new NANOS({ parent, index });
 		}
 
 		// Return this node's reactive doc-spec
@@ -773,6 +823,18 @@ modcaps=''
 			return d.rr; // Allow chaining
 		}
 
+		// (setParent node index)
+		function opSetParent (d) {
+			const p = d.p, m = d.mp, rxs = p.at('rxState');
+			const parent = m.at(0), index = m.at(1);
+
+			if (typeChains(parent?.msjsType, IF_NAME)) {
+				rxs.set('parent', parent);
+				if (Number.isInteger(index) && index >= 0) rxs.set('index', index);
+				else rxs.set('index', undefined);
+			}
+		}
+
 		// (setSpec [spec])
 		function opSetSpec (d) {
 			const p = d.p, m = d.mp, spec = m.at(0);
@@ -817,6 +879,7 @@ modcaps=''
 					// (applies to all node types, including autoDoc: false nodes)
 					const nodes = doc('from', { list: rns, slotSrc });
 					subDoc.push(nodes);
+					setNodesParent(nodes, d.rr);
 					rxs.push({ live: true, docEq: false }); // Sub-doc is now source of truth
 				} else if (schema?.at(AUTO_DOC) !== false) {
 					// No m.rns: auto-populate from subSpec for normal (autoDoc !== false) nodes
@@ -825,6 +888,7 @@ modcaps=''
 					if (subSpec?.size) {
 						const nodes = doc('from', { list: subSpec, slotSrc });
 						subDoc.push(nodes);
+						setNodesParent(nodes, d.rr);
 					}
 					// The sub-doc is now live (even if empty) and matches the sub-spec
 					rxs.push({ live: true, docEq: true });
@@ -849,6 +913,7 @@ modcaps=''
 				getAttrHTML: opGetAttrHTML,
 				getDOM: opGetSubDOM, // Default behavior is to render sub-DOM
 				getHTML: opGetHTML,
+				getParent: opGetParent,
 				getSpec: opGetSpec,
 				getSubDoc: opGetSubDoc,
 				getSubDOM: opGetSubDOM,
@@ -856,7 +921,9 @@ modcaps=''
 				hasAttr: opHasAttr,
 				hasChildren: opHasChildren,
 				hasClass: opHasClass,
+				nodePath: opNodePath,
 				setAttr: opSetAttr,
+				setParent: opSetParent,
 				slotSrc: (d) => d.p.at('slotSrc'), // (intended for testing)
 				// typically, this doc-node is the new sub-doc slot-source
 				subSlotSrc: (d) => d.rr,
