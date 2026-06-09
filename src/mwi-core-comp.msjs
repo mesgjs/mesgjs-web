@@ -81,17 +81,18 @@ modcaps=''
 		}
 
 		function opGetDOM (d) {
-			if (typeof document !== 'object' || typeof document.createComment !== 'function') return new NANOS();
 			const p = d.p;
 
 			if (p.has('_dom')) return p.at('_dom').rv;
+			if (typeof document !== 'object' || typeof document.createComment !== 'function') return new NANOS();
 
-			const comment = document.createComment('');
+			const m = d.mp, sync = m.at('sync'), existing = sync?.('sync', ['m.com', d.rr]);
+			const comment = existing ?? document.createComment('');
 			const nodes = new NANOS(comment);
 			const _dom = reactive({ eager: true, def: () => {
 				const text = d.rr('getAttr', [ 't' ]) || '';
-				comment.data = text;
 
+				if (comment.data !== text) comment.data = text;
 				return nodes;
 			}});
 
@@ -101,9 +102,12 @@ modcaps=''
 		}
 
 		function opGetHTML (d) {
+			if (d.rr('getAttr', ['m.csr'])) return '';
+
 			const m = d.mp, output = m.at('in');;
 			const text = d.rr('getAttr', [ 't' ]) || '';
 			const html = `<!--${escapeComment(d, text)}-->`;
+
 			if (output) output.push(html);
 			return html;
 		}
@@ -207,6 +211,8 @@ modcaps=''
 		const END_MARKER = '<script type="x" data-mwi="end"></script>';
 
 		function opGetHTML (d) {
+			if (d.rr('getAttr', ['m.csr'])) return '';
+
 			const p = d.p, type = p.at('type').replace(/^m\./, '');
 			const m = d.mp, hasIn = m.has('in'), html = m.at('in', []);
 
@@ -234,18 +240,17 @@ modcaps=''
 
 			// Closing tag
 			html.push(`</${type}>`);
-
 			if (!hasIn) return html.join('');
 		}
 
 		function opGetDOM (d) {
-			if (typeof document !== 'object' || typeof document.head !== 'object') return new NANOS();
 			const p = d.p;
 
 			if (p.has('_dom')) {
 				p.at('_domAttrs').rv;
 				return p.at('_dom').rv;
 			}
+			if (typeof document !== 'object' || typeof document.head !== 'object') return new NANOS();
 
 			// Adopt the existing document.head or document.body element
 			const type = p.at('type');
@@ -253,15 +258,25 @@ modcaps=''
 			if (!targetElement) return new NANOS();
 
 			const nodes = new NANOS(targetElement);
-			const _dom = reactive({ eager: true }), _domAttrs = reactive();
+			const _dom = reactive({ eager: true });
+			const _domAttrs = d.rr.setDOMAttrs(targetElement, p.at('attrs'), p.at(SCHEMA));
 			p.push({ _dom, _domAttrs });
 
 			// Reactively set/sync HTML attributes on the adopted element
-			_domAttrs.def = d.rr.setDOMAttrs(targetElement, p.at('attrs'), p.at(SCHEMA));
 
 			// Reactively synchronize managed children
+			const m = d.mp, syncMode = m.at('sync');
+			let sync;
+
+			if (syncMode) {
+				const { begin } = d.rr.getManagedRegion(targetElement);
+
+				if (begin?.nextSibling) sync = getInstance('MWIDOMSync', [begin.nextSibling]);
+			}
+
 			_dom.def = () => {
-				const children = d.rr('getSubDOM'); // sub-DOM children
+				const children = d.rr('getSubDOM', { sync }); // sub-DOM children
+				sync = null; // Only sync first render
 				d.rr.domSyncManagedChildren(targetElement, children);
 				return nodes;
 			};
@@ -273,22 +288,17 @@ modcaps=''
 
 				const doc = p.at('doc'), frag = doc.createNode('m.frg');
 				frag('setSubSpec', csrStatic);
-				const csrNodes = frag('getSubDOM');
-				// Find the end marker and append after it
-				const { end } = d.rr.getManagedRegion(targetElement);
-				const insertAfter = end || targetElement.lastChild;
-				for (const node of csrNodes.values()) {
-					if (insertAfter) {
-						const next = insertAfter.nextSibling;
-						if (next) targetElement.insertBefore(node, next);
-						else targetElement.append(node);
-					} else {
-						targetElement.append(node);
-					}
+				const csrNodes = [...frag('getSubDOM').values()];
+				if (csrNodes.length) {
+					// Find the end marker and append after it
+					const { end } = d.rr.getManagedRegion(targetElement);
+					const insertAfter = end || targetElement.lastChild;
+
+					if (insertAfter) insertAfter.after(...csrNodes);
+					else targetElement.append(...csrNodes);
 				}
 			}
 
-			_domAttrs.rv;
 			return _dom.rv;
 		}
 
@@ -326,33 +336,41 @@ modcaps=''
 		}
 
 		function opGetHTML (d) {
+			if (d.rr('getAttr', ['m.csr'])) return '';
+
 			const m = d.mp, output = m.at('in');
 			const css = aggregateCSS(d);
+
 			if (css !== '') {
 				// Escape </style> as \3c /style> (based on CSS string syntax)
 				const sanzd = css.replace(/<(?=\s*\/\s*style)/gi, '\\3c ');
-				const html = `<style>${sanzd}</style>`;
+				const htmlId = d.rr.textToHTML(d.rr('getAttr', ['m.id']), { dq: true });
+				const html = `<style id="${htmlId}">${sanzd}</style>`;
+
 				if (output) output.push(html);
 				return html;
 			}
+
 			return '';
 		}
 
 		// Return reactive NANOS of DOM nodes
 		function opGetDOM (d) {
-			if (typeof document !== 'object' || typeof document.createElement !== 'function') return new NANOS();
 			const p = d.p;
 
 			if (p.has('_dom')) return p.at('_dom').rv;
+			if (typeof document !== 'object' || typeof document.createElement !== 'function') return new NANOS();
 
-			const styleElem = document.createElement('style');
+			const id = d.rr('getAttr', ['id']);
+			const existing = id && document.getElementById(id);
+			const styleElem = existing || document.createElement('style');
 			const doc = p.at('doc'), nodes = doc.rxNANOS();
 			const _dom = reactive({ eager: true, def: () => {
 				const css = aggregateCSS(d);
 
 				reactive.untracked(() => {
 					if (css !== '') {
-						styleElem.textContent = css;
+						if (styleElem.textContent !== css) styleElem.textContent = css;
 						if (!nodes.has(0)) nodes.set(0, styleElem);
 					} else {
 						if (nodes.has(0)) nodes.clear();
@@ -457,21 +475,23 @@ modcaps=''
 	(() => {
 		// Return reactive NANOS of DOM nodes
 		function opGetDOM (d) {
-			if (typeof document !== 'object' || typeof document.createTextNode !== 'function') return new NANOS();
 			const p = d.p;
 
 			if (p.has('_dom')) return p.at('_dom').rv;
+			if (typeof document !== 'object' || typeof document.createTextNode !== 'function') return new NANOS();
 
-			const output = document.createTextNode(''), doc = p.at('doc'), nodes = doc.rxNANOS();
+			const m = d.mp, sync = m.at('sync'), existing = sync?.('sync', ['m.t', d.rr]);
+			const text = existing ?? document.createTextNode('');
+			const doc = p.at('doc'), nodes = doc.rxNANOS();
 			const _dom = reactive({ eager: true, def: () => {
-				const text = d.rr('getAttr', [ 't' ]) || '';
+				const content = d.rr('getAttr', [ 't' ]) || '';
 
 				reactive.untracked(() => {
-					if (text !== '') {
-						output.data = text;
-						if (!nodes.has(0)) nodes.set(0, output);
+					if (content !== '') {
+						if (text.data !== content) text.data = content;
+						if (!nodes.has(0)) nodes.set(0, text);
 					} else {
-						output.data = '';
+						text.data = '';
 						if (nodes.has(0)) nodes.clear();
 					}
 				});
@@ -480,11 +500,12 @@ modcaps=''
 			}});
 
 			p.set('_dom', _dom);
-
 			return _dom.rv;
 		}
 
 		function opGetHTML (d) {
+			if (d.rr('getAttr', ['m.csr'])) return '';
+
 			const m = d.mp, output = m.at('in');;
 			const text = d.rr('getAttr', [ 't' ]) || '';
 			const html = d.rr.textToHTML(text);

@@ -40,7 +40,7 @@ Deno.test("MWICoreScpCSS SSR Compound - Complete Page with Scoped CSS", async (t
 		const html = doc('getHTML');
 
 		// Should have style tag with scoped CSS
-		assert(html.includes('<style>'), "Should include style tag");
+		assert(html.includes('<style'), "Should include style tag");
 		assert(html.includes('border: 1px solid #ccc'), "Should include card border CSS");
 		assert(html.includes('.header'), "Should include nested selector");
 
@@ -76,7 +76,7 @@ Deno.test("MWICoreScpCSS SSR Compound - Complete Page with Scoped CSS", async (t
 		const html = doc('getHTML');
 
 		// Find positions
-		const styleIdx = html.indexOf('<style>');
+		const styleIdx = html.indexOf('<style');
 		const bodyIdx = html.indexOf('<body');
 
 		assert(styleIdx !== -1, "Should have style tag");
@@ -207,7 +207,7 @@ Deno.test("MWICoreScpCSS SSR Compound - Component Library Pattern", async (t) =>
 
 		// Structure should be correct
 		assert(html.includes('<head>'), "Should have head");
-		assert(html.includes('<style>'), "Should have style in head");
+		assert(html.includes('<style'), "Should have style in head");
 		assert(html.includes('<body>'), "Should have body");
 		assert(html.includes('Submit'), "Should have button text");
 	});
@@ -259,7 +259,7 @@ Deno.test("MWICoreScpCSS SSR Compound - Edge Cases", async (t) => {
 		const html = doc('getHTML');
 
 		// Should not have style tag
-		assert(!html.includes('<style>'), "Should not have style tag when no scoped CSS");
+		assert(!html.includes('<style'), "Should not have style tag when no scoped CSS");
 		assert(html.includes('Just text'), "Should still have content");
 	});
 
@@ -286,7 +286,7 @@ Deno.test("MWICoreScpCSS SSR Compound - Edge Cases", async (t) => {
 		const html = doc('getHTML');
 
 		// Should have two style tags with same CSS
-		const styleTags = html.match(/<style>/g);
+		const styleTags = html.match(/<style/g);
 		assertEquals(styleTags?.length, 2, "Should have two style tags");
 
 		const cssMatches = html.match(/opacity: 0\.9/g);

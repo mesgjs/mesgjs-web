@@ -68,10 +68,14 @@
 - Synchronous operation
 - Delegates to root fragment's `getHTML()`
 
-**`(getDOM)` / `getDOM()`**
+**`(getDOM sync=domSync?)` / `getDOM({ sync? })`**
 - Returns reactive NANOS of DOM nodes
 - Synchronous initial render
 - Delegates to root fragment's `getDOM()`
+- **`sync` parameter (optional):** [`MWIDOMSync`](MWIDOMSync-dom-sync.md) instance for SSR-CSR hydration
+  - Pass a `MWIDOMSync` instance to enable sync mode during hydration
+  - Typically initialized with `document.body.firstChild` or similar to start matching from existing SSR DOM
+  - See [SSR-CSR Hydration](../../v5-arch/ssr-csr-hydration-v2.md) for complete hydration workflow
 
 ### Utilities
 
@@ -170,8 +174,43 @@ attrs.set('class', 'active');
 const list = doc.rxNANOS(['item1', 'item2']);
 ```
 
+### SSR-CSR Hydration (Sync Mode)
+
+```javascript
+// Define page spec
+const pageSpec = ps(`[(
+	[h.div id=app class=container
+		[h.h1 "Welcome"]
+		[h.p "Server-rendered content"]
+	]
+)]`);
+
+// Server: Generate HTML from spec
+const doc = getInstance('MWIDocument');
+doc.append({ list: pageSpec });
+const html = doc.getHTML();
+// Outputs: <div id="app" class="container"><h1>Welcome</h1><p>Server-rendered content</p></div>
+// Send HTML to browser...
+
+// Client: Browser has parsed HTML into existing DOM
+// Reconstruct same doc tree from same spec
+const doc = getInstance('MWIDocument');
+doc.append({ list: pageSpec });
+
+// Create sync cursor starting at existing DOM
+const sync = getInstance('MWIDOMSync', [document.body.firstChild]);
+
+// Render in sync mode - connects to existing DOM instead of creating new nodes
+const dom = doc.getDOM({ sync });
+// dom contains the existing DOM nodes, now connected to reactive system
+// Future reactive updates will modify the existing DOM
+
+// See MWIDOMSync and SSR-CSR Hydration docs for complete details
+```
+
 ## Related Interfaces
 
 - [`MWIRegistry`](MWIRegistry-registry.md) - Component registry
 - [`MWIDocNode`](MWIDocNode-document-node.md) - Base node interface
 - [`MWICoreFrag`](MWICoreFrag-fragment.md) - Document root type
+- [`MWIDOMSync`](MWIDOMSync-dom-sync.md) - SSR-CSR DOM synchronization

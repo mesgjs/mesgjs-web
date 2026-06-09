@@ -75,7 +75,7 @@ Deno.test('MWIRegistry - Deferred Module Loading', async (t) => {
 	await t.step('.getWait() triggers module load and merges interface', async () => {
 		// Request the registry entry - this should trigger deferred load
 		const entry = await registry.getWait(DEFER_TYPE);
-		
+
 		assert(entry, 'Registry should return component entry');
 		assertEquals(deferLoaded, true, 'Module should be loaded after access');
 		assertEquals(fcheck(DEFER_FT), true, 'Feature check should return true after access');

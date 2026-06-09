@@ -45,7 +45,7 @@ See [`MWIDocNode`](MWIDocNode-document-node.md) for:
 - Returns combined HTML of children
 - No wrapper element
 
-**`(getDOM)` / `getDOM()`**
+**`(getDOM sync=domSync?)` / `getDOM({ sync? })`**
 - Returns reactive NANOS of child DOM nodes
 - No wrapper element
 

@@ -53,7 +53,7 @@ See [`MWIDocNode`](MWIDocNode-document-node.md) for:
 - Escapes `</style>` sequences as `\3c /style>` to prevent premature tag closure
 - CSS blocks are concatenated with newlines
 
-**`(getDOM)` / `getDOM()`**
+**`(getDOM sync=domSync?)` / `getDOM({ sync? })`**
 - Returns NANOS with single `<style>` element containing aggregated CSS
 - Returns empty NANOS if no components with `scopedCSS` are used
 - Style element content updates reactively when components are added

@@ -62,7 +62,7 @@ See [`MWIDocNode`](MWIDocNode-document-node.md) for:
 - Returns HTML for selected content
 - Reactively selects based on slot source
 
-**`(getDOM)` / `getDOM()`**
+**`(getDOM sync=domSync?)` / `getDOM({ sync? })`**
 - Returns reactive NANOS of selected content's DOM nodes
 - Content selection updates reactively
 

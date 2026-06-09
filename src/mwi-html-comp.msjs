@@ -27,7 +27,6 @@ modcaps=''
 
 	const DOCTYPE_IF = BASE_IF + 'DocType';
 	const SCRIPT_IF = BASE_IF + 'Script';
-	const TITLE_IF = BASE_IF + 'Title';
 
 	const { fready, fwait, getInstance, getInterface } = globalThis.$c;
 
@@ -137,7 +136,7 @@ modcaps=''
 		'h.th': ls([INTERFACE, BASE_IF]),
 		'h.thead': ls([INTERFACE, BASE_IF]),
 		'h.time': ls([INTERFACE, BASE_IF]),
-		'h.title': ls([INTERFACE, TITLE_IF]),
+		'h.title': ls([INTERFACE, SCRIPT_IF]),
 		'h.tr': ls([INTERFACE, BASE_IF]),
 		'h.track': ls([INTERFACE, BASE_IF, SCHEMA, ls([VOID, true])]),
 		'h.u': ls([INTERFACE, BASE_IF]),
@@ -153,25 +152,45 @@ modcaps=''
 	// MWIHTML (base) interface (standard `h.` HTML tags)
 	(() => {
 		function opGetDOM (d) {
-			if (typeof document !== 'object' || typeof document.createElement !== 'function') return new NANOS();
 			const p = d.p;
-			if (p.has('dom')) return p.at('dom');
-			const type = p.at('type').replace(/^h\./, ''), node = document.createElement(type), nodes = new NANOS(node);
-			p.set('dom', nodes);
-			d.rr.setDOMAttrs(node, p.at('attrs'), p.at(SCHEMA));
-			if (!p.at([SCHEMA, VOID])) reactive({ eager: true, def: () => {
-				const children = d.sm(d, 'redis');
+
+			if (p.has('_dom')) {
+				p.at('_domAttrs').rv;
+				return p.at('_dom').rv;
+			}
+			if (typeof document !== 'object' || typeof document.createElement !== 'function') return new NANOS();
+
+			const schema = p.at(SCHEMA), isVoid = schema?.at(VOID);
+			const type = p.at('type').replace(/^h\./, '').toUpperCase();
+			const m = d.mp, sync = m.at('sync');
+			let existing = sync && sync('sync', [type, d.rr]);
+			const node = existing || document.createElement(type), nodes = new NANOS(node);
+			const _domAttrs = d.rr.setDOMAttrs(node, p.at('attrs'), schema);
+			const _dom = reactive({ eager: true, def: () => {
+				if (isVoid) return nodes;
+
+				const subSync = existing?.firstChild && getInstance('MWIDOMSync', [existing.firstChild]);
+				const children = d.rr('getSubDOM', { sync: subSync });
+
 				d.rr.domSyncChildren(node, children);
-			}}).rv;
-			return nodes;
+				existing = null;
+				return nodes;
+			}});
+
+			p.push({ _dom, _domAttrs });
+			return _dom.rv;
 		}
 
 		// Return HTML for standard (or void) HTML tags
 		function opGetHTML (d) {
+			if (d.rr('getAttr', ['m.csr'])) return '';
+
 			const p = d.p, type = p.at('type').replace(/^h\./, '');
 			const m = d.mp, hasIn = m.has('in'), html = m.at('in', []);
+
 			// Opening (or void) tag with optional (HTML) attributes
 			html.push(`<${type}${d.rr('getAttrHTML')}>`);
+
 			if (!p.at([SCHEMA, VOID])) {
 				// Collect inner HTML
 				for (const node of p.at('subDoc', []).values()) {
@@ -180,6 +199,7 @@ modcaps=''
 				// Closing tag
 				html.push(`</${type}>`);
 			}
+
 			if (!hasIn) return html.join('');
 		}
 
@@ -203,6 +223,7 @@ modcaps=''
 		function opGetHTML (d) {
 			const m = d.mp, output = m.at('in');;
 			const html = `<!DOCTYPE html>`; // Fixed type for now
+
 			if (output) output.push(html);
 			return html;
 		}
@@ -219,28 +240,45 @@ modcaps=''
 		});
 	})();
 
-	// MWIHTMLScript (script and style) interface
+	// MWIHTMLScript (script / style / title) interface
 	// `[h.script m.text=script?]`
 	// `[h.style m.text=style?]`
+	// `[h.title m.text=title?]`
 	(() => {
 		function opGetDOM (d) {
+			const p = d.p;
+
+			if (p.has('_dom')) {
+				p.at('_domAttrs').rv;
+				return p.at('_dom').rv;
+			}
 			if (typeof document !== 'object' || typeof document.createElement !== 'function') return new NANOS();
-			const p = d.p, doc = p.at('doc'), type = p.at('type').replace(/^h\./, '');
-			const node = document.createElement(type);
+
+			const doc = p.at('doc'), type = p.at('type').replace(/^h\./, '').toUpperCase();
+			const m = d.mp, sync = m.at('sync');
+			const existing = sync && sync('sync', [type, d.rr]);
+			const node = existing || document.createElement(type);
 			const nodes = new NANOS(node);
-			d.rr.setDOMAttrs(node, p.at('attrs'), p.at(SCHEMA));
-			reactive({ eager: true, def: () => {
-				const text = d.rr('getAttr', [ 'm.text' ]) || '';
-				node.textContent = text;
-			}}).rv;
-			return nodes;
+			const _domAttrs = d.rr.setDOMAttrs(node, p.at('attrs'), p.at(SCHEMA));
+			const _dom = reactive({ eager: true, def: () => {
+				const content = d.rr('getAttr', [ 'm.text' ]) || '';
+
+				if (node.textContent !== content) node.textContent = content;
+				return nodes;
+			}});
+
+			p.push({ _dom, _domAttrs });
+			return _dom.rv;
 		}
 
 		function opGetHTML (d) {
+			if (d.rr('getAttr', ['m.csr'])) return '';
+
 			const p = d.p, type = p.at('type').replace(/^h\./, '');
 			const m = d.mp, output = m.at('in');;
 			const raw = d.rr('getAttr', [ 'm.text' ]) || '';
 			let sanzd = '';
+
 			// Match an embedded closing tag with pathological generosity for safety
 			switch (type) {
 			case 'script':
@@ -251,48 +289,18 @@ modcaps=''
 				// escape </style> as \3c /style> (based on CSS string syntax)
 				sanzd = raw.replace(/<(?=\s*\/\s*style)/g, '\\3c ');
 				break;
+			case 'title':
+				sanzd = d.rr.textToHTML(raw);
+				break;
 			}
+
 			const html = `<${type}${d.rr('getAttrHTML')}>${sanzd}</${type}>`;
+
 			if (output) output.push(html);
 			return html;
 		}
 
 		getInterface(SCRIPT_IF).set({
-			pristine: true, lock: true,
-			chain: [ BASE_IF ],
-			handlers: {
-				getDOM: opGetDOM,
-				getHTML: opGetHTML,
-				getSubSpec: (_d) => new NANOS(),
-				setSubSpec: (d) => d.rr,
-			}
-		});
-	})();
-
-	// MWIHTMLTitle (title) interface
-	// `[h.title m.text=title?]`
-	(() => {
-		function opGetDOM (d) {
-			if (typeof document !== 'object' || typeof document.createElement !== 'function') return new NANOS();
-			const p = d.p, doc = p.at('doc');
-			const node = document.createElement('title');
-			const nodes = new NANOS(node);
-			reactive({ eager: true, def: () => {
-				const text = d.rr('getAttr', [ 'm.text' ]) || '';
-				node.textContent = text;
-			}}).rv;
-			return nodes;
-		}
-
-		function opGetHTML (d) {
-			const m = d.mp, output = m.at('in');;
-			const text = d.rr('getAttr', [ 'm.text' ]) || '';
-			const html = `<title${d.rr('getAttrHTML')}>${d.rr.textToHTML(text)}</title>`;
-			if (output) output.push(html);
-			return html;
-		}
-
-		getInterface(TITLE_IF).set({
 			pristine: true, lock: true,
 			chain: [ BASE_IF ],
 			handlers: {

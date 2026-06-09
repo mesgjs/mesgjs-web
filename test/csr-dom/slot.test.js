@@ -131,8 +131,6 @@ Deno.test("MWICoreSlot (m.slot) - CSR-DOM Slot Source Integration", async (t) =>
 		const slotNode = doc('createNode', ls([, 'm.slot', 'slotSrc', divNode]));
 		slotNode('setSubSpec', ['Fallback']);
 		const domNodes = slotNode('getDOM');
-		console.log('divNode', divNode.getSpec().toSLID());
-		console.log('slotNode', slotNode.getSpec().toSLID());
 
 		await globalThis.reactive.wait();
 		assertEquals(domNodes.size, 1);
@@ -260,7 +258,6 @@ Deno.test("MWICoreSlot (m.slot) - CSR-DOM Reactive Updates", async (t) => {
 		textNode('setAttr', ['t', 'Updated child']);
 		await globalThis.reactive.wait();
 
-		console.log(textNode.getSpec());
 		assertEquals(domNodes.at(0).textContent, 'Updated child');
 		assertEquals(domNodes.size, 1);
 	});

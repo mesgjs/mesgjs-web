@@ -79,7 +79,7 @@ See [`MWIHTML`](MWIHTML-HTML-elements.md) and [`MWIDocNode`](MWIDocNode-document
 - Emits the `begin` boundary marker, managed children, `end` boundary marker, and `m.ssrStatic` content (if any)
 - `m.csrStatic` content is **not** included in SSR output
 
-**`(getDOM)` / `getDOM()`**
+**`(getDOM sync=domSync?)` / `getDOM({ sync? })`**
 - Returns a NANOS containing the existing `document.head` or `document.body` element
 - Inserts boundary markers if not already present
 - Sets up reactive synchronization of managed children

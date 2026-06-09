@@ -1,15 +1,15 @@
-# MWIHTMLScript - Script and Style Elements
+# MWIHTMLScript - Script, Style, and Title Elements
 
 **Interface:** `MWIHTMLScript`  
-**Component Types:** `h.script`, `h.style`  
+**Component Types:** `h.script`, `h.style`, `h.title`  
 **Attributes:** Void
-**Source:** [`src/mwi-html-comp.msjs`](../src/mwi-html-comp.msjs) (lines 224-274)  
+**Source:** [`src/mwi-html-comp.msjs`](../src/mwi-html-comp.msjs) (lines 243-313)  
 **Extends:** [`MWIHTML`](MWIHTML-HTML-elements.md)  
 **Status:** ACTIVE
 
 ## Overview
 
-Handles `<script>` and `<style>` elements. Content is provided via the `m.text` attribute rather than as children, and is properly escaped to prevent premature closing tags.
+Handles `<script>`, `<style>`, and `<title>` elements. Content is provided via the `m.text` attribute rather than as children, and is properly escaped to prevent premature closing tags (or entity-encoded for `<title>`).
 
 ## Behavior
 
@@ -27,6 +27,7 @@ Handles `<script>` and `<style>` elements. Content is provided via the `m.text` 
 **Standard HTML attributes also supported:**
 - `h.script`: `src`, `type`, `async`, `defer`, `crossorigin`, `integrity`, etc.
 - `h.style`: `media`, `type`, etc.
+- `h.title`: No additional HTML attributes typically used
 
 ## Operations
 
@@ -37,14 +38,15 @@ See [`MWIHTML`](MWIHTML-HTML-elements.md) and [`MWIDocNode`](MWIDocNode-document
 ### Script/Style-Specific
 
 **`(getHTML)` / `getHTML()`**
-- Returns `<script>content</script>` or `<style>content</style>`
-- Escapes embedded closing tags:
+- Returns `<script>content</script>`, `<style>content</style>`, or `<title>content</title>`
+- Escapes embedded closing tags or encodes as HTML:
   - `h.script`: `</script>` → `\x3c/script>`
   - `h.style`: `</style>` → `\3c /style>`
+  - `h.title`: HTML entity-encoded (e.g., `<` → `&lt;`)
 
-**`(getDOM)` / `getDOM()`**
-- Returns NANOS with single `<script>` or `<style>` element
-- Sets `innerHTML` with content
+**`(getDOM sync=domSync?)` / `getDOM({ sync? })`**
+- Returns NANOS with single `<script>`, `<style>`, or `<title>` element
+- Sets `textContent` with content
 - Content updates reactively
 
 **`(getSubSpec)` / `getSubSpec()`**
@@ -69,6 +71,14 @@ Embedded `</style>` tags are escaped using CSS string syntax:
 ```javascript
 // Input: content: '</style>'
 // Output: content: '\3c /style>'
+```
+
+### Title Encoding
+
+Title content is HTML entity-encoded:
+```javascript
+// Input: <My Site> & Co.
+// Output: &lt;My Site&gt; &amp; Co.
 ```
 
 ## Usage Examples
@@ -185,8 +195,30 @@ script.setAttr('m.text', `
 // SSR: <script type="module">import { init } from './app.js';...</script>
 ```
 
+### Page Title
+
+```javascript
+const title = doc.createNode('h.title');
+title.setAttr('m.text', 'My Website - Home');
+
+// SSR: <title>My Website - Home</title>
+// CSR: <title>My Website - Home</title>
+```
+
+### Reactive Title Updates
+
+```javascript
+const title = doc.createNode('h.title');
+title.setAttr('m.text', 'Loading...');
+
+const domNodes = title.getDOM();
+// <title>Loading...</title>
+
+title.setAttr('m.text', 'Dashboard - My App');
+// DOM automatically updates to <title>Dashboard - My App</title>
+```
+
 ## Related Interfaces
 
 - [`MWIHTML`](MWIHTML-HTML-elements.md) - Base HTML interface
 - [`MWIDocNode`](MWIDocNode-document-node.md) - Base node interface
-- [`MWIHTMLTitle`](MWIHTMLTitle-title.md) - Similar pattern for title element

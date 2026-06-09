@@ -81,15 +81,22 @@
 - **Not reactive** - subsequent changes to attributes or content are not reflected
 - Must call `getHTML()` again to get updated HTML
 
-**`(getDOM)` / `getDOM()`**
+**`(getDOM sync=domSync?)` / `getDOM({ sync? })`**
 - Returns reactive NANOS of DOM nodes
 - Synchronous initial render
 - **Reactive updates automatic** - DOM updates when attributes or content change
 - Changes propagate to browser DOM in real-time
+- **`sync` parameter (optional):** [`MWIDOMSync`](MWIDOMSync-dom-sync.md) instance for SSR-CSR hydration
+  - When provided, attempts to match and reuse existing DOM nodes rather than creating new ones
+  - Used during client-side hydration to connect to SSR-rendered DOM
+  - See [SSR-CSR Hydration](../../v5-arch/ssr-csr-hydration-v2.md) for architecture details
+  - See [`MWIDocument` sync mode example](MWIDocument-document.md#ssr-csr-hydration-sync-mode) for usage example
 
-**`(getSubDOM)` / `getSubDOM()`**
+**`(getSubDOM into=list? sync=domSync?)` / `getSubDOM({ into, sync })`**
 - Returns reactive NANOS of sub-doc DOM nodes
 - Used internally for child rendering
+- **`into` parameter (optional):** Existing nodes list to render into (used by [`m.defer`](MWICoreDefer-defer.md))
+- **`sync` parameter (optional):** [`MWIDOMSync`](MWIDOMSync-dom-sync.md) instance for SSR-CSR hydration
 
 ### Parent Tracking
 
@@ -145,6 +152,18 @@ This returns the component ID of the component, as assigned by the registry (`MW
 - Via `getAttr`, this returns the component ID of the node itself. (This will *always* be defined.)
 - Since `m.coat` and `m.slat` work with the node's slot source, `<m.ci>` (for `m.coat`) or `m.ci=[]` (for `m.slat`) will reflect the component ID of the slot source. (This will be undefined for nodes without a slot source.)
 - This value is read-only.
+
+### `m.csr` - CSR-Only Rendering
+
+Marks a node and its entire subtree as CSR-only (client-side rendering only):
+
+- **SSR behavior:** When `m.csr` is truthy, SSR completely suppresses rendering of the node and all descendants
+- **CSR behavior:** During CSR in sync mode ([`MWIDOMSync`](MWIDOMSync-dom-sync.md)), the node is generated normally and inserted via `domSyncChildren` or `domSyncManagedChildren`
+- **Scope:** Can be set as a doc-node attribute or as a component registry flag (all instances CSR-only)
+- **No SSR markers:** Unlike [`m.defer`](MWICoreDefer-defer.md), `m.csr` nodes emit no placeholders or markers during SSR
+- **Use cases:** Interactive widgets, client-specific UI, components that require browser APIs
+
+See [SSR-CSR Hydration](../../v5-arch/ssr-csr-hydration-v2.md) for complete details on SSR-CSR coordination.
 
 ### `m.id` - Mandatory Element ID
 
@@ -442,3 +461,7 @@ All MWI node interfaces extend `MWIDocNode`:
 - [`MWICoreTpl`](MWICoreTpl-template.md) - Template handler
 - [`MWICoreDefer`](MWICoreDefer-defer.md) - Deferred placeholder
 - [`MWIHTML`](MWIHTML-HTML-elements.md) - HTML elements
+
+Related interfaces for rendering:
+- [`MWIDocument`](MWIDocument-document.md) - Document coordinator
+- [`MWIDOMSync`](MWIDOMSync-dom-sync.md) - SSR-CSR DOM synchronization

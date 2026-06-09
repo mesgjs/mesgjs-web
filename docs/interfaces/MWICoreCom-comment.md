@@ -41,7 +41,7 @@ See [`MWIDocNode`](MWIDocNode-document-node.md) for:
 - Returns `<!--text-->` with escaped content
 - Empty if `t` attribute is empty
 
-**`(getDOM)` / `getDOM()`**
+**`(getDOM sync=domSync?)` / `getDOM({ sync? })`**
 - Returns NANOS with single comment node
 - Content reactively updates
 - Returns empty NANOS in non-browser environment

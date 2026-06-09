@@ -401,12 +401,13 @@ modcaps=''
 			domSyncChildren,
 			domSyncManagedChildren,
 			getAttr (name) { return this('getAttr', [ name ]); },
-			getDOM () { return this('getDOM'); },
+			getDOM ({ sync } = {}) { return this('getDOM', { sync }); },
 			getHTML () { return this('getHTML'); },
 			getManagedRegion,
 			getParent () { return this('getParent'); },
 			getSpec () { return this('getSpec'); },
 			getSubDoc () { return this('getSubDoc'); },
+			getSubDOM ({ into, sync } = {}) { return this('getSubDOM', { into, sync }); },
 			getSubSpec (view) { return this('getSubSpec', [ view ]); },
 			hasAttr (name) { return this('hasAttr', [ name ]); },
 			hasChildren () { return this('hasChildren'); },
@@ -460,8 +461,10 @@ modcaps=''
 		// (append doc-node|text...)
 		function opAppend (d) {
 			const p = d.p;
+
 			if (p.at([ SCHEMA, VOID ])) return d.rr;
-			const m = d.mp, rxs = p.at('rxState'), subDoc = d.rr('getSubDoc');
+
+			const m = d.mp, doc = p.at('doc'), rxs = p.at('rxState'), subDoc = d.rr('getSubDoc');
 			const docNodes = [...m.values()].reduce((list, item) => {
 				if (typeof item === 'string') {
 					const node = doc.createNode('m.t');
@@ -573,6 +576,8 @@ modcaps=''
 
 		// Typically just recursively gather HTML from sub-doc-nodes
 		function opGetHTML (d) {
+			if (d.rr('getAttr', ['m.csr'])) return ''; // CSR only
+
 			const p = d.p, m = d.mp;
 			const hasIn = m.has('in'), html = m.at('in', []);
 			const subDoc = d.rr('getSubDoc');
@@ -674,10 +679,10 @@ modcaps=''
 		}
 
 		// Get reactive NANOS of sub-doc DOM nodes
-		// (getSubDOM into=list?)
+		// (getSubDOM into=list? sync=domSync?)
 		// The `into` option allows re-using an existing nodes list (e.g. for m.defer)
 		function opGetSubDOM (d) {
-			const p = d.p, m = d.mp, into = m.at('into');
+			const p = d.p, m = d.mp, into = m.at('into'), sync = m.at('sync');
 
 			// Once created, always return the same reactive object
 			// (Gate ignored on the first render into e.g. m.defer)
@@ -686,11 +691,10 @@ modcaps=''
 			const doc = p.at('doc'), nodes = into || doc.rxNANOS();
 			const _subDom = into ? (p.at('_subDom') ?? reactive()) : reactive();
 
-			const rxs = p.at('rxState');
 			_subDom.def = () => {
 				const subDoc = d.rr('getSubDoc'), newNodes = [];
 				for (const node of subDoc.values()) {
-					const subDOM = node('getDOM');
+					const subDOM = node('getDOM', { sync });
 					newNodes.push(...subDOM.values());
 				}
 				reactive.unbatch(() => {

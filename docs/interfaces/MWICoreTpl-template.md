@@ -54,7 +54,7 @@ See [`MWIDocNode`](MWIDocNode-document-node.md) for:
 - Delegates to internal fragment
 - Returns HTML for slotted template
 
-**`(getDOM)` / `getDOM()`**
+**`(getDOM sync=domSync?)` / `getDOM({ sync? })`**
 - Returns reactive NANOS of template's DOM nodes
 - Delegates to internal fragment
 - Updates reactively when attributes or sub-spec change

@@ -265,7 +265,7 @@ modcaps=''
 			from: opFrom,
 			/* async */ fromWait: opFromWait,
 			getDocById: opGetDocById,
-			getDOM: (d) => d.p.at('root')('getDOM'),
+			getDOM: (d) => d.p.at('root')('getDOM', { sync: d.mp.at('sync') }),
 			getHTML: (d) => d.p.at('root')('getHTML'),
 			nextId: (d) => d.p.at('registry')('nextId'),
 			registry: (d) => d.p.at('registry'),

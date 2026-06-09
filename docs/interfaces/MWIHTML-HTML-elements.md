@@ -52,7 +52,7 @@ See [`MWIDocNode`](MWIDocNode-document-node.md) for:
 - Format: `<tag attrs>children</tag>` (container)
 - Format: `<tag attrs>` (void)
 
-**`(getDOM)` / `getDOM()`**
+**`(getDOM sync=domSync?)` / `getDOM({ sync? })`**
 - Returns NANOS with single DOM element
 - Attributes sync reactively
 - Children sync reactively (container elements only)

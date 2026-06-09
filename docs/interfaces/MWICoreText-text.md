@@ -9,12 +9,12 @@
 
 ## Overview
 
-Renders text content. In SSR, outputs escaped HTML text. In CSR, renders as an `<output>` element for non-empty text, or nothing for empty text.
+Renders text content. In SSR, outputs escaped HTML text. In CSR, renders as a text node for non-empty text, or nothing for empty text.
 
 ## Behavior
 
 - **Void:** Cannot have children (`schema.void = true`)
-- **Conditional DOM:** `<output>` for non-empty text, nothing for empty
+- **Conditional DOM:** Text node for non-empty text, nothing for empty
 - **Reactive Content:** Text updates reactively in DOM
 - **Escaped:** Content properly escaped for HTML
 
@@ -42,8 +42,8 @@ See [`MWIDocNode`](MWIDocNode-document-node.md) for:
 - Returns HTML-escaped text
 - Empty string if `t` attribute is empty
 
-**`(getDOM)` / `getDOM()`**
-- Non-empty text: Returns NANOS with `<output>` element
+**`(getDOM sync=domSync?)` / `getDOM({ sync? })`**
+- Non-empty text: Returns NANOS with text node
 - Empty text: Returns empty NANOS (no DOM nodes)
 - Content reactively updates
 - Returns empty NANOS in non-browser environment
@@ -64,7 +64,7 @@ const text = doc.createNode('m.t');
 text.setAttr('t', 'Hello, world!');
 
 // SSR: Hello, world! (escaped)
-// CSR: <output>Hello, world!</output>
+// CSR: Hello, world!
 ```
 
 ### Empty Text
@@ -84,13 +84,13 @@ const text = doc.createNode('m.t');
 text.setAttr('t', 'Initial');
 
 const domNodes = text.getDOM();
-// <output>Initial</output> created
+// Initial text-node created
 
 text.setAttr('t', 'Updated');
-// <output> content automatically updates to "Updated"
+// Text node content automatically updates to "Updated"
 
 text.setAttr('t', '');
-// <output> element removed from DOM
+// Text node removed from DOM
 ```
 
 ### From String
@@ -113,7 +113,7 @@ const text = doc.createNode('m.t');
 text.setAttr('t', '<script>alert("XSS")</script>');
 
 // SSR: &lt;script&gt;alert(&quot;XSS&quot;)&lt;/script&gt;
-// CSR: <output>&lt;script&gt;alert("XSS")&lt;/script&gt;</output>
+// CSR (as text node): &lt;script&gt;alert("XSS")&lt;/script&gt;
 ```
 
 ## Related Interfaces

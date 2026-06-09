@@ -448,7 +448,9 @@ Deno.test("MWICoreScpCSS Core - CSS Deduplication", async (t) => {
 		doc.createNode('test.core.scpcss.dedup3');
 
 		const scpNode1 = doc.createNode('m.scpcss');
+		scpNode1.setAttr('id', 'scpcss'); // Prevent mismatch due to auto-assigned id
 		const scpNode2 = doc.createNode('m.scpcss');
+		scpNode2.setAttr('id', 'scpcss');
 
 		const html1 = scpNode1('getHTML');
 		const html2 = scpNode2('getHTML');

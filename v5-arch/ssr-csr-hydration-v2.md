@@ -124,7 +124,7 @@ The `m.csr` attribute can be set in two ways:
 
 ### 3.4 No SSR Markers
 
-Unlike deferred components, `m.csr` nodes do not emit any SSR placeholders or markers. The SSR output simply omits them entirely. CSR in sync mode detects their absence and generates them.
+Like deferred components, `m.csr` nodes do not emit any SSR placeholders or markers. The SSR output simply omits them entirely. CSR in sync mode detects their absence and generates them.
 
 ---
 
@@ -208,7 +208,6 @@ Certain node types benefit from auto-assigned IDs (via `m.id` reference if not u
 
 | Node Type | Reason | Current Status |
 |-----------|--------|----------------|
-| `m.defer` nodes | Required for deferred component replacement | Already auto-assigns via `m.id` |
 | First element of aggregated content | Aids synchronization during hydration | Should reference `m.id` |
 | `m.csr` subtree roots (optional) | Can help resync after structural mismatch | Not required — parent sync maintains position |
 
@@ -218,12 +217,11 @@ Documentation should note that it is the user's responsibility to ensure aggrega
 
 ### 6.4 Deferred Components Special Case
 
-[`MWICoreDefer`](../src/mwi-core-comp.msjs:112) should be updated:
-- Currently renders `<slot>` placeholders, which are not permitted in `<head>` and will break HTML parsing
-- Should instead render *nothing* during SSR
-- After the deferred component loads, the `m.defer` node should be replaced within the doc-spec
-- Replacement is then reactively projected into the DOM via normal CSR mechanisms
-- The `m.defer` node should reference its `m.id` attribute during "rendering" to ensure a library-supplied ID is used if the user did not provide one
+[`MWICoreDefer`](../src/mwi-core-comp.msjs:112) renders nothing during SSR (per the smart-defer implementation):
+- SSR output is empty (no placeholders or markers)
+- At CSR, the required feature is derived from the registry entry for the component type in the sub-spec
+- After the feature becomes available via `fwait`, children are rendered reactively
+- No ID assignment is needed — `m.defer` nodes don't participate in DOM sync since they have no SSR output
 
 ---
 
@@ -251,9 +249,9 @@ The existing mechanism passes data via `globalThis.mwiServer` embedded in the SS
 | Aspect | `m.defer` | `m.csr` |
 |--------|-----------|---------|
 | **Purpose** | Component not yet loaded at render time | Component that should be CSR-managed |
-| **SSR Output** | ~~`<slot>` placeholder~~ Nothing (needs update) | Nothing |
-| **Client Behavior** | Loads component → replaces doc node → reactive update | Normal CSR in sync mode |
-| **Timing** | Triggered by component load event | Triggered by initial CSR pass |
+| **SSR Output** | Nothing | Nothing |
+| **Client Behavior** | Waits for feature via `fwait` → renders children reactively | Normal CSR (nothing to sync) |
+| **Timing** | Triggered by feature promise resolution | Triggered by initial CSR pass |
 
 These mechanisms share the principle of "SSR outputs nothing, CSR handles it" but serve different use cases.
 

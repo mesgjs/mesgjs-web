@@ -37,7 +37,7 @@ Deno.test("MWICoreScpCSS SSR - Basic HTML Rendering", async (t) => {
 		const scpNode = doc.createNode('m.scpcss');
 		const html = scpNode('getHTML');
 
-		assert(html.startsWith('<style>'), "Should start with <style> tag");
+		assert(html.startsWith('<style'), "Should start with <style> tag");
 		assert(html.endsWith('</style>'), "Should end with </style> tag");
 		assert(html.includes('color: blue'), "Should include CSS content");
 		assert(html.includes('_MO_'), "Should include component ID");
@@ -79,12 +79,12 @@ Deno.test("MWICoreScpCSS SSR - Basic HTML Rendering", async (t) => {
 		const scpNode = doc.createNode('m.scpcss');
 		const html = scpNode('getHTML');
 
-		assert(html.startsWith('<style>'), "Should start with <style>");
+		assert(html.startsWith('<style'), "Should start with <style>");
 		assert(html.endsWith('</style>'), "Should end with </style>");
 		assert(html.includes('color: red'), "Should include first component CSS");
 		assert(html.includes('color: green'), "Should include second component CSS");
 		// Should be single style tag with both CSS blocks
-		const styleTags = html.match(/<style>/g);
+		const styleTags = html.match(/<style/g);
 		assertEquals(styleTags?.length, 1, "Should have single <style> tag");
 	});
 });
@@ -102,7 +102,7 @@ Deno.test("MWICoreScpCSS SSR - Integration with Document", async (t) => {
 		doc.createNode('test.ssr.scpcss.doc1');
 
 		const html = doc('getHTML');
-		assert(html.includes('<style>'), "Document HTML should include style tag");
+		assert(html.includes('<style'), "Document HTML should include style tag");
 		assert(html.includes('margin: 0'), "Document HTML should include CSS");
 	});
 
@@ -132,7 +132,7 @@ Deno.test("MWICoreScpCSS SSR - Integration with Document", async (t) => {
 
 		const html = doc('getHTML');
 		const beforeIdx = html.indexOf('Before');
-		const styleIdx = html.indexOf('<style>');
+		const styleIdx = html.indexOf('<style');
 		const afterIdx = html.indexOf('After');
 
 		assert(beforeIdx < styleIdx, "Style should come after 'Before'");
@@ -154,7 +154,7 @@ Deno.test("MWICoreScpCSS SSR - Integration with Document", async (t) => {
 		doc('append', scpNode2);
 
 		const html = doc('getHTML');
-		const styleTags = html.match(/<style>/g);
+		const styleTags = html.match(/<style/g);
 		assertEquals(styleTags?.length, 2, "Should have two style tags");
 
 		// Both should have the same CSS
@@ -201,7 +201,7 @@ Deno.test("MWICoreScpCSS SSR - Real-World Patterns", async (t) => {
 
 		const html = doc('getHTML');
 
-		assert(html.includes('<style>'), "Should include style tag");
+		assert(html.includes('<style'), "Should include style tag");
 		assert(html.includes('background: #333'), "Should include header CSS");
 		assert(html.includes('display: flex'), "Should include nav CSS");
 		assert(html.includes('padding: 2rem'), "Should include main CSS");
@@ -324,7 +324,7 @@ Deno.test("MWICoreScpCSS SSR - Edge Cases", async (t) => {
 		const scpNode = doc.createNode('m.scpcss');
 		const html = scpNode('getHTML');
 
-		assert(html.includes('<style>'), "Should handle long CSS");
+		assert(html.includes('<style'), "Should handle long CSS");
 		assert(html.includes('class0'), "Should include first class");
 		assert(html.includes('class99'), "Should include last class");
 		assert(html.length > 1000, "Should have substantial length");
