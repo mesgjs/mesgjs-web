@@ -1,6 +1,6 @@
 # Aggregate Content — Architectural Plan V2
 
-**Status:** DRAFT  
+**Status:** APPROVED  
 **Date:** 2026-05-31  
 **Last updated:** 2026-06-07  
 **Purpose:** Unified architectural plan for SSR and CSR content aggregation with resumability support
@@ -65,8 +65,8 @@ An aggregation-aware variant of the low-level `h.link` and `h.style` tags:
 
 ## MWIDocument Changes
 
-- **`(getAggr reset=@f)`**
-  - If `reset` is true (default is false), clears all aggregated content and buffer ids (below) for a new, clean rerender.
+- **`(getAggr clear=@f)`**
+  - If `clear` is true (default is false), clears all aggregated content and buffer ids (below) for a new, clean rerender.
   - Returns a JS `Map` for tracking aggregated content.
   - The Map is created at construction and exists for the lifetime of the instance.
   - Keys should be strings of the form `<namespace>:<buffer name>`, e.g. `m.aggr:default`.
@@ -86,8 +86,8 @@ An aggregation-aware variant of the low-level `h.link` and `h.style` tags:
     - The next sequential, zero-origin buffer id is automatically allocated upon first reference.
   - If `buffer` is a number, returns the associated buffer name.
 
-- **`(getHTML forNode?)`**
-  - Calls `(getHTML)` on node `forNode` (default document root) to get placeholder-based HTML for the (sub-)tree rooted at the node.
+- **`(getHTML node?)`**
+  - Calls `(getHTML)` on node `node` (default document root) to get placeholder-based HTML for the (sub-)tree rooted at the node.
   - Post-generation, replaces `<{bufferId}>` (e.g. `<{25}>`) placeholders with rendered content from the aggregation array map iteratively until all placeholders have been replaced.
     - Uses the buffer ID -> buffer name mapping to locate the content array (or content `Set`).
 	- Replacement is performed only once per ID. A subsequent request for the same ID generates a console warning message and is replaced with nothing.
@@ -245,16 +245,30 @@ The placeholder/string-surgery approach is the mechanism for **generating the in
 
 ### 2. DOM Claiming Mechanism
 
+**Status:** RESOLVED (see [`ssr-csr-hydration-v2.md`](ssr-csr-hydration-v2.md))
+
 **Question:** How does the client associate reconstructed doc nodes with existing DOM nodes?
 
-**Current thinking:** The `m.id` system provides the mapping (for nodes that have an id; not all do). The `MWIDOMSync` interface has been written and tested to perform this function. The exact integration with aggregate content still needs to be specified.
+**Answer:** The [`MWIDOMSync`](ssr-csr-hydration-v2.md#2-mwidomsync-interface) interface provides synchronous DOM assimilation during CSR. When CSR runs in sync mode (by passing an `MWIDOMSync` instance), it attempts to match and reuse existing DOM nodes through a 5-step matching strategy:
+
+1. Text/Comment matching (by type and content)
+2. Skip normalized nodes
+3. Tag matching
+4. ID-based resyncing (for structural mismatch recovery)
+5. Fallback to regeneration (via `domSyncChildren`)
+
+**Integration with aggregate content:**
+
+- **Aggregate collection tags** (e.g., `[m.aggr to=bufferName ...]`) do not render immediately and therefore do not participate in DOM sync
+- **Aggregate rendering tags** (e.g., `[m.aggr from=bufferName]`) determine the active content doc-nodes (applying deduplication where applicable), then render the active content nodes in sync mode
+- **Best practice:** Well-formed aggregated content fragments should begin with elements with `id` attributes to aid in synchronization. Leading text should be wrapped in a container element (e.g., `<span>`)
 
 ---
 
 ## Next Steps
 
 1. **Finalize state serialization format** — Determine the exact format for serializing doc tree state into HTML
-2. **Specify DOM claiming integration** — Define how `MWIDOMSync` integrates with aggregate content reconstruction
+2. ~~**Specify DOM claiming integration**~~ — ✓ RESOLVED: [`ssr-csr-hydration-v2.md`](ssr-csr-hydration-v2.md) defines the `MWIDOMSync` interface and aggregate content integration patterns
 3. **Implement SSR aggregation** — Build the placeholder + string surgery mechanism in `MWIDocument`
 4. **Implement CSR aggregation** — Build the central store pattern with reactive buffers
 5. **Implement resumability** — Build the state serialization and DOM claiming mechanisms

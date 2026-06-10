@@ -32,6 +32,18 @@ modcaps=''
 
 	await fwait(REG_READY_FT, NODE_READY_FT, CORE_READY_FT);
 
+	// Compare two node paths (arrays of integers) for ordering
+	// Returns negative if a < b, 0 if equal, positive if a > b
+	function compareNodePaths (a, b) {
+		const aLen = a.next ?? 0, bLen = b.next ?? 0;
+		const minLen = Math.min(aLen, bLen);
+		for (let i = 0; i < minLen; i++) {
+			const diff = a.at(i) - b.at(i);
+			if (diff !== 0) return diff;
+		}
+		return aLen - bLen;
+	}
+
 	// Helper to create a reactive NANOS
 	// **IMPORTANT:**
 	// Any operation that returns a reactive NANOS should probably be returning the same one every time!
@@ -49,16 +61,19 @@ modcaps=''
 		// append(...nodes)
 		append (...params) { return this('append', (params.length === 1) ? params[0] : params); },
 		/* async */ appendWait (params) { return this('appendWait', params); },
+		compareNodePaths,
 		compIdStr (id) { return '_MC_' + id.toString(36); },
 		createNode (type, { slotSrc } = {}) { return this('createNode', { 0: type, slotSrc }); },
 		/* async */ createNodeWait (type, { slotSrc } = {}) { return this('createNodeWait', { 0: type, slotSrc }); },
 		from (params) { return this('from', params); },
 		/* async */ fromWait (params) { return this('fromWait', params); },
 		getDocById (id) { return this('getDocById', [ id ]); },
+		getAggr (options = {}) { return this('getAggr', options); },
 		getDOM () { return this('getDOM'); },
-		getHTML () { return this('getHTML'); },
+		getHTML (node) { return this('getHTML', [node]); },
 		getId () { return this('getElemId'); },
 		get jsv () { return this; },
+		mapAggrBuffer (from) { return this('mapAggrBuffer', [from]); },
 		registry () { return this('registry'); },
 		get root () { return this('root'); },
 		rxNANOS,
@@ -68,11 +83,18 @@ modcaps=''
 	function opInit (d) {
 		const p = d.p;
 		const registry = getInstance(REG_IF);
-		p.set('registry', registry);
-		p.set('typesUsed', rxNANOS()); // The *keys* form a reactive list of unique types created on the document
-		p.set('idIndex', new Map()); // Map of id (string) -> doc-node for getDocById
+		p.push({
+			registry: registry,
+			typesUsed: rxNANOS(), // The *keys* form a reactive list of unique types created on the document
+			idIndex: new Map(), // Map of id (string) -> doc-node for getDocById
+			aggrData: new Map(), // Aggregated content
+			aggrMap: new Map(), // Aggregate buffer name <-> id mapping
+			nextAggrId: 0, // Next aggregate buffer id
+		});
+
 		// Add JS interface
 		Object.setPrototypeOf(d.rr, docProto);
+
 		// Add document root (m.frg fragment)
 		const root = d.rr('createNode', ['m.frg']);
 		p.set('root', root);
@@ -216,6 +238,21 @@ modcaps=''
 		throw new TypeError(`${IF_NAME}(fromWait) without "item" or "list"`);
 	}
 
+	// (getAggr clear=@f)
+	// Optionally clear, and then return, the aggregated-data map
+	function opGetAggr (d) {
+		const p = d.p, data = p.at('aggrData');
+		const m = d.mp, clear = m.at('clear');
+
+		if (clear) { // Clear both aggregated-data maps
+			data.clear();
+			p.at('aggrMap').clear();
+			p.set('nextAggrId', 0);
+		}
+
+		return data;
+	}
+
 	// Get doc-node by id
 	// (getDocById id)
 	function opGetDocById (d) {
@@ -227,6 +264,82 @@ modcaps=''
 		const weakRef = idIndex.get(normalId);
 		// Dereference WeakRef and return node (or undefined if collected)
 		return weakRef?.deref();
+	}
+
+	// (getHTML node?)
+	// Return the rendered HTML for the document or specific node
+	// Replaces aggregation placeholders before returning the result
+	function opGetHTML (d) {
+		const p = d.p, m = d.mp, node = m.at(0) || p.at('root');
+		const initial = node('getHTML');
+
+		// Return the initial rendering if nothing was ever aggregated
+		if (!p.at('nextAggrId')) return initial;
+
+		const data = p.at('aggrData'), map = p.at('aggrMap');
+		const output = []; // Accumulated output segments
+		const refCount = new Map(); // Number of times each placeholder has been referenced
+		// Replace `<{id}>` placeholders, but not in comments / scripts / styles
+		// Pushes to output for assembly; returns nothing
+		const process = (input) => {
+			if (!input) return; // Skip empty segments
+			if (!input.includes('<{')) { // No placeholder candidates; accept as-is
+				output.push(input);
+				return;
+			}
+
+			// Locate markers for all the interesting parts of the input
+			const markers = input.matchAll(/\<!--.*?-->|\<\s*script.*?\<\s*\/\s*script>|\<\s*style.*?\<\s*\/\s*style>|\<{(\d+)}>/gis);
+			let cursor = 0;
+
+			for (const marker of markers) {
+				const [ outer, inner ] = marker; // Sample marker: [ '{0}', '0', index: 5, ... ]
+
+				if (inner === undefined) continue; // Ignore comment / script / style
+
+				const { index } = marker, number = parseInt(inner, 10), seen = refCount.get(number) ?? 0;
+
+				if (seen === 1) console.warn(`MWI HTML placeholder ${number} has already been processed`);
+				refCount.set(number, seen + 1);
+				output.push(input.slice(cursor, index)); // Keep segment from last position to placeholder
+				cursor = index + outer.length; // Cursor resumes after the placeholder
+				if (seen) continue;
+
+				const name = map.get(number), partMap = (name && data.get(name)) || [];
+
+				for (const part of partMap.values()) process(part); // Add recursively-processed placeholder value
+			}
+
+			if (cursor < input.length) output.push(input.slice(cursor)); // Add final segment
+		};
+
+		process(initial);
+		return output.join(''); // Return assembled processed segments
+	}
+
+	// (mapAggrBuffer id)
+	// (mapAggrBuffer name)
+	// Return the aggregation buffer name from id or id from name
+	function opMapAggrBuffer (d) {
+		const p = d.p, map = p.at('aggrMap');
+		const m = d.mp, from = m.at(0);
+
+		// Return the buffer name (or undefined) for the buffer id
+		if (typeof from === 'number') return map.get(from);
+
+		// Return the existing id for the buffer name if there is one
+		const curId = map.get(from);
+
+		if (curId !== undefined) return curId;
+
+		// Assign and return the next sequential id
+		const nextId = p.at('nextAggrId');
+
+		p.set('nextAggrId', nextId + 1);
+		map.set(nextId, from);
+		map.set(from, nextId);
+
+		return nextId;
 	}
 
 	// Update id index of MWIDocNode sender (internal, attributed message)
@@ -264,9 +377,11 @@ modcaps=''
 			/* async */ createNodeWait: opCreateNodeWait,
 			from: opFrom,
 			/* async */ fromWait: opFromWait,
+			getAggr: opGetAggr,
 			getDocById: opGetDocById,
 			getDOM: (d) => d.p.at('root')('getDOM', { sync: d.mp.at('sync') }),
-			getHTML: (d) => d.p.at('root')('getHTML'),
+			getHTML: opGetHTML,
+			mapAggrBuffer: opMapAggrBuffer,
 			nextId: (d) => d.p.at('registry')('nextId'),
 			registry: (d) => d.p.at('registry'),
 			root: (d) => d.p.at('root'),

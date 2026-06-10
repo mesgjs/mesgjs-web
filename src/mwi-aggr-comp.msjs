@@ -1,0 +1,224 @@
+[(
+modpath='mwi/mwi-aggr-comp'
+version='0.5.0'
+featreq='mwi.comp.MWICore mwi.compRegOpen MWIDocNode'
+featpro='mwi.comp.MWIAggr'
+modcaps=''
+)]
+
+/*
+ * mwi-aggr-comp - MWI Aggregate Content Component
+ * Copyright 2026 by Kappa Computer Solutions, LLC and Brian Katzung
+ */
+
+@e @js{
+	if (!mid) throw new Error('MWIAggr requires Mesgjs module management to be active');
+
+	const INTERFACE = 'if';
+	const SCHEMA = 'schema';
+	const AUTO_DOC = 'autoDoc';
+
+	const REG_IF = 'MWIRegistry';
+	const REG_OPEN_FT = 'mwi.compRegOpen';
+	const BASE_IF = 'MWIDocNode';
+	const BASE_FT = BASE_IF;
+	const CORE_READY_FT = 'mwi.comp.MWICore';
+	const AGGR_IF = 'MWIAggr';
+	const AGGR_TYPE = 'm.aggr';
+	const READY_FT = 'mwi.comp.' + AGGR_IF;
+
+	// Default buffer name for m.aggr
+	const DEFAULT_BUFFER = 'default';
+	// Namespace prefix for aggregation map keys
+	const AGGR_NS = 'm.aggr';
+
+	const { fready, fwait, getInstance, getInterface, typeChains } = globalThis.$c;
+
+	const aggrConfig = {
+		[AGGR_TYPE]: ls([INTERFACE, AGGR_IF, SCHEMA, ls([AUTO_DOC, false])]),
+	};
+
+	await fwait(BASE_FT, CORE_READY_FT); // For interface chaining
+
+	// MWIAggr (aggregate content) interface
+	// `[m.aggr to=bufferName? content...]` - Aggregates content to the specified buffer
+	// `[m.aggr from=bufferName]` - Renders the content from the specified buffer
+	//
+	// SSR behavior:
+	//   - `to` mode: renders children to HTML and stores in the aggregation map
+	//   - `from` mode: renders a placeholder `<{bufferId}>` for later substitution
+	//
+	// CSR behavior:
+	//   - `to` mode: registers this node's sub-doc with the reactive buffer on mount,
+	//     deregisters on unmount
+	//   - `from` mode: reactively renders the buffer's current content in node-path order
+	(() => {
+		// Get the buffer key for the aggregation map: `<namespace>:<bufferName>`
+		function getBufferKey (bufferName) {
+			return AGGR_NS + ':' + bufferName;
+		}
+
+		// Get or create the CSR reactive NANOS list for a given buffer key
+		function getCSRBuffer (aggrData, bufferKey, doc) {
+			let buffer = aggrData.get(bufferKey);
+			if (!buffer) {
+				buffer = doc.rxNANOS();
+				aggrData.set(bufferKey, buffer);
+			}
+			return buffer;
+		}
+
+		// Get or create the second-level SSR map for a given buffer key
+		function getSSRBuffer (aggrData, bufferKey) {
+			let buffer = aggrData.get(bufferKey);
+			if (!buffer) {
+				buffer = new Map();
+				aggrData.set(bufferKey, buffer);
+			}
+			return buffer;
+		}
+
+		// SSR: `from` mode - render a placeholder for later substitution
+		function ssrAggrFrom (d, bufferName) {
+			const p = d.p, doc = p.at('doc');
+			const m = d.mp, output = m.at('in');
+			const bufferKey = getBufferKey(bufferName);
+			const bufferId = doc('mapAggrBuffer', [bufferKey]);
+			const html = `<{${bufferId}}>`;
+
+			if (output) output.push(html);
+			return html;
+		}
+
+		// SSR: `to` mode - render children to HTML and store in aggregation map
+		function ssrAggrTo (d, bufferName) {
+			const p = d.p, doc = p.at('doc');
+			const aggrData = doc('getAggr');
+			const bufferKey = getBufferKey(bufferName);
+			const buffer = getSSRBuffer(aggrData, bufferKey);
+			const html = [];
+			
+			// Render children to HTML
+			for (const node of d.rr('getSubDoc').values()) {
+				node('getHTML', { in: html });
+			}
+
+			// Store rendered HTML with a unique symbol key (non-deduplicating)
+			const key = Symbol();
+			buffer.set(key, html.join(''));
+		}
+
+		// CSR: getDOM handler
+		function opGetDOM (d) {
+			const p = d.p;
+
+			if (p.has('_dom')) return p.at('_dom').rv;
+			if (typeof document !== 'object' || typeof document.createElement !== 'function') return new NANOS();
+
+			const doc = p.at('doc');
+			const from = d.rr('getAttr', ['from']);
+			const to = d.rr('getAttr', ['to']);
+
+			if (typeof from !== 'string') {
+				// `to` mode: register this node with the aggregation buffer and return empty DOM
+				const bufferName = (typeof to === 'string') ? to : DEFAULT_BUFFER;
+				const aggrData = doc.getAggr();
+				const bufferKey = getBufferKey(bufferName);
+				const buffer = getCSRBuffer(aggrData, bufferKey, doc);
+
+				// Register this node in the buffer at the next sequential index
+				buffer.push(d.rr);
+
+				// Note: To unmount, just remove the node from the buffer.
+				// const foundKV = buffer.find((v) => v === d.rr); // Find by node value
+				// if (foundKV) buffer.delete(foundKV[0]); // Then delete by key
+
+				// `to` nodes don't render any DOM themselves
+				const nodes = new NANOS();
+				const _dom = reactive({ eager: true, def: () => nodes });
+
+				p.set('_dom', _dom);
+				return _dom.rv;
+			}
+
+			// `from` mode: reactively render the aggregated content in node-path order
+			const aggrData = doc.getAggr();
+			const bufferKey = getBufferKey(from);
+			const buffer = getCSRBuffer(aggrData, bufferKey, doc);
+			const nodes = doc.rxNANOS();
+			const m = d.mp, sync = m.at('sync');
+
+			const _dom = reactive({ eager: true, def: () => {
+				// Collect all registered `to` nodes from the buffer
+				const unsorted = [...buffer.values()];
+
+				// Sort by node path for consistent tree-traversal order
+				const sorted = unsorted.sort((a, b) => {
+					const pathA = a('nodePath'), pathB = b('nodePath');
+					return doc.compareNodePaths(pathA, pathB);
+				});
+
+				// Gather DOM nodes from each registered `to` node's sub-doc
+				// Support the local sub-doc as a CSR-only fallback
+				const newNodes = [];
+				if (sorted.length) for (const node of sorted) {
+					const subDOM = node('getSubDOM', { sync });
+					newNodes.push(...subDOM.values());
+				}
+				else for (const node of d.rr('getSubDoc').values()) {
+					const subDOM = node('getDOM', { sync });
+					newNodes.push(...subDOM.values());
+				}
+
+				reactive.unbatch(() => {
+					nodes.clear();
+					nodes.push(newNodes);
+				});
+
+				return nodes;
+			}});
+
+			p.set('_dom', _dom);
+			return _dom.rv;
+		}
+
+		// SSR getHTML handler
+		function opGetHTML (d) {
+			if (d.rr('getAttr', ['m.csr'])) return '';
+
+			const from = d.rr('getAttr', ['from']);
+			const to = d.rr('getAttr', ['to']);
+
+			if (typeof from === 'string') {
+				// `from` mode: render placeholder
+				return ssrAggrFrom(d, from);
+			} else if (typeof to === 'string') {
+				// `to` mode with explicit buffer name
+				ssrAggrTo(d, to);
+				return '';
+			} else {
+				// `to` mode with default buffer name (no `from` attribute)
+				ssrAggrTo(d, DEFAULT_BUFFER);
+				return '';
+			}
+		}
+
+		getInterface(AGGR_IF).set({
+			pristine: true, lock: true,
+			chain: [ BASE_IF ],
+			handlers: {
+				getDOM: opGetDOM,
+				getHTML: opGetHTML,
+				subSlotSrc: (d) => d.p.at('slotSrc'), // non-source; pass-through
+			}
+		});
+	})();
+
+	await fwait(REG_OPEN_FT); // For component registration
+	const registry = getInstance(REG_IF);
+	for (const [name, entry] of Object.entries(aggrConfig)) {
+		registry.register(name, entry);
+	}
+
+	fready(mid, READY_FT);
+@}
