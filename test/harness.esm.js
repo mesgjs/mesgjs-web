@@ -4,7 +4,7 @@ import { transpileTree } from "mesgjs/src/transpile.esm.js";
 // Set up the Mesgjs runtime. May only be called once per process.
 // Previously transpiled modules will be loaded normally by the runtime.
 // Mesgjs source modules will be transpiled and side-loaded.
-export async function setupRuntime ({ modules, standard = true, features = [] } = {}) {
+export async function setupRuntime ({ modules, standard = true, extended = false, features = [] } = {}) {
 	await import('./runtime-loader.esm.js');
 	const { fwait, getModMeta, setModMeta } = globalThis.$c;
 	globalThis.ls = (pairs) => (new NANOS()).fromPairs(pairs);
@@ -33,6 +33,13 @@ export async function setupRuntime ({ modules, standard = true, features = [] } 
 		},
 	};
 	if (standard) modules = Object.assign({}, stdMods, modules);
+	const extMods = {
+		'mwi/mwi-aggr-comp.msjs': {
+			url: './src/mwi-aggr-comp.msjs',
+			featpro: 'mwi.comp.MWIAGGR',
+		},
+	};
+	if (extended) modules = Object.assign({}, extMods, modules);
 	const modMeta = {
 		testMode: true,
 		modules,

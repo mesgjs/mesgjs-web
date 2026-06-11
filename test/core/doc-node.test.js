@@ -265,6 +265,58 @@ Deno.test("MWIDocNode - Special Attribute: m.id", async (t) => {
 		const id = divNode.getAttr('id');
 		assertEquals(mid, id);
 	});
+
+	await t.step("(setAttr) - m.id auto-assigns id when not set (supplied value ignored)", () => {
+		const divNode = doc.createNode('h.div');
+		// Confirm id starts undefined
+		assertEquals(divNode('getAttr', ls([, 'id'])), undefined);
+		// setAttr with m.id should auto-assign an id; the supplied value is ignored
+		divNode('setAttr', ls([, 'm.id', , 'ignored-value']));
+		const id = divNode('getAttr', ls([, 'id']));
+		assert(typeof id === 'string');
+		assert(id.length > 0);
+		assert(id !== 'ignored-value');
+	});
+
+	await t.step(".setAttr() - m.id auto-assigns id when not set (supplied value ignored) via JS", () => {
+		const divNode = doc.createNode('h.div');
+		// Confirm id starts undefined
+		assertEquals(divNode.getAttr('id'), undefined);
+		// setAttr with m.id should auto-assign an id; the supplied value is ignored
+		divNode.setAttr('m.id', 'ignored-value');
+		const id = divNode.getAttr('id');
+		assert(typeof id === 'string');
+		assert(id.length > 0);
+		assert(id !== 'ignored-value');
+	});
+
+	await t.step("(setAttr) - m.id does not override existing id (supplied value ignored)", () => {
+		const divNode = doc.createNode('h.div');
+		divNode('setAttr', ls([, 'id', , 'existing-id']));
+		// setAttr with m.id should NOT change the existing id; the supplied value is ignored
+		divNode('setAttr', ls([, 'm.id', , 'should-be-ignored']));
+		assertEquals(divNode('getAttr', ls([, 'id'])), 'existing-id');
+	});
+
+	await t.step(".setAttr() - m.id does not override existing id (supplied value ignored) via JS", () => {
+		const divNode = doc.createNode('h.div');
+		divNode.setAttr('id', 'js-existing-id');
+		// setAttr with m.id should NOT change the existing id; the supplied value is ignored
+		divNode.setAttr('m.id', 'should-be-ignored');
+		assertEquals(divNode.getAttr('id'), 'js-existing-id');
+	});
+
+	await t.step("(setAttr) - m.id returns node for chaining", () => {
+		const divNode = doc.createNode('h.div');
+		const result = divNode('setAttr', ls([, 'm.id', , 'any-value']));
+		assertStrictEquals(result, divNode);
+	});
+
+	await t.step(".setAttr() - m.id returns node for chaining via JS", () => {
+		const divNode = doc.createNode('h.div');
+		const result = divNode.setAttr('m.id', 'any-value');
+		assertStrictEquals(result, divNode);
+	});
 });
 
 Deno.test("MWIDocNode - Special Attribute: class", async (t) => {

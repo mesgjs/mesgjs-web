@@ -101,8 +101,6 @@ Deno.test('MWIDocument - getAggr', async (t) => {
 Deno.test('MWIDocument - mapAggrBuffer', async (t) => {
 	await t.step('(mapAggrBuffer) - Assigns sequential IDs to buffer names', () => {
 		const doc = getInstance('MWIDocument');
-		// Clear any prior state
-		doc('getAggr', ls(['clear', true]));
 
 		const id0 = doc('mapAggrBuffer', ls([, 'm.aggr:first']));
 		const id1 = doc('mapAggrBuffer', ls([, 'm.aggr:second']));
@@ -115,7 +113,6 @@ Deno.test('MWIDocument - mapAggrBuffer', async (t) => {
 
 	await t.step('.mapAggrBuffer() - Assigns sequential IDs via JS', () => {
 		const doc = getInstance('MWIDocument');
-		doc.getAggr({ clear: true });
 
 		const id0 = doc.mapAggrBuffer('m.aggr:first');
 		const id1 = doc.mapAggrBuffer('m.aggr:second');
@@ -126,7 +123,6 @@ Deno.test('MWIDocument - mapAggrBuffer', async (t) => {
 
 	await t.step('(mapAggrBuffer) - Returns same ID for same name', () => {
 		const doc = getInstance('MWIDocument');
-		doc('getAggr', ls(['clear', true]));
 
 		const id1 = doc('mapAggrBuffer', ls([, 'm.aggr:stable']));
 		const id2 = doc('mapAggrBuffer', ls([, 'm.aggr:stable']));
@@ -136,7 +132,6 @@ Deno.test('MWIDocument - mapAggrBuffer', async (t) => {
 
 	await t.step('.mapAggrBuffer() - Returns same ID for same name via JS', () => {
 		const doc = getInstance('MWIDocument');
-		doc.getAggr({ clear: true });
 
 		const id1 = doc.mapAggrBuffer('m.aggr:stable');
 		const id2 = doc.mapAggrBuffer('m.aggr:stable');
@@ -146,7 +141,6 @@ Deno.test('MWIDocument - mapAggrBuffer', async (t) => {
 
 	await t.step('(mapAggrBuffer) - Reverse lookup: ID to name', () => {
 		const doc = getInstance('MWIDocument');
-		doc('getAggr', ls(['clear', true]));
 
 		const name = 'm.aggr:reverse-test';
 		const id = doc('mapAggrBuffer', ls([, name]));
@@ -157,7 +151,6 @@ Deno.test('MWIDocument - mapAggrBuffer', async (t) => {
 
 	await t.step('.mapAggrBuffer() - Reverse lookup: ID to name via JS', () => {
 		const doc = getInstance('MWIDocument');
-		doc.getAggr({ clear: true });
 
 		const name = 'm.aggr:reverse-test';
 		const id = doc.mapAggrBuffer(name);
@@ -168,7 +161,6 @@ Deno.test('MWIDocument - mapAggrBuffer', async (t) => {
 
 	await t.step('(mapAggrBuffer) - Unknown ID returns undefined', () => {
 		const doc = getInstance('MWIDocument');
-		doc('getAggr', ls(['clear', true]));
 
 		const result = doc('mapAggrBuffer', ls([, 999]));
 		assertEquals(result, undefined, 'Unknown ID should return undefined');
@@ -176,7 +168,6 @@ Deno.test('MWIDocument - mapAggrBuffer', async (t) => {
 
 	await t.step('.mapAggrBuffer() - Unknown ID returns undefined via JS', () => {
 		const doc = getInstance('MWIDocument');
-		doc.getAggr({ clear: true });
 
 		const result = doc.mapAggrBuffer(999);
 		assertEquals(result, undefined, 'Unknown ID should return undefined via JS');

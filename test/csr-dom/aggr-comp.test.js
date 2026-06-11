@@ -44,7 +44,6 @@ Deno.test('MWIAggr (m.aggr) - CSR-DOM to mode', async (t) => {
 
 	await t.step('(getDOM) - to mode registers node in aggregation buffer', async () => {
 		const doc = getInstance('MWIDocument');
-		doc('getAggr', ls(['clear', true]));
 
 		const toNode = doc('createNode', ls([, 'm.aggr']));
 		toNode('setSubSpec', { subSpec: ps('[([m.t t=Registered])]') });
@@ -60,7 +59,6 @@ Deno.test('MWIAggr (m.aggr) - CSR-DOM to mode', async (t) => {
 
 	await t.step('(getDOM) - to mode with explicit buffer name registers in named buffer', async () => {
 		const doc = getInstance('MWIDocument');
-		doc('getAggr', ls(['clear', true]));
 
 		const toNode = doc('createNode', ls([, 'm.aggr']));
 		toNode('setAttr', ['to', 'myBuffer']);
@@ -77,7 +75,6 @@ Deno.test('MWIAggr (m.aggr) - CSR-DOM to mode', async (t) => {
 
 	await t.step('.getDOM() - to mode with explicit buffer name via JS', async () => {
 		const doc = getInstance('MWIDocument');
-		doc.getAggr({ clear: true });
 
 		const toNode = doc.createNode('m.aggr');
 		toNode.setAttr('to', 'jsBuffer');
@@ -94,7 +91,6 @@ Deno.test('MWIAggr (m.aggr) - CSR-DOM to mode', async (t) => {
 
 	await t.step('(getDOM) - Multiple to nodes register in same buffer', async () => {
 		const doc = getInstance('MWIDocument');
-		doc('getAggr', ls(['clear', true]));
 
 		const toNode1 = doc('createNode', ls([, 'm.aggr']));
 		toNode1('setSubSpec', { subSpec: ps('[([m.t t=First])]') });
@@ -115,7 +111,6 @@ Deno.test('MWIAggr (m.aggr) - CSR-DOM to mode', async (t) => {
 Deno.test('MWIAggr (m.aggr) - CSR-DOM from mode', async (t) => {
 	await t.step('(getDOM) - from mode returns empty DOM when buffer is empty', async () => {
 		const doc = getInstance('MWIDocument');
-		doc('getAggr', ls(['clear', true]));
 
 		const fromNode = doc('createNode', ls([, 'm.aggr']));
 		fromNode('setAttr', ['from', 'empty-buf']);
@@ -126,7 +121,6 @@ Deno.test('MWIAggr (m.aggr) - CSR-DOM from mode', async (t) => {
 
 	await t.step('.getDOM() - from mode returns empty DOM when buffer is empty via JS', async () => {
 		const doc = getInstance('MWIDocument');
-		doc.getAggr({ clear: true });
 
 		const fromNode = doc.createNode('m.aggr');
 		fromNode.setAttr('from', 'empty-buf-js');
@@ -137,7 +131,6 @@ Deno.test('MWIAggr (m.aggr) - CSR-DOM from mode', async (t) => {
 
 	await t.step('(getDOM) - from mode renders content from registered to nodes', async () => {
 		const doc = getInstance('MWIDocument');
-		doc('getAggr', ls(['clear', true]));
 
 		// Create and register a to node
 		const toNode = doc('createNode', ls([, 'm.aggr']));
@@ -156,7 +149,6 @@ Deno.test('MWIAggr (m.aggr) - CSR-DOM from mode', async (t) => {
 
 	await t.step('.getDOM() - from mode renders content from registered to nodes via JS', async () => {
 		const doc = getInstance('MWIDocument');
-		doc.getAggr({ clear: true });
 
 		// Create and register a to node
 		const toNode = doc.createNode('m.aggr');
@@ -175,7 +167,6 @@ Deno.test('MWIAggr (m.aggr) - CSR-DOM from mode', async (t) => {
 
 	await t.step('(getDOM) - from mode renders multiple to nodes in buffer', async () => {
 		const doc = getInstance('MWIDocument');
-		doc('getAggr', ls(['clear', true]));
 
 		// Register two to nodes
 		const toNode1 = doc('createNode', ls([, 'm.aggr']));
@@ -200,7 +191,6 @@ Deno.test('MWIAggr (m.aggr) - CSR-DOM from mode', async (t) => {
 
 	await t.step('(getDOM) - from mode with named buffer', async () => {
 		const doc = getInstance('MWIDocument');
-		doc('getAggr', ls(['clear', true]));
 
 		// Register a to node in a named buffer
 		const toNode = doc('createNode', ls([, 'm.aggr']));
@@ -220,7 +210,6 @@ Deno.test('MWIAggr (m.aggr) - CSR-DOM from mode', async (t) => {
 
 	await t.step('(getDOM) - from mode DOM is stable across calls', async () => {
 		const doc = getInstance('MWIDocument');
-		doc('getAggr', ls(['clear', true]));
 
 		const fromNode = doc('createNode', ls([, 'm.aggr']));
 		fromNode('setAttr', ['from', 'stable']);
@@ -234,7 +223,6 @@ Deno.test('MWIAggr (m.aggr) - CSR-DOM from mode', async (t) => {
 Deno.test('MWIAggr (m.aggr) - CSR-DOM reactive behavior', async (t) => {
 	await t.step('(getDOM) - from mode reactively updates when to node is added', async () => {
 		const doc = getInstance('MWIDocument');
-		doc('getAggr', ls(['clear', true]));
 
 		// Create a from node first (empty buffer)
 		const fromNode = doc('createNode', ls([, 'm.aggr']));
@@ -257,7 +245,6 @@ Deno.test('MWIAggr (m.aggr) - CSR-DOM reactive behavior', async (t) => {
 
 	await t.step('(getDOM) - from mode reactively updates when to node content changes', async () => {
 		const doc = getInstance('MWIDocument');
-		doc('getAggr', ls(['clear', true]));
 
 		// Create a to node with initial content
 		const toNode = doc('createNode', ls([, 'm.aggr']));
@@ -287,7 +274,6 @@ Deno.test('MWIAggr (m.aggr) - CSR-DOM CSR-only fallback', async (t) => {
 		// When there are no `to` nodes registered in the buffer, the `from` node
 		// falls back to rendering its own sub-doc (CSR-only fallback feature)
 		const doc = getInstance('MWIDocument');
-		doc('getAggr', ls(['clear', true]));
 
 		const fromNode = doc('createNode', ls([, 'm.aggr']));
 		fromNode('setAttr', ['from', 'fallback-test']);
@@ -302,7 +288,6 @@ Deno.test('MWIAggr (m.aggr) - CSR-DOM CSR-only fallback', async (t) => {
 
 	await t.step('.getDOM() - from mode uses local sub-doc as fallback via JS', async () => {
 		const doc = getInstance('MWIDocument');
-		doc.getAggr({ clear: true });
 
 		const fromNode = doc.createNode('m.aggr');
 		fromNode.setAttr('from', 'fallback-test-js');
@@ -318,7 +303,6 @@ Deno.test('MWIAggr (m.aggr) - CSR-DOM CSR-only fallback', async (t) => {
 		// When a `to` node is added after the `from` node was using fallback content,
 		// the `from` node should switch to rendering the registered content
 		const doc = getInstance('MWIDocument');
-		doc('getAggr', ls(['clear', true]));
 
 		const fromNode = doc('createNode', ls([, 'm.aggr']));
 		fromNode('setAttr', ['from', 'switch-test']);
@@ -342,7 +326,6 @@ Deno.test('MWIAggr (m.aggr) - CSR-DOM CSR-only fallback', async (t) => {
 
 	await t.step('(getDOM) - from mode with no fallback and no to nodes returns empty DOM', async () => {
 		const doc = getInstance('MWIDocument');
-		doc('getAggr', ls(['clear', true]));
 
 		const fromNode = doc('createNode', ls([, 'm.aggr']));
 		fromNode('setAttr', ['from', 'no-fallback']);
@@ -356,7 +339,6 @@ Deno.test('MWIAggr (m.aggr) - CSR-DOM CSR-only fallback', async (t) => {
 Deno.test('MWIAggr (m.aggr) - CSR-DOM end-to-end in document', async (t) => {
 	await t.step('(getDOM) - to/from round-trip in document', async () => {
 		const doc = getInstance('MWIDocument');
-		doc('getAggr', ls(['clear', true]));
 
 		// Build a document with a `from` node and a `to` node
 		const fromNode = doc('createNode', ls([, 'm.aggr']));
@@ -378,7 +360,6 @@ Deno.test('MWIAggr (m.aggr) - CSR-DOM end-to-end in document', async (t) => {
 
 	await t.step('.getDOM() - to/from round-trip in document via JS', async () => {
 		const doc = getInstance('MWIDocument');
-		doc.getAggr({ clear: true });
 
 		const fromNode = doc.createNode('m.aggr');
 		fromNode.setAttr('from', 'default');
@@ -397,7 +378,6 @@ Deno.test('MWIAggr (m.aggr) - CSR-DOM end-to-end in document', async (t) => {
 
 	await t.step('(getDOM) - Surrounding content preserved with aggregation', async () => {
 		const doc = getInstance('MWIDocument');
-		doc('getAggr', ls(['clear', true]));
 
 		const beforeNode = doc('createNode', ls([, 'm.t']));
 		beforeNode('setAttr', ['t', 'Before']);

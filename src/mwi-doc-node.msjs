@@ -632,14 +632,14 @@ modcaps=''
 				// Collect attributes eagerly to create reactive deps
 				const attrs = [...p.at('attrs').namedEntries()];
 				const rns = d.rr('getAttr', ['m.rns']); // Virtual; computed from live sub-doc
-				const subSpec = d.rr('getSubSpec');
+				const subSpec = [...d.rr('getSubSpec').values()];
 
 				reactive.unbatch(() => {
 					spec.clear();
 					spec.push(type);
 					spec.fromEntries(attrs); // Add attributes
 					if (rns) spec.set('m.rns', rns); // Include rendered custom state when present
-					spec.push(subSpec); // Add sub-spec (child spec)
+					if (subSpec.length) spec.push(subSpec); // Add sub-spec (child spec)
 				});
 
 				return spec;
@@ -664,8 +664,8 @@ modcaps=''
 					const nodes = doc('from', { list: source, slotSrc });
 
 					reactive.untracked(() => {
-						subDoc.clear();
-						subDoc.push(nodes);
+						subDoc.fromEntries(nodes.entries()); // Overwrite without clearing
+						subDoc.next = nodes.length; // In case shorter now
 						rxs.push({ live: true, docEq: true });
 					});
 				});
@@ -698,8 +698,8 @@ modcaps=''
 					newNodes.push(...subDOM.values());
 				}
 				reactive.unbatch(() => {
-					nodes.clear();
-					nodes.push(newNodes);
+					nodes.fromEntries(newNodes.entries()); // Overwrite without clearing
+					nodes.next = newNodes.length; // In case shorter now
 				});
 
 				return nodes;
@@ -737,8 +737,8 @@ modcaps=''
 					newSpec = [...p.at('subSpec').values()];
 				}
 				reactive.unbatch(() => {
-					subSpec.clear();
-					subSpec.push(newSpec);
+					subSpec.fromEntries(newSpec.entries()); // Overwrite without clearing
+					subSpec.next = newSpec.length; // In case shorter now
 				});
 
 				return subSpec;
@@ -812,9 +812,11 @@ modcaps=''
 			case 'style': // Smart style
 				setStyle(d, value);
 				break;
+			case 'm.id': // Auto-generate ID if needed (supplied value ignored)
+				d.rr('getAttr', ['m.id']);
+				break;
 			// Read-only virtuals
 			case 'm.ci': // Component ID
-			case 'm.id': // Element ID (set id instead)
 			case 'm.rns': // Rendered node spec (virtual; computed from live sub-doc)
 				break;
 			default:
@@ -868,21 +870,21 @@ modcaps=''
 			const rns = m.at('m.rns') ?? spec?.at('m.rns');
 
 			reactive.batch(() => {
-				subSpec.clear();
-				if (spec instanceof NANOS) {
-					const children = [...spec.values()].slice(1);
-					subSpec.push(children);
-				} else {
-					subSpec.push([...subList.values()]);
-				}
+				// Update sub-spec
+				const children = (spec instanceof NANOS) ? [...spec.values()].slice(1) : [...subList.values()];
+
+				subSpec.fromEntries(children.entries()); // Overwrite without clearing
+				subSpec.next = children.length; // In case shorter now
 				rxs.set('live', false); // Sub-spec is now source of content truth
 
-				subDoc.clear(); // New "blueprint" -> new "house"
+				// Potentially update sub-doc as well
 				if (rns instanceof NANOS) {
 					// m.rns present: use it to populate the initial live doc children
 					// (applies to all node types, including autoDoc: false nodes)
 					const nodes = doc('from', { list: rns, slotSrc });
-					subDoc.push(nodes);
+
+					subDoc.fromEntries(nodes.entries());
+					subDoc.next = nodes.length;
 					setNodesParent(nodes, d.rr);
 					rxs.push({ live: true, docEq: false }); // Sub-doc is now source of truth
 				} else if (schema?.at(AUTO_DOC) !== false) {
@@ -891,11 +893,17 @@ modcaps=''
 					// (Their actual content is managed in an internal fragment.)
 					if (subSpec?.size) {
 						const nodes = doc('from', { list: subSpec, slotSrc });
-						subDoc.push(nodes);
+
+						subDoc.fromEntries(nodes.entries());
+						subDoc.next = nodes.length;
 						setNodesParent(nodes, d.rr);
+					} else {
+						subDoc.next = 0;
 					}
 					// The sub-doc is now live (even if empty) and matches the sub-spec
 					rxs.push({ live: true, docEq: true });
+				} else {
+					subDoc.next = 0;
 				}
 			});
 
@@ -954,6 +962,7 @@ modcaps=''
 		// Start synchronizing at DOM cursor node
 		function opInit (d) {
 			const p = d.p, m = d.mp, cursor = m.at(0);
+
 			p.set('cursor', cursor);
 			// Add JS interface
 			Object.setPrototypeOf(d.rr, domSyncProto);
@@ -967,9 +976,12 @@ modcaps=''
 			let cursor = p.at('cursor');
 			const saveNext = (node = cursor) => p.set('cursor', node.nextSibling);
 
+			console.log('sync seeking', tag);
+
 			// Sync with text or comment nodes if the content also matches
 			if (tag === 'm.t' || tag === 'm.com') {
 				const data = docNode?.('getAttr', ['t']);
+
 				if ((tag === 'm.t' && cursor?.nodeType === TEXT_NODE && cursor.data === data) ||
 				  (tag === 'm.com' && cursor?.nodeType === COMMENT_NODE && cursor.data === data)) {
 					saveNext();
@@ -986,6 +998,7 @@ modcaps=''
 
 			// Return the next element if it matches by tag name
 			if (cursor?.tagName === tag) {
+				console.log('sync matched tag', tag);
 				saveNext();
 				return cursor;
 			}
@@ -993,7 +1006,9 @@ modcaps=''
 			// Return a "non-local" element if we can locate it by id
 			const id = docNode?.('getAttr', ['id']) ?? '';
 			const element = id !== '' && document.getElementById(id);
+
 			if (element) {
+				console.log('sync matched id', id);
 				saveNext(element);
 				return element;
 			}

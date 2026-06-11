@@ -32,6 +32,15 @@ modcaps=''
 
 	await fwait(REG_READY_FT, NODE_READY_FT, CORE_READY_FT);
 
+	// Clear all aggregated data
+	function clearAggr (p) {
+		const data = p.at('aggrData');
+
+		data.clear();
+		p.at('aggrMap').clear();
+		p.set('nextAggrId', 0);
+	}
+
 	// Compare two node paths (arrays of integers) for ordering
 	// Returns negative if a < b, 0 if equal, positive if a > b
 	function compareNodePaths (a, b) {
@@ -72,6 +81,7 @@ modcaps=''
 		getDOM () { return this('getDOM'); },
 		getHTML (node) { return this('getHTML', [node]); },
 		getId () { return this('getElemId'); },
+		initialCSR () { return this('initialCSR'); },
 		get jsv () { return this; },
 		mapAggrBuffer (from) { return this('mapAggrBuffer', [from]); },
 		registry () { return this('registry'); },
@@ -90,6 +100,7 @@ modcaps=''
 			aggrData: new Map(), // Aggregated content
 			aggrMap: new Map(), // Aggregate buffer name <-> id mapping
 			nextAggrId: 0, // Next aggregate buffer id
+			initialCSR: reactive({ v: false }),
 		});
 
 		// Add JS interface
@@ -244,12 +255,7 @@ modcaps=''
 		const p = d.p, data = p.at('aggrData');
 		const m = d.mp, clear = m.at('clear');
 
-		if (clear) { // Clear both aggregated-data maps
-			data.clear();
-			p.at('aggrMap').clear();
-			p.set('nextAggrId', 0);
-		}
-
+		if (clear) clearAggr(p); // Clear all aggregated data
 		return data;
 	}
 
@@ -266,11 +272,28 @@ modcaps=''
 		return weakRef?.deref();
 	}
 
+	// Full-document CSR
+	function opGetDOM (d) {
+		const p = d.p, m = d.mp;
+		const root = p.at('root');
+		const sync = m.at('sync');
+
+		// Defer aggregate CSR until the first pass is complete
+		// and all "to" nodes have registered
+		p.at('initialCSR').wv = true;
+
+		const nodes = root('getDOM', { sync });
+
+		p.at('initialCSR').wv = false;
+		return nodes;
+	}
+
 	// (getHTML node?)
 	// Return the rendered HTML for the document or specific node
 	// Replaces aggregation placeholders before returning the result
 	function opGetHTML (d) {
-		const p = d.p, m = d.mp, node = m.at(0) || p.at('root');
+		const p = d.p, m = d.mp;
+		const node = m.at(0) || p.at('root');
 		const initial = node('getHTML');
 
 		// Return the initial rendering if nothing was ever aggregated
@@ -379,8 +402,9 @@ modcaps=''
 			/* async */ fromWait: opFromWait,
 			getAggr: opGetAggr,
 			getDocById: opGetDocById,
-			getDOM: (d) => d.p.at('root')('getDOM', { sync: d.mp.at('sync') }),
+			getDOM: opGetDOM,
 			getHTML: opGetHTML,
+			initialCSR: (d) => d.p.at('initialCSR').rv,
 			mapAggrBuffer: opMapAggrBuffer,
 			nextId: (d) => d.p.at('registry')('nextId'),
 			registry: (d) => d.p.at('registry'),

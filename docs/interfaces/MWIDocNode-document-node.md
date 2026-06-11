@@ -169,7 +169,10 @@ See [SSR-CSR Hydration](../../v5-arch/ssr-csr-hydration-v2.md) for complete deta
 
 - If the node does not already have an assigned, non-empty, standard `id` attribute, a unique one is automatically generated and assigned.
 - The value of the `id` attribute (whether user-specified or automatically generated) is then returned.
-- This value is read-only (but with side effects; use the `id` attribute directly to set a value).
+- **Read via `getAttr('m.id')`:** Returns the current `id` attribute value, auto-assigning one if not already set.
+- **Write via `setAttr('m.id', value)`:** Triggers the same auto-assignment logic as reading; the supplied `value` is **always ignored**.
+  - Adding a unique id (using `[type m.id=x content...]`) may help CSR DOM synchronization if it is having difficulty matching content.
+  - Use the traditional `id` attribute directly to set a specific value.
 
 ### `m.percl` - Permanent Classes
 

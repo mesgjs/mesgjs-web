@@ -188,6 +188,11 @@ modcaps=''
 			const p = d.p, type = p.at('type').replace(/^h\./, '');
 			const m = d.mp, hasIn = m.has('in'), html = m.at('in', []);
 
+			if (html.wantId) { // Id requested for aggregate DOM sync
+				d.rr('getAttr', ['m.id']);
+				html.wantId = false;
+			}
+
 			// Opening (or void) tag with optional (HTML) attributes
 			html.push(`<${type}${d.rr('getAttrHTML')}>`);
 
@@ -278,6 +283,11 @@ modcaps=''
 			const m = d.mp, output = m.at('in');;
 			const raw = d.rr('getAttr', [ 'm.text' ]) || '';
 			let sanzd = '';
+
+			if (output?.wantId) {
+				d.rr('getAttr', ['m.id']);
+				output.wantId = false;
+			}
 
 			// Match an embedded closing tag with pathological generosity for safety
 			switch (type) {

@@ -97,8 +97,9 @@ modcaps=''
 			const bufferKey = getBufferKey(bufferName);
 			const buffer = getSSRBuffer(aggrData, bufferKey);
 			const html = [];
-			
+
 			// Render children to HTML
+			html.wantId = true;
 			for (const node of d.rr('getSubDoc').values()) {
 				node('getHTML', { in: html });
 			}
@@ -146,9 +147,19 @@ modcaps=''
 			const bufferKey = getBufferKey(from);
 			const buffer = getCSRBuffer(aggrData, bufferKey, doc);
 			const nodes = doc.rxNANOS();
-			const m = d.mp, sync = m.at('sync');
+			const m = d.mp;
+			let syncMode = m.at('sync');
+
+			console.log('m.aggr CSR (getDOM); sync', !!syncMode);
 
 			const _dom = reactive({ eager: true, def: () => {
+				// Defer during initial CSR while "to" nodes register
+				console.log('m.aggr reactor; initial', doc('initialCSR'), 'sync', !!syncMode);
+				if (doc('initialCSR')) {
+					console.log('m.aggr reactor (initial CSR)...');
+					return nodes;
+				}
+
 				// Collect all registered `to` nodes from the buffer
 				const unsorted = [...buffer.values()];
 
@@ -162,17 +173,22 @@ modcaps=''
 				// Support the local sub-doc as a CSR-only fallback
 				const newNodes = [];
 				if (sorted.length) for (const node of sorted) {
+					const sync = syncMode && getInstance('MWIDOMSync', [null]);
+					console.log('m.aggr (from to)', node, !!sync);
 					const subDOM = node('getSubDOM', { sync });
 					newNodes.push(...subDOM.values());
 				}
 				else for (const node of d.rr('getSubDoc').values()) {
-					const subDOM = node('getDOM', { sync });
+					console.log('m.aggr (from fallback)', node);
+					// Fallback is always CSR when activated - nothing to SYNC
+					const subDOM = node('getDOM');
 					newNodes.push(...subDOM.values());
 				}
 
+				syncMode = false; // Only applies to first render
 				reactive.unbatch(() => {
-					nodes.clear();
-					nodes.push(newNodes);
+					nodes.fromEntries(newNodes.entries());
+					nodes.next = newNodes.length;
 				});
 
 				return nodes;

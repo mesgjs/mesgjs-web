@@ -29,7 +29,6 @@ Deno.test('MWIDocument - getHTML with aggregate placeholder replacement', async 
 
 	await t.step('(getHTML) - Replaces placeholder with aggregated content', () => {
 		const doc = getInstance('MWIDocument');
-		doc('getAggr', ls(['clear', true]));
 
 		// Manually set up aggregation: create a buffer and a placeholder
 		const bufferKey = 'm.aggr:default';
@@ -53,7 +52,6 @@ Deno.test('MWIDocument - getHTML with aggregate placeholder replacement', async 
 
 	await t.step('(getHTML) - Multiple placeholders replaced correctly', () => {
 		const doc = getInstance('MWIDocument');
-		doc('getAggr', ls(['clear', true]));
 
 		// Set up two buffers
 		const key1 = 'm.aggr:buf1';
@@ -89,7 +87,6 @@ Deno.test('MWIDocument - getHTML with aggregate placeholder replacement', async 
 		// The pattern tested is: false (comment) - real - false (script)
 		// Only the real placeholder outside protected regions should be replaced.
 		const doc = getInstance('MWIDocument');
-		doc('getAggr', ls(['clear', true]));
 
 		// Set up a real buffer with content (gets ID 0)
 		const bufferKey = 'm.aggr:real';
@@ -149,7 +146,6 @@ Deno.test('MWIDocument - getHTML with aggregate placeholder replacement', async 
 		// - The second reference produces a console warning and renders nothing (prevents loops/DOM-to-doc mismatches)
 		// - Third+ references also render nothing (no additional warnings)
 		const doc = getInstance('MWIDocument');
-		doc('getAggr', ls(['clear', true]));
 
 		// Set up a buffer with content
 		const bufferKey = 'm.aggr:multi';

@@ -160,12 +160,12 @@ modcaps=''
 				rxs.set('live', false); // Trigger transition when feature resolves
 				_subDoc.def = () => {
 					if (rxs.at('live')) return subDoc; // subDoc is already source of truth
-					
+
 					const nodes = doc('from', { list: subSpec, slotSrc });
 
 					reactive.unbatch(() => {
-						subDoc.clear();
-						subDoc.push(nodes);
+						subDoc.fromEntries(nodes.entries());
+						subDoc.next = nodes.length;
 						rxs.push({ live: true, docEq: true });
 					});
 
@@ -441,8 +441,8 @@ modcaps=''
 					const nodes = doc('from', { list: source, slotSrc: d.rr });
 
 					reactive.untracked(() => {
-						subDoc.clear();
-						subDoc.push(nodes);
+						subDoc.fromEntries(nodes.entries());
+						subDoc.next = nodes.length;
 						rxs.push({ live: true, docEq: source === subSpec });
 					});
 				});
