@@ -153,7 +153,7 @@ modcaps=''
 			const _dom = reactive({ eager: true, def: () => {
 				// Defer during initial CSR while "to" nodes register
 				if (doc('initialCSR')) {
-					return nodes;
+					return syncMode ? undefined : nodes;
 				}
 
 				// Collect all registered `to` nodes from the buffer
@@ -169,16 +169,19 @@ modcaps=''
 				// Gather DOM nodes from each registered `to` node's sub-doc
 				// Support the local sub-doc as a CSR-only fallback
 				const newNodes = [];
-				if (sorted.length) for (const node of sorted) {
-					const sync = syncMode && getInstance('MWIDOMSync', [null]);
-					const subDOM = node('getSubDOM', { sync });
+				if (sorted.length) {
+					for (const node of sorted) {
+						const sync = syncMode && getInstance('MWIDOMSync', [null]);
+						const subDOM = node('getSubDOM', { sync });
 
-					newNodes.push(...subDOM.values());
-				}
-				else for (const node of d.rr('getSubDoc').values()) {
-					// Fallback is always CSR when activated - nothing to SYNC
-					const subDOM = node('getDOM');
-					newNodes.push(...subDOM.values());
+						newNodes.push(...subDOM.values());
+					}
+				} else {
+					for (const node of d.rr('getSubDoc').values()) {
+						// Fallback is always CSR when activated - nothing to SYNC
+						const subDOM = node('getDOM');
+						newNodes.push(...subDOM.values());
+					}
 				}
 
 				syncMode = false; // Only applies to first render

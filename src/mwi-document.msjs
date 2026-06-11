@@ -278,14 +278,13 @@ modcaps=''
 		const root = p.at('root');
 		const sync = m.at('sync');
 
-		// Defer aggregate CSR until the first pass is complete
-		// and all "to" nodes have registered
+		// Two-pass generation
+		// Initial CSR discovers aggregate "to" nodes
+		// Second CSR fills in aggregate "from" nodes, if any
 		p.at('initialCSR').wv = true;
-
-		const nodes = root('getDOM', { sync });
-
+		root('getDOM', { sync });
 		p.at('initialCSR').wv = false;
-		return nodes;
+		return root('getDOM');
 	}
 
 	// (getHTML node?)

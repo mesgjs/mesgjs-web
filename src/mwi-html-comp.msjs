@@ -172,8 +172,10 @@ modcaps=''
 				const subSync = existing?.firstChild && getInstance('MWIDOMSync', [existing.firstChild]);
 				const children = d.rr('getSubDOM', { sync: subSync });
 
-				d.rr.domSyncChildren(node, children);
-				existing = null;
+				if (children) {
+					d.rr.domSyncChildren(node, children);
+					existing = null;
+				}
 				return nodes;
 			}});
 

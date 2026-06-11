@@ -693,10 +693,21 @@ modcaps=''
 
 			_subDom.def = () => {
 				const subDoc = d.rr('getSubDoc'), newNodes = [];
+				let defer = false;
+
 				for (const node of subDoc.values()) {
 					const subDOM = node('getDOM', { sync });
-					newNodes.push(...subDOM.values());
+
+					if (subDOM && !defer) newNodes.push(...subDOM.values());
+					else {
+						// Child nodes are indeterminate due to aggregate rendering
+						// being paused during initial CSR. Continue rendering.
+						defer = true;
+					}
 				}
+
+				if (defer) return; // Nodes are not stable yet
+
 				reactive.unbatch(() => {
 					nodes.fromEntries(newNodes.entries()); // Overwrite without clearing
 					nodes.next = newNodes.length; // In case shorter now
@@ -994,14 +1005,15 @@ modcaps=''
 				saveNext();
 			}
 
+			const id = String(docNode?.('getAttr', ['id']) ?? '');
+
 			// Return the next element if it matches by tag name
-			if (cursor?.tagName === tag) {
+			if (cursor?.tagName === tag && (cursor.id ?? '') === id) {
 				saveNext();
 				return cursor;
 			}
 
 			// Return a "non-local" element if we can locate it by id
-			const id = docNode?.('getAttr', ['id']) ?? '';
 			const element = id !== '' && document.getElementById(id);
 
 			if (element) {

@@ -309,24 +309,24 @@ Deno.test("MWIDOMSync - Non-local Element Sync (getElementById)", async (t) => {
 	await t.step("(sync) - Does not use getElementById when local match succeeds", () => {
 		const container = document.createElement('div');
 		const localSpan = document.createElement('span');
+		localSpan.id = 'target-span';
 		container.appendChild(localSpan);
 
-		// Also create a global element with an id
-		const globalSpan = document.createElement('span');
-		globalSpan.id = 'global-span';
-		document.body.appendChild(globalSpan);
-
 		const docNode = makeDocNode('h.span');
-		docNode.setAttr('id', 'global-span');
+		docNode.setAttr('id', 'target-span');
+
+		// Spy on getElementById to verify it is NOT called when a local match exists
+		let getByIdCalled = false;
+		const origGetById = document.getElementById.bind(document);
+		document.getElementById = (...args) => { getByIdCalled = true; return origGetById(...args); };
 
 		const sync = createSync(localSpan);
 		const result = sync('sync', ['SPAN', docNode]);
 
-		// Should match the local element, not the global one
-		assertStrictEquals(result, localSpan, 'should prefer local match over getElementById');
+		document.getElementById = origGetById; // Restore
 
-		// Cleanup
-		document.body.removeChild(globalSpan);
+		assertStrictEquals(result, localSpan, 'should return local match');
+		assertEquals(getByIdCalled, false, 'should not call getElementById when local match found');
 	});
 });
 

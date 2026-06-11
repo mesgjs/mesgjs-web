@@ -276,8 +276,11 @@ modcaps=''
 
 			_dom.def = () => {
 				const children = d.rr('getSubDOM', { sync }); // sub-DOM children
-				sync = null; // Only sync first render
-				d.rr.domSyncManagedChildren(targetElement, children);
+
+				if (children) {
+					sync = null; // Only sync first render
+					d.rr.domSyncManagedChildren(targetElement, children);
+				}
 				return nodes;
 			};
 
