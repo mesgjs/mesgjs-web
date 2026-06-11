@@ -976,8 +976,6 @@ modcaps=''
 			let cursor = p.at('cursor');
 			const saveNext = (node = cursor) => p.set('cursor', node.nextSibling);
 
-			console.log('sync seeking', tag);
-
 			// Sync with text or comment nodes if the content also matches
 			if (tag === 'm.t' || tag === 'm.com') {
 				const data = docNode?.('getAttr', ['t']);
@@ -998,7 +996,6 @@ modcaps=''
 
 			// Return the next element if it matches by tag name
 			if (cursor?.tagName === tag) {
-				console.log('sync matched tag', tag);
 				saveNext();
 				return cursor;
 			}
@@ -1008,7 +1005,6 @@ modcaps=''
 			const element = id !== '' && document.getElementById(id);
 
 			if (element) {
-				console.log('sync matched id', id);
 				saveNext(element);
 				return element;
 			}
