@@ -79,7 +79,6 @@ Deno.test("MWICoreScpCSS CSR - Reactive Behavior", async (t) => {
 
 		// Add component
 		doc.createNode('test.csr.scpcss.reactive1');
-		await globalThis.reactive.wait();
 
 		// Should now have style element
 		dom = scpNode('getDOM');
@@ -104,7 +103,6 @@ Deno.test("MWICoreScpCSS CSR - Reactive Behavior", async (t) => {
 
 		// Add first component
 		doc.createNode('test.csr.scpcss.reactive2a');
-		await globalThis.reactive.wait();
 
 		let dom = scpNode('getDOM');
 		let styleElem = dom.at(0);
@@ -113,7 +111,6 @@ Deno.test("MWICoreScpCSS CSR - Reactive Behavior", async (t) => {
 
 		// Add second component
 		doc.createNode('test.csr.scpcss.reactive2b');
-		await globalThis.reactive.wait();
 
 		dom = scpNode('getDOM');
 		styleElem = dom.at(0);
@@ -157,7 +154,6 @@ Deno.test("MWICoreScpCSS CSR - Reactive Behavior", async (t) => {
 
 		// Add component
 		doc.createNode('test.csr.scpcss.update');
-		await globalThis.reactive.wait();
 
 		// Get the style element
 		dom = scpNode('getDOM');
@@ -168,7 +164,7 @@ Deno.test("MWICoreScpCSS CSR - Reactive Behavior", async (t) => {
 
 		// The element reference should remain stable even if content changes
 		// (though in this test we're not changing it, just verifying stability)
-		await globalThis.reactive.wait();
+		await reactive.wait();
 		assertStrictEquals(dom.at(0), styleElem, "Element reference should remain stable");
 	});
 });
@@ -188,7 +184,6 @@ Deno.test("MWICoreScpCSS CSR - Integration with Document", async (t) => {
 
 		// Add body content with styled component
 		doc.createNode('test.csr.scpcss.head');
-		await globalThis.reactive.wait();
 
 		const docDOM = doc('getDOM');
 		assert(docDOM.size > 0, "Document should have DOM nodes");
@@ -247,7 +242,6 @@ Deno.test("MWICoreScpCSS CSR - Edge Cases", async (t) => {
 		}
 
 		// Wait for reactive updates
-		await globalThis.reactive.wait();
 
 		const dom = scpNode('getDOM');
 		const styleElem = dom.at(0);
@@ -271,8 +265,6 @@ Deno.test("MWICoreScpCSS CSR - Edge Cases", async (t) => {
 		doc.createNode('test.csr.scpcss.reuse');
 		doc.createNode('test.csr.scpcss.reuse');
 		doc.createNode('test.csr.scpcss.reuse');
-
-		await globalThis.reactive.wait();
 
 		const dom = scpNode('getDOM');
 		const styleElem = dom.at(0);
@@ -299,7 +291,6 @@ Deno.test("MWICoreScpCSS CSR - Edge Cases", async (t) => {
 
 		// Use the new component
 		doc.createNode('test.csr.scpcss.late');
-		await globalThis.reactive.wait();
 
 		// Should now include the late component's CSS
 		dom = scpNode('getDOM');
@@ -326,7 +317,6 @@ Deno.test("MWICoreScpCSS CSR - Real-World Integration", async (t) => {
 
 		// Dynamically add styled component
 		doc.createNode('test.csr.scpcss.dynamic');
-		await globalThis.reactive.wait();
 
 		// Style element should update
 		dom = scpNode('getDOM');
@@ -372,8 +362,6 @@ Deno.test("MWICoreScpCSS CSR - Real-World Integration", async (t) => {
 		doc.createNode('test.csr.scpcss.complib5');
 		doc.createNode('test.csr.scpcss.complib8');
 
-		await globalThis.reactive.wait();
-
 		const dom = scpNode('getDOM');
 		const styleElem = dom.at(0);
 
@@ -402,7 +390,6 @@ Deno.test("MWICoreScpCSS CSR - Empty to Non-Empty Transitions", async (t) => {
 
 		// Add component
 		doc.createNode('test.csr.scpcss.transition');
-		await globalThis.reactive.wait();
 
 		// Should now have element
 		dom = scpNode('getDOM');

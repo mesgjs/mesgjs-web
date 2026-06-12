@@ -1330,6 +1330,202 @@ Deno.test("MWIDocNode - Computed Attributes: m.coat", async (t) => {
 	});
 });
 
+Deno.test("MWIDocNode - m.coat Reactivity", async (t) => {
+	await t.step("(getAttr) - Updates when slot source attribute changes", async () => {
+		const fragNode = doc.createNode('m.frg');
+		fragNode('setAttr', ls([, 'name', , 'Initial']));
+
+		const divNode = doc.createNode('h.div', { slotSrc: fragNode });
+		divNode('setAttr', ls([, 'm.coat', , ps('[(title=<name>)]')]));
+
+		assertEquals(divNode('getAttr', ls([, 'title'])), 'Initial');
+
+		// Change the source attribute - m.coat should reactively update
+		fragNode('setAttr', ls([, 'name', , 'Updated']));
+		assertEquals(divNode('getAttr', ls([, 'title'])), 'Updated');
+	});
+
+	await t.step(".getAttr() - Updates when slot source attribute changes via JS", async () => {
+		const fragNode = doc.createNode('m.frg');
+		fragNode.setAttr('name', 'JS Initial');
+
+		const divNode = doc.createNode('h.div', { slotSrc: fragNode });
+		divNode.setAttr('m.coat', ps('[(title=<name>)]'));
+
+		assertEquals(divNode.getAttr('title'), 'JS Initial');
+
+		// Change the source attribute - m.coat should reactively update
+		fragNode.setAttr('name', 'JS Updated');
+		assertEquals(divNode.getAttr('title'), 'JS Updated');
+	});
+
+	await t.step("(getAttr) - Updates when m.coat spec changes", async () => {
+		const fragNode = doc.createNode('m.frg');
+		fragNode('setAttr', ls([, 'name', , 'World']));
+		fragNode('setAttr', ls([, 'greeting', , 'Hello']));
+
+		const divNode = doc.createNode('h.div', { slotSrc: fragNode });
+		divNode('setAttr', ls([, 'm.coat', , ps('[(title=<name>)]')]));
+
+		assertEquals(divNode('getAttr', ls([, 'title'])), 'World');
+
+		// Change the m.coat spec itself - should re-compute
+		divNode('setAttr', ls([, 'm.coat', , ps('[(title=<greeting>)]')]));
+		assertEquals(divNode('getAttr', ls([, 'title'])), 'Hello');
+	});
+
+	await t.step(".getAttr() - Updates when m.coat spec changes via JS", async () => {
+		const fragNode = doc.createNode('m.frg');
+		fragNode.setAttr('name', 'JS World');
+		fragNode.setAttr('greeting', 'JS Hello');
+
+		const divNode = doc.createNode('h.div', { slotSrc: fragNode });
+		divNode.setAttr('m.coat', ps('[(title=<name>)]'));
+
+		assertEquals(divNode.getAttr('title'), 'JS World');
+
+		// Change the m.coat spec itself - should re-compute
+		divNode.setAttr('m.coat', ps('[(title=<greeting>)]'));
+		assertEquals(divNode.getAttr('title'), 'JS Hello');
+	});
+
+	await t.step("(getAttr) - Conditional expression updates reactively", async () => {
+		const fragNode = doc.createNode('m.frg');
+		// Start with name unset
+
+		const divNode = doc.createNode('h.div', { slotSrc: fragNode });
+		divNode('setAttr', ls([, 'm.coat', , ps('[(title=<name|Default>)]')]));
+
+		// Initially unset - should use default
+		assertEquals(divNode('getAttr', ls([, 'title'])), 'Default');
+
+		// Set the source attribute - should now use the value
+		fragNode('setAttr', ls([, 'name', , 'Set Value']));
+		assertEquals(divNode('getAttr', ls([, 'title'])), 'Set Value');
+
+		// Clear the source attribute - should revert to default
+		fragNode('delAttr', ls([, 'name']));
+		assertEquals(divNode('getAttr', ls([, 'title'])), 'Default');
+	});
+
+	await t.step(".getAttr() - Conditional expression updates reactively via JS", async () => {
+		const fragNode = doc.createNode('m.frg');
+		// Start with name unset
+
+		const divNode = doc.createNode('h.div', { slotSrc: fragNode });
+		divNode.setAttr('m.coat', ps('[(title="<name|JS Default>")]'));
+
+		// Initially unset - should use default
+		assertEquals(divNode.getAttr('title'), 'JS Default');
+
+		// Set the source attribute - should now use the value
+		fragNode.setAttr('name', 'JS Set Value');
+		assertEquals(divNode.getAttr('title'), 'JS Set Value');
+
+		// Clear the source attribute - should revert to default
+		fragNode.delAttr('name');
+		assertEquals(divNode.getAttr('title'), 'JS Default');
+	});
+});
+
+Deno.test("MWIDocNode - m.slat Reactivity", async (t) => {
+	await t.step("(getAttr) - Updates when slot source attribute changes", async () => {
+		const fragNode = doc.createNode('m.frg');
+		fragNode('setAttr', ls([, 'title', , 'Initial']));
+
+		const divNode = doc.createNode('h.div', { slotSrc: fragNode });
+		divNode('setAttr', ls([, 'm.slat', , ps('[(title=[])]')]));
+
+		assertEquals(divNode('getAttr', ls([, 'title'])), 'Initial');
+
+		// Change the source attribute - m.slat should reactively update
+		fragNode('setAttr', ls([, 'title', , 'Updated']));
+		assertEquals(divNode('getAttr', ls([, 'title'])), 'Updated');
+	});
+
+	await t.step(".getAttr() - Updates when slot source attribute changes via JS", async () => {
+		const fragNode = doc.createNode('m.frg');
+		fragNode.setAttr('title', 'JS Initial');
+
+		const divNode = doc.createNode('h.div', { slotSrc: fragNode });
+		divNode.setAttr('m.slat', ps('[(title=[])]'));
+
+		assertEquals(divNode.getAttr('title'), 'JS Initial');
+
+		// Change the source attribute - m.slat should reactively update
+		fragNode.setAttr('title', 'JS Updated');
+		assertEquals(divNode.getAttr('title'), 'JS Updated');
+	});
+
+	await t.step("(getAttr) - Updates when m.slat spec changes", async () => {
+		const fragNode = doc.createNode('m.frg');
+		fragNode('setAttr', ls([, 'src1', , 'Value1']));
+		fragNode('setAttr', ls([, 'src2', , 'Value2']));
+
+		const divNode = doc.createNode('h.div', { slotSrc: fragNode });
+		divNode('setAttr', ls([, 'm.slat', , ps('[(title=[src1])]')]));
+
+		assertEquals(divNode('getAttr', ls([, 'title'])), 'Value1');
+
+		// Change the m.slat spec to use a different source
+		divNode('setAttr', ls([, 'm.slat', , ps('[(title=[src2])]')]));
+		assertEquals(divNode('getAttr', ls([, 'title'])), 'Value2');
+	});
+
+	await t.step(".getAttr() - Updates when m.slat spec changes via JS", async () => {
+		const fragNode = doc.createNode('m.frg');
+		fragNode.setAttr('src1', 'JS Value1');
+		fragNode.setAttr('src2', 'JS Value2');
+
+		const divNode = doc.createNode('h.div', { slotSrc: fragNode });
+		divNode.setAttr('m.slat', ps('[(title=[src1])]'));
+
+		assertEquals(divNode.getAttr('title'), 'JS Value1');
+
+		// Change the m.slat spec to use a different source
+		divNode.setAttr('m.slat', ps('[(title=[src2])]'));
+		assertEquals(divNode.getAttr('title'), 'JS Value2');
+	});
+
+	await t.step("(getAttr) - Else fallback updates reactively", async () => {
+		const fragNode = doc.createNode('m.frg');
+		// Start with source attribute unset
+
+		const divNode = doc.createNode('h.div', { slotSrc: fragNode });
+		divNode('setAttr', ls([, 'm.slat', , ps('[(title=[missing else=Default])]')]));
+
+		// Initially unset - should use else default
+		assertEquals(divNode('getAttr', ls([, 'title'])), 'Default');
+
+		// Set the source attribute - should now use the value
+		fragNode('setAttr', ls([, 'missing', , 'Found']));
+		assertEquals(divNode('getAttr', ls([, 'title'])), 'Found');
+
+		// Clear the source attribute - should revert to else default
+		fragNode('delAttr', ls([, 'missing']));
+		assertEquals(divNode('getAttr', ls([, 'title'])), 'Default');
+	});
+
+	await t.step(".getAttr() - Else fallback updates reactively via JS", async () => {
+		const fragNode = doc.createNode('m.frg');
+		// Start with source attribute unset
+
+		const divNode = doc.createNode('h.div', { slotSrc: fragNode });
+		divNode.setAttr('m.slat', ps('[(title=[missing else="JS Default"])]'));
+
+		// Initially unset - should use else default
+		assertEquals(divNode.getAttr('title'), 'JS Default');
+
+		// Set the source attribute - should now use the value
+		fragNode.setAttr('missing', 'JS Found');
+		assertEquals(divNode.getAttr('title'), 'JS Found');
+
+		// Clear the source attribute - should revert to else default
+		fragNode.delAttr('missing');
+		assertEquals(divNode.getAttr('title'), 'JS Default');
+	});
+});
+
 Deno.test("MWIDocNode - Combined m.slat and m.coat", async (t) => {
 	await t.step("(setAttr) - Both processed immediately", async () => {
 		const fragNode = doc.createNode('m.frg');

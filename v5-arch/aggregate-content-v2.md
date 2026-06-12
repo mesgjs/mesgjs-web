@@ -1,6 +1,6 @@
 # Aggregate Content — Architectural Plan V2
 
-**Status:** APPROVED  
+**Status:** COMPLETED  
 **Date:** 2026-05-31  
 **Last updated:** 2026-06-07  
 **Purpose:** Unified architectural plan for SSR and CSR content aggregation with resumability support

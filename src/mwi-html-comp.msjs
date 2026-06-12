@@ -158,7 +158,7 @@ modcaps=''
 				p.at('_domAttrs').rv;
 				return p.at('_dom').rv;
 			}
-			if (typeof document !== 'object' || typeof document.createElement !== 'function') return new NANOS();
+			if (typeof document !== 'object' || typeof document.createElement !== 'function') throw new Error('Missing document.createElement API');
 
 			const schema = p.at(SCHEMA), isVoid = schema?.at(VOID);
 			const type = p.at('type').replace(/^h\./, '').toUpperCase();
@@ -259,7 +259,7 @@ modcaps=''
 				p.at('_domAttrs').rv;
 				return p.at('_dom').rv;
 			}
-			if (typeof document !== 'object' || typeof document.createElement !== 'function') return new NANOS();
+			if (typeof document !== 'object' || typeof document.createElement !== 'function') throw new Error('Missing document.createElement API');
 
 			const doc = p.at('doc'), type = p.at('type').replace(/^h\./, '').toUpperCase();
 			const m = d.mp, sync = m.at('sync');

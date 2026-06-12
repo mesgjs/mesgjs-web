@@ -606,3 +606,301 @@ Deno.test("MWIDocNode - CSR-DOM Slotting Without Slot Source", async (t) => {
 		assertEquals(divElem.getAttribute('data-info'), 'JS Default2');
 	});
 });
+
+Deno.test("MWIDocNode - CSR-DOM m.coat Rendering", async (t) => {
+	await t.step("(getDOM) - m.coat with slot source renders computed attribute", async () => {
+		const fragNode = doc('createNode', ['m.frg']);
+		fragNode('setAttr', ['name', 'World']);
+
+		const divNode = doc('createNode', { 0: 'h.div', slotSrc: fragNode });
+		divNode('setAttr', ['m.coat', ps('[(title=<name>)]')]);
+		const domNodes = divNode('getDOM');
+
+		await globalThis.reactive.wait();
+		const divElem = domNodes.at(0);
+		assertEquals(divElem.title, 'World');
+	});
+
+	await t.step(".getDOM() - m.coat with slot source renders computed attribute via JS", async () => {
+		const fragNode = doc.createNode('m.frg');
+		fragNode.setAttr('name', 'JS World');
+
+		const divNode = doc.createNode('h.div', { slotSrc: fragNode });
+		divNode.setAttr('m.coat', ps('[(title=<name>)]'));
+		const domNodes = divNode.getDOM();
+
+		await globalThis.reactive.wait();
+		const divElem = domNodes.at(0);
+		assertEquals(divElem.title, 'JS World');
+	});
+
+	await t.step("(getDOM) - m.coat with default fallback renders default", async () => {
+		const fragNode = doc('createNode', ['m.frg']);
+		// name is not set
+
+		const divNode = doc('createNode', { 0: 'h.div', slotSrc: fragNode });
+		divNode('setAttr', ['m.coat', ps('[(title=<name|Default>)]')]);
+		const domNodes = divNode('getDOM');
+
+		await globalThis.reactive.wait();
+		const divElem = domNodes.at(0);
+		assertEquals(divElem.title, 'Default');
+	});
+
+	await t.step(".getDOM() - m.coat with default fallback renders default via JS", async () => {
+		const fragNode = doc.createNode('m.frg');
+		// name is not set
+
+		const divNode = doc.createNode('h.div', { slotSrc: fragNode });
+		divNode.setAttr('m.coat', ps('[(title=<name|Fallback>)]'));
+		const domNodes = divNode.getDOM();
+
+		await globalThis.reactive.wait();
+		const divElem = domNodes.at(0);
+		assertEquals(divElem.title, 'Fallback');
+	});
+});
+
+Deno.test("MWIDocNode - CSR-DOM m.coat Reactivity", async (t) => {
+	await t.step("(getDOM) - DOM updates when slot source attribute changes", async () => {
+		const fragNode = doc('createNode', ['m.frg']);
+		fragNode('setAttr', ['name', 'Initial']);
+
+		const divNode = doc('createNode', { 0: 'h.div', slotSrc: fragNode });
+		divNode('setAttr', ['m.coat', ps('[(title=<name>)]')]);
+		const domNodes = divNode('getDOM');
+
+		await globalThis.reactive.wait();
+		const divElem = domNodes.at(0);
+		assertEquals(divElem.title, 'Initial');
+
+		// Change the source attribute - DOM should reactively update
+		fragNode('setAttr', ['name', 'Updated']);
+		await globalThis.reactive.wait();
+		assertEquals(divElem.title, 'Updated');
+	});
+
+	await t.step(".getDOM() - DOM updates when slot source attribute changes via JS", async () => {
+		const fragNode = doc.createNode('m.frg');
+		fragNode.setAttr('name', 'JS Initial');
+
+		const divNode = doc.createNode('h.div', { slotSrc: fragNode });
+		divNode.setAttr('m.coat', ps('[(title=<name>)]'));
+		const domNodes = divNode.getDOM();
+
+		await globalThis.reactive.wait();
+		const divElem = domNodes.at(0);
+		assertEquals(divElem.title, 'JS Initial');
+
+		// Change the source attribute - DOM should reactively update
+		fragNode.setAttr('name', 'JS Updated');
+		await globalThis.reactive.wait();
+		assertEquals(divElem.title, 'JS Updated');
+	});
+
+	await t.step("(getDOM) - DOM updates when m.coat spec changes", async () => {
+		const fragNode = doc('createNode', ['m.frg']);
+		fragNode('setAttr', ['name', 'World']);
+		fragNode('setAttr', ['greeting', 'Hello']);
+
+		const divNode = doc('createNode', { 0: 'h.div', slotSrc: fragNode });
+		divNode('setAttr', ['m.coat', ps('[(title=<name>)]')]);
+		const domNodes = divNode('getDOM');
+
+		await globalThis.reactive.wait();
+		const divElem = domNodes.at(0);
+		assertEquals(divElem.title, 'World');
+
+		// Change the m.coat spec - DOM should reactively update
+		divNode('setAttr', ['m.coat', ps('[(title=<greeting>)]')]);
+		await globalThis.reactive.wait();
+		assertEquals(divElem.title, 'Hello');
+	});
+
+	await t.step(".getDOM() - DOM updates when m.coat spec changes via JS", async () => {
+		const fragNode = doc.createNode('m.frg');
+		fragNode.setAttr('name', 'JS World');
+		fragNode.setAttr('greeting', 'JS Hello');
+
+		const divNode = doc.createNode('h.div', { slotSrc: fragNode });
+		divNode.setAttr('m.coat', ps('[(title=<name>)]'));
+		const domNodes = divNode.getDOM();
+
+		await globalThis.reactive.wait();
+		const divElem = domNodes.at(0);
+		assertEquals(divElem.title, 'JS World');
+
+		// Change the m.coat spec - DOM should reactively update
+		divNode.setAttr('m.coat', ps('[(title=<greeting>)]'));
+		await globalThis.reactive.wait();
+		assertEquals(divElem.title, 'JS Hello');
+	});
+
+	await t.step("(getDOM) - DOM updates when conditional expression changes", async () => {
+		const fragNode = doc('createNode', ['m.frg']);
+		// name is not set initially
+
+		const divNode = doc('createNode', { 0: 'h.div', slotSrc: fragNode });
+		divNode('setAttr', ['m.coat', ps('[(title=<name|Default>)]')]);
+		const domNodes = divNode('getDOM');
+
+		await globalThis.reactive.wait();
+		const divElem = domNodes.at(0);
+		assertEquals(divElem.title, 'Default');
+
+		// Set the source attribute - DOM should update
+		fragNode('setAttr', ['name', 'SetValue']);
+		await globalThis.reactive.wait();
+		assertEquals(divElem.title, 'SetValue');
+
+		// Clear the source attribute - DOM should revert to default
+		fragNode('delAttr', ['name']);
+		await globalThis.reactive.wait();
+		assertEquals(divElem.title, 'Default');
+	});
+
+	await t.step(".getDOM() - DOM updates when conditional expression changes via JS", async () => {
+		const fragNode = doc.createNode('m.frg');
+		// name is not set initially
+
+		const divNode = doc.createNode('h.div', { slotSrc: fragNode });
+		divNode.setAttr('m.coat', ps('[(title=<name|Fallback>)]'));
+		const domNodes = divNode.getDOM();
+
+		await globalThis.reactive.wait();
+		const divElem = domNodes.at(0);
+		assertEquals(divElem.title, 'Fallback');
+
+		// Set the source attribute - DOM should update
+		fragNode.setAttr('name', 'JSSetValue');
+		await globalThis.reactive.wait();
+		assertEquals(divElem.title, 'JSSetValue');
+
+		// Clear the source attribute - DOM should revert to fallback
+		fragNode.delAttr('name');
+		await globalThis.reactive.wait();
+		assertEquals(divElem.title, 'Fallback');
+	});
+});
+
+Deno.test("MWIDocNode - CSR-DOM m.slat Reactivity", async (t) => {
+	await t.step("(getDOM) - DOM updates when slot source attribute changes", async () => {
+		const fragNode = doc('createNode', ['m.frg']);
+		fragNode('setAttr', ['title', 'Initial']);
+
+		const divNode = doc('createNode', { 0: 'h.div', slotSrc: fragNode });
+		divNode('setAttr', ['m.slat', ps('[(title=[])]')]);
+		const domNodes = divNode('getDOM');
+
+		await globalThis.reactive.wait();
+		const divElem = domNodes.at(0);
+		assertEquals(divElem.title, 'Initial');
+
+		// Change the source attribute - DOM should reactively update
+		fragNode('setAttr', ['title', 'Updated']);
+		await globalThis.reactive.wait();
+		assertEquals(divElem.title, 'Updated');
+	});
+
+	await t.step(".getDOM() - DOM updates when slot source attribute changes via JS", async () => {
+		const fragNode = doc.createNode('m.frg');
+		fragNode.setAttr('title', 'JS Initial');
+
+		const divNode = doc.createNode('h.div', { slotSrc: fragNode });
+		divNode.setAttr('m.slat', ps('[(title=[])]'));
+		const domNodes = divNode.getDOM();
+
+		await globalThis.reactive.wait();
+		const divElem = domNodes.at(0);
+		assertEquals(divElem.title, 'JS Initial');
+
+		// Change the source attribute - DOM should reactively update
+		fragNode.setAttr('title', 'JS Updated');
+		await globalThis.reactive.wait();
+		assertEquals(divElem.title, 'JS Updated');
+	});
+
+	await t.step("(getDOM) - DOM updates when m.slat spec changes", async () => {
+		const fragNode = doc('createNode', ['m.frg']);
+		fragNode('setAttr', ['src1', 'Value1']);
+		fragNode('setAttr', ['src2', 'Value2']);
+
+		const divNode = doc('createNode', { 0: 'h.div', slotSrc: fragNode });
+		divNode('setAttr', ['m.slat', ps('[(title=[src1])]')]);
+		const domNodes = divNode('getDOM');
+
+		await globalThis.reactive.wait();
+		const divElem = domNodes.at(0);
+		assertEquals(divElem.title, 'Value1');
+
+		// Change the m.slat spec - DOM should reactively update
+		divNode('setAttr', ['m.slat', ps('[(title=[src2])]')]);
+		await globalThis.reactive.wait();
+		assertEquals(divElem.title, 'Value2');
+	});
+
+	await t.step(".getDOM() - DOM updates when m.slat spec changes via JS", async () => {
+		const fragNode = doc.createNode('m.frg');
+		fragNode.setAttr('src1', 'JS Value1');
+		fragNode.setAttr('src2', 'JS Value2');
+
+		const divNode = doc.createNode('h.div', { slotSrc: fragNode });
+		divNode.setAttr('m.slat', ps('[(title=[src1])]'));
+		const domNodes = divNode.getDOM();
+
+		await globalThis.reactive.wait();
+		const divElem = domNodes.at(0);
+		assertEquals(divElem.title, 'JS Value1');
+
+		// Change the m.slat spec - DOM should reactively update
+		divNode.setAttr('m.slat', ps('[(title=[src2])]'));
+		await globalThis.reactive.wait();
+		assertEquals(divElem.title, 'JS Value2');
+	});
+
+	await t.step("(getDOM) - DOM updates when else fallback changes", async () => {
+		const fragNode = doc('createNode', ['m.frg']);
+		// source attribute not set initially
+
+		const divNode = doc('createNode', { 0: 'h.div', slotSrc: fragNode });
+		divNode('setAttr', ['m.slat', ps('[(title=[missing else=Default])]')]);
+		const domNodes = divNode('getDOM');
+
+		await globalThis.reactive.wait();
+		const divElem = domNodes.at(0);
+		assertEquals(divElem.title, 'Default');
+
+		// Set the source attribute - DOM should update
+		fragNode('setAttr', ['missing', 'Found']);
+		await globalThis.reactive.wait();
+		assertEquals(divElem.title, 'Found');
+
+		// Clear the source attribute - DOM should revert to else default
+		fragNode('delAttr', ['missing']);
+		await globalThis.reactive.wait();
+		assertEquals(divElem.title, 'Default');
+	});
+
+	await t.step(".getDOM() - DOM updates when else fallback changes via JS", async () => {
+		const fragNode = doc.createNode('m.frg');
+		// source attribute not set initially
+
+		const divNode = doc.createNode('h.div', { slotSrc: fragNode });
+		divNode.setAttr('m.slat', ps('[(title=[missing else=Fallback])]'));
+		const domNodes = divNode.getDOM();
+
+		await globalThis.reactive.wait();
+		const divElem = domNodes.at(0);
+		assertEquals(divElem.title, 'Fallback');
+
+		// Set the source attribute - DOM should update
+		fragNode.setAttr('missing', 'JSFound');
+		await globalThis.reactive.wait();
+		assertEquals(divElem.title, 'JSFound');
+
+		// Clear the source attribute - DOM should revert to else fallback
+		fragNode.delAttr('missing');
+		await globalThis.reactive.wait();
+		assertEquals(divElem.title, 'Fallback');
+	});
+});

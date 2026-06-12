@@ -61,7 +61,6 @@ Deno.test("MWICoreDefer (m.defer) - CSR-DOM No Gate (component has no ftr)", asy
 		deferNode('setSubSpec', { subSpec: ps('[([test.deferred.noftr])]') });
 		const domNodes = deferNode('getDOM');
 
-		await globalThis.reactive.wait();
 		assertEquals(domNodes.size, 0, 'Should return empty NANOS (no ftr)');
 	});
 
@@ -70,7 +69,6 @@ Deno.test("MWICoreDefer (m.defer) - CSR-DOM No Gate (component has no ftr)", asy
 		deferNode.setSubSpec({ subSpec: ps('[([test.deferred.noftr])]') });
 		const domNodes = deferNode.getDOM();
 
-		await globalThis.reactive.wait();
 		assertEquals(domNodes.size, 0, 'Should return empty NANOS (no ftr)');
 	});
 });
@@ -84,7 +82,6 @@ Deno.test("MWICoreDefer (m.defer) - CSR-DOM With Gate (feature-gated rendering)"
 		assertEquals(deferNode.msjsType, 'MWICoreDefer', 'Should be defer');
 		const domNodes = deferNode('getDOM');
 
-		await globalThis.reactive.wait();
 		assertEquals(domNodes.size, 0, 'Should be empty before gate opens');
 	});
 
@@ -95,7 +92,6 @@ Deno.test("MWICoreDefer (m.defer) - CSR-DOM With Gate (feature-gated rendering)"
 		assertEquals(deferNode.msjsType, 'MWICoreDefer', 'Should be defer');
 		const domNodes = deferNode.getDOM();
 
-		await globalThis.reactive.wait();
 		assertEquals(domNodes.size, 0, 'Should be empty before gate opens');
 	});
 });
@@ -105,7 +101,6 @@ Deno.test("MWICoreDefer (m.defer) - CSR-DOM Real-World Scenarios", async (t) => 
 		const node = doc('createNode', ['test.deferred.csr']);
 		const domNodes = node('getDOM');
 
-		await globalThis.reactive.wait();
 		assertEquals(domNodes.size, 0, 'Should return empty NANOS (no rendering)');
 	});
 
@@ -113,7 +108,6 @@ Deno.test("MWICoreDefer (m.defer) - CSR-DOM Real-World Scenarios", async (t) => 
 		const node = doc.createNode('test.deferred.csr');
 		const domNodes = node.getDOM();
 
-		await globalThis.reactive.wait();
 		assertEquals(domNodes.size, 0, 'Should return empty NANOS (no rendering)');
 	});
 
@@ -122,7 +116,6 @@ Deno.test("MWICoreDefer (m.defer) - CSR-DOM Real-World Scenarios", async (t) => 
 		testDoc('append', { list: '[([test.deferred.csr])]' });
 		const domNodes = testDoc('getDOM');
 
-		await globalThis.reactive.wait();
 		// Defer node contributes no DOM nodes
 		assertEquals(domNodes.size, 0, 'Document with only defer node should produce empty DOM');
 	});
@@ -132,7 +125,6 @@ Deno.test("MWICoreDefer (m.defer) - CSR-DOM Real-World Scenarios", async (t) => 
 		testDoc.append({ list: '[([test.deferred.csr])]' });
 		const domNodes = testDoc.getDOM();
 
-		await globalThis.reactive.wait();
 		assertEquals(domNodes.size, 0, 'Document with only defer node should produce empty DOM');
 	});
 
@@ -141,7 +133,6 @@ Deno.test("MWICoreDefer (m.defer) - CSR-DOM Real-World Scenarios", async (t) => 
 		testDoc('append', { list: '[([m.t t=Before] [test.deferred.csr] [m.t t=After])]' });
 		const domNodes = testDoc('getDOM');
 
-		await globalThis.reactive.wait();
 		// Should only see content from text nodes (2 nodes)
 		assertEquals(domNodes.size, 2, 'Should only have nodes from text elements');
 		assertEquals(domNodes.at(0).nodeType, 3); // Text node
@@ -155,7 +146,6 @@ Deno.test("MWICoreDefer (m.defer) - CSR-DOM Real-World Scenarios", async (t) => 
 		testDoc.append({ list: '[([m.t t=Start] [test.deferred.csr] [m.t t=End])]' });
 		const domNodes = testDoc.getDOM();
 
-		await globalThis.reactive.wait();
 		assertEquals(domNodes.size, 2, 'Should only have nodes from text elements');
 		assertEquals(domNodes.at(0).nodeType, 3); // Text node
 		assertEquals(domNodes.at(0).nodeValue, 'Start');
@@ -169,7 +159,6 @@ Deno.test("MWICoreDefer (m.defer) - CSR-DOM Reactive Behavior", async (t) => {
 		const deferNode = doc('createNode', ['m.defer']);
 		const domNodes = deferNode('getDOM');
 
-		await globalThis.reactive.wait();
 		assertEquals(domNodes.size, 0, 'Should be empty initially');
 
 		// Try to change attributes
@@ -186,7 +175,6 @@ Deno.test("MWICoreDefer (m.defer) - CSR-DOM Reactive Behavior", async (t) => {
 		const deferNode = doc.createNode('m.defer');
 		const domNodes = deferNode.getDOM();
 
-		await globalThis.reactive.wait();
 		assertEquals(domNodes.size, 0, 'Should be empty initially');
 
 		deferNode.setAttr('style', 'color: red');

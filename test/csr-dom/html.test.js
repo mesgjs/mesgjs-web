@@ -339,7 +339,6 @@ Deno.test("MWIHTML (h.*) - CSR-DOM Reactive Updates", async (t) => {
 
 		const divElem = domNodes.at(0);
 		// Initially empty - no children
-		await globalThis.reactive.wait();
 		assertEquals(divElem.childNodes.length, 0);
 
 		// Update to non-empty
@@ -361,7 +360,6 @@ Deno.test("MWIHTML (h.*) - CSR-DOM Reactive Updates", async (t) => {
 		const domNodes = divNode.getDOM();
 
 		const divElem = domNodes.at(0);
-		await globalThis.reactive.wait();
 		assertEquals(divElem.childNodes.length, 0);
 
 		textNode.setAttr('t', 'Now has text');

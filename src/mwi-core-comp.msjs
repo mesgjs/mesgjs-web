@@ -33,20 +33,30 @@ modcaps=''
 
 	const COM_IF = CORE_IF + 'Com';
 	const COM_TYPE = 'm.com';
+
 	const DEFER_IF = CORE_IF + 'Defer';
 	const DEFER_TYPE = 'm.defer';
+
 	const FRAG_IF = CORE_IF + 'Frag';
 	const FRAG_TYPE = 'm.frg';
+
 	const HEADBODY_IF = CORE_IF + 'HeadBody';
 	const HEAD_TYPE = 'm.head';
 	const BODY_TYPE = 'm.body';
-	const TEXT_IF = CORE_IF + 'Text';
-	const TEXT_TYPE = 'm.t';
-	const TPL_IF = CORE_IF + 'Tpl';
-	const SLOT_IF = CORE_IF + 'Slot';
-	const SLOT_TYPE = 'm.slot';
+
 	const SCPCSS_IF = CORE_IF + 'ScpCSS';
 	const SCPCSS_TYPE = 'm.scpcss';
+
+	const SLOT_IF = CORE_IF + 'Slot';
+	const SLOT_TYPE = 'm.slot';
+
+	const SOURCE_IF = CORE_IF + 'Source';
+	const SOURCE_TYPE = 'm.src';
+
+	const TEXT_IF = CORE_IF + 'Text';
+	const TEXT_TYPE = 'm.t';
+
+	const TPL_IF = CORE_IF + 'Tpl';
 
 	const { fready, fwait, getInstance, getInterface } = globalThis.$c;
 
@@ -58,6 +68,7 @@ modcaps=''
 		[HEAD_TYPE]: ls([INTERFACE, HEADBODY_IF]),
 		[SCPCSS_TYPE]: ls([INTERFACE, SCPCSS_IF, SCHEMA, ls([VOID, true])]),
 		[SLOT_TYPE]: ls([INTERFACE, SLOT_IF, SCHEMA, ls([MRNS, true])]),
+		[SOURCE_TYPE]: ls([INTERFACE, SOURCE_IF]),
 		[TEXT_TYPE]: ls([INTERFACE, TEXT_IF, SCHEMA, ls([VOID, true])]),
 	};
 
@@ -84,7 +95,7 @@ modcaps=''
 			const p = d.p;
 
 			if (p.has('_dom')) return p.at('_dom').rv;
-			if (typeof document !== 'object' || typeof document.createComment !== 'function') return new NANOS();
+			if (typeof document !== 'object' || typeof document.createComment !== 'function') throw new Error('Missing document.createComment API');
 
 			const m = d.mp, sync = m.at('sync'), existing = sync?.('sync', ['m.com', d.rr]);
 			const comment = existing ?? document.createComment('');
@@ -133,10 +144,10 @@ modcaps=''
 	(() => {
 		// Return reactive sub-doc
 		function opGetSubDoc (d) {
-			if (typeof document !== 'object') return new NANOS();
 			const p = d.p, subDoc = p.at('subDoc');
 
 			if (p.has('_subDoc')) return p.at('_subDoc').rv;
+			if (typeof document !== 'object') throw new Error('Missing document API');
 
 			const rxs = p.at('rxState'), _subDoc = reactive({ eager: true, def: () => subDoc });
 			// Derive the feature name from the sub-spec's component type
@@ -362,7 +373,7 @@ modcaps=''
 			const p = d.p;
 
 			if (p.has('_dom')) return p.at('_dom').rv;
-			if (typeof document !== 'object' || typeof document.createElement !== 'function') return new NANOS();
+			if (typeof document !== 'object' || typeof document.createElement !== 'function') throw new Error('Missing document.createElement API');
 
 			const id = d.rr('getAttr', ['id']);
 			const existing = id && document.getElementById(id);
@@ -473,6 +484,30 @@ modcaps=''
 		});
 	})();
 
+	// MWICoreSource (m.src) interface
+	// An MWIDocNode (essentially a fragment) that is a new slot source
+	// (for "staging") with special, pass-through m.ci semantics
+	(() => {
+		function opGetAttr (d) {
+			const m = d.mp, name = m.at(0);
+
+			if (name === 'm.ci') {
+				const p = d.p, slotSrc = p.at('slotSrc');
+				if (slotSrc) return slotSrc('getAttr', ['m.ci']);
+			}
+
+			return d.sm(d, 'redis');
+		}
+
+		getInterface(SOURCE_IF).set({
+			pristine: true, lock: true,
+			chain: [ BASE_IF ],
+			handlers: {
+				'getAttr': opGetAttr,
+			},
+		});
+	})();
+
 	// MWICoreText (text) interface
 	// `text` or `[m.t t=text?]`
 	(() => {
@@ -481,7 +516,7 @@ modcaps=''
 			const p = d.p;
 
 			if (p.has('_dom')) return p.at('_dom').rv;
-			if (typeof document !== 'object' || typeof document.createTextNode !== 'function') return new NANOS();
+			if (typeof document !== 'object' || typeof document.createTextNode !== 'function') throw new Error('Missing document.createTextNode API');
 
 			const m = d.mp, sync = m.at('sync'), existing = sync?.('sync', ['m.t', d.rr]);
 			const text = existing ?? document.createTextNode('');

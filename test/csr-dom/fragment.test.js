@@ -23,7 +23,6 @@ Deno.test("MWICoreFrag (m.frg) - CSR-DOM Tests", async (t) => {
 		const domNodes = await fragNode('getDOM');
 
 		// Empty fragment should return empty reactive NANOS
-		await globalThis.reactive.wait();
 		assertEquals(domNodes.size, 0);
 	});
 
@@ -31,7 +30,6 @@ Deno.test("MWICoreFrag (m.frg) - CSR-DOM Tests", async (t) => {
 		const fragNode = await doc.createNode('m.frg');
 		const domNodes = await fragNode.getDOM();
 
-		await globalThis.reactive.wait();
 		assertEquals(domNodes.size, 0);
 	});
 
@@ -202,7 +200,6 @@ Deno.test("MWICoreFrag (m.frg) - CSR-DOM Tests", async (t) => {
 		const domNodes = await fragNode('getDOM');
 
 		// Initially empty - no nodes from text child
-		await globalThis.reactive.wait();
 		assertEquals(domNodes.size, 0);
 
 		// Update to non-empty
@@ -222,7 +219,6 @@ Deno.test("MWICoreFrag (m.frg) - CSR-DOM Tests", async (t) => {
 		fragNode.append(textNode);
 		const domNodes = await fragNode.getDOM();
 
-		await globalThis.reactive.wait();
 		assertEquals(domNodes.size, 0);
 
 		textNode.setAttr('t', 'Now has text');
@@ -244,7 +240,6 @@ Deno.test("MWICoreFrag (m.frg) - CSR-DOM Tests", async (t) => {
 		const domNodes = await fragNode('getDOM');
 
 		// Only the non-empty text node should contribute a DOM node
-		await globalThis.reactive.wait();
 		assertEquals(domNodes.size, 1);
 		assertEquals(domNodes.at(0).nodeValue, 'Content');
 	});
@@ -260,7 +255,6 @@ Deno.test("MWICoreFrag (m.frg) - CSR-DOM Tests", async (t) => {
 		fragNode.append(text1, text2, text3);
 		const domNodes = await fragNode.getDOM();
 
-		await globalThis.reactive.wait();
 		assertEquals(domNodes.size, 1);
 		assertEquals(domNodes.at(0).nodeValue, 'Content');
 	});

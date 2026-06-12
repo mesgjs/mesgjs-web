@@ -394,3 +394,222 @@ Deno.test("MWICoreScpCSS SSR - Output Parameter", async (t) => {
 		assertEquals(output.length, 0, "Should not push to output array when empty");
 	});
 });
+
+Deno.test("MWICoreScpCSS SSR - Edge Cases (migrated from core)", async (t) => {
+	// Migrated from test/core/scoped-css.test.js - unique coverage not in SSR file
+
+	await t.step("Component with whitespace-only scopedCSS", () => {
+		registry.register('test.migrate.scpcss.whitespace', ls([
+			'allowLate', true,
+			'if', 'MWIHTML',
+			'scopedCSS', '   \n  '
+		]));
+
+		const doc = getInstance('MWIDocument');
+		doc.createNode('test.migrate.scpcss.whitespace');
+		const scpNode = doc.createNode('m.scpcss');
+
+		const html = scpNode('getHTML');
+		// Whitespace-only CSS should still be included (implementation detail)
+		assert(html.length > 0, "Whitespace CSS should be included");
+	});
+});
+
+Deno.test("MWICoreScpCSS SSR - m.ci Virtual Attribute (migrated from core)", async (t) => {
+	// Migrated from test/core/scoped-css.test.js - unique coverage not in SSR file
+
+	await t.step("Read m.ci via m.slat from slot source", () => {
+		registry.register('test.migrate.scpcss.ci2', ls([
+			'allowLate', true,
+			'tpl', ps('[( [h.div m.slat=[ci=[m.ci]]] )]')
+		]));
+
+		const doc = getInstance('MWIDocument');
+		const tplNode = doc.createNode('test.migrate.scpcss.ci2');
+
+		// The template's internal div should have ci attribute set from slot source
+		const html = tplNode('getHTML');
+		assert(html.includes('ci='), "Should have ci attribute from m.slat");
+	});
+});
+
+Deno.test("MWICoreScpCSS SSR - m.coat with m.ci Integration (migrated from core)", async (t) => {
+	// Migrated from test/core/scoped-css.test.js - unique coverage not in SSR file
+
+	await t.step("Use m.ci in m.coat to set m.percl", () => {
+		registry.register('test.migrate.scpcss.coat1', ls([
+			'allowLate', true,
+			'tpl', ps('[( [h.div m.coat=[m.percl="<m.ci>"]] )]'),
+			'scopedCSS', '.@@ { border: 1px solid; }'
+		]));
+
+		const doc = getInstance('MWIDocument');
+		const tplNode = doc.createNode('test.migrate.scpcss.coat1');
+
+		// Get the internal div
+		const html = tplNode('getHTML');
+
+		// Should have m.percl set to component ID
+		const compId = tplNode('getAttr', ls([, 'm.ci']));
+		assert(html.includes(`class="${compId}"`), "Should have component ID as class");
+	});
+
+	await t.step("Use m.ci in m.coat to set regular class", () => {
+		registry.register('test.migrate.scpcss.coat2', ls([
+			'allowLate', true,
+			'tpl', ps('[( [h.div m.coat=[class="<m.ci>"]] )]')
+		]));
+
+		const doc = getInstance('MWIDocument');
+		const tplNode = doc.createNode('test.migrate.scpcss.coat2');
+
+		const compId = tplNode('getAttr', ls([, 'm.ci']));
+		const html = tplNode('getHTML');
+
+		assert(html.includes(`class="${compId}"`), "Should have component ID as class");
+	});
+
+	await t.step("Multiple m.coat attributes using m.ci", () => {
+		registry.register('test.migrate.scpcss.coat3', ls([
+			'allowLate', true,
+			'tpl', ps('[( [h.div m.coat=[m.percl="<m.ci>" data-comp="<m.ci>"]] )]')
+		]));
+
+		const doc = getInstance('MWIDocument');
+		const tplNode = doc.createNode('test.migrate.scpcss.coat3');
+
+		const compId = tplNode('getAttr', ls([, 'm.ci']));
+		const html = tplNode('getHTML');
+
+		assert(html.includes(`class="${compId}"`), "Should have component ID as class");
+		assert(html.includes(`data-comp="${compId}"`), "Should have component ID as data attribute");
+	});
+
+	await t.step("m.coat with m.ci in nested template context", () => {
+		registry.register('test.migrate.scpcss.coat4outer', ls([
+			'allowLate', true,
+			'tpl', ps('[( [test.migrate.scpcss.coat4inner m.slat=[outerci=[m.ci]]] )]'),
+			'scopedCSS', '.@@ { border: 2px solid; }'
+		]));
+		registry.register('test.migrate.scpcss.coat4inner', ls([
+			'allowLate', true,
+			'tpl', ps('[( [h.div m.coat=[m.percl="<outerci>"]] )]'),
+			'scopedCSS', '.@@ { padding: 1rem; }'
+		]));
+
+		const doc = getInstance('MWIDocument');
+		const outerNode = doc.createNode('test.migrate.scpcss.coat4outer');
+
+		const html = outerNode('getHTML');
+
+		// The inner div should have the outer template's component ID
+		const outerCompId = outerNode('getAttr', ls([, 'm.ci']));
+		assert(html.includes(`class="${outerCompId}"`), "Should have outer component ID as class");
+	});
+});
+
+Deno.test("MWICoreScpCSS SSR - CSS Deduplication (migrated from core)", async (t) => {
+	// Migrated from test/core/scoped-css.test.js - unique coverage not in SSR file
+
+	await t.step("Single component type, multiple instances", () => {
+		registry.register('test.migrate.scpcss.dedup1', ls([
+			'allowLate', true,
+			'if', 'MWIHTML',
+			'scopedCSS', '.@@ { width: 100%; }'
+		]));
+
+		const doc = getInstance('MWIDocument');
+
+		// Create 5 instances
+		for (let i = 0; i < 5; i++) {
+			doc.createNode('test.migrate.scpcss.dedup1');
+		}
+
+		const scpNode = doc.createNode('m.scpcss');
+		const html = scpNode('getHTML');
+
+		// CSS should appear only once
+		const matches = html.match(/width: 100%/g);
+		assertEquals(matches?.length, 1, "CSS should appear only once despite multiple instances");
+	});
+
+	await t.step("Component type reuse across document", () => {
+		registry.register('test.migrate.scpcss.dedup2', ls([
+			'allowLate', true,
+			'if', 'MWIHTML',
+			'scopedCSS', '.@@ { height: 50px; }'
+		]));
+
+		const doc = getInstance('MWIDocument');
+
+		// Use in different parts
+		const frag1 = doc.createNode('m.frg');
+		frag1('append', doc.createNode('test.migrate.scpcss.dedup2'));
+		doc('append', frag1);
+
+		const frag2 = doc.createNode('m.frg');
+		frag2('append', doc.createNode('test.migrate.scpcss.dedup2'));
+		doc('append', frag2);
+
+		const scpNode = doc.createNode('m.scpcss');
+		const html = scpNode('getHTML');
+
+		// CSS should not be duplicated
+		const matches = html.match(/height: 50px/g);
+		assertEquals(matches?.length, 1, "CSS should not be duplicated across document");
+	});
+});
+
+Deno.test("MWICoreScpCSS SSR - Real-World Patterns (migrated from core)", async (t) => {
+	// Migrated from test/core/scoped-css.test.js - unique coverage not in SSR file
+
+	await t.step("Card component with scoped styles", () => {
+		registry.register('test.migrate.scpcss.card', ls([
+			'allowLate', true,
+			'tpl', ps('[( [h.div m.coat=[m.percl="<m.ci>"] [m.slot]] )]'),
+			'scopedCSS', '.@@ { border: 1px solid #ccc; padding: 1rem; } .@@ .header { font-weight: bold; }'
+		]));
+
+		const doc = getInstance('MWIDocument');
+		const cardNode = doc.createNode('test.migrate.scpcss.card');
+		cardNode('setSubSpec', ps('[( [h.div class="header" "Card Title"] )]'));
+
+		const scpNode = doc.createNode('m.scpcss');
+		const html = scpNode('getHTML');
+
+		assert(html.includes('border: 1px solid #ccc'), "Should include card border CSS");
+		assert(html.includes('padding: 1rem'), "Should include padding CSS");
+		assert(html.includes('.header'), "Should include nested selector");
+		assert(html.includes('font-weight: bold'), "Should include header style");
+
+		// Verify card HTML has scoped class
+		const cardHtml = cardNode('getHTML');
+		const compId = cardNode('getAttr', ls([, 'm.ci']));
+		assert(cardHtml.includes(`class="${compId}"`), "Card should have scoped class");
+	});
+
+	await t.step("Nested components with scoped CSS", () => {
+		registry.register('test.migrate.scpcss.parent', ls([
+			'allowLate', true,
+			'tpl', ps('[( [m.scpcss] [h.div m.coat=[m.percl="<m.ci>"] [test.migrate.scpcss.child m.slat=[parentci=[m.ci]]]] )]'),
+			'scopedCSS', '.@@ { background: #f0f0f0; }'
+		]));
+		registry.register('test.migrate.scpcss.child', ls([
+			'allowLate', true,
+			'tpl', ps('[( [h.span m.coat=[m.percl="<parentci>"] "Child"] )]'),
+			'scopedCSS', '.@@ { color: blue; }'
+		]));
+
+		const doc = getInstance('MWIDocument');
+		const parNode = doc.createNode('test.migrate.scpcss.parent');
+
+		const html = parNode('getHTML');
+
+		assert(html.includes('background: #f0f0f0'), "Should include parent CSS");
+		assert(html.includes('color: blue'), "Should include child CSS");
+
+		// Should have two different component IDs
+		const compIdMatches = html.match(/_MO_\w+/g);
+		assert(compIdMatches.length >= 2, "Should have at least two component IDs");
+	});
+});

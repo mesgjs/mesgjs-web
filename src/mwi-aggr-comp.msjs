@@ -126,7 +126,7 @@ modcaps=''
 			const p = d.p;
 
 			if (p.has('_dom')) return p.at('_dom').rv;
-			if (typeof document !== 'object' || typeof document.createElement !== 'function') return new NANOS();
+			if (typeof document !== 'object' || typeof document.createElement !== 'function') throw new Error('Missing document.createElement API');
 
 			const doc = p.at('doc');
 			const from = d.rr('getAttr', ['from']);
@@ -367,7 +367,7 @@ modcaps=''
 			const p = d.p;
 
 			if (p.has('_dom')) return p.at('_dom').rv;
-			if (typeof document !== 'object' || typeof document.createElement !== 'function') return new NANOS();
+			if (typeof document !== 'object' || typeof document.createElement !== 'function') throw new Error('Missing document.createElement API');
 
 			const doc = p.at('doc');
 			const type = p.at('type');
@@ -488,7 +488,7 @@ modcaps=''
 				p.at('_subDomAttrs').rv;
 				return p.at('_subDom').rv;
 			}
-			if (typeof document !== 'object' || typeof document.createElement !== 'function') return new NANOS();
+			if (typeof document !== 'object' || typeof document.createElement !== 'function') throw new Error('Missing document.createElement API');
 
 			const type = p.at('type');
 			const link = type !== SCRIPT_TYPE && d.rr('getAttr', ['href']);

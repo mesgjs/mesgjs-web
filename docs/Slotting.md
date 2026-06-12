@@ -287,6 +287,7 @@ One powerful use of slotting is creating hierarchical ID structures in nested, r
 Different component types handle slotting differently:
 
 - **Templates and slots**: Create new slotting boundaries (become slot sources)
+- **Sources (`m.src`)**: Create new slotting boundaries (become slot sources); also passes through the outer slot source's `m.ci` — see [`MWICoreSource`](interfaces/MWICoreSource-slot-source.md)
 - **HTML elements (`h.*`)**: Pass through their parent's slot source (transparent)
 - **Fragments (`m.frg`)**: Pass through their parent's slot source (transparent)
 
@@ -294,6 +295,14 @@ This design ensures that:
 - Templates and slots create clear composition boundaries
 - HTML elements and fragments don't interfere with slotting
 - The slotting hierarchy remains predictable and composable
+
+### The `m.src` Component: Slotting Source Staging Layer
+
+`m.src` creates a new slotting boundary (becomes the slot source for its children), making it useful as a **staging layer** for slot content with its own attribute scope. Unlike `m.frg`, which is transparent, `m.src` isolates its children from the outer slot source's attributes.
+
+`m.src` also has special `m.ci` pass-through semantics: when a child uses `@@` (component ID), it resolves to the outer slot source's `m.ci` rather than `m.src`'s own registry entry. This ensures CSS scoping works correctly even when `m.src` is used inside a template.
+
+For full details, usage examples, and a comparison with `m.frg`, see [`MWICoreSource` — Slot Source Component](interfaces/MWICoreSource-slot-source.md).
 
 ## Summary
 

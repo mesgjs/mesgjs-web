@@ -37,25 +37,49 @@ modcaps=''
 		// m.coat (computed) attribute slotting
 		function applyCoat (d, value) {
 			if (!(value instanceof NANOS)) return;
+
 			const p = d.p, attrs = p.at('attrs');
+
 			attrs.set('m.coat', value);
-			for (const [target, spec] of value.namedEntries()) {
-				const value = computeAttr(d, spec);
-				d.rr('setAttr', ls([, target, , value, 'coat', false ]));
-			}
+			if (p.has('_mCoat')) return p.at('_mCoat').rv;
+
+			const _mCoat = reactive({ eager: true, def: () => {
+				const value = attrs.get('m.coat');
+
+				for (const [target, spec] of value.namedEntries()) {
+					const value = computeAttr(d, spec);
+
+					reactive.untracked(() => d.rr('setAttr', ls([, target, , value, 'coat', false ])));
+				}
+			}});
+
+			p.set('_mCoat', _mCoat);
+			return _mCoat.rv;
 		}
 
 		// m.slat attribute slotting
 		// [... m.slat=[target=[source? else=default?]...] ...]
 		function applySlat (d, value) {
 			if (!(value instanceof NANOS)) return;
+
 			const p = d.p, attrs = p.at('attrs'), slotSrc = p.at('slotSrc');
+
 			attrs.set('m.slat', value);
-			for (const [target, spec] of value.namedEntries()) {
-				const source = spec.at(0, target);
-				const value = slotSrc?.('getAttr', [ source ]) ?? spec.at('else');
-				d.rr('setAttr', ls([, target, , value, 'coat', false ]));
-			}
+			if (p.has('_mSlat')) return p.at('_mSlat').rv;
+
+			const _mSlat = reactive({ eager: true, def: () => {
+				const value = attrs.get('m.slat');
+
+				for (const [target, spec] of value.namedEntries()) {
+					const source = spec.at(0, target);
+					const value = slotSrc?.('getAttr', [ source ]) ?? spec.at('else');
+
+					reactive.untracked(() => d.rr('setAttr', ls([, target, , value, 'coat', false ])));
+				}
+			}});
+
+			p.set('_mSlat', _mSlat);
+			return _mSlat.rv;
 		}
 
 		// Return the final (string) value for a computed (e.g. m.coat) attribute
@@ -556,6 +580,11 @@ modcaps=''
 			}
 
 			// Real attributes
+			if (name !== 'm.coat' && name !== 'm.slat') {
+				// Eagerly reflect any recent source changes
+				p.at('_mCoat')?.rv;
+				p.at('_mSlat')?.rv;
+			}
 			return attrs.at(name);
 		}
 

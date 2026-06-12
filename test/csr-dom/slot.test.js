@@ -28,7 +28,6 @@ Deno.test("MWICoreSlot (m.slot) - CSR-DOM Default Content", async (t) => {
 		const domNodes = slotNode('getDOM');
 
 		// Should have one text node from the text node
-		await globalThis.reactive.wait();
 		assertEquals(domNodes.size, 1);
 		const textDomNode = domNodes.at(0);
 		assertEquals(textDomNode.nodeType, 3); // Text node
@@ -40,7 +39,6 @@ Deno.test("MWICoreSlot (m.slot) - CSR-DOM Default Content", async (t) => {
 		slotNode.setSubSpec('JS Default');
 		const domNodes = slotNode.getDOM();
 
-		await globalThis.reactive.wait();
 		assertEquals(domNodes.size, 1);
 		const textDomNode = domNodes.at(0);
 		assertEquals(textDomNode.nodeType, 3); // Text node
@@ -56,7 +54,6 @@ Deno.test("MWICoreSlot (m.slot) - CSR-DOM Default Content", async (t) => {
 		slotNode('append', [text1, text2]);
 		const domNodes = slotNode('getDOM');
 
-		await globalThis.reactive.wait();
 		assertEquals(domNodes.size, 2);
 		assertEquals(domNodes.at(0).textContent, 'First');
 		assertEquals(domNodes.at(1).textContent, 'Second');
@@ -71,7 +68,6 @@ Deno.test("MWICoreSlot (m.slot) - CSR-DOM Default Content", async (t) => {
 		slotNode.append(text1, text2);
 		const domNodes = slotNode.getDOM();
 
-		await globalThis.reactive.wait();
 		assertEquals(domNodes.size, 2);
 		assertEquals(domNodes.at(0).textContent, 'JS First');
 		assertEquals(domNodes.at(1).textContent, 'JS Second');
@@ -86,7 +82,6 @@ Deno.test("MWICoreSlot (m.slot) - CSR-DOM Slot Source Integration", async (t) =>
 		slotNode('setSubSpec', ['Default']);
 		const domNodes = slotNode('getDOM');
 
-		await globalThis.reactive.wait();
 		assertEquals(domNodes.size, 1);
 		assertEquals(domNodes.at(0).textContent, 'Default');
 	});
@@ -98,7 +93,6 @@ Deno.test("MWICoreSlot (m.slot) - CSR-DOM Slot Source Integration", async (t) =>
 		slotNode.setSubSpec('JS Default');
 		const domNodes = slotNode.getDOM();
 
-		await globalThis.reactive.wait();
 		assertEquals(domNodes.size, 1);
 		assertEquals(domNodes.at(0).textContent, 'JS Default');
 	});
@@ -109,7 +103,6 @@ Deno.test("MWICoreSlot (m.slot) - CSR-DOM Slot Source Integration", async (t) =>
 		slotNode('setSubSpec', ['Fallback']);
 		const domNodes = slotNode('getDOM');
 
-		await globalThis.reactive.wait();
 		assertEquals(domNodes.size, 1);
 		assertEquals(domNodes.at(0).textContent, 'Fallback');
 	});
@@ -120,7 +113,6 @@ Deno.test("MWICoreSlot (m.slot) - CSR-DOM Slot Source Integration", async (t) =>
 		slotNode.setSubSpec('JS Fallback');
 		const domNodes = slotNode.getDOM();
 
-		await globalThis.reactive.wait();
 		assertEquals(domNodes.size, 1);
 		assertEquals(domNodes.at(0).textContent, 'JS Fallback');
 	});
@@ -132,7 +124,6 @@ Deno.test("MWICoreSlot (m.slot) - CSR-DOM Slot Source Integration", async (t) =>
 		slotNode('setSubSpec', ['Fallback']);
 		const domNodes = slotNode('getDOM');
 
-		await globalThis.reactive.wait();
 		assertEquals(domNodes.size, 1);
 		assertEquals(domNodes.at(0).textContent, 'Natural child');
 	});
@@ -144,7 +135,6 @@ Deno.test("MWICoreSlot (m.slot) - CSR-DOM Slot Source Integration", async (t) =>
 		slotNode.setSubSpec('JS Fallback');
 		const domNodes = slotNode.getDOM();
 
-		await globalThis.reactive.wait();
 		assertEquals(domNodes.size, 1);
 		assertEquals(domNodes.at(0).textContent, 'JS Natural child');
 	});
@@ -159,7 +149,6 @@ Deno.test("MWICoreSlot (m.slot) - CSR-DOM Named Slots", async (t) => {
 		slotNode('setSubSpec', ['Fallback header']);
 		const domNodes = slotNode('getDOM');
 
-		await globalThis.reactive.wait();
 		assertEquals(domNodes.size, 1);
 		assertEquals(domNodes.at(0).textContent, 'Header from attr');
 	});
@@ -172,7 +161,6 @@ Deno.test("MWICoreSlot (m.slot) - CSR-DOM Named Slots", async (t) => {
 		slotNode.setSubSpec('Fallback footer');
 		const domNodes = slotNode.getDOM();
 
-		await globalThis.reactive.wait();
 		assertEquals(domNodes.size, 1);
 		assertEquals(domNodes.at(0).textContent, 'Footer from attr');
 	});
@@ -185,7 +173,6 @@ Deno.test("MWICoreSlot (m.slot) - CSR-DOM Named Slots", async (t) => {
 		slotNode('setSubSpec', ['Fallback for missing']);
 		const domNodes = slotNode('getDOM');
 
-		await globalThis.reactive.wait();
 		assertEquals(domNodes.size, 1);
 		assertEquals(domNodes.at(0).textContent, 'Fallback for missing');
 	});
@@ -198,7 +185,6 @@ Deno.test("MWICoreSlot (m.slot) - CSR-DOM Named Slots", async (t) => {
 		slotNode.setSubSpec('JS Fallback');
 		const domNodes = slotNode.getDOM();
 
-		await globalThis.reactive.wait();
 		assertEquals(domNodes.size, 1);
 		assertEquals(domNodes.at(0).textContent, 'JS Fallback');
 	});
@@ -212,7 +198,6 @@ Deno.test("MWICoreSlot (m.slot) - CSR-DOM Reactive Updates", async (t) => {
 		slotNode('append', [textNode]);
 		const domNodes = slotNode('getDOM');
 
-		await globalThis.reactive.wait();
 		assertEquals(domNodes.at(0).textContent, 'Initial');
 
 		// Update the text
@@ -230,7 +215,6 @@ Deno.test("MWICoreSlot (m.slot) - CSR-DOM Reactive Updates", async (t) => {
 		slotNode.append(textNode);
 		const domNodes = slotNode.getDOM();
 
-		await globalThis.reactive.wait();
 		assertEquals(domNodes.at(0).textContent, 'JS Initial');
 
 		textNode.setAttr('t', 'JS Updated');
@@ -251,7 +235,6 @@ Deno.test("MWICoreSlot (m.slot) - CSR-DOM Reactive Updates", async (t) => {
 		slotNode('setSubSpec', ['Fallback']);
 		const domNodes = slotNode('getDOM');
 
-		await globalThis.reactive.wait();
 		assertEquals(domNodes.at(0).textContent, 'Initial child');
 
 		// Update the source's child
@@ -272,7 +255,6 @@ Deno.test("MWICoreSlot (m.slot) - CSR-DOM Reactive Updates", async (t) => {
 		slotNode.setSubSpec('JS Fallback');
 		const domNodes = slotNode.getDOM();
 
-		await globalThis.reactive.wait();
 		assertEquals(domNodes.at(0).textContent, 'JS Initial child');
 
 		textNode.setAttr('t', 'JS Updated child');
@@ -289,7 +271,6 @@ Deno.test("MWICoreSlot (m.slot) - CSR-DOM Reactive Updates", async (t) => {
 		const domNodes = slotNode('getDOM');
 
 		// Initially empty source - should show fallback
-		await globalThis.reactive.wait();
 		assertEquals(domNodes.at(0).textContent, 'Fallback');
 
 		// Add child to source
@@ -309,7 +290,6 @@ Deno.test("MWICoreSlot (m.slot) - CSR-DOM Reactive Updates", async (t) => {
 		slotNode.setSubSpec('JS Fallback');
 		const domNodes = slotNode.getDOM();
 
-		await globalThis.reactive.wait();
 		assertEquals(domNodes.at(0).textContent, 'JS Fallback');
 
 		const textNode = doc.createNode('m.t');
@@ -337,7 +317,6 @@ Deno.test("MWICoreSlot (m.slot) - CSR-DOM Named Slot Reactivity", async (t) => {
 		slotNode('setAttr', ['name', 'header']);
 		slotNode('setSubSpec', ['Fallback']);
 
-		await globalThis.reactive.wait();
 		const domNodes = slotNode('getDOM');
 		assertEquals(domNodes.at(0).textContent, 'Initial attr');
 
@@ -362,7 +341,6 @@ Deno.test("MWICoreSlot (m.slot) - CSR-DOM Named Slot Reactivity", async (t) => {
 		slotNode.setSubSpec('JS Fallback');
 		const domNodes = slotNode.getDOM();
 
-		await globalThis.reactive.wait();
 		assertEquals(domNodes.at(0).textContent, 'JS Initial attr');
 
 		footerList.at(0).set('t', 'JS Updated attr');

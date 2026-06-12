@@ -66,7 +66,6 @@ Deno.test("MWICoreHeadBody - CSR boundary markers inserted", async (t) => {
 	await t.step("(getDOM) - m.head inserts begin/end boundary markers", async () => {
 		const headNode = doc.createNode('m.head');
 		headNode.getDOM();
-		await globalThis.reactive.wait();
 
 		const head = document.head;
 		let begin = null, end = null;
@@ -87,7 +86,6 @@ Deno.test("MWICoreHeadBody - CSR boundary markers inserted", async (t) => {
 	await t.step("(getDOM) - m.body inserts begin/end boundary markers", async () => {
 		const bodyNode = doc.createNode('m.body');
 		bodyNode.getDOM();
-		await globalThis.reactive.wait();
 
 		const body = document.body;
 		let begin = null, end = null;
@@ -111,7 +109,6 @@ Deno.test("MWICoreHeadBody - CSR managed children synchronized", async (t) => {
 		titleNode.setAttr('m.text', 'Test Page');
 		headNode.append(titleNode);
 		headNode.getDOM();
-		await globalThis.reactive.wait();
 
 		const head = document.head;
 		let begin = null, end = null;
@@ -152,7 +149,6 @@ Deno.test("MWICoreHeadBody - CSR managed children synchronized", async (t) => {
 		titleNode.setAttr('m.text', 'My Page');
 		headNode.append(titleNode);
 		headNode.getDOM();
-		await globalThis.reactive.wait();
 
 		// External script should still be present (in first protected region)
 		const externalFound = document.head.querySelector('script[src="/external.js"]');
@@ -169,7 +165,6 @@ Deno.test("MWICoreHeadBody - CSR reactive managed region updates", async (t) => 
 		titleNode.setAttr('m.text', 'Initial Title');
 		headNode.append(titleNode);
 		headNode.getDOM();
-		await globalThis.reactive.wait();
 
 		const titleElem = document.head.querySelector('title');
 		assertExists(titleElem, 'title element present');
@@ -191,7 +186,6 @@ Deno.test("MWICoreHeadBody - CSR m.csrStatic content appended", async (t) => {
 		const csrStatic = ps('[( [h.script src="/csr-only.js"] )]');
 		headNode.setAttr('m.csrStatic', csrStatic);
 		headNode.getDOM();
-		await globalThis.reactive.wait();
 
 		const head = document.head;
 		// Find end marker
@@ -225,7 +219,6 @@ Deno.test("MWICoreHeadBody - CSR getManagedRegion helper", async (t) => {
 	await t.step(".getManagedRegion() - finds existing boundary markers", async () => {
 		const headNode = doc.createNode('m.head');
 		headNode.getDOM();
-		await globalThis.reactive.wait();
 
 		const { begin, end } = headNode.getManagedRegion(document.head);
 		assertExists(begin, 'begin marker found');

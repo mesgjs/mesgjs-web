@@ -68,11 +68,7 @@ Deno.test("MWICoreDefer (m.defer) - Placeholder Behavior", async (t) => {
 		assertEquals(deferNode('type'), 'm.defer');
 	});
 
-	await t.step("Placeholder node doesn't render HTML",  () => {
-		const deferNode = doc.createNode('m.defer');
-		// getHTML should return empty string
-		assertEquals(deferNode('getHTML'), '');
-	});
+	// "Placeholder node doesn't render HTML" removed - covered in test/ssr-html/defer.test.js
 
 	await t.step("Schema has autoDoc=false", () => {
 		const entry = registry.get('m.defer');
@@ -203,19 +199,8 @@ Deno.test("MWICoreDefer (m.defer) - Sub-Spec Behavior (new: children accepted)",
 		assertEquals(subSpec.size, 1);
 	});
 
-	await t.step("(getHTML) - Returns empty string even with children", () => {
-		const deferNode = doc.createNode('m.defer');
-		const childSpec = ps('[(hello)]');
-		deferNode('setSubSpec', { subSpec: childSpec });
-		assertEquals(deferNode('getHTML'), '');
-	});
-
-	await t.step(".getHTML() - Returns empty string even with children via JS", () => {
-		const deferNode = doc.createNode('m.defer');
-		const childSpec = ps('[(world)]');
-		deferNode.setSubSpec({ subSpec: childSpec });
-		assertEquals(deferNode.getHTML(), '');
-	});
+	// "(getHTML) - Returns empty string even with children" removed - covered in test/ssr-html/defer.test.js
+	// ".getHTML() - Returns empty string even with children via JS" removed - covered in test/ssr-html/defer.test.js
 });
 
 Deno.test("MWICoreDefer (m.defer) - Schema Properties", async (t) => {
@@ -301,12 +286,5 @@ Deno.test("MWICoreDefer (m.defer) - Complex Scenarios", async (t) => {
 		assertEquals(deferNode('getAttr', ls([, 'data-status'])), 'loading');
 	});
 
-	await t.step("Defer node doesn't render HTML (placeholder only)", () => {
-		const deferNode = doc.createNode('m.defer');
-		deferNode.setAttr('class', 'test-class');
-		deferNode.setAttr('id', 'test-id');
-
-		// Should not render anything
-		assertEquals(deferNode('getHTML'), '');
-	});
+	// "Defer node doesn't render HTML (placeholder only)" removed - covered in test/ssr-html/defer.test.js
 });
