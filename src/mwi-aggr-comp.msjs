@@ -2,7 +2,7 @@
 modpath='mwi/mwi-aggr-comp'
 version='0.5.0'
 featreq='mwi.comp.MWICore mwi.compRegOpen MWIDocNode'
-featpro='mwi.comp.MWIAggr'
+featpro='mwi.comp.MWIAggr mwi.comp.MWIAggrScript'
 modcaps=''
 )]
 
@@ -23,19 +23,31 @@ modcaps=''
 	const BASE_IF = 'MWIDocNode';
 	const BASE_FT = BASE_IF;
 	const CORE_READY_FT = 'mwi.comp.MWICore';
+
 	const AGGR_IF = 'MWIAggr';
 	const AGGR_TYPE = 'm.aggr';
-	const READY_FT = 'mwi.comp.' + AGGR_IF;
+	const AGGR_RDY_FT = 'mwi.comp.' + AGGR_IF;
+
+	const SCRIPT_IF = 'MWIAggrScript';
+	const SCRIPT_TYPE = 'm.script';
+	const STYLE_TYPE = 'm.style';
+	const SCRIPT_RDY_FT = 'mwi.comp.' + SCRIPT_IF;
 
 	// Default buffer name for m.aggr
 	const DEFAULT_BUFFER = 'default';
-	// Namespace prefix for aggregation map keys
+	// Default buffer name for m.script and m.style
+	const DEFAULT_HEAD_BUFFER = 'head';
+	// Namespace prefixes for aggregation map keys
 	const AGGR_NS = 'm.aggr';
+	const SCRIPT_NS = 'm.script';
+	const STYLE_NS = 'm.style';
 
 	const { fready, fwait, getInstance, getInterface, typeChains } = globalThis.$c;
 
 	const aggrConfig = {
 		[AGGR_TYPE]: ls([INTERFACE, AGGR_IF, SCHEMA, ls([AUTO_DOC, false])]),
+		[SCRIPT_TYPE]: ls([INTERFACE, SCRIPT_IF, SCHEMA, ls([AUTO_DOC, false])]),
+		[STYLE_TYPE]: ls([INTERFACE, SCRIPT_IF, SCHEMA, ls([AUTO_DOC, false])]), // SIC
 	};
 
 	await fwait(BASE_FT, CORE_READY_FT); // For interface chaining
@@ -131,8 +143,8 @@ modcaps=''
 				buffer.push(d.rr);
 
 				// Note: To unmount, just remove the node from the buffer.
-				// const foundKV = buffer.find((v) => v === d.rr); // Find by node value
-				// if (foundKV) buffer.delete(foundKV[0]); // Then delete by key
+				// const key = buffer.keyOf(d.rr); // Find by node value
+				// if (key) buffer.delete(key); // Then delete by key (a string)
 
 				// `to` nodes don't render any DOM themselves
 				const nodes = new NANOS();
@@ -229,11 +241,297 @@ modcaps=''
 		});
 	})();
 
+	// MWIAggrScript (script/style aggregation) interface
+	// `[m.script to=bufferName? m.text=content otherProps...]` - Aggregates inline script (deduped by m.text)
+	// `[m.script to=bufferName? src=URL otherProps...]` - Aggregates external script (deduped by URL)
+	// `[m.script from=bufferName]` - Renders aggregated scripts
+	// 
+	// `[m.style to=bufferName? m.text=content otherProps...]` - Aggregates inline style (deduped by m.text)
+	// `[m.style to=bufferName? href=URL otherProps...]` - Aggregates external stylesheet (deduped by URL)
+	// `[m.style from=bufferName]` - Renders aggregated stylesheets
+	//
+	// SSR behavior:
+	//   - `to` mode: renders tag to HTML and stores in the aggregation map (deduped by key)
+	//   - `from` mode: renders a placeholder `<{bufferId}>` for later substitution
+	//
+	// CSR behavior:
+	//   - `to` mode: registers this node with the reactive buffer on mount, deregisters on unmount
+	//   - `from` mode: reactively renders the buffer's content in node-path order, deduped by key
+	(() => {
+		// Get the buffer key for the aggregation map: `<namespace>:<bufferName>`
+		function getBufferKey (namespace, bufferName) {
+			return namespace + ':' + bufferName;
+		}
+
+		// Get or create the CSR reactive NANOS list for a given buffer key
+		function getCSRBuffer (aggrData, bufferKey, doc) {
+			let buffer = aggrData.get(bufferKey);
+			if (!buffer) {
+				buffer = doc.rxNANOS();
+				aggrData.set(bufferKey, buffer);
+			}
+			return buffer;
+		}
+
+		// Get the deduplication key for this node (URL or m.text content)
+		function getDedupeKey (d, urlAttr) {
+			const url = d.rr('getAttr', [urlAttr]);
+			if (typeof url === 'string') return url;
+
+			const text = d.rr('getAttr', ['m.text']);
+			if (typeof text === 'string') return text;
+
+			return null;
+		}
+
+		// Get or create the second-level SSR map for a given buffer key
+		function getSSRBuffer (aggrData, bufferKey) {
+			let buffer = aggrData.get(bufferKey);
+			if (!buffer) {
+				buffer = new Map();
+				aggrData.set(bufferKey, buffer);
+			}
+			return buffer;
+		}
+
+		// Get the namespace and buffer key based on the type
+		function getTypeInfo (type) {
+			return (type === SCRIPT_TYPE) 
+				? { ns: SCRIPT_NS, tag: 'script', urlAttr: 'src' }
+				: { ns: STYLE_NS, tag: 'style', urlAttr: 'href' };
+		}
+
+		// SSR: `from` mode - render a placeholder for later substitution
+		function ssrScriptFrom (d, namespace, bufferName) {
+			const p = d.p, doc = p.at('doc');
+			const m = d.mp, output = m.at('in');
+			const bufferKey = getBufferKey(namespace, bufferName);
+			const bufferId = doc('mapAggrBuffer', [bufferKey]);
+			const html = `<{${bufferId}}>`;
+
+			if (output) output.push(html);
+			return html;
+		}
+
+		// SSR: `to` mode - render tag to HTML and store in aggregation map (deduped)
+		function ssrScriptTo (d, type, namespace, bufferName, urlAttr, tag) {
+			const p = d.p, doc = p.at('doc');
+			const aggrData = doc('getAggr');
+			const bufferKey = getBufferKey(namespace, bufferName);
+			const buffer = getSSRBuffer(aggrData, bufferKey);
+
+			// Get deduplication key
+			const dedupeKey = getDedupeKey(d, urlAttr);
+			if (!dedupeKey) return; // No URL or m.text - skip (invalid)
+
+			// Skip if already in buffer
+			if (buffer.has(dedupeKey)) return;
+
+			// Render the tag
+			let html;
+			const url = d.rr('getAttr', [urlAttr]);
+
+			d.rr('getAttr', ['m.id']); // Ensure id for DOM sync
+			if (typeof url === 'string') {
+				// External script/style
+				if (type === SCRIPT_TYPE) {
+					// <script src="..."></script>
+					html = `<script${d.rr('getAttrHTML')}></script>`;
+				} else {
+					// <link rel="stylesheet" href="...">
+					const rel = d.rr('getAttr', ['rel']) ? '' : ' rel="stylesheet"';
+					html = `<link${rel}${d.rr('getAttrHTML')}>`;
+				}
+			} else {
+				// Inline script/style
+				const raw = d.rr('getAttr', ['m.text']) || '';
+				let sanzd = '';
+
+				if (type === SCRIPT_TYPE) {
+					// Escape </script> as \x3c/script>
+					sanzd = raw.replace(/<(?=\s*\/\s*script)/g, '\\x3c');
+				} else {
+					// Escape </style> as \3c /style>
+					sanzd = raw.replace(/<(?=\s*\/\s*style)/g, '\\3c ');
+				}
+
+				html = `<${tag}${d.rr('getAttrHTML')}>${sanzd}</${tag}>`;
+			}
+
+			// Store rendered HTML with deduplication key
+			buffer.set(dedupeKey, html);
+		}
+
+		// CSR: getDOM handler
+		function opGetDOM (d) {
+			const p = d.p;
+
+			if (p.has('_dom')) return p.at('_dom').rv;
+			if (typeof document !== 'object' || typeof document.createElement !== 'function') return new NANOS();
+
+			const doc = p.at('doc');
+			const type = p.at('type');
+			const { ns, tag, urlAttr } = getTypeInfo(type);
+			const from = d.rr('getAttr', ['from']);
+			const to = d.rr('getAttr', ['to']);
+
+			if (typeof from !== 'string') {
+				// `to` mode: register this node with the aggregation buffer and return empty DOM
+				const bufferName = (typeof to === 'string') ? to : DEFAULT_HEAD_BUFFER;
+				const aggrData = doc.getAggr();
+				const bufferKey = getBufferKey(ns, bufferName);
+				const buffer = getCSRBuffer(aggrData, bufferKey, doc);
+
+				// Register this node in the buffer
+				buffer.push(d.rr);
+
+				// `to` nodes don't render any DOM themselves
+				const nodes = new NANOS();
+				const _dom = reactive({ eager: true, def: () => nodes });
+
+				p.set('_dom', _dom);
+				return _dom.rv;
+			}
+
+			// `from` mode: reactively render the aggregated content with deduplication
+			const aggrData = doc.getAggr();
+			const bufferKey = getBufferKey(ns, from);
+			const buffer = getCSRBuffer(aggrData, bufferKey, doc);
+			const nodes = doc.rxNANOS();
+			const m = d.mp;
+			let syncMode = m.at('sync');
+
+			const _dom = reactive({ eager: true, def: () => {
+				// Defer during initial CSR while "to" nodes register
+				if (doc('initialCSR')) {
+					return syncMode ? undefined : nodes;
+				}
+
+				// Collect all registered `to` nodes from the buffer
+				const unsorted = [...buffer.values()];
+
+				// Sort by node path for consistent tree-traversal order
+				const sorted = unsorted.sort((a, b) => {
+					const pathA = a('nodePath'), pathB = b('nodePath');
+					return doc.compareNodePaths(pathA, pathB);
+				});
+
+				// Deduplicate and gather DOM nodes
+				// Support the local sub-doc as a CSR-only fallback
+				const seen = new Set();
+				const newNodes = [];
+
+				if (sorted.length) {
+					for (const node of sorted) {
+						// Get the deduplication key
+						const nodeType = node('type');
+						const nodeUrlAttr = (nodeType === SCRIPT_TYPE) ? 'src' : 'href';
+						const dedupeKey = getDedupeKey({ rr: node, p: node.p, mp: m }, nodeUrlAttr);
+
+						// Skip if already seen (deduplication)
+						if (dedupeKey && seen.has(dedupeKey)) continue;
+						if (dedupeKey) seen.add(dedupeKey);
+
+						const sync = syncMode && getInstance('MWIDOMSync', [null]);
+						const subDOM = node('getSubDOM', { sync });
+						newNodes.push(...subDOM.values());
+					}
+				} else {
+					// Fallback to local sub-doc
+					for (const node of d.rr('getSubDoc').values()) {
+						const subDOM = node('getDOM');
+						newNodes.push(...subDOM.values());
+					}
+				}
+
+				syncMode = false; // Only applies to first render
+				reactive.unbatch(() => {
+					nodes.fromEntries(newNodes.entries());
+					nodes.next = newNodes.length;
+				});
+
+				return nodes;
+			}});
+
+			p.set('_dom', _dom);
+			return _dom.rv;
+		}
+
+		// SSR getHTML handler
+		function opGetHTML (d) {
+			if (d.rr('getAttr', ['m.csr'])) return '';
+
+			const p = d.p, type = p.at('type');
+			const { ns, tag, urlAttr } = getTypeInfo(type);
+			const from = d.rr('getAttr', ['from']);
+			const to = d.rr('getAttr', ['to']);
+
+			if (typeof from === 'string') {
+				// `from` mode: render placeholder
+				return ssrScriptFrom(d, ns, from);
+			} else if (typeof to === 'string') {
+				// `to` mode with explicit buffer name
+				ssrScriptTo(d, type, ns, to, urlAttr, tag);
+				return '';
+			} else {
+				// `to` mode with default buffer name
+				ssrScriptTo(d, type, ns, DEFAULT_HEAD_BUFFER, urlAttr, tag);
+				return '';
+			}
+		}
+
+		// CSR: get actual content node
+		function opGetSubDOM (d) {
+			const p = d.p;
+
+			if (p.has('_subDom')) {
+				p.at('_subDomAttrs').rv;
+				return p.at('_subDom').rv;
+			}
+			if (typeof document !== 'object' || typeof document.createElement !== 'function') return new NANOS();
+
+			const type = p.at('type');
+			const link = type !== SCRIPT_TYPE && d.rr('getAttr', ['href']);
+			const tag = (type === SCRIPT_TYPE) ? 'SCRIPT' : (link ? 'LINK' : 'STYLE');
+			const m = d.mp, sync = m.at('sync');
+			const existing = sync && sync('sync', [tag, d.rr]);
+			const node = existing || document.createElement(tag);
+
+			if (link && !d.rr('getAttr', ['rel'])) d.rr('setAttr', ['rel', 'stylesheet']);
+
+			const nodes = new NANOS(node);
+			const _subDomAttrs = d.rr.setDOMAttrs(node, p.at('attrs'), p.at(SCHEMA));
+			const _subDom = reactive({ eager: true, def: () => {
+				if (!link) {
+					const content = d.rr('getAttr', ['m.text']) || '';
+
+					if (node.textContent !== content) node.textContent = content;
+				}
+				return nodes;
+			}});
+
+			p.push({ _subDom, _subDomAttrs });
+			return _subDom.rv;
+		}
+
+		getInterface(SCRIPT_IF).set({
+			pristine: true, lock: true,
+			chain: [ BASE_IF ],
+			handlers: {
+				getDOM: opGetDOM,
+				getHTML: opGetHTML,
+				getSubDOM: opGetSubDOM,
+				subSlotSrc: (d) => d.p.at('slotSrc'), // non-source; pass-through
+			}
+		});
+	})();
+
 	await fwait(REG_OPEN_FT); // For component registration
 	const registry = getInstance(REG_IF);
 	for (const [name, entry] of Object.entries(aggrConfig)) {
 		registry.register(name, entry);
 	}
 
-	fready(mid, READY_FT);
+	fready(mid, AGGR_RDY_FT);
+	fready(mid, SCRIPT_RDY_FT);
 @}
