@@ -418,6 +418,7 @@ modcaps=''
 			append (...content) { return this('append', content); },
 			get compId () { return this('compId'); },
 			[globalThis.$c.symbols.convert] () { return this; },
+			closest (predicate) { return this('closest', [predicate]); },
 			createDOMBoundary,
 			delAttr (name) { return this('delAttr', [ name ]); },
 			get document () { return this('document'); },
@@ -511,6 +512,36 @@ modcaps=''
 			});
 
 			return d.rr;
+		}
+
+		// (closest predicate)
+		// Predicate is a JS or Mesgjs function, or string containing a comma-separated list of types
+		// JS function: `predicate(node)`  Mesgjs function: `predicate(call node)`
+		function opClosest (d) {
+			const m = d.mp, rawPredicate = m.at(0);
+			let predicate;
+
+			if (typeof rawPredicate === 'string') {
+				const types = new Set(rawPredicate.split(',').map((s) => s.trim()).filter(Boolean));
+
+				if (!types.size) return null;
+				predicate = (node) => types.has(node('type'));
+			} else if (typeof rawPredicate === 'function') {
+				if (rawPredicate.msjsType === '@function') {
+					predicate = (node) => rawPredicate('call', [node]);
+				} else if (!rawPredicate.msjsType) {
+					predicate = rawPredicate;
+				} else {
+					return null;
+				}
+			} else {
+				return null;
+			}
+
+			for (let node = d.rr; node; node = node('getParent')?.at('parent')) {
+				if (predicate(node)) return node;
+			}
+			return null;
 		}
 
 		// Delete attribute
@@ -958,6 +989,7 @@ modcaps=''
 			handlers: {
 				'@init': opInit,
 				append: opAppend,
+				closest: opClosest,
 				compId: (d) => d.p.at('id'), // Component id
 				delAttr: opDelAttr,
 				document: (d) => d.p.at('doc'),

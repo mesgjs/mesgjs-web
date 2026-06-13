@@ -2,6 +2,7 @@ import {
 	assert,
 	assertEquals,
 	assertExists,
+	assertStrictEquals,
 } from "https://deno.land/std@0.152.0/testing/asserts.ts";
 
 import { setupRuntime, simulateBrowser } from '../harness.esm.js';
@@ -427,5 +428,83 @@ Deno.test("MWIHTML (h.*) - CSR-DOM Various Element Types", async (t) => {
 		assertEquals(spanElem.className, 'js-highlight');
 		assertEquals(spanElem.childNodes[0].nodeValue, 'JS Highlighted');
 		assertEquals(domNodes.size, 1);
+	});
+});
+
+Deno.test("MWIHTML (h.*) - CSR-DOM HTMLElement[MWINode] back-reference", async (t) => {
+	const NODE_SYM = Symbol.for('MWINode');
+
+	await t.step("(getDOM) - DOM element has MWINode back-reference", () => {
+		const divNode = doc('createNode', ['h.div']);
+		const domNodes = divNode('getDOM');
+
+		assertStrictEquals(domNodes.at(0)[NODE_SYM], divNode);
+	});
+
+	await t.step(".getDOM() - DOM element has MWINode back-reference via JS", () => {
+		const divNode = doc.createNode('h.div');
+		const domNodes = divNode.getDOM();
+
+		assertStrictEquals(domNodes.at(0)[NODE_SYM], divNode);
+	});
+
+	await t.step("(getDOM) - Each element has its own MWINode back-reference", () => {
+		const outerDiv = doc('createNode', ['h.div']);
+		const innerSpan = doc('createNode', ['h.span']);
+		outerDiv('append', [innerSpan]);
+		const domNodes = outerDiv('getDOM');
+
+		const outerElem = domNodes.at(0);
+		assertStrictEquals(outerElem[NODE_SYM], outerDiv);
+		assertStrictEquals(outerElem.children[0][NODE_SYM], innerSpan);
+	});
+
+	await t.step(".getDOM() - Each element has its own MWINode back-reference via JS", () => {
+		const outerDiv = doc.createNode('h.div');
+		const innerSpan = doc.createNode('h.span');
+		outerDiv.append(innerSpan);
+		const domNodes = outerDiv.getDOM();
+
+		const outerElem = domNodes.at(0);
+		assertStrictEquals(outerElem[NODE_SYM], outerDiv);
+		assertStrictEquals(outerElem.children[0][NODE_SYM], innerSpan);
+	});
+
+	await t.step("(getDOM) - MWINode back-reference stable across reactive updates", async () => {
+		const divNode = doc('createNode', ['h.div']);
+		divNode('setAttr', ['title', 'Initial']);
+		const domNodes = divNode('getDOM');
+
+		const divElem = domNodes.at(0);
+		divNode('setAttr', ['title', 'Updated']);
+		await globalThis.reactive.wait();
+
+		assertStrictEquals(divElem[NODE_SYM], divNode);
+	});
+
+	await t.step(".getDOM() - MWINode back-reference stable across reactive updates via JS", async () => {
+		const divNode = doc.createNode('h.div');
+		divNode.setAttr('title', 'JS Initial');
+		const domNodes = divNode.getDOM();
+
+		const divElem = domNodes.at(0);
+		divNode.setAttr('title', 'JS Updated');
+		await globalThis.reactive.wait();
+
+		assertStrictEquals(divElem[NODE_SYM], divNode);
+	});
+
+	await t.step("(getDOM) - Void element also has MWINode back-reference", () => {
+		const brNode = doc('createNode', ['h.br']);
+		const domNodes = brNode('getDOM');
+
+		assertStrictEquals(domNodes.at(0)[NODE_SYM], brNode);
+	});
+
+	await t.step(".getDOM() - Void element also has MWINode back-reference via JS", () => {
+		const brNode = doc.createNode('h.br');
+		const domNodes = brNode.getDOM();
+
+		assertStrictEquals(domNodes.at(0)[NODE_SYM], brNode);
 	});
 });

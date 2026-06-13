@@ -56,6 +56,7 @@ See [`MWIDocNode`](MWIDocNode-document-node.md) for:
 - Returns NANOS with single DOM element
 - Attributes sync reactively
 - Children sync reactively (container elements only)
+- The created DOM element has a `Symbol.for('MWINode')` property set to the doc-node that created it (the back-reference is stable across reactive updates)
 
 ## Registered Components
 

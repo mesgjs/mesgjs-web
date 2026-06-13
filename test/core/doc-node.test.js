@@ -18,6 +18,17 @@ const doc = getInstance('MWIDocument');
 const ls = globalThis.ls;
 const ps = globalThis.ps;
 
+const modScope = globalThis.$modScope();
+
+// Helper to build a Mesgjs @function
+// jsFunction (d) accepts d (standard @dispatch object)
+// Call via msjsFunction('call', messageParams)
+function makeMsjsFunction (jsFunction) {
+	const msjsCode = modScope.d.b({ cd: jsFunction }); // -> @code object
+	const msjsFunction = msjsCode('fn'); // -> @function object
+	return msjsFunction;
+}
+
 Deno.test("MWIDocNode - Basic Interface Tests", async (t) => {
 	const divNode = doc.createNode('h.div');
 
@@ -1821,6 +1832,142 @@ Deno.test("MWIDocNode - Spec Management", async (t) => {
 		brNode.setSubSpec({ subSpec: subList });
 		const subSpec = brNode.getSubSpec();
 		assertEquals(subSpec.size, 0);
+	});
+});
+
+Deno.test("MWIDocNode - closest", async (t) => {
+	// Build a small tree: grandparent (h.section) > parent (h.div) > child (m.t)
+	const grandparent = doc.createNode('h.section');
+	const parent = doc.createNode('h.div');
+	const child = doc.createNode('m.t');
+	child.setAttr('t', 'leaf');
+	grandparent.append(parent);
+	parent.append(child);
+
+	await t.step("(closest) - String predicate: finds self when type matches", () => {
+		const result = child('closest', ls([, 'm.t']));
+		assertStrictEquals(result, child);
+	});
+
+	await t.step(".closest() - String predicate: finds self when type matches via JS", () => {
+		const result = child.closest('m.t');
+		assertStrictEquals(result, child);
+	});
+
+	await t.step("(closest) - String predicate: finds ancestor by type", () => {
+		const result = child('closest', ls([, 'h.div']));
+		assertStrictEquals(result, parent);
+	});
+
+	await t.step(".closest() - String predicate: finds ancestor by type via JS", () => {
+		const result = child.closest('h.div');
+		assertStrictEquals(result, parent);
+	});
+
+	await t.step("(closest) - String predicate: finds distant ancestor by type", () => {
+		const result = child('closest', ls([, 'h.section']));
+		assertStrictEquals(result, grandparent);
+	});
+
+	await t.step(".closest() - String predicate: finds distant ancestor by type via JS", () => {
+		const result = child.closest('h.section');
+		assertStrictEquals(result, grandparent);
+	});
+
+	await t.step("(closest) - String predicate: comma-separated types (first match wins)", () => {
+		// Both h.div and h.section are ancestors; h.div is closer
+		const result = child('closest', ls([, 'h.div,h.section']));
+		assertStrictEquals(result, parent);
+	});
+
+	await t.step(".closest() - String predicate: comma-separated types (first match wins) via JS", () => {
+		const result = child.closest('h.div,h.section');
+		assertStrictEquals(result, parent);
+	});
+
+	await t.step("(closest) - String predicate: returns null when no match", () => {
+		const result = child('closest', ls([, 'h.span']));
+		assertEquals(result, null);
+	});
+
+	await t.step(".closest() - String predicate: returns null when no match via JS", () => {
+		const result = child.closest('h.span');
+		assertEquals(result, null);
+	});
+
+	await t.step("(closest) - String predicate: empty string returns null", () => {
+		const result = child('closest', ls([, '']));
+		assertEquals(result, null);
+	});
+
+	await t.step(".closest() - String predicate: empty string returns null via JS", () => {
+		const result = child.closest('');
+		assertEquals(result, null);
+	});
+
+	await t.step("(closest) - JS function predicate: finds self", () => {
+		const result = child('closest', ls([, (node) => node === child]));
+		assertStrictEquals(result, child);
+	});
+
+	await t.step(".closest() - JS function predicate: finds self via JS", () => {
+		const result = child.closest((node) => node === child);
+		assertStrictEquals(result, child);
+	});
+
+	await t.step("(closest) - JS function predicate: finds ancestor", () => {
+		const result = child('closest', ls([, (node) => node.type === 'h.div']));
+		assertStrictEquals(result, parent);
+	});
+
+	await t.step(".closest() - JS function predicate: finds ancestor via JS", () => {
+		const result = child.closest((node) => node.type === 'h.section');
+		assertStrictEquals(result, grandparent);
+	});
+
+	await t.step("(closest) - JS function predicate: returns null when no match", () => {
+		const result = child('closest', ls([, (_node) => false]));
+		assertEquals(result, null);
+	});
+
+	await t.step(".closest() - JS function predicate: returns null when no match via JS", () => {
+		const result = child.closest((_node) => false);
+		assertEquals(result, null);
+	});
+
+	await t.step("(closest) - Mesgjs @function predicate: finds ancestor", () => {
+		// Construct a Mesgjs @function that checks if the node type is 'h.div'
+		const msjsFn = makeMsjsFunction((d) => d.mp.at(0)('type') === 'h.div');
+		const result = child('closest', ls([, msjsFn]));
+		assertStrictEquals(result, parent);
+	});
+
+	await t.step(".closest() - Mesgjs @function predicate: finds ancestor via JS", () => {
+		const msjsFn = makeMsjsFunction((d) => d.mp.at(0).type === 'h.section');
+		const result = child.closest(msjsFn);
+		assertStrictEquals(result, grandparent);
+	});
+
+	await t.step("(closest) - Non-function/non-string predicate returns null", () => {
+		const result = child('closest', ls([, 42]));
+		assertEquals(result, null);
+	});
+
+	await t.step(".closest() - Non-function/non-string predicate returns null via JS", () => {
+		const result = child.closest(42);
+		assertEquals(result, null);
+	});
+
+	await t.step("(closest) - Unparented node: only finds self", () => {
+		const orphan = doc.createNode('h.div');
+		const result = orphan('closest', ls([, 'h.div']));
+		assertStrictEquals(result, orphan);
+	});
+
+	await t.step(".closest() - Unparented node: returns null for non-matching type via JS", () => {
+		const orphan = doc.createNode('h.div');
+		const result = orphan.closest('h.span');
+		assertEquals(result, null);
 	});
 });
 

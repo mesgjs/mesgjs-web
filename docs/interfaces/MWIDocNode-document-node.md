@@ -68,6 +68,14 @@
 - Accepts multiple nodes
 - Automatically sets `parent` and `index` on each appended node (index continues from current sub-doc size)
 
+**`(closest predicate)` / `closest(predicate)`**
+- Traverses the node itself and its ancestors (via `getParent`) looking for the first node that matches `predicate`
+- Returns the matching node, or `null` if none found
+- **String predicate:** A comma-separated list of node types (e.g., `'h.div,h.section'`). An empty string always returns `null`.
+- **JS function predicate:** A plain JavaScript function `(node) => boolean`. Called with each candidate node.
+- **Mesgjs `@function` predicate:** Called via `predicate('call', [node])`. The node is passed as the first positional parameter.
+- **Other predicate types:** Always returns `null`.
+
 **`(hasChildren)` / `hasChildren()`**
 - Returns `true` if node has sub-doc content
 - Returns `false` otherwise

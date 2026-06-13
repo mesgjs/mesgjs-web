@@ -17,6 +17,7 @@ modcaps=''
 	const INTERFACE = 'if';
 	const SCHEMA = 'schema';
 	const AUTO_DOC = 'autoDoc';
+	const NODE_SYM = Symbol.for('MWINode');
 
 	const REG_IF = 'MWIRegistry';
 	const REG_OPEN_FT = 'mwi.compRegOpen';
@@ -497,6 +498,7 @@ modcaps=''
 			const existing = sync && sync('sync', [tag, d.rr]);
 			const node = existing || document.createElement(tag);
 
+			node[NODE_SYM] = d.rr;
 			if (link && !d.rr('getAttr', ['rel'])) d.rr('setAttr', ['rel', 'stylesheet']);
 
 			const nodes = new NANOS(node);

@@ -21,6 +21,7 @@ modcaps=''
 	const AUTO_DOC = 'autoDoc'; // false -> Prevent sub-doc auto-generation from sub-spec
 	const MRNS = 'mrns'; // Virtual m.rns attribute opt-in
 	const VOID = 'void'; // Non-container types
+	const NODE_SYM = Symbol.for('MWINode');
 
 	const REG_IF = 'MWIRegistry';
 	const REG_OPEN_FT = 'mwi.compRegOpen';
@@ -99,6 +100,9 @@ modcaps=''
 
 			const m = d.mp, sync = m.at('sync'), existing = sync?.('sync', ['m.com', d.rr]);
 			const comment = existing ?? document.createComment('');
+
+			comment[NODE_SYM] = d.rr;
+
 			const nodes = new NANOS(comment);
 			const _dom = reactive({ eager: true, def: () => {
 				const text = d.rr('getAttr', [ 't' ]) || '';
@@ -378,6 +382,9 @@ modcaps=''
 			const id = d.rr('getAttr', ['id']);
 			const existing = id && document.getElementById(id);
 			const styleElem = existing || document.createElement('style');
+
+			styleElem[NODE_SYM] = d.rr;
+
 			const doc = p.at('doc'), nodes = doc.rxNANOS();
 			const _dom = reactive({ eager: true, def: () => {
 				const css = aggregateCSS(d);
@@ -520,6 +527,9 @@ modcaps=''
 
 			const m = d.mp, sync = m.at('sync'), existing = sync?.('sync', ['m.t', d.rr]);
 			const text = existing ?? document.createTextNode('');
+
+			text[NODE_SYM] = d.rr;
+
 			const doc = p.at('doc'), nodes = doc.rxNANOS();
 			const _dom = reactive({ eager: true, def: () => {
 				const content = d.rr('getAttr', [ 't' ]) || '';

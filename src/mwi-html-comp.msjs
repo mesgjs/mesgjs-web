@@ -17,6 +17,7 @@ modcaps=''
 	const INTERFACE = 'if';
 	const SCHEMA = 'schema';
 	const VOID = 'void';
+	const NODE_SYM = Symbol.for('MWINode');
 
 	const REG_IF = 'MWIRegistry';
 	const REG_OPEN_FT = 'mwi.compRegOpen';
@@ -165,6 +166,9 @@ modcaps=''
 			const m = d.mp, sync = m.at('sync');
 			let existing = sync && sync('sync', [type, d.rr]);
 			const node = existing || document.createElement(type), nodes = new NANOS(node);
+
+			node[NODE_SYM] = d.rr;
+
 			const _domAttrs = d.rr.setDOMAttrs(node, p.at('attrs'), schema);
 			const _dom = reactive({ eager: true, def: () => {
 				if (isVoid) return nodes;
@@ -265,6 +269,9 @@ modcaps=''
 			const m = d.mp, sync = m.at('sync');
 			const existing = sync && sync('sync', [type, d.rr]);
 			const node = existing || document.createElement(type);
+
+			node[NODE_SYM] = d.rr;
+
 			const nodes = new NANOS(node);
 			const _domAttrs = d.rr.setDOMAttrs(node, p.at('attrs'), p.at(SCHEMA));
 			const _dom = reactive({ eager: true, def: () => {
