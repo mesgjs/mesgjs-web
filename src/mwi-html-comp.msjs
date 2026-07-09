@@ -164,7 +164,7 @@ modcaps=''
 			const schema = p.at(SCHEMA), isVoid = schema?.at(VOID);
 			const type = p.at('type').replace(/^h\./, '').toUpperCase();
 			const m = d.mp, sync = m.at('sync');
-			let existing = sync && sync('sync', [type, d.rr]);
+			let existing = sync && $c.sm(sync, 'sync', [type, d.rr]);
 			const node = existing || document.createElement(type), nodes = new NANOS(node);
 
 			node[NODE_SYM] = d.rr;
@@ -267,7 +267,7 @@ modcaps=''
 
 			const doc = p.at('doc'), type = p.at('type').replace(/^h\./, '').toUpperCase();
 			const m = d.mp, sync = m.at('sync');
-			const existing = sync && sync('sync', [type, d.rr]);
+			const existing = sync && $c.sm(sync, 'sync', [type, d.rr]);
 			const node = existing || document.createElement(type);
 
 			node[NODE_SYM] = d.rr;

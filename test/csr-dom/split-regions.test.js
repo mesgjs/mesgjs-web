@@ -109,6 +109,7 @@ Deno.test("MWICoreHeadBody - CSR managed children synchronized", async (t) => {
 		titleNode.setAttr('m.text', 'Test Page');
 		headNode.append(titleNode);
 		headNode.getDOM();
+		console.log(document.head.outerHTML);
 
 		const head = document.head;
 		let begin = null, end = null;

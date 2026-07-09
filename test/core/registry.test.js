@@ -34,7 +34,7 @@ Deno.test('MWIRegistry - ID Generation', async (t) => {
 	const registry = getInstance('MWIRegistry');
 
 	await t.step('(nextId) - Server ID prefix', () => {
-		const id1 = registry('nextId');
+		const id1 = $c.sm(registry, 'nextId');
 		assertMatch(id1, /^_MS_/, 'ID should start with _MS_ prefix for server');
 		assertEquals(typeof id1, 'string', 'ID should be a string');
 	});
@@ -46,9 +46,9 @@ Deno.test('MWIRegistry - ID Generation', async (t) => {
 	});
 
 	await t.step('(nextId) - Sequential IDs', () => {
-		const id1 = registry('nextId');
-		const id2 = registry('nextId');
-		const id3 = registry('nextId');
+		const id1 = $c.sm(registry, 'nextId');
+		const id2 = $c.sm(registry, 'nextId');
+		const id3 = $c.sm(registry, 'nextId');
 
 		// Extract numeric parts (base-36)
 		const num1 = parseInt(id1.slice(4), 36);
@@ -76,7 +76,7 @@ Deno.test('MWIRegistry - ID Generation', async (t) => {
 	await t.step('(nextId) - Unique IDs', () => {
 		const ids = new Set();
 		for (let i = 0; i < 100; i++) {
-			ids.add(registry('nextId'));
+			ids.add($c.sm(registry, 'nextId'));
 		}
 		assertEquals(ids.size, 100, 'All generated IDs should be unique');
 	});
@@ -96,7 +96,7 @@ Deno.test('MWIRegistry - Component Retrieval (get)', async (t) => {
 
 	await t.step('(get) - Retrieve registered component', () => {
 		// Core components should be registered by now
-		const textComp = registry('get', ls([, 'm.t']));
+		const textComp = $c.sm(registry, 'get', ls([, 'm.t']));
 		assert(textComp, 'Should return component entry for m.t');
 		assert(textComp.has('if'), 'Component entry should have interface');
 	});
@@ -110,7 +110,7 @@ Deno.test('MWIRegistry - Component Retrieval (get)', async (t) => {
 	await t.step('(get) - Multiple component types', () => {
 		const components = ['m.t', 'm.com', 'm.frg', 'h.div'];
 		for (const compName of components) {
-			const comp = registry('get', ls([, compName]));
+			const comp = $c.sm(registry, 'get', ls([, compName]));
 			assert(comp, `Should return component entry for ${compName}`);
 		}
 	});
@@ -124,7 +124,7 @@ Deno.test('MWIRegistry - Component Retrieval (get)', async (t) => {
 	});
 
 	await t.step('(get) - Non-existent component', () => {
-		const comp = registry('get', ls([, 'nonexistent.component']));
+		const comp = $c.sm(registry, 'get', ls([, 'nonexistent.component']));
 		assertEquals(comp, undefined, 'Should return undefined for non-existent component');
 	});
 
@@ -134,7 +134,7 @@ Deno.test('MWIRegistry - Component Retrieval (get)', async (t) => {
 	});
 
 	await t.step('(get) - Component has ID', () => {
-		const textComp = registry('get', ls([, 'm.t']));
+		const textComp = $c.sm(registry, 'get', ls([, 'm.t']));
 		assert(textComp.has('id'), 'Component entry should have an ID');
 		const id = textComp.at('id');
 		assertMatch(id, /^_MO_/, 'Component ID should start with _MO_ prefix');

@@ -15,7 +15,7 @@ modcaps=''
 @e @js{
 	if (!mid) throw new Error('MWIDocNode requires Mesgjs module management to be active');
 
-	const { fready, fwait, getInstance, getInterface, typeChains } = globalThis.$c;
+	const { fready, fwait, getInstance, getInterface, MsjsObject, typeChains } = globalThis.$c;
 
 	const IF_NAME = 'MWIDocNode';
 	const READY_FT = IF_NAME;
@@ -25,7 +25,11 @@ modcaps=''
 	const SYNC_IF_NAME = 'MWIDOMSync';
 	const SYNC_RDY_FT = SYNC_IF_NAME;
 
-	// MWIDocNode Interface
+	//////////////////////////////////////////////////////////////////////
+	//////////////////////////////////////////////////////////////////////
+	//////      MWIDocNode Interface
+	//////////////////////////////////////////////////////////////////////
+	//////////////////////////////////////////////////////////////////////
 	(() => {
 		const SCHEMA = 'schema';
 		const VOID = 'void';
@@ -35,66 +39,74 @@ modcaps=''
 		const ATTR_LOW_FLUX = 3; // # of attribute changes before individual tracking
 
 		// m.coat (computed) attribute slotting
-		function applyCoat (d, value) {
+		function applyCoat (self, ps, value) {
 			if (!(value instanceof NANOS)) return;
 
-			const p = d.p, attrs = p.at('attrs');
+			const attrs = ps.at('attrs');
 
 			attrs.set('m.coat', value);
-			if (p.has('_mCoat')) return p.at('_mCoat').rv;
+			if (ps.has('_mCoat')) return ps.at('_mCoat').rv;
 
 			const _mCoat = reactive({ eager: true, def: () => {
 				const value = attrs.get('m.coat');
+				const entries = [...value.namedEntries()];
 
-				for (const [target, spec] of value.namedEntries()) {
-					const value = computeAttr(d, spec);
+				reactive.untracked(() => {
+					for (const [target, spec] of entries) {
+						const value = computeAttr(d, spec);
 
-					reactive.untracked(() => d.rr('setAttr', ls([, target, , value, 'coat', false ])));
-				}
+						self.setAttr(target, value, { coat: false });
+					}
+				});
 			}});
 
-			p.set('_mCoat', _mCoat);
+			ps.set('_mCoat', _mCoat);
 			return _mCoat.rv;
 		}
 
 		// m.slat attribute slotting
 		// [... m.slat=[target=[source? else=default?]...] ...]
-		function applySlat (d, value) {
+		function applySlat (self, ps, value) {
 			if (!(value instanceof NANOS)) return;
 
-			const p = d.p, attrs = p.at('attrs'), slotSrc = p.at('slotSrc');
+			const attrs = ps.at('attrs'), slotSrc = ps.at('slotSrc');
 
 			attrs.set('m.slat', value);
-			if (p.has('_mSlat')) return p.at('_mSlat').rv;
+			if (ps.has('_mSlat')) return ps.at('_mSlat').rv;
 
 			const _mSlat = reactive({ eager: true, def: () => {
 				const value = attrs.get('m.slat');
+				const entries = [...value.namedEntries()];
 
-				for (const [target, spec] of value.namedEntries()) {
-					const source = spec.at(0, target);
-					const value = slotSrc?.('getAttr', [ source ]) ?? spec.at('else');
+				reactive.untracked(() => {
+					for (const [target, spec] of value.namedEntries()) {
+						const source = spec.at(0, target);
+						const value = slotSrc ? slotSrc.getAttr(source) : spec.at('else');
 
-					reactive.untracked(() => d.rr('setAttr', ls([, target, , value, 'coat', false ])));
-				}
+						self.setAttr(target, value, { coat: false });
+					}
+				});
 			}});
 
-			p.set('_mSlat', _mSlat);
+			ps.set('_mSlat', _mSlat);
 			return _mSlat.rv;
 		}
 
 		// Return the final (string) value for a computed (e.g. m.coat) attribute
-		function computeAttr (d, spec) {
-			const slotSrc = d.p.at('slotSrc');
+		function computeAttr (ps, spec) {
+			const slotSrc = ps.at('slotSrc');
 			// Handle first-pass shortcuts: `@@` for component id, `@#` for doc-node id
 			// Use functional replacement to only access attributes when/if referenced
+
 			if (typeof spec === 'number') spec = String(spec);
 			spec = spec.replace(/@@|@#/g, (match) => {
 				switch (match) {
-				case '@@': return slotSrc?.('getAttr', 'm.ci') || '';
-				case '@#': return slotSrc?.('getAttr', 'm.id') || '';
+				case '@@': return slotSrc?.getAttr('m.ci') ?? '';
+				case '@#': return slotSrc?.getAttr('m.id') ?? '';
 				default: return match;
 				}
 			});
+
 			let retUndef = false;
 			const getVal = (name) => {
 				switch (name) { // Handle escapes, e.g. <.lt>
@@ -106,7 +118,7 @@ modcaps=''
 				case '.un': retUndef = true; return; // Return undefined
 				case '.vb': return '|'; // Vertical bar
 				}
-				if (slotSrc) return slotSrc('getAttr', [ name ]);
+				return slotSrc?.getAttr(name);
 			};
 			const isUns = (v) => v === undefined || v === false; // unset
 			const isUOE = (v) => v === undefined || v === "" || v === false; // unset or empty
@@ -116,6 +128,7 @@ modcaps=''
 			const outStr = (v) => {
 				if (typeof v === 'string' || typeof v === 'number') {
 					const str = String(v);
+
 					if (str) output.push(str);
 				}
 			};
@@ -123,11 +136,14 @@ modcaps=''
 			const parseExpr = () => { // Parse a (sub-)expression
 				const name = tokens.shift(), value = getVal(name);
 				const then = tokens.shift();
+
 				if (then === '>') { // Simple interpolations
 					outStr(value);
 					return;
 				}
+
 				let copy = false;
+
 				switch (then) {
 				// Conditionals
 				case '?': copy = !isUns(value); break;
@@ -157,86 +173,6 @@ modcaps=''
 			if (!retUndef) return output.join('');
 		}
 
-		// Create a managed-region boundary marker element
-		function createDOMBoundary (type) {
-			const script = document.createElement('script');
-			script.type = 'x';
-			script.dataset.mwi = type;
-			return script;
-		}
-
-		// Append a new child node after some other child node
-		// (Does nothing if the node is already in the proper position; this
-		// is an "append" version of parent.insertBefore(node, beforeNode))
-		function domAppendAfter (parent, node, after = null) {
-			if (!after && (node.parentNode !== parent || node.previousSibling)) {
-				// Position node as the first child
-				const curFirst = parent.firstChild;
-				if (curFirst) parent.insertBefore(node, curFirst);
-				else parent.append(node);
-			} else if (after && (node.parentNode !== parent || node.previousSibling !== after)) {
-				// Position node after the reference node
-				const next = after.nextSibling;
-				if (next) parent.insertBefore(node, next);
-				else parent.append(node);
-			}
-			// else the node is already in the correct position
-		}
-
-		// Update/synchronize a DOM node's children (shuffling in place when possible)
-		function domSyncChildren (parent, children) {
-			let prev = null, child = null;
-			for (child of children.values()) {
-				domAppendAfter(parent, child, prev);
-				prev = child;
-			}
-			// Remove any "extra nodes left over" after the last child
-			if (prev) while (prev.nextSibling) parent.removeChild(prev.nextSibling);
-			else while (parent.firstChild) parent.removeChild(parent.firstChild);
-		}
-
-		// Synchronize children within the managed region (between begin/end boundary markers)
-		function domSyncManagedChildren (parent, children) {
-			let { begin, end } = getManagedRegion(parent);
-
-			// Add managed-region boundary-markers if absent
-			if (!begin) {
-				begin = createDOMBoundary('begin');
-				if (end) parent.insertBefore(begin, end);
-				else parent.append(begin);
-			}
-			if (!end) {
-				end = createDOMBoundary('end');
-				parent.insertBefore(end, begin.nextSibling);
-			}
-
-			// Synchronize children within the managed region (only)
-			let prev = begin, child = null;
-			for (child of children.values()) {
-				domAppendAfter(parent, child, prev);
-				prev = child;
-			}
-
-			// Remove stale children from the managed region
-			for (child = prev.nextSibling; child && child !== end; child = prev.nextSibling) {
-				parent.removeChild(child);
-			}
-		}
-
-		// Locate the managed-region boundary markers within a parent element
-		function getManagedRegion (parent) {
-			let begin = null, end = null;
-			for (const child of parent.children) {
-				if (child.tagName !== 'SCRIPT') continue;
-				switch (child.dataset.mwi) {
-				case 'begin': begin = child; break;
-				case 'end': end = child; break;
-				}
-				if (begin && end) break;
-			}
-			return { begin, end };
-		}
-
 		// Convert a style-map into a `name:value;...` string
 		function joinStyles (styleMap) {
 			return [...styleMap.entries()].map(([name, value]) => name + ':' + value).join(';');
@@ -248,12 +184,14 @@ modcaps=''
 		// `+` supplements (instead of replacing) existing classes
 		// !class removes the class
 		// ~class toggles the class
-		function setClass (d, classStr) {
+		function setClass (ps, classStr) {
 			if (typeof classStr !== 'string') return;
-			const p = d.p, attrs = p.at('attrs'), classes = p.at('classes');
+
+			const attrs = ps.at('attrs'), classes = ps.at('classes');
 
 			// Add (uniquely), remove, or toggle classes listed in the value
 			let condClear = true; // Start from empty by default
+
 			if (/^\s*$/.test(classStr)) classes.clear();
 			else for (const [, token, mod, cls] of classStr.matchAll(/([+]|={1,2})|([!~]?)\s*([-_a-z][-_a-z0-9]*)/gi)) {
 				if (token === '=') condClear = true; // Conditional clear
@@ -269,7 +207,7 @@ modcaps=''
 			}
 
 			// Guarantee permanent classes
-			const permClasses = p.at('permClasses');
+			const permClasses = ps.at('permClasses');
 			for (const cls of permClasses.values()) classes.add(cls);
 
 			// Update (or remove) the class attribute value
@@ -280,59 +218,12 @@ modcaps=''
 			}
 		}
 
-		// Set/sync DOM node attributes from HTML subset of doc-node attributes
-		// Updates reactively, so only call **once** per node
-		// Returns the reactor
-		function setDOMAttrs (node, attrs, schema = null) {
-			const flux = {};
-			const allowAttr = ((set) => set?.jsv || set)(schema?.at('htmlAllowAttr'));  // undefined or Set/@set
-
-			const rxAttr = reactive({ eager: true, def: () => {
-				// Main-group reactor
-				// Remember all current DOM-node attributes.
-				const extra = new Set(node.getAttributeNames());
-				for (const name of attrs.namedKeys()) {
-					// Only HTML attributes
-					if (!/^[0-9a-z:_-]*$/.test(name)) continue;
-					// Filter if htmlAllowAttr is specified
-					if (allowAttr && !allowAttr.has(name)) continue;
-					flux[name] ||= 0; // Track attribute activity
-					extra.delete(name); // Handled attributes are not "extra"
-					const update = (_, chg = 0) => { // Common update code
-						const curValue = node.getAttribute(name), newValue = attrs.at(name);
-						if (curValue !== newValue) {
-							flux[name] += chg;
-							if (newValue === undefined) node.removeAttribute(name);
-							else node.setAttribute(name, newValue);
-						}
-					};
-					// Attributes that have changed several times track individually.
-					// Less-active attributes track together in the main group.
-					if (flux[name] > ATTR_LOW_FLUX) reactive({
-						eager: true, def: update, // Individual attribute reactor
-					}).rv;
-					else update(0, 1);
-				}
-				// Remove any extra DOM attributes to affect a full sync.
-				for (const name of extra.values()) node.removeAttribute(name);
-			}});
-
-			rxAttr.rv;
-			return rxAttr;
-		}
-
-		// Helper to set doc-node parent + index when appending
-		function setNodesParent (nodes, parent, offset = 0) {
-			for (const [index, node] of nodes.entries()) {
-				node('setParent', [parent, index + offset]);
-			}
-		};
-
 		// Set "permanent" classes to always be included in the `class` attribute
-		function setPermClass (d, classStr) {
-			const p = d.p, attrs = p.at('attrs'), classes = new Set();
+		function setPermClass (ps, classStr) {
+			const attrs = ps.at('attrs'), classes = new Set();
+
 			if (typeof classStr === 'string') for (const [cls] of classStr.matchAll(/[-_a-z][-_a-z0-9]*/gi)) classes.add(cls);
-			p.set('permClasses', classes);
+			ps.set('permClasses', classes);
 			if (classes.size) attrs.set('m.percl', [...classes.values()].join(''));
 			else attrs.set('m.percl', undefined);
 		}
@@ -342,12 +233,14 @@ modcaps=''
 		// `=` conditionally clears previous styles (if additional styles (but not `+`) follow)
 		// `+` supplements (instead of replacing) existing styles
 		// Name with empty value (`name: ;`) removes the style.
-		function setStyle (d, styleStr) {
+		function setStyle (ps, styleStr) {
 			if (typeof styleStr !== 'string') return;
-			const p = d.p, attrs = p.get('attrs'), styles = new Map();
+
+			const attrs = ps.get('attrs'), styles = new Map();
 
 			// Start with current styles, in case updating
 			const current = attrs.get('style', '');
+
 			if (typeof current === 'string') {
 				for (const [name, value] of splitStyles(current)) styles.set(name, value);
 			}
@@ -380,87 +273,787 @@ modcaps=''
 			for (const [, token, name, value] of styleStr.matchAll(/([+]|={1,2})|([-_a-z][-_a-z0-9]*)\s*:\s*((?:'(?:\\'|[^'])*'|"(?:\\"|[^"])*"|[^;])*?)\s*(?:;|$)/gi)) yield [name, value, token];
 		}
 
-		// HTML-escape text, with options for different contexts
-		function textToHTML (str, { lt = true, amp = true, gt = true, sq = false, dq = false } = {}) {
-			if (typeof str === 'function') {
-				// Hack to double as message handler
-				const d = str, m = d.mp;
-				str = m.at(0);
-				lt = m.at('lt', true);
-				amp = m.at('amp', true);
-				gt = m.at('gt', true);
-				sq = m.at('sq', false);
-				dq = m.at('dq', false);
-			}
-			// deno-lint-ignore no-control-regex
-			return String(str).replace(/[\x00-\x1f&'"<>\\\x7f-\uffff]/g, (match) => {
-				switch (match) {
-				case '<': return (lt ? '&lt;' : '<');
-				case '&': return (amp ? '&amp;' : '&');
-				case '>': return (gt ? '&gt;' : '>');
-				case "'": return (sq ? '&#39;' : "'");
-				case '"': return (dq ? '&quot;' : '"');
-				default:
-					// &#x length >= &# length for all UTF-16
-					return `&#${match.charCodeAt()};`;
-				}
-			});
-		}
-
-		// Update the id index when an id changes
-		function updateIdIndex (d, oldId, newId) {
-			const doc = d.p.at('doc');
-			d.sm(doc, 'updIdIndex', ls([, oldId, , newId]));
-		}
-
 		// JS interface prototype
-		const docNodeProto = Object.setPrototypeOf({
-			append (...content) { return this('append', content); },
-			get compId () { return this('compId'); },
-			[globalThis.$c.symbols.convert] () { return this; },
-			closest (predicate) { return this('closest', [predicate]); },
-			createDOMBoundary,
-			delAttr (name) { return this('delAttr', [ name ]); },
-			get document () { return this('document'); },
-			domAppendAfter,
-			domSyncChildren,
-			domSyncManagedChildren,
-			getAttr (name) { return this('getAttr', [ name ]); },
-			getDOM ({ sync } = {}) { return this('getDOM', { sync }); },
-			getHTML () { return this('getHTML'); },
-			getManagedRegion,
-			getParent () { return this('getParent'); },
-			getSpec () { return this('getSpec'); },
-			getSubDoc () { return this('getSubDoc'); },
-			getSubDOM ({ into, sync } = {}) { return this('getSubDOM', { into, sync }); },
-			getSubSpec (view) { return this('getSubSpec', [ view ]); },
-			hasAttr (name) { return this('hasAttr', [ name ]); },
-			hasChildren () { return this('hasChildren'); },
-			hasClass (name) { return this('hasClass', [ name ]); },
-			get jsv () { return this; },
-			nodePath () { return this('nodePath'); },
-			setAttr (name, value, options = {}) { return this('setAttr', new NANOS([ name, value ], options)); },
-			setDOMAttrs,
-			setNodesParent,
-			setParent (parent, index) { return this('setParent', [parent, index]); },
-			setSpec (spec) { return this('setSpec', [ spec ]); },
-			setSubSpec (...params) { return this('setSubSpec', (params.length === 1) ? params[0] : params); },
-			get slotSrc () { return this('slotSrc'); }, // (intended for testing)
-			get subSlotSrc () { return this('subSlotSrc'); },
-			textToHTML,
-			get type () { return this('type'); },
-			valueOf () { return this; },
-		}, Function.prototype);
+		class MWIDocNode extends MsjsObject {
+			#ps;
+
+			constructor (key, type) {
+				super(key, type);
+				this.#ps = MsjsObject.getPS(this, key);
+			}
+
+			// "Live" append doc-nodes to initial sub-doc (bilingual)
+			// (append doc-node|text...) OR .append(doc-node|text, ...)
+			append (...params) {
+				const d = params[0]?.msjsType === '@dispatch' ? params[0] : undefined;
+				const ps = d?.p ?? this.#ps;
+				const self = d?.rr ?? this;
+
+				if (ps.at([ SCHEMA, VOID ])) return self;
+
+				const doc = ps.at('doc'), rxs = ps.at('rxState');
+				const subDoc = self.getSubDoc();
+				const content = d ? [...d.mp.values()] : params;
+				const docNodes = content.reduce((list, item) => {
+					if (typeof item === 'string') {
+						const node = doc.createNode('m.t');
+
+						node.setAttr('t', item);
+						list.push(node);
+					} else if (typeChains(item?.msjsType, IF_NAME)) {
+						list.push(item);
+					}
+					return list;
+				}, []);
+
+				reactive.batch(() => {
+					if (docNodes.length) {
+						const offset = subDoc.next;
+
+						subDoc.push(docNodes);
+						setNodesParent(docNodes, self, offset);
+					}
+					rxs.push({ live: true, docEq: false });
+				});
+
+				return self;
+			}
+
+			// (closest predicate) OR .closest(predicate) (bilingual)
+			// Predicate is a JS or Mesgjs function, or string containing a comma-separated list of types
+			// JS function: `predicate(node)`  Mesgjs function: `predicate(call node)`
+			closest (p1) {
+				const d = (p1?.msjsType === '@dispatch') ? p1 : undefined;
+				const self = d?.rr ?? this;
+				const rawPredicate = d ? d.mp.at(0) : p1;
+				let predicate;
+
+				if (typeof rawPredicate === 'string') {
+					const types = new Set(rawPredicate.split(',').map((s) => s.trim()).filter(Boolean));
+
+					if (!types.size) return null;
+					predicate = (node) => types.has(node.type);
+				} else if (typeof rawPredicate === 'function' && !rawPredicate.msjsType) {
+					// JS function
+					predicate = rawPredicate;
+				} else if (typeof rawPredicate === 'object' && rawPredicate?.msjsType === '@function') {
+					// Mesgjs @function - call via message
+					predicate = (node) => $c.sm(rawPredicate, 'call', [node]);
+				} else {
+					return null;
+				}
+
+				for (let node = self; node; node = node.getParent().parent) {
+					if (predicate(node)) return node;
+				}
+				return null;
+			}
+
+			// .compId - Return component id
+			get compId () { return this.#ps.at('id'); }
+
+			// Create a managed-region boundary marker element
+			// .createDOMBoundary('begin'|'end')
+			static createDOMBoundary (type) {
+				const script = document.createElement('script');
+
+				script.type = 'x';
+				script.dataset.mwi = type;
+				return script;
+			}
+
+			// Delete attribute (bilingual)
+			// (delAttr name) OR .delAttr(name)
+			delAttr (p1) {
+				const d = (p1?.msjsType === '@dispatch') ? p1 : undefined;
+				const ps = d?.p ?? this.#ps;
+				const self = d?.rr ?? this;
+				const name = d ? d.mp.at(0) : p1;
+
+				switch (name) {
+				case 'm.percl':
+					ps.at('permClasses').clear();
+					setClass(ps, '+');
+					break;
+				case 'class':
+					ps.at('classes').clear();
+					setClass(ps, '+');
+					break;
+				case 'id':
+					if (d) { // Mesgjs already has the required dispatch
+						const attrs = ps.at('attrs'), doc = ps.at('doc');
+						const oldId = attrs.at('id');
+
+						attrs.set('id', undefined);
+						d.sm(doc, 'updIdIndex', ls([, oldId, , undefined]));
+					} else { // Escalate from JS to Mesgjs for the dispatch
+						$c.sm(self, 'delAttr', 'id');
+					}
+					break;
+				case 'style':
+					setStyle(ps, '==');
+					break;
+				default:
+				{
+					const attrs = ps.at('attrs');
+
+					attrs.delete(name);
+					break;
+				}
+				}
+			}
+
+			// .document - Return associated document
+			get document () { return this.#ps.at('doc'); }
+
+			// Append a new child node after some other child node
+			// (Does nothing if the node is already in the proper position; this
+			// is an "append" version of parent.insertBefore(node, beforeNode))
+			static domAppendAfter (parent, node, after = null) {
+				if (!after && (node.parentNode !== parent || node.previousSibling)) {
+					// Position node as the first child
+					const curFirst = parent.firstChild;
+
+					if (curFirst) parent.insertBefore(node, curFirst);
+					else parent.append(node);
+				} else if (after && (node.parentNode !== parent || node.previousSibling !== after)) {
+					// Position node after the reference node
+					const next = after.nextSibling;
+
+					if (next) parent.insertBefore(node, next);
+					else parent.append(node);
+				}
+				// else the node is already in the correct position
+			}
+
+			// Update/synchronize a DOM node's children (shuffling in place when possible)
+			static domSyncChildren (parent, children) {
+				let prev = null, child = null;
+
+				for (child of children.values()) {
+					domAppendAfter(parent, child, prev);
+					prev = child;
+				}
+				// Remove any "extra nodes left over" after the last child
+				if (prev) while (prev.nextSibling) parent.removeChild(prev.nextSibling);
+				else while (parent.firstChild) parent.removeChild(parent.firstChild);
+			}
+
+			// Synchronize children within the managed region (between begin/end boundary markers)
+			static domSyncManagedChildren (parent, children) {
+				let { begin, end } = getManagedRegion(parent);
+
+				// Add managed-region boundary-markers if absent
+				if (!begin) {
+					begin = createDOMBoundary('begin');
+					if (end) parent.insertBefore(begin, end);
+					else parent.append(begin);
+				}
+				if (!end) {
+					end = createDOMBoundary('end');
+					parent.insertBefore(end, begin.nextSibling);
+				}
+
+				// Synchronize children within the managed region (only)
+				let prev = begin, child = null;
+
+				for (child of children.values()) {
+					domAppendAfter(parent, child, prev);
+					prev = child;
+				}
+
+				// Remove stale children from the managed region
+				for (child = prev.nextSibling; child && child !== end; child = prev.nextSibling) {
+					parent.removeChild(child);
+				}
+			}
+
+			// Get attribute value (bilingual)
+			// (getAttr name) OR .getAttr(name)
+			getAttr (p1) {
+				const d = (p1?.msjsType === '@dispatch') ? p1 : undefined;
+				const ps = d?.p ?? this.#ps;
+				const self = d?.rr ?? this;
+				const name = d ? d.mp.at(0) : p1;
+				const attrs = ps.at('attrs');
+
+				// Virtual attributes
+				switch (name) {
+				case 'm.ci': // Component id (read-only)
+					return ps.at('id');
+				case 'm.id': // Mandatory id value (read-only)
+					if (!attrs.has('id')) {
+						// There's no user-assigned id, so auto-assign one
+						const doc = ps.at('doc'), mid = doc('nextId');
+
+						if (d) { // Handle here if we have the necessary Mesgjs dispatch
+							attrs.set('id', mid);
+							d.sm(doc, 'updIdIndex', ls([, undefined, , mid]));
+						} else {
+							// Otherwise, escalate to Mesgjs (setAttr id mid)
+							$c.sm(self, 'setAttr', ls([, 'id', , mid]));
+						}
+						return mid;
+					}
+					return attrs.at('id');
+				case 'm.rns': // Rendered node spec (virtual, read-only)
+				{
+					// m.rns is only defined for participating types and when the sub-doc is live but off-spec
+					const useMRns = ps.at([SCHEMA, MRNS]);
+
+					if (!useMRns) return;
+
+					const rxs = ps.at('rxState'), live = rxs.at('live'), equal = rxs.at('docEq');
+
+					if (!live || equal) return;
+
+					const subDoc = ps.at('subDoc'), mRns = new NANOS();
+
+					for (const node of subDoc.values()) {
+						mRns.push([$c.sm(node, 'getSpec')]);
+					}
+					return mRns;
+				}
+				}
+
+				// Real attributes
+				if (name !== 'm.coat' && name !== 'm.slat') {
+					// Eagerly reflect any recent source changes
+					ps.at('_mCoat')?.rv;
+					ps.at('_mSlat')?.rv;
+				}
+				return attrs.at(name);
+			}
+
+			// Return the HTML encoding of string- and true-valued, HTML, "non-dot" attributes (bilingual)
+			// (getAttrHTML) or .getAttrHTML()
+			getAttrHTML (p1) {
+				const ps = (p1?.msjsType === '@dispatch') ? p1.p : this.#ps;
+				const HTML = [], schema = ps.at(SCHEMA);
+				const allowAttr = schema?.at('htmlAllowAttr');  // undefined or Set/@set
+
+				for (const [name, value] of ps.at('attrs').namedEntries()) {
+					if (!/^[0-9a-z:_-]*$/.test(name)) continue; // Only HTML attributes
+					if (allowAttr && !allowAttr.has(name)) continue; // Filter if specified
+					if (value === true) HTML.push(` ${name}`);
+					else if (typeof value === 'string' || typeof value === 'number') {
+						HTML.push(` ${name}="${textToHTML(String(value), { dq: true })}"`);
+					}
+				}
+				return HTML.join('');
+			}
+
+			// Typically just recursively gather HTML from sub-doc-nodes (bilingual)
+			// (getHTML) OR .getHTML()
+			getHTML (p1) {
+				const d = (p1?.msjsType === '@dispatch') ? p1 : undefined;
+				const self = d?.rr ?? this;
+
+				if (self.getAttr('m.csr')) return ''; // CSR only
+
+				const hasIn = d ? d.mp.at('in') : p1?.in;
+				const html = hasIn || [];
+				const subDoc = self.getSubDoc();
+
+				for (const node of subDoc.values()) {
+					node.getHTML({ in: html });
+				}
+				if (!hasIn) return html.join('');
+			}
+
+			// Locate the managed-region boundary markers within a parent element
+			static getManagedRegion (parent) {
+				let begin = null, end = null;
+
+				for (const child of parent.children) {
+					if (child.tagName !== 'SCRIPT') continue;
+					switch (child.dataset.mwi) {
+					case 'begin': begin = child; break;
+					case 'end': end = child; break;
+					}
+					if (begin && end) break;
+				}
+				return { begin, end };
+			}
+
+			// Returns an object or NANOS containing the current parent and index (bilingual)
+			// (getParent) or .getParent()
+			getParent (p1) {
+				const d = (p1?.msjsType === '@dispatch') ? p1 : undefined;
+				const ps = d?.p ?? this.#ps;
+				const rxs = ps.at('rxState');
+				const parent = rxs.at('parent'), index = rxs.at('index');
+
+				// Return object for JS or NANOS for Mesgjs
+				return d ? new NANOS({ parent, index }) : { parent, index };
+			}
+
+			// Return this node's reactive doc-spec (bilingual)
+			// (`[type attr=value... m.rns=[content]? children...]`)
+			// (getSpec) OR .getSpec()
+			getSpec (p1) {
+				const d = (p1?.msjsType === '@dispatch') ? p1 : undefined;
+				const ps = d?.p ?? this.#ps;
+				const self = d?.rr ?? this;
+
+				if (ps.has('_spec')) return ps.at('_spec').rv;
+
+				const doc = ps.at('doc'), type = ps.at('type');
+				const spec = doc.rxNANOS();
+				const _spec = reactive({ def: () => {
+					// Collect attributes eagerly to create reactive deps
+					const attrs = [...ps.at('attrs').namedEntries()];
+					const rns = self.getAttr('m.rns'); // Virtual; computed from live sub-doc
+					const subSpec = [...self.getSubSpec().values()];
+
+					reactive.unbatch(() => {
+						spec.clear();
+						spec.push(type);
+						spec.fromEntries(attrs); // Add attributes
+						if (rns) spec.set('m.rns', rns); // Include rendered custom state when present
+						if (subSpec.length) spec.push(subSpec); // Add sub-spec (child spec)
+					});
+
+					return spec;
+				}});
+
+				ps.set('_spec', _spec);
+
+				return _spec.rv;
+			}
+
+			// Return reactive NANOS of sub-doc nodes (bilingual)
+			// (getSubDoc) OR .getSubDoc()
+			getSubDoc (p1) {
+				const d = (p1?.msjsType === '@dispatch') ? p1 : undefined;
+				const ps = d?.p ?? this.#ps, rxs = ps.at('rxState');
+
+				if (ps.has('_subDoc')) return ps.at('_subDoc').rv;
+
+				const self = d?.rr ?? this;
+				const doc = ps.at('doc'), subDoc = ps.at('subDoc');
+				const slotSrc = self.subSlotSrc();
+				const _subDoc = reactive({ eager: true, def: () => {
+					if (rxs.at('live')) return subDoc; // Doc-nodes are already source of truth
+					reactive.batch(() => {
+						const source = self.getSubSpec();
+						const nodes = $c.sm(doc, 'from', { list: source, slotSrc }); // Skip JS->Mesgjs escalation
+
+						reactive.untracked(() => {
+							subDoc.fromEntries(nodes.entries()); // Overwrite without clearing
+							subDoc.next = nodes.length; // In case shorter now
+							rxs.push({ live: true, docEq: true });
+						});
+					});
+
+					return subDoc;
+				}});
+
+				ps.set('_subDoc', _subDoc);
+
+				return _subDoc.rv;
+			}
+
+			// Get reactive NANOS of sub-doc DOM nodes (bilingual)
+			// The `into` option allows re-using an existing nodes list (e.g. for m.defer)
+			// The 'sync' option provides an MWIDomSync instance for hydration
+			// (getSubDOM into=list? sync=domSync?) OR .getSubDOM({ into, sync })
+			getSubDOM (p1) {
+				const d = (p1?.msjsType === '@dispatch') ? p1 : undefined, ps = d?.p ?? this.#ps;
+				const self = d?.rr ?? this;
+				const into = d ? d.mp.at('into') : p1?.into;
+				const sync = d ? d.mp.at('sync') : p1?.sync;
+
+				// Once created, always return the same reactive object
+				// (Gate ignored on the first render into e.g. m.defer)
+				if (ps.has('_subDom') && !into) return ps.at('_subDom').rv;
+
+				const doc = ps.at('doc'), nodes = into || doc.rxNANOS();
+				const _subDom = into ? (ps.at('_subDom') ?? reactive()) : reactive();
+
+				_subDom.def = () => {
+					const subDoc = self.getSubDoc(), newNodes = [];
+					let defer = false;
+
+					for (const node of subDoc.values()) {
+						const subDOM = $c.sm(node, 'getDOM', { sync });
+
+						if (subDOM && !defer) newNodes.push(...subDOM.values());
+						else {
+							// Child nodes are indeterminate due to aggregate rendering
+							// being paused during initial CSR. Continue rendering.
+							defer = true;
+						}
+					}
+
+					if (defer) return; // Nodes are not stable yet
+
+					reactive.unbatch(() => {
+						nodes.fromEntries(newNodes.entries()); // Overwrite without clearing
+						nodes.next = newNodes.length; // In case shorter now
+					});
+
+					return nodes;
+				};
+				_subDom.eager = true;
+
+				if (!into) ps.set('_subDom', _subDom);
+
+				return _subDom.rv;
+			}
+
+			// Return the node's reactive sub-spec (bilingual)
+			// (getSubSpec view=1?) OR .getSubSpec(view = 1)
+			// View 0: always returns the underlying sub-spec
+			// View 1: reflects live state for non-MRNS types
+			getSubSpec (p1 = 1) {
+				const d = (p1?.msjsType === '@dispatch') ? p1 : undefined;
+				const self = d?.rr ?? this;
+				const ps = d?.p ?? this.#ps;
+				const view = d ? d.mp.at(0, 1) : p1;
+
+				// Allways return the same reactive value (per view)
+				if (view === 0) return ps.at('subSpec'); // Return raw original
+				if (ps.has('_subSpec')) return ps.at('_subSpec').rv; // Return active view
+
+				const doc = ps.at('doc'), subSpec = doc.rxNANOS();
+				const useMRns = ps.at([SCHEMA, MRNS]), rxs = ps.at('rxState');
+				const _subSpec = reactive({ def: () => {
+					let newSpec;
+
+					if (!useMRns && rxs.at('live')) {
+						// Live view prefers to reflect the current document
+						const subDoc = self.getSubDoc();
+
+						newSpec = [...subDoc.values()].map((n) => n('getSpec'));
+					} else {
+						// Mirror the raw sub-spec when not live or when the
+						// sub-spec is semantically not the content (MRNS)
+						newSpec = [...ps.at('subSpec').values()];
+					}
+					reactive.unbatch(() => {
+						subSpec.fromEntries(newSpec.entries()); // Overwrite without clearing
+						subSpec.next = newSpec.length; // In case shorter now
+					});
+
+					return subSpec;
+				}});
+
+				ps.set('_subSpec', _subSpec);
+
+				return _subSpec.rv;
+			}
+
+			// .hasAttr(name) - True if the node has the named attribute
+			hasAttr (name) { return this.#ps.at('attrs').has(name); }
+
+			// .hasChildren() - True if has children (non-empty sub-spec)
+			hasChildren () { return !!this.getSubSpec().next; }
+
+			// .hasClass(name) - True if name in class list
+			hasClass (name) { return this.#ps.at('classes').has(name); }
+
+			get jsv () { return this; }
+
+			// Return a reactive list of node indexes up to an unparented node (bilingual)
+			// (nodePath) OR .nodePath()
+			nodePath (p1) {
+				const ps = (p1?.msjsType === '@dispatch') ? p1.p : this.#ps;
+				const doc = ps.at('doc');
+
+				if (ps.has('_nodePath')) return ps.at('_nodePath').rv;
+
+				const rxs = ps.at('rxState'), nodePath = doc.rxNANOS();
+				const _nodePath = reactive({ def: () => {
+					const parent = rxs.at('parent'), index = rxs.at('index');
+					const parentPath = typeof index === 'number' && parent?.('nodePath');
+
+					reactive.unbatch(() => {
+						nodePath.clear();
+						if (parentPath) nodePath.push(parentPath, index);
+					});
+
+					return nodePath;
+				}});
+
+				ps.set('_nodePath', _nodePath);
+				return _nodePath.rv;
+			}
+
+			// Set attribute value (bilingual)
+			// (setAttr name value coat=@f) OR setAttr(name, value, { coat: false })
+			setAttr (p1, p2, p3) {
+				const d = (p1?.msjsType === '@dispatch') ? p1 : undefined;
+				const ps = d?.p ?? this.#ps;
+				const name = d ? d.mp.at(0) : p1;
+				let value = d ? d.mp.at(1) : p2;
+				const coat = d ? d.mp.at('coat') : p3?.coat;
+				const self = d?.rr ?? this;
+
+				switch (name) {
+				case 'm.coat': // Computed attributes
+					applyCoat(self, ps, value);
+					break;
+				case 'm.percl': // Permanent classes
+					if (coat !== false) value = computeAttr(ps, value);
+					setPermClass(ps, value);
+					setClass(ps, '+');
+					break;
+				case 'm.slat': // Slotted attributes
+					applySlat(self, ps, value);
+					break;
+				case 'class': // Smart class
+					if (coat !== false) value = computeAttr(ps, value);
+					setClass(ps, value);
+					break;
+				case 'id':
+					// Type check and normalize
+					if (!d) { // Escalate to Mesgjs for required dispatch
+						$c.sm(self, 'setAttr', ls([, 'id', , value]));
+					} else if (typeof value === 'string' || typeof value === 'number') {
+						if (coat !== false) value = computeAttr(d, value);
+						value = String(value); // Normalize to string
+
+						const attrs = ps.at('attrs'), doc = ps.at('doc');
+						const oldId = attrs.at('id');
+
+						attrs.set('id', value);
+						d.sm(doc, 'updIdIndex', ls([, oldId, , value]));
+					} else if (value === undefined || value === null || value === false) {
+						// Clear id
+						const attrs = ps.at('attrs'), doc = ps.at('doc');
+						const oldId = attrs.at('id');
+
+						attrs.set('id', undefined);
+						d.sm(doc, 'updIdIndex', ls([, oldId, , undefined]));
+					}
+					// Ignore any other types
+					break;
+				case 'style': // Smart style
+					setStyle(d, value);
+					break;
+				case 'm.id': // Auto-generate ID if needed (supplied value ignored)
+					$c.sm(self, 'getAttr', 'm.id'); // Dispatch will be needed for this
+					break;
+				// Read-only virtuals
+				case 'm.ci': // Component ID
+				case 'm.rns': // Rendered node spec (virtual; computed from live sub-doc)
+					break;
+				default:
+				{
+					const attrs = ps.at('attrs');
+
+					attrs.set(name, value);
+					break;
+				}
+				}
+				return self; // Allow chaining
+			}
+
+			// Set/sync DOM node attributes from HTML subset of doc-node attributes
+			// Updates reactively, so only call **once** per node
+			// Returns the reactor
+			static setDOMAttrs (rawNode, attrs, schema = null) {
+				const flux = {};
+				const allowAttr = schema?.at('htmlAllowAttr');  // undefined or Set
+				const rxAttr = reactive({ eager: true, def: () => {
+					// Main-group reactor
+					// Remember all current DOM-node attributes.
+					const node = reactive.typeOf(rawNode) ? rawNode.rv : rawNode;
+					const extra = new Set(node.getAttributeNames());
+
+					for (const name of attrs.namedKeys()) {
+						// Only HTML attributes
+						if (!/^[0-9a-z:_-]*$/.test(name)) continue;
+						// Filter if htmlAllowAttr is specified
+						if (allowAttr && !allowAttr.has(name)) continue;
+						flux[name] ||= 0; // Track attribute activity
+						extra.delete(name); // Handled attributes are not "extra"
+
+						const update = (_, chg = 0) => { // Common update code
+							const curValue = node.getAttribute(name), newValue = attrs.at(name);
+
+							if (curValue !== newValue) {
+								flux[name] += chg;
+								if (newValue === undefined) node.removeAttribute(name);
+								else node.setAttribute(name, newValue);
+							}
+						};
+
+						// Attributes that have changed several times track individually.
+						// Less-active attributes track together in the main group.
+						if (flux[name] > ATTR_LOW_FLUX) reactive({
+							eager: true, def: update, // Individual attribute reactor
+						}).rv;
+						else update(0, 1);
+					}
+					// Remove any extra DOM attributes to affect a full sync.
+					for (const name of extra.values()) node.removeAttribute(name);
+				}});
+
+				rxAttr.rv;
+				return rxAttr;
+			}
+
+			// Helper to set doc-node parent + index when appending
+			static setNodesParent (nodes, parent, offset = 0) {
+				for (const [index, node] of nodes.entries()) {
+					node.setParent(parent, index + offset);
+				}
+			};
+
+			// Set parent node and our (child) index (bilingual)
+			// (setParent parent index) OR .setParent(parent, index)
+			setParent (p1, p2) {
+				const d = (p1?.msjsType === '@dispatch') ? p1 : undefined;
+				const ps = d?.p ?? this.#ps;
+				const parent = d ? d.mp.at(0) : p1;
+				const index = d ? d.mp.at(1) : p2;
+
+				if (typeChains(parent?.msjsType, IF_NAME)) {
+					reactive.batch(() => {
+						rxs.set('parent', parent);
+						if (Number.isInteger(index) && index >= 0) rxs.set('index', index);
+						else rxs.set('index', undefined);
+					});
+				}
+			}
+
+			// Set the node specification (bilingual)
+			// (setSpec [spec]) or .setSpec(specNANOS)
+			setSpec (p1) {
+				const d = (p1?.msjsType === '@dispatch') ? p1 : undefined;
+				const self = d?.rr ?? this;
+				const ps = d?.p ?? this.#ps;
+				const spec = d ? d.mp.at(0) : p1;
+
+				reactive.batch(() => {
+					// Spec named values are node attributes
+					for (const [name, value] of spec.namedEntries()) self.setAttr(name, value);
+					// Spec positional values (after tag) are sub-spec (children)
+					self.setSubSpec({ spec });
+				});
+
+				return d.rr;
+			}
+
+			// Set node sub-spec (bilingual)
+			// (setSubSpec m.rns=[spec]? subspec...) (positional form, sub-spec only) (with m.rns only on Mesgjs)
+			// (setSubSpec m.rns=[spec]? subSpec=[subspec...]) (named-parameter variant)
+			// (setSubSpec m.rns=[spec]? spec=[type attr=value... m.rns=[spec]? subspec...])
+			//     (named, full spec from which sub-spec is extracted)
+			setSubSpec (...params) {
+				const d = (params[0]?.msjsType === '@dispatch') ? params[0] : undefined, ps = d?.p ?? this.#ps;
+				const schema = ps.at(SCHEMA);
+
+				if (schema?.at(VOID)) return;
+
+				const self = d?.rr ?? this, mp = d?.mp;
+				const subSpec = ps.at('subSpec');
+				const spec = d ? mp.at('spec') : params[0]?.spec;
+				const subList = d ? mp.at('subSpec', m) : (!params[0]?.msjsType && params[0]?.subSpec || params);
+				const doc = ps.at('doc'), rxs = ps.at('rxState');
+				const subDoc = ps.at('subDoc'), slotSrc = self.subSlotSrc;
+				// Note: m.rns is a virtual, non-reactive value (intended for SSR->CSR hydration)
+				const rns = mp?.at('m.rns') ?? spec?.at('m.rns');
+
+				reactive.batch(() => {
+					// Update sub-spec
+					const children = (spec instanceof NANOS) ? [...spec.values()].slice(1) : [...subList.values()];
+
+					subSpec.fromEntries(children.entries()); // Overwrite without clearing
+					subSpec.next = children.length; // In case shorter now
+					rxs.set('live', false); // Sub-spec is now source of content truth
+
+					// Potentially update sub-doc as well
+					if (rns instanceof NANOS) {
+						// m.rns present: use it to populate the initial live doc children
+						// (applies to all node types, including autoDoc: false nodes)
+						const nodes = doc('from', { list: rns, slotSrc });
+
+						subDoc.fromEntries(nodes.entries());
+						subDoc.next = nodes.length;
+						MWIDocNode.setNodesParent(nodes, self);
+						rxs.push({ live: true, docEq: false }); // Sub-doc is now source of truth
+					} else if (schema?.at(AUTO_DOC) !== false) {
+						// No m.rns: auto-populate from subSpec for normal (autoDoc !== false) nodes
+						// Template sub-specs are only for (unnamed) content slotting and therefore disable auto-doc.
+						// (Their actual content is managed in an internal fragment.)
+						if (subSpec?.size) {
+							const nodes = $c.sm(doc, 'from', { list: subSpec, slotSrc });
+
+							subDoc.fromEntries(nodes.entries());
+							subDoc.next = nodes.length;
+							MWIDocNode.setNodesParent(nodes, self);
+						} else {
+							subDoc.next = 0;
+						}
+						// The sub-doc is now live (even if empty) and matches the sub-spec
+						rxs.push({ live: true, docEq: true });
+					} else {
+						subDoc.next = 0;
+					}
+				});
+
+				return self;
+			}
+
+			// .slotSrc - Slot source for this node
+			get slotSrc () { return this.#ps.at('slotSrc'); }
+
+			// .subSlotSrc - Slot source for node's children
+			get subSlotSrc () { return this; }
+
+			// HTML-escape text, with options for different contexts
+			static textToHTML (p1, { lt = true, amp = true, gt = true, sq = false, dq = false } = {}) {
+				const d = (p1?.msjsType === '@dispatch') ? p1 : undefined, m = d?.mp;
+				const str = m ? m.at(0) : p1;
+
+				if (m) {
+					lt = m.at('lt', true);
+					amp = m.at('amp', true);
+					gt = m.at('gt', true);
+					sq = m.at('sq', false);
+					dq = m.at('dq', false);
+				}
+
+				// deno-lint-ignore no-control-regex
+				return String(str).replace(/[\x00-\x1f&'"<>\\\x7f-\uffff]/g, (match) => {
+					switch (match) {
+					case '<': return (lt ? '&lt;' : '<');
+					case '&': return (amp ? '&amp;' : '&');
+					case '>': return (gt ? '&gt;' : '>');
+					case "'": return (sq ? '&#39;' : "'");
+					case '"': return (dq ? '&quot;' : '"');
+					default:
+						// &#x length >= &# length for all UTF-16
+						return `&#${match.charCodeAt()};`;
+					}
+				});
+			}
+
+			// .type - Node type (AKA component type)
+			get type () { return this.#ps.at('type'); }
+
+			valueOf () { return this; }
+		}
+
+		const proto = MWIDocNode.prototype;
+		// The default getDOM behavior is to just render the sub-DOM, so alias the method
+		proto.getDOM = proto.getSubDOM;
 
 		// Initialize the new doc node
 		function opInit (d) {
 			const p = d.p, m = d.mp, doc = d.sr;
-			if (typeof doc !== 'function' || d.st !== DOC_IF) {
+
+			if (!(doc instanceof MsjsObject) || d.st !== DOC_IF) {
 				const type = m.at('type', d.rt);
+
 				throw new Error(`Use ${DOC_IF}(createNode) to create a new ${type} node`);
 			}
 
 			const isVoid = p.at([ SCHEMA, VOID ]);
+
 			p.push({
 				slotSrc: undefined, // Slotting source (overridden by (createNode), if active)
 				}, m, {
@@ -478,507 +1071,6 @@ modcaps=''
 				subSpec: doc.rxNANOS(), // Sub-content spec
 			});
 			if (!p.has('type')) throw new TypeError(`${IF_NAME} requires a node type`);
-			// Add JS interface
-			Object.setPrototypeOf(d.rr, docNodeProto);
-		}
-
-		// "Live" append doc-nodes to initial sub-doc
-		// (append doc-node|text...)
-		function opAppend (d) {
-			const p = d.p;
-
-			if (p.at([ SCHEMA, VOID ])) return d.rr;
-
-			const m = d.mp, doc = p.at('doc'), rxs = p.at('rxState'), subDoc = d.rr('getSubDoc');
-			const docNodes = [...m.values()].reduce((list, item) => {
-				if (typeof item === 'string') {
-					const node = doc.createNode('m.t');
-					node('setAttr', ['t', item]);
-					list.push(node);
-				} else if (typeChains(item?.msjsType, IF_NAME)) {
-					list.push(item);
-				}
-				return list;
-			}, []);
-
-			reactive.batch(() => {
-				if (docNodes.length) {
-					const doc = p.at('doc'), offset = subDoc.next;
-
-					subDoc.push(docNodes);
-					setNodesParent(docNodes, d.rr, offset);
-				}
-				rxs.push({ live: true, docEq: false });
-			});
-
-			return d.rr;
-		}
-
-		// (closest predicate)
-		// Predicate is a JS or Mesgjs function, or string containing a comma-separated list of types
-		// JS function: `predicate(node)`  Mesgjs function: `predicate(call node)`
-		function opClosest (d) {
-			const m = d.mp, rawPredicate = m.at(0);
-			let predicate;
-
-			if (typeof rawPredicate === 'string') {
-				const types = new Set(rawPredicate.split(',').map((s) => s.trim()).filter(Boolean));
-
-				if (!types.size) return null;
-				predicate = (node) => types.has(node('type'));
-			} else if (typeof rawPredicate === 'function') {
-				if (rawPredicate.msjsType === '@function') {
-					predicate = (node) => rawPredicate('call', [node]);
-				} else if (!rawPredicate.msjsType) {
-					predicate = rawPredicate;
-				} else {
-					return null;
-				}
-			} else {
-				return null;
-			}
-
-			for (let node = d.rr; node; node = node('getParent')?.at('parent')) {
-				if (predicate(node)) return node;
-			}
-			return null;
-		}
-
-		// Delete attribute
-		function opDelAttr (d) {
-			const p = d.p, m = d.mp;
-			const name = m.at(0);
-			switch (name) {
-			case 'm.percl':
-				p.at('permClasses').clear();
-				setClass(d, '+');
-				break;
-			case 'class':
-				p.at('classes').clear();
-				setClass(d, '+');
-				break;
-			case 'id':
-				{
-				const attrs = p.at('attrs');
-				const oldId = attrs.at('id');
-				attrs.set('id', undefined);
-				// Update id index
-				updateIdIndex(d, oldId, undefined);
-				}
-				break;
-			case 'style':
-				setStyle(d, '==');
-				break;
-			default:
-				{
-				const attrs = p.at('attrs');
-				attrs.delete(name);
-				}
-				break;
-			}
-		}
-
-		// Get attribute value
-		function opGetAttr (d) {
-			const p = d.p, m = d.mp;
-			const name = m.at(0), attrs = p.at('attrs');
-
-			// Virtual attributes
-			switch (name) {
-			case 'm.ci': // Component id (read-only)
-				return p.at('id');
-			case 'm.id': // Mandatory id value (read-only)
-				if (!attrs.has('id')) {
-					// There's no user-assigned id, so auto-assign one
-					const doc = p.at('doc'), mid = doc('nextId');
-					attrs.set('id', mid);
-					return mid;
-				}
-				return attrs.at('id');
-			case 'm.rns': // Rendered node spec (virtual, read-only)
-				{
-				// m.rns is only defined for participating types and when the sub-doc is live but off-spec
-				const useMRns = p.at([SCHEMA, MRNS]);
-				if (!useMRns) return;
-				const rxs = p.at('rxState'), live = rxs.at('live'), equal = rxs.at('docEq');
-				if (!live || equal) return;
-				const subDoc = p.at('subDoc'), mRns = new NANOS();
-				for (const node of subDoc.values()) {
-					mRns.push([node('getSpec')]);
-				}
-				return mRns;
-				}
-			}
-
-			// Real attributes
-			if (name !== 'm.coat' && name !== 'm.slat') {
-				// Eagerly reflect any recent source changes
-				p.at('_mCoat')?.rv;
-				p.at('_mSlat')?.rv;
-			}
-			return attrs.at(name);
-		}
-
-		// Return the HTML encoding of string- and true-valued, HTML, "non-dot" attributes
-		function opGetAttrHTML (d) {
-			const p = d.p, HTML = [], schema = p.at(SCHEMA);
-			const allowAttr = ((set) => set?.jsv || set)(schema?.at('htmlAllowAttr'));  // undefined or Set/@set
-			for (const [name, value] of p.at('attrs').namedEntries()) {
-				if (!/^[0-9a-z:_-]*$/.test(name)) continue; // Only HTML attributes
-				if (allowAttr && !allowAttr.has(name)) continue; // Filter if specified
-				if (value === true) HTML.push(` ${name}`);
-				else if (typeof value === 'string' || typeof value === 'number') {
-					HTML.push(` ${name}="${textToHTML(String(value), { dq: true })}"`);
-				}
-			}
-			return HTML.join('');
-		}
-
-		// Typically just recursively gather HTML from sub-doc-nodes
-		function opGetHTML (d) {
-			if (d.rr('getAttr', ['m.csr'])) return ''; // CSR only
-
-			const p = d.p, m = d.mp;
-			const hasIn = m.has('in'), html = m.at('in', []);
-			const subDoc = d.rr('getSubDoc');
-			for (const node of subDoc.values()) {
-				node('getHTML', { in: html });
-			}
-			if (!hasIn) return html.join('');
-		}
-
-		// Return a reactive list of node indexes up to an unparented node
-		function opNodePath (d) {
-			const p = d.p, doc = p.at('doc');
-
-			if (p.has('_nodePath')) return p.at('_nodePath').rv;
-
-			const rxs = p.at('rxState'), nodePath = doc.rxNANOS();
-			const _nodePath = reactive({ def: () => {
-				const parent = rxs.at('parent'), index = rxs.at('index');
-				const parentPath = typeof index === 'number' && parent?.('nodePath');
-
-				reactive.unbatch(() => {
-					nodePath.clear();
-					if (parentPath) nodePath.push(parentPath, index);
-				});
-
-				return nodePath;
-			}});
-
-			p.set('_nodePath', _nodePath);
-			return _nodePath.rv;
-		}
-
-		// (getParent)
-		// Returns a NANOS containing the current parent and index
-		function opGetParent (d) {
-			const p = d.p, rxs = p.at('rxState');
-			const parent = rxs.at('parent'), index = rxs.at('index');
-			return new NANOS({ parent, index });
-		}
-
-		// Return this node's reactive doc-spec
-		// (`[type attr=value... m.rns=[content]? children...]`)
-		function opGetSpec (d) {
-			const p = d.p;
-
-			if (p.has('_spec')) return p.at('_spec').rv;
-
-			const doc = p.at('doc'), type = p.at('type');
-			const spec = doc.rxNANOS();
-
-			const _spec = reactive({ def: () => {
-				// Collect attributes eagerly to create reactive deps
-				const attrs = [...p.at('attrs').namedEntries()];
-				const rns = d.rr('getAttr', ['m.rns']); // Virtual; computed from live sub-doc
-				const subSpec = [...d.rr('getSubSpec').values()];
-
-				reactive.unbatch(() => {
-					spec.clear();
-					spec.push(type);
-					spec.fromEntries(attrs); // Add attributes
-					if (rns) spec.set('m.rns', rns); // Include rendered custom state when present
-					if (subSpec.length) spec.push(subSpec); // Add sub-spec (child spec)
-				});
-
-				return spec;
-			}});
-
-			p.set('_spec', _spec);
-
-			return _spec.rv;
-		}
-
-		// Return reactive NANOS of sub-doc nodes
-		function opGetSubDoc (d) {
-			const p = d.p, rxs = p.at('rxState');
-
-			if (p.has('_subDoc')) return p.at('_subDoc').rv;
-
-			const doc = p.at('doc'), subDoc = p.at('subDoc'), slotSrc = d.rr('subSlotSrc');
-			const _subDoc = reactive({ eager: true, def: () => {
-				if (rxs.at('live')) return subDoc; // Doc-nodes are already source of truth
-				reactive.batch(() => {
-					const source = d.rr('getSubSpec');
-					const nodes = doc('from', { list: source, slotSrc });
-
-					reactive.untracked(() => {
-						subDoc.fromEntries(nodes.entries()); // Overwrite without clearing
-						subDoc.next = nodes.length; // In case shorter now
-						rxs.push({ live: true, docEq: true });
-					});
-				});
-
-				return subDoc;
-			}});
-
-			p.set('_subDoc', _subDoc);
-
-			return _subDoc.rv;
-		}
-
-		// Get reactive NANOS of sub-doc DOM nodes
-		// (getSubDOM into=list? sync=domSync?)
-		// The `into` option allows re-using an existing nodes list (e.g. for m.defer)
-		function opGetSubDOM (d) {
-			const p = d.p, m = d.mp, into = m.at('into'), sync = m.at('sync');
-
-			// Once created, always return the same reactive object
-			// (Gate ignored on the first render into e.g. m.defer)
-			if (p.has('_subDom') && !into) return p.at('_subDom').rv;
-
-			const doc = p.at('doc'), nodes = into || doc.rxNANOS();
-			const _subDom = into ? (p.at('_subDom') ?? reactive()) : reactive();
-
-			_subDom.def = () => {
-				const subDoc = d.rr('getSubDoc'), newNodes = [];
-				let defer = false;
-
-				for (const node of subDoc.values()) {
-					const subDOM = node('getDOM', { sync });
-
-					if (subDOM && !defer) newNodes.push(...subDOM.values());
-					else {
-						// Child nodes are indeterminate due to aggregate rendering
-						// being paused during initial CSR. Continue rendering.
-						defer = true;
-					}
-				}
-
-				if (defer) return; // Nodes are not stable yet
-
-				reactive.unbatch(() => {
-					nodes.fromEntries(newNodes.entries()); // Overwrite without clearing
-					nodes.next = newNodes.length; // In case shorter now
-				});
-
-				return nodes;
-			};
-			_subDom.eager = true;
-
-			if (!into) p.set('_subDom', _subDom);
-
-			return _subDom.rv;
-		}
-
-		// (getSubSpec view=1?)
-		// Return the node's reactive sub-spec
-		// View 0: always returns the underlying sub-spec
-		// View 1: reflects live state for non-MRNS types
-		function opGetSubSpec (d) {
-			const p = d.p, m = d.mp, view = m.at(0, 1);
-
-			// Allways return the same reactive value (per view)
-			if (view === 0) return p.at('subSpec'); // Return raw original
-			if (p.has('_subSpec')) return p.at('_subSpec').rv; // Return active view
-
-			const doc = p.at('doc'), subSpec = doc.rxNANOS();
-
-			const useMRns = p.at([SCHEMA, MRNS]), rxs = p.at('rxState');
-			const _subSpec = reactive({ def: () => {
-				let newSpec;
-				if (!useMRns && rxs.at('live')) {
-					// Live view prefers to reflect the current document
-					const subDoc = d.rr('getSubDoc');
-					newSpec = [...subDoc.values()].map((n) => n('getSpec'));
-				} else {
-					// Mirror the raw sub-spec when not live or when the
-					// sub-spec is semantically not the content (MRNS)
-					newSpec = [...p.at('subSpec').values()];
-				}
-				reactive.unbatch(() => {
-					subSpec.fromEntries(newSpec.entries()); // Overwrite without clearing
-					subSpec.next = newSpec.length; // In case shorter now
-				});
-
-				return subSpec;
-			}});
-
-			p.set('_subSpec', _subSpec);
-
-			return _subSpec.rv;
-		}
-
-		// Do we have a particular attribute value?
-		function opHasAttr (d) {
-			const p = d.p, m = d.mp, name = m.at(0);
-			const attrs = p.at('attrs');
-			return attrs.has(name);
-		}
-
-		// Does the node have children (from a slotting perspective)?
-		function opHasChildren (d) {
-			const subSpec = d.rr('getSubSpec');
-			return !!subSpec.next;
-		}
-
-		// Have we been assigned a particular class?
-		function opHasClass (d) {
-			const p = d.p, m = d.mp, classes = p.at('classes');
-			return classes.has(m.at(0));
-		}
-
-		// Set attribute value
-		function opSetAttr (d) {
-			const p = d.p, m = d.mp;
-			const name = m.at(0), coat = m.at('coat');
-			let value = m.at(1);
-			switch (name) {
-			case 'm.coat': // Computed attributes
-				applyCoat(d, value);
-				break;
-			case 'm.percl': // Permanent classes
-				if (coat !== false) value = computeAttr(d, value);
-				setPermClass(d, value);
-				setClass(d, '+');
-				break;
-			case 'm.slat': // Slotted attributes
-				applySlat(d, value);
-				break;
-			case 'class': // Smart class
-				if (coat !== false) value = computeAttr(d, value);
-				setClass(d, value);
-				break;
-			case 'id':
-				// Type check and normalize
-				if (typeof value === 'string' || typeof value === 'number') {
-					if (coat !== false) value = computeAttr(d, value);
-					value = String(value); // Normalize to string
-					const attrs = p.at('attrs');
-					const oldId = attrs.at('id');
-					attrs.set('id', value);
-					// Update id index
-					updateIdIndex(d, oldId, value);
-				} else if (value === undefined || value === null || value === false) {
-					// Clear id
-					const attrs = p.at('attrs');
-					const oldId = attrs.at('id');
-					attrs.set('id', undefined);
-					// Update id index
-					updateIdIndex(d, oldId, undefined);
-				}
-				// Ignore any other types
-				break;
-			case 'style': // Smart style
-				setStyle(d, value);
-				break;
-			case 'm.id': // Auto-generate ID if needed (supplied value ignored)
-				d.rr('getAttr', ['m.id']);
-				break;
-			// Read-only virtuals
-			case 'm.ci': // Component ID
-			case 'm.rns': // Rendered node spec (virtual; computed from live sub-doc)
-				break;
-			default:
-				{
-				const attrs = p.at('attrs');
-				attrs.set(name, value);
-				}
-				break;
-			}
-			return d.rr; // Allow chaining
-		}
-
-		// (setParent node index)
-		function opSetParent (d) {
-			const p = d.p, m = d.mp, rxs = p.at('rxState');
-			const parent = m.at(0), index = m.at(1);
-
-			if (typeChains(parent?.msjsType, IF_NAME)) {
-				rxs.set('parent', parent);
-				if (Number.isInteger(index) && index >= 0) rxs.set('index', index);
-				else rxs.set('index', undefined);
-			}
-		}
-
-		// (setSpec [spec])
-		function opSetSpec (d) {
-			const p = d.p, m = d.mp, spec = m.at(0);
-
-			reactive.batch(() => {
-				// Spec named values are node attributes
-				for (const attr of spec.namedEntries()) d.rr('setAttr', attr);
-				// Spec positional values (after tag) are sub-spec (children)
-				d.rr('setSubSpec', { spec });
-			});
-
-			return d.rr;
-		}
-
-		// (setSubSpec m.rns=[spec]? subspec...) (positional form, sub-spec only)
-		// (setSubSpec m.rns=[spec]? subSpec=[subspec...]) (named-parameter variant)
-		// (setSubSpec m.rns=[spec]? spec=[type attr=value... m.rns=[spec]? subspec...])
-		//     (named, full spec from which sub-spec is extracted)
-		function opSetSubSpec (d) {
-			const m = d.mp, p = d.p, subSpec = p.at('subSpec'), schema = p.at(SCHEMA);
-			if (schema?.at(VOID)) return;
-
-			const subList = m.at('subSpec', m), spec = m.at('spec');
-			const doc = p.at('doc'), rxs = p.at('rxState');
-			const subDoc = p.at('subDoc'), slotSrc = d.rr('subSlotSrc');
-			// Note: m.rns is a virtual, non-reactive value (intended for SSR->CSR hydration)
-			const rns = m.at('m.rns') ?? spec?.at('m.rns');
-
-			reactive.batch(() => {
-				// Update sub-spec
-				const children = (spec instanceof NANOS) ? [...spec.values()].slice(1) : [...subList.values()];
-
-				subSpec.fromEntries(children.entries()); // Overwrite without clearing
-				subSpec.next = children.length; // In case shorter now
-				rxs.set('live', false); // Sub-spec is now source of content truth
-
-				// Potentially update sub-doc as well
-				if (rns instanceof NANOS) {
-					// m.rns present: use it to populate the initial live doc children
-					// (applies to all node types, including autoDoc: false nodes)
-					const nodes = doc('from', { list: rns, slotSrc });
-
-					subDoc.fromEntries(nodes.entries());
-					subDoc.next = nodes.length;
-					setNodesParent(nodes, d.rr);
-					rxs.push({ live: true, docEq: false }); // Sub-doc is now source of truth
-				} else if (schema?.at(AUTO_DOC) !== false) {
-					// No m.rns: auto-populate from subSpec for normal (autoDoc !== false) nodes
-					// Template sub-specs are only for (unnamed) content slotting and therefore disable auto-doc.
-					// (Their actual content is managed in an internal fragment.)
-					if (subSpec?.size) {
-						const nodes = doc('from', { list: subSpec, slotSrc });
-
-						subDoc.fromEntries(nodes.entries());
-						subDoc.next = nodes.length;
-						setNodesParent(nodes, d.rr);
-					} else {
-						subDoc.next = 0;
-					}
-					// The sub-doc is now live (even if empty) and matches the sub-spec
-					rxs.push({ live: true, docEq: true });
-				} else {
-					subDoc.next = 0;
-				}
-			});
-
-			return d.rr;
 		}
 
 		// With dependencies loaded, configure *my* module interface
@@ -988,47 +1080,115 @@ modcaps=''
 			// chain, final, once, private, etc.
 			handlers: {
 				'@init': opInit,
-				append: opAppend,
-				closest: opClosest,
+				append: proto.append,
+				closest: proto.closest,
 				compId: (d) => d.p.at('id'), // Component id
-				delAttr: opDelAttr,
+				delAttr: proto.delAttr,
 				document: (d) => d.p.at('doc'),
-				getAttr: opGetAttr,
-				getAttrHTML: opGetAttrHTML,
-				getDOM: opGetSubDOM, // Default behavior is to render sub-DOM
-				getHTML: opGetHTML,
-				getParent: opGetParent,
-				getSpec: opGetSpec,
-				getSubDoc: opGetSubDoc,
-				getSubDOM: opGetSubDOM,
-				getSubSpec: opGetSubSpec,
-				hasAttr: opHasAttr,
-				hasChildren: opHasChildren,
-				hasClass: opHasClass,
-				nodePath: opNodePath,
-				setAttr: opSetAttr,
-				setParent: opSetParent,
+				getAttr: proto.getAttr,
+				getAttrHTML: proto.getAttrHTML,
+				getDOM: proto.getSubDOM, // Default behavior is to render sub-DOM
+				getHTML: proto.getHTML,
+				getParent: proto.getParent,
+				getSpec: proto.getSpec,
+				getSubDoc: proto.getSubDoc,
+				getSubDOM: proto.getSubDOM,
+				getSubSpec: proto.getSubSpec,
+				hasAttr: (d) => d.p.at('attrs').has(d.mp.at(0)),
+				hasChildren: (d) => !!d.rr.getSubSpec().next,
+				hasClass: (d) => d.p.at('classes').has(d.mp.at(0)),
+				nodePath: proto.nodePath,
+				setAttr: proto.setAttr,
+				setParent: proto.setParent,
 				slotSrc: (d) => d.p.at('slotSrc'), // (intended for testing)
 				// typically, this doc-node is the new sub-doc slot-source
 				subSlotSrc: (d) => d.rr,
-				setSpec: opSetSpec,
-				setSubSpec: opSetSubSpec,
-				textToHTML,
+				setSpec: proto.setSpec,
+				setSubSpec: proto.setSubSpec,
+				textToHTML: MWIDocNode.textToHTML,
 				type: (d) => d.p.at('type'),
-			}
+			},
+			proto: MWIDocNode,
 		});
 	})();
 
-	// MWIDOMSync Interface
+	//////////////////////////////////////////////////////////////////////
+	//////////////////////////////////////////////////////////////////////
+	//////      MWIDOMSync Interface
+	//////////////////////////////////////////////////////////////////////
+	//////////////////////////////////////////////////////////////////////
 	(() => {
 		const TEXT_NODE = globalThis.Node?.TEXT_NODE ?? 3;
 		const COMMENT_NODE = globalThis.Node?.COMMENT_NODE ?? 8;
 		const isTextOrComment = (node) => node?.nodeType === TEXT_NODE || node?.nodeType === COMMENT_NODE;
 
-		const domSyncProto = Object.setPrototypeOf({
-			get cursor () { return this('cursor'); },
-			sync (tag, syncNode) { return this('sync', [tag, syncNode]); },
-		}, Function.prototype);
+		class MWIDOMSync extends MsjsObject {
+			#ps;
+
+			constructor (key, type) {
+				super(key, type);
+				this.#ps = MsjsObject.getPS(this, key);
+			}
+
+			get cursor () { return this.#ps.at('cursor'); }
+
+			// (sync tag docNode) OR .sync(tag, docNode) (bilingual)
+			// Tag: m.t (text), m.com (comment), or HTML tag name (DIV, SPAN, etc)
+			// Return the sync node if it matches the tag / tag + doc-node
+			sync (p1, p2) {
+				const d = (p1?.msjsType === '@dispatch') ? p1 : undefined;
+				const ps = d?.p ?? this.#ps;
+				const tag = d ? d.mp.at(0) : p1;
+				const docNode = d ? d.mp.at(1) : p2;
+				let cursor = ps.at('cursor');
+				const saveNext = (node = cursor) => {
+					ps.set('cursor', node.nextSibling);
+					return node;
+				};
+
+				// Sync with text or comment nodes if the content also matches
+				if (tag === 'm.t' || tag === 'm.com') {
+					const data = docNode?.getAttr('t');
+
+					if ((tag === 'm.t' && cursor?.nodeType === TEXT_NODE && cursor.data === data) ||
+					(tag === 'm.com' && cursor?.nodeType === COMMENT_NODE && cursor.data === data)) {
+						return saveNext();
+					}
+					return;
+				}
+
+				// Any other type: first advance over text or comments
+				if (isTextOrComment(cursor)) {
+					while (isTextOrComment(cursor)) cursor = cursor.nextSibling;
+					saveNext();
+				}
+
+				const id = String(docNode?.getAttr('id') ?? '');
+
+				// Return the next element if it matches by tag name and id
+				if (cursor?.tagName === tag && (cursor.id ?? '') === id) {
+					return saveNext();
+				}
+
+				// Return a "non-local" element if we can locate it by id
+				const element = id !== '' && document.getElementById(id);
+
+				if (element) {
+					return saveNext(element);
+				}
+
+				// Special-case unique nodes
+				switch (tag) {
+				case 'h.body': return document.body;
+				case 'h.doctype': return saveNext(document.doctype);
+				case 'h.head': return saveNext(document.head);
+				case 'h.html': return document.documentElement;
+				case 'h.title': return document.head.querySelector('title');
+				}
+			}
+		}
+
+		const proto = MWIDomSync.prototype;
 
 		// (@init cursor)
 		// Start synchronizing at DOM cursor node
@@ -1036,51 +1196,6 @@ modcaps=''
 			const p = d.p, m = d.mp, cursor = m.at(0);
 
 			p.set('cursor', cursor);
-			// Add JS interface
-			Object.setPrototypeOf(d.rr, domSyncProto);
-		}
-
-		// (sync tag docNode)
-		// Tag: m.t (text), m.com (comment), or HTML tag name (DIV, SPAN, etc)
-		// Return the sync node if it matches the tag / tag + doc-node
-		function opSync (d) {
-			const p = d.p, m = d.mp, tag = m.at(0), docNode = m.at(1);
-			let cursor = p.at('cursor');
-			const saveNext = (node = cursor) => p.set('cursor', node.nextSibling);
-
-			// Sync with text or comment nodes if the content also matches
-			if (tag === 'm.t' || tag === 'm.com') {
-				const data = docNode?.('getAttr', ['t']);
-
-				if ((tag === 'm.t' && cursor?.nodeType === TEXT_NODE && cursor.data === data) ||
-				  (tag === 'm.com' && cursor?.nodeType === COMMENT_NODE && cursor.data === data)) {
-					saveNext();
-					return cursor;
-				}
-				return;
-			}
-
-			// Any other type: first advance over text or comments
-			if (isTextOrComment(cursor)) {
-				while (isTextOrComment(cursor)) cursor = cursor.nextSibling;
-				saveNext();
-			}
-
-			const id = String(docNode?.('getAttr', ['id']) ?? '');
-
-			// Return the next element if it matches by tag name
-			if (cursor?.tagName === tag && (cursor.id ?? '') === id) {
-				saveNext();
-				return cursor;
-			}
-
-			// Return a "non-local" element if we can locate it by id
-			const element = id !== '' && document.getElementById(id);
-
-			if (element) {
-				saveNext(element);
-				return element;
-			}
 		}
 
 		getInterface(SYNC_IF_NAME).set({
@@ -1090,8 +1205,9 @@ modcaps=''
 			handlers: {
 				'@init': opInit,
 				'cursor': (d) => d.p.at('cursor'),
-				'sync': opSync,
-			}
+				'sync': proto.sync,
+			},
+			proto: MWIDOMSync,
 		})
 	})();
 
