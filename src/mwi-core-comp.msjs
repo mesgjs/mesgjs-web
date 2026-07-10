@@ -59,7 +59,7 @@ modcaps=''
 
 	const TPL_IF = CORE_IF + 'Tpl';
 
-	const { fready, fwait, getInstance, getInterface } = globalThis.$c;
+	const { fready, fwait, getInstance, getInterface, MsjsObject } = globalThis.$c;
 
 	const coreConfig = {
 		[BODY_TYPE]: ls([INTERFACE, HEADBODY_IF]),
@@ -75,12 +75,20 @@ modcaps=''
 
 	await fwait(BASE_FT, HTML_FT); // For interface chaining
 
-	// MWICoreCom (comment) interface
-	// `[m.com t=comment?]`
+	// "Import" parent JS classes, Mesgjs-style, for sub-classing
+	const MWIDocNode = getInterface(BASE_IF).proto;
+	const MWIHTML = getInterface(HTML_IF).proto;
+
+	//////////////////////////////////////////////////////////////////////
+	//////////////////////////////////////////////////////////////////////
+	//////     MWICoreCom (comment) interface
+	//////     `[m.com t=comment?]`
+	//////////////////////////////////////////////////////////////////////
+	//////////////////////////////////////////////////////////////////////
 	(() => {
 		// Custom, reversible, HTML escape for comment content
 		// https://html.spec.whatwg.org/multipage/syntax.html#comments
-		function escapeComment (d, text) {
+		function escapeComment (text) {
 			const comment = text.
 			  replace(/&/g, '&amp;').
 			  replace(/^>/, '&gt;').
@@ -89,337 +97,462 @@ modcaps=''
 			  replace(/--(!?)>/g, '--$1&gt;').
 			  replace(/<!--/g, '&lt;!--').
 			  replace(/<!-$/, '&lt;!-');
-			return d.rr.textToHTML(comment, { lt: false, amp: false, gt: false, sq: false, dq: false });
+			return MWIDocNode.textToHTML(comment, { lt: false, amp: false, gt: false, sq: false, dq: false });
 		}
 
-		function opGetDOM (d) {
-			const p = d.p;
+		class MWICoreCom extends MWIDocNode {
+			#ps;
 
-			if (p.has('_dom')) return p.at('_dom').rv;
-			if (typeof document !== 'object' || typeof document.createComment !== 'function') throw new Error('Missing document.createComment API');
+			constructor (key, type) {
+				super(key, type);
+				this.#ps = MsjsObject.getPS(this, key);
+			}
+			// Return generated DOM (bilingual)
+			// (getDOM sync=domNode?) OR .getDOM({ sync })
+			getDOM (p1) {
+				const d = (p1?.msjsType === '@dispatch') ? p1 : undefined;
+				const ps = d?.p ?? this.#ps;
 
-			const m = d.mp, sync = m.at('sync'), existing = sync?.('sync', ['m.com', d.rr]);
-			const comment = existing ?? document.createComment('');
+				if (ps.has('_dom')) return ps.at('_dom').rv;
+				if (typeof document !== 'object' || typeof document.createComment !== 'function') throw new Error('Missing document.createComment API');
 
-			comment[NODE_SYM] = d.rr;
+				const self = d?.rr ?? this;
+				const sync = d ? d.mp.at('sync') : p1?.sync;
+				const existing = sync?.sync('m.com', self);
+				const comment = existing ?? document.createComment('');
 
-			const nodes = new NANOS(comment);
-			const _dom = reactive({ eager: true, def: () => {
-				const text = d.rr('getAttr', [ 't' ]) || '';
+				comment[NODE_SYM] = self;
 
-				if (comment.data !== text) comment.data = text;
-				return nodes;
-			}});
+				const nodes = new NANOS(comment);
+				const _dom = reactive({ eager: true, def: () => {
+					const text = self.getAttr('t') || '';
 
-			p.set('_dom', _dom);
+					if (comment.data !== text) comment.data = text;
+					return nodes;
+				}});
 
-			return _dom.rv;
+				ps.set('_dom', _dom);
+
+				return _dom.rv;
+			}
+
+			// Render HTML (bilingual)
+			// (getHTML in=buffer) OR .getHTML({ in })
+			getHTML (p1) {
+				const d = (p1?.msjsType === '@dispatch') ? d : undefined;
+				const self = d?.rr ?? this;
+
+				if (self.getAttr('m.csr')) return '';
+
+				const output = d ? d.mp.at('in') : p1?.in;
+				const text = self.getAttr('t') || '';
+				const html = `<!--${escapeComment(text)}-->`;
+
+				if (output) output.push(html);
+				return html;
+			}
+
+			getSubSpec () { return new NANOS(); }
+
+			setSubSpec () { return this; }
 		}
 
-		function opGetHTML (d) {
-			if (d.rr('getAttr', ['m.csr'])) return '';
-
-			const m = d.mp, output = m.at('in');;
-			const text = d.rr('getAttr', [ 't' ]) || '';
-			const html = `<!--${escapeComment(d, text)}-->`;
-
-			if (output) output.push(html);
-			return html;
-		}
+		const proto = MWICoreCom.prototype;
 
 		getInterface(COM_IF).set({
 			pristine: true, lock: true,
 			chain: [ BASE_IF ],
 			handlers: {
-				getDOM: opGetDOM,
-				getHTML: opGetHTML,
-				getSubSpec: (_d) => new NANOS(),
+				getDOM: proto.getDOM,
+				getHTML: proto.getHTML,
+				getSubSpec: () => new NANOS(),
 				setSubSpec: (d) => d.rr,
-			}
+			},
+			proto: MWICoreCom,
 		});
 	})();
 
-	// MWICoreDefer (deferred component placeholder) interface
-	// `[m.defer content...]`
+	//////////////////////////////////////////////////////////////////////
+	//////////////////////////////////////////////////////////////////////
+	//////      MWICoreDefer (deferred component placeholder) interface
+	//////      `[m.defer content...]`
+	//////////////////////////////////////////////////////////////////////
+	//////////////////////////////////////////////////////////////////////
 	// Does not render any HTML during SSR (doc-spec only, for hydration).
 	// At CSR, derives the required feature from the registry entry for the
 	// component type (sub-spec item 0, item 0), then waits via `fwait`.
 	// If no feature can be derived, CSR does not render either.
 	(() => {
-		// Return reactive sub-doc
-		function opGetSubDoc (d) {
-			const p = d.p, subDoc = p.at('subDoc');
+		class MWICoreDefer extends MWIDocNode {
+			#ps;
 
-			if (p.has('_subDoc')) return p.at('_subDoc').rv;
-			if (typeof document !== 'object') throw new Error('Missing document API');
+			constructor (key, type) {
+				super(key, type);
+				this.#ps = MsjsObject.getPS(this, key);
+			}
 
-			const rxs = p.at('rxState'), _subDoc = reactive({ eager: true, def: () => subDoc });
-			// Derive the feature name from the sub-spec's component type
-			const slotSrc = p.at('slotSrc'), subSpec = p.at('subSpec');
-			const compType = subSpec?.at([0, 0]);  // item 0 of item 0 of sub-spec
-			const registry = getInstance(REG_IF);
-			const ftr = compType && registry.get(compType)?.at('ftr');
+			getHTML () { return ''; } // Renders nothing during SSR
 
-			rxs.set('live', true);
-			p.set('_subDoc', _subDoc);
+			// Return reactive sub-doc
+			getSubDoc (p1) {
+				const d = (p1?.msjsType === '@dispatch') ? p1 : undefined;
+				const ps = d?.p ?? this.#ps;
+				const subDoc = ps.at('subDoc');
 
-			// Wait for the feature, then render like a fragment
-			if (ftr) fwait(ftr).then(() => {
-				// Verify that the component is now resolvable
-				const regEntry = registry.get(compType);
+				if (ps.has('_subDoc')) return ps.at('_subDoc').rv;
+				if (typeof document !== 'object') throw new Error('Missing document API');
 
-				if (!regEntry.has(INTERFACE) && !regEntry.has(TEMPLATE)) return;
+				const rxs = ps.at('rxState'), _subDoc = reactive({ eager: true, def: () => subDoc });
+				// Derive the feature name from the sub-spec's component type
+				const slotSrc = ps.at('slotSrc'), subSpec = ps.at('subSpec');
+				const compType = subSpec?.at([0, 0]);  // item 0 of item 0 of sub-spec
+				const registry = getInstance(REG_IF);
+				const ftr = compType && registry.get(compType)?.at('ftr');
 
-				const doc = p.at('doc'), rxs = p.at('rxState');
+				rxs.set('live', true);
+				ps.set('_subDoc', _subDoc);
 
-				rxs.set('live', false); // Trigger transition when feature resolves
-				_subDoc.def = () => {
-					if (rxs.at('live')) return subDoc; // subDoc is already source of truth
+				// Wait for the feature, then render like a fragment
+				if (ftr) fwait(ftr).then(() => {
+					// Verify that the component is now resolvable
+					const regEntry = registry.get(compType);
 
-					const nodes = doc('from', { list: subSpec, slotSrc });
+					if (!regEntry.has(INTERFACE) && !regEntry.has(TEMPLATE)) return;
 
-					reactive.unbatch(() => {
-						subDoc.fromEntries(nodes.entries());
-						subDoc.next = nodes.length;
-						rxs.push({ live: true, docEq: true });
-					});
+					const doc = ps.at('doc'), rxs = ps.at('rxState');
 
-					return subDoc;
-				};
-			}, () => {});
+					rxs.set('live', false); // Trigger transition when feature resolves
+					_subDoc.def = () => {
+						if (rxs.at('live')) return subDoc; // subDoc is already source of truth
 
-			return _subDoc.rv;
+						const nodes = $c.sm(doc, 'from', { list: subSpec, slotSrc });
+
+						reactive.unbatch(() => {
+							subDoc.fromEntries(nodes.entries());
+							subDoc.next = nodes.length;
+							rxs.push({ live: true, docEq: true });
+						});
+
+						return subDoc;
+					};
+				}, () => {});
+
+				return _subDoc.rv;
+			}
+
+			get subSlotSrc () { return this.#ps.at('slotSrc'); }
 		}
+
+		const proto = MWICoreDefer.prototype;
 
 		getInterface(DEFER_IF).set({
 			pristine: true, lock: true,
 			chain: [ BASE_IF ],
 			handlers: {
-				getSubDoc: opGetSubDoc,
-				getHTML: (_d) => '',
+				getSubDoc: proto.getSubDoc,
+				getHTML: () => '',
 				subSlotSrc: (d) => d.p.at('slotSrc'), // non-source; pass-through
-			}
+			},
+			proto: MWICoreDefer,
 		});
 	})();
 
-	// MWICoreFrag (fragment) interface
-	// `[m.frg text|[node]...]`
+	//////////////////////////////////////////////////////////////////////
+	//////////////////////////////////////////////////////////////////////
+	//////      MWICoreFrag (fragment) interface
+	//////      `[m.frg text|[nod]...]`
+	//////////////////////////////////////////////////////////////////////
+	//////////////////////////////////////////////////////////////////////
 	// Fragments are "transparent containers" (the aggregate of their contents, and nothing more).
 	(() => {
-		// Pretty much just a vanilla doc-node
+		class MWICoreFrag extends MWIDocNode {
+			#ps;
+
+			constructor (key, type) {
+				super(key, type);
+				this.#ps = MsjsObject.getPS(this, key);
+			}
+
+			get subSlotSrc () { return this.#ps.at('slotSrc'); }
+		}
+
 		getInterface(FRAG_IF).set({
 			pristine: true, lock: true,
 			chain: [ BASE_IF ],
 			handlers: {
 				subSlotSrc: (d) => d.p.at('slotSrc'), // non-source; pass through
-			}
+			},
+			proto: MWICoreFrag,
 		});
 	})();
 
-	// MWICoreHeadBody (m.head / m.body) interface
-	// `[m.head m.ssrStatic=[...] m.csrStatic=[...] content...]`
-	// `[m.body m.ssrStatic=[...] m.csrStatic=[...] content...]`
+	//////////////////////////////////////////////////////////////////////
+	//////////////////////////////////////////////////////////////////////
+	//////      MWICoreHeadBody (m.head / m.body) interface
+	//////      `[m.head m.ssrStatic=[...] m.csrStatic=[...] content...]`
+	//////      `[m.body m.ssrStatic=[...] m.csrStatic=[...] content...]`
+	//////////////////////////////////////////////////////////////////////
+	//////////////////////////////////////////////////////////////////////
 	// Renders a managed <head> or <body> element with boundary markers isolating
 	// MWI-managed children from externally-injected content.
 	(() => {
 		const BEGIN_MARKER = '<script type="x" data-mwi="begin"></script>';
 		const END_MARKER = '<script type="x" data-mwi="end"></script>';
 
-		function opGetHTML (d) {
-			if (d.rr('getAttr', ['m.csr'])) return '';
+		class MWICoreHeadBody extends MWIHTML {
+			#ps;
 
-			const p = d.p, type = p.at('type').replace(/^m\./, '');
-			const m = d.mp, hasIn = m.has('in'), html = m.at('in', []);
-
-			// Opening tag with HTML attributes (m.ssrStatic and m.csrStatic are filtered as dot-prefixed)
-			html.push(`<${type}${d.rr('getAttrHTML')}>`);
-
-			// Begin boundary marker
-			html.push(BEGIN_MARKER);
-
-			// Managed region: normal children
-			for (const node of p.at('subDoc', []).values()) {
-				node('getHTML', { in: html });
+			constructor (key, type) {
+				super(key, type);
+				this.#ps = MsjsObject.getPS(this, key);
 			}
 
-			// End boundary marker
-			html.push(END_MARKER);
+			// Render HTML (bilingual)
+			// (getHTML in=buffer) OR .getHTML({ in })
+			getHTML (p1) {
+				const d = (p1?.msjsType === '@dispatch') ? p1 : undefined;
+				const ps = d?.p ?? this.#ps;
+				const self = d?.rr ?? this;
 
-			// m.ssrStatic content (rendered statically after end marker; not reactive)
-			const ssrStatic = d.rr('getAttr', [ 'm.ssrStatic' ]);
-			if (ssrStatic instanceof NANOS) {
-				const doc = p.at('doc'), frag = doc.createNode('m.frg');
-				frag('setSubSpec', ssrStatic);
-				frag('getHTML', { in: html });
+				if (self.getAttr('m.csr')) return '';
+
+				const type = ps.at('type').replace(/^m\./, '');
+				const hasIn = d ? d.mp.at('in') : p1?.in;
+				const html = hasIn || [];
+
+				// Opening tag with HTML attributes (m.ssrStatic and m.csrStatic are filtered as dot-prefixed)
+				html.push(`<${type}${self.getAttrHTML()}>`);
+
+				// Begin boundary marker
+				html.push(BEGIN_MARKER);
+
+				// Managed region: normal children
+				for (const node of ps.at('subDoc', []).values()) {
+					node.getHTML({ in: html });
+				}
+
+				// End boundary marker
+				html.push(END_MARKER);
+
+				// m.ssrStatic content (rendered statically after end marker; not reactive)
+				const ssrStatic = self.getAttr('m.ssrStatic');
+				if (ssrStatic instanceof NANOS) {
+					const doc = ps.at('doc'), frag = doc.createNode('m.frg');
+
+					frag.setSubSpec(...ssrStatic.values());
+					frag.getHTML({ in: html });
+				}
+
+				// Closing tag
+				html.push(`</${type}>`);
+				if (!hasIn) return html.join('');
 			}
 
-			// Closing tag
-			html.push(`</${type}>`);
-			if (!hasIn) return html.join('');
+			// Return generated DOM (bilingual)
+			// (getDOM sync=domSync?) OR .getDOM({ sync })
+			getDOM (p1) {
+				const d = (p1?.msjsType === '@dispatch') ? p1 : undefined;
+				const ps = d?.p ?? this.#ps;
+				const self = d?.rr ?? this;
+
+				if (ps.has('_dom')) {
+					ps.at('_domAttrs').rv;
+					return ps.at('_dom').rv;
+				}
+				if (typeof document !== 'object' || typeof document.head !== 'object') return new NANOS();
+
+				// Adopt the existing document.head or document.body element
+				const type = ps.at('type');
+				const targetElement = (type === HEAD_TYPE) ? document.head : document.body;
+				if (!targetElement) return new NANOS();
+
+				const nodes = new NANOS(targetElement);
+				const _dom = reactive({ eager: true });
+				const _domAttrs = MWIDocNode.setDOMAttrs(targetElement, ps.at('attrs'), ps.at(SCHEMA));
+				ps.push({ _dom, _domAttrs });
+
+				// Reactively synchronize managed children
+				const passedSync = d ? d.mp.at('sync') : p1?.sync;
+				let sync;
+
+				if (passedSync) {
+					const { begin } = MWIDocNode.getManagedRegion(targetElement);
+
+					if (begin?.nextSibling) sync = getInstance('MWIDOMSync', [begin.nextSibling]);
+				}
+
+				_dom.def = () => {
+					const children = self.getSubDOM({ sync }); // sub-DOM children
+
+					if (children) {
+						sync = null; // Only sync first render
+						MWIDocNode.domSyncManagedChildren(targetElement, children);
+					}
+					return nodes;
+				};
+
+				// Append m.csrStatic content once (non-reactively) after the end marker
+				const csrStatic = self.getAttr('m.csrStatic');
+				if (csrStatic instanceof NANOS) {
+					_dom.rv; // Make sure managed zone renders first and csrStatic appears after
+
+					const doc = ps.at('doc'), frag = doc.createNode('m.frg');
+
+					frag.setSubSpec(...csrStatic.values());
+					const csrNodes = [...frag.getSubDOM().values()];
+					if (csrNodes.length) {
+						// Find the end marker and append after it
+						const { end } = MWIDocNode.getManagedRegion(targetElement);
+						const insertAfter = end || targetElement.lastChild;
+
+						if (insertAfter) insertAfter.after(...csrNodes);
+						else targetElement.append(...csrNodes);
+					}
+				}
+
+				return _dom.rv;
+			}
 		}
 
-		function opGetDOM (d) {
-			const p = d.p;
-
-			if (p.has('_dom')) {
-				p.at('_domAttrs').rv;
-				return p.at('_dom').rv;
-			}
-			if (typeof document !== 'object' || typeof document.head !== 'object') return new NANOS();
-
-			// Adopt the existing document.head or document.body element
-			const type = p.at('type');
-			const targetElement = (type === HEAD_TYPE) ? document.head : document.body;
-			if (!targetElement) return new NANOS();
-
-			const nodes = new NANOS(targetElement);
-			const _dom = reactive({ eager: true });
-			const _domAttrs = d.rr.setDOMAttrs(targetElement, p.at('attrs'), p.at(SCHEMA));
-			p.push({ _dom, _domAttrs });
-
-			// Reactively set/sync HTML attributes on the adopted element
-
-			// Reactively synchronize managed children
-			const m = d.mp, syncMode = m.at('sync');
-			let sync;
-
-			if (syncMode) {
-				const { begin } = d.rr.getManagedRegion(targetElement);
-
-				if (begin?.nextSibling) sync = getInstance('MWIDOMSync', [begin.nextSibling]);
-			}
-
-			_dom.def = () => {
-				const children = d.rr('getSubDOM', { sync }); // sub-DOM children
-
-				if (children) {
-					sync = null; // Only sync first render
-					d.rr.domSyncManagedChildren(targetElement, children);
-				}
-				return nodes;
-			};
-
-			// Append m.csrStatic content once (non-reactively) after the end marker
-			const csrStatic = d.rr('getAttr', [ 'm.csrStatic' ]);
-			if (csrStatic instanceof NANOS) {
-				_dom.rv; // Make sure managed zone renders first and csrStatic appears after
-
-				const doc = p.at('doc'), frag = doc.createNode('m.frg');
-				frag('setSubSpec', csrStatic);
-				const csrNodes = [...frag('getSubDOM').values()];
-				if (csrNodes.length) {
-					// Find the end marker and append after it
-					const { end } = d.rr.getManagedRegion(targetElement);
-					const insertAfter = end || targetElement.lastChild;
-
-					if (insertAfter) insertAfter.after(...csrNodes);
-					else targetElement.append(...csrNodes);
-				}
-			}
-
-			return _dom.rv;
-		}
+		const proto = MWICoreHeadBody.prototype;
 
 		getInterface(HEADBODY_IF).set({
 			pristine: true, lock: true,
 			chain: [ HTML_IF ],
 			handlers: {
-				getDOM: opGetDOM,
-				getHTML: opGetHTML,
-			}
+				getDOM: proto.getDOM,
+				getHTML: proto.getHTML,
+			},
+			proto: MWICoreHeadBody,
 		});
 	})();
 
-	// MWICoreScpCSS (scoped CSS aggregator) interface
-	// `[m.scpcss]`
+	//////////////////////////////////////////////////////////////////////
+	//////////////////////////////////////////////////////////////////////
+	//////      MWICoreScpCSS (scoped CSS aggregator) interface
+	//////      `[m.scpcss]`
+	//////////////////////////////////////////////////////////////////////
+	//////////////////////////////////////////////////////////////////////
 	// Aggregates scoped CSS from all used component types
 	(() => {
-		function aggregateCSS (d) {
-			const doc = d.p.at('doc'), registry = doc('registry');
-			const typesUsed = doc('typesUsed');
-			const cssBlocks = [];
+			// Helper function to aggregate CSS (converted to static method for v4)
+			function aggregateCSS (ps) {
+				const doc = ps.at('doc');
+				const registry = doc.registry;
+				const typesUsed = doc.typesUsed;
+				const cssBlocks = [];
 
-			for (const type of typesUsed) {
-				const entry = registry.get(type);
-				if (entry && entry.has('scopedCSS')) {
-					const scopedCSS = entry.at('scopedCSS');
-					const id = entry.at('id');
-					// Replace @@ with component ID
-					const processedCSS = scopedCSS.replace(/@@/g, id);
-					cssBlocks.push(processedCSS);
-				}
-			}
-
-			return cssBlocks.join('\n');
-		}
-
-		function opGetHTML (d) {
-			if (d.rr('getAttr', ['m.csr'])) return '';
-
-			const m = d.mp, output = m.at('in');
-			const css = aggregateCSS(d);
-
-			if (css !== '') {
-				// Escape </style> as \3c /style> (based on CSS string syntax)
-				const sanzd = css.replace(/<(?=\s*\/\s*style)/gi, '\\3c ');
-				const htmlId = d.rr.textToHTML(d.rr('getAttr', ['m.id']), { dq: true });
-				const html = `<style id="${htmlId}">${sanzd}</style>`;
-
-				if (output) output.push(html);
-				return html;
-			}
-
-			return '';
-		}
-
-		// Return reactive NANOS of DOM nodes
-		function opGetDOM (d) {
-			const p = d.p;
-
-			if (p.has('_dom')) return p.at('_dom').rv;
-			if (typeof document !== 'object' || typeof document.createElement !== 'function') throw new Error('Missing document.createElement API');
-
-			const id = d.rr('getAttr', ['id']);
-			const existing = id && document.getElementById(id);
-			const styleElem = existing || document.createElement('style');
-
-			styleElem[NODE_SYM] = d.rr;
-
-			const doc = p.at('doc'), nodes = doc.rxNANOS();
-			const _dom = reactive({ eager: true, def: () => {
-				const css = aggregateCSS(d);
-
-				reactive.untracked(() => {
-					if (css !== '') {
-						if (styleElem.textContent !== css) styleElem.textContent = css;
-						if (!nodes.has(0)) nodes.set(0, styleElem);
-					} else {
-						if (nodes.has(0)) nodes.clear();
+				for (const type of typesUsed) {
+					const entry = registry.get(type);
+					if (entry && entry.has('scopedCSS')) {
+						const scopedCSS = entry.at('scopedCSS');
+						const id = entry.at('id');
+						// Replace @@ with component ID
+						const processedCSS = scopedCSS.replace(/@@/g, id);
+						cssBlocks.push(processedCSS);
 					}
-				});
+				}
 
-				return nodes;
-			}});
-
-			p.set('_dom', _dom);
-
-			return _dom.rv;
-		}
-
-		getInterface(SCPCSS_IF).set({
-			pristine: true, lock: true,
-			chain: [ BASE_IF ],
-			handlers: {
-				getHTML: opGetHTML,
-				getDOM: opGetDOM,
-				getSubSpec: (_d) => new NANOS(),
-				setSubSpec: (d) => d.rr,
+				return cssBlocks.join('\n');
 			}
-		});
-	})();
 
-	// MWICoreSlot (slot) interface
-	// `[m.slot name=slotName? default-content...]`
+			// Class-based interface for MWICoreScpCSS (v4 pattern)
+			class MWICoreScpCSS extends MWIDocNode {
+				#ps;
+
+				constructor (key, type) {
+					super(key, type);
+					this.#ps = MsjsObject.getPS(this, key);
+				}
+
+				// Render HTML (bilingual)
+				// (getHTML in=buffer) OR .getHTML({ in })
+				getHTML (p1) {
+					const d = (p1?.msjsType === '@dispatch') ? p1 : undefined;
+					const ps = d?.p ?? this.#ps;
+					const self = d?.rr ?? this;
+
+					if (self.getAttr('m.csr')) return '';
+
+					const output = d ? d.mp.at('in') : p1?.in;
+					const css = aggregateCSS(ps);
+
+					if (css !== '') {
+						// Escape </style> as \3c /style> (based on CSS string syntax)
+						const sanzd = css.replace(/<(?=\s*\/\s*style)/gi, '\\3c ');
+						const htmlId = MWIDocNode.textToHTML(self.getAttr('m.id'), { dq: true });
+						const html = `<style id="${htmlId}">${sanzd}</style>`;
+
+						if (output) output.push(html);
+						return html;
+					}
+
+					return '';
+				}
+
+				// Return generated DOM (bilingual)
+				// (getDOM sync=domNode?) OR .getDOM({ sync })
+				getDOM (p1) {
+					const d = (p1?.msjsType === '@dispatch') ? p1 : undefined;
+					const ps = d?.p ?? this.#ps;
+					const self = d?.rr ?? this;
+
+					if (ps.has('_dom')) return ps.at('_dom').rv;
+					if (typeof document !== 'object' || typeof document.createElement !== 'function') throw new Error('Missing document.createElement API');
+
+					const id = self.getAttr('id');
+					const existing = id && document.getElementById(id);
+					const styleElem = existing || document.createElement('style');
+
+					styleElem[NODE_SYM] = self;
+
+					const doc = ps.at('doc'), nodes = doc.rxNANOS();
+					const _dom = reactive({ eager: true, def: () => {
+						const css = aggregateCSS(ps);
+
+						reactive.untracked(() => {
+							if (css !== '') {
+								if (styleElem.textContent !== css) styleElem.textContent = css;
+								if (!nodes.has(0)) nodes.set(0, styleElem);
+							} else {
+								if (nodes.has(0)) nodes.clear();
+							}
+						});
+
+						return nodes;
+					}});
+
+					ps.set('_dom', _dom);
+
+					return _dom.rv;
+				}
+
+				getSubSpec () { return new NANOS(); }
+
+				setSubSpec () { return this; }
+			}
+
+			const proto = MWICoreScpCSS.prototype;
+
+			getInterface(SCPCSS_IF).set({
+				pristine: true, lock: true,
+				chain: [ BASE_IF ],
+				handlers: {
+					getHTML: proto.getHTML,
+					getDOM: proto.getDOM,
+					getSubSpec: () => new NANOS(),
+					setSubSpec: (d) => d.rr,
+				},
+				proto: MWICoreScpCSS,
+			});
+		})();
+
+	//////////////////////////////////////////////////////////////////////
+	//////////////////////////////////////////////////////////////////////
+	//////     MWICoreSlot (slot) interface
+	//////     `[m.slot name=slotName? default-content...]`
+	//////////////////////////////////////////////////////////////////////
+	//////////////////////////////////////////////////////////////////////
 	// This is basically just a fragment with a computed sub-doc.
 	(() => {
 		// Slot content selection:
@@ -427,163 +560,246 @@ modcaps=''
 		// Unnamed slot: Source natural children (if any), with fall-back to slot's natural children
 
 		// Determine the current source spec
-		function getSourceSpec (d) {
-			const p = d.p, slotSrc = p.at('slotSrc'), defSpec = p.at('subSpec');
+		function getSourceSpec (self, ps) {
+			const slotSrc = ps.at('slotSrc'), defSpec = ps.at('subSpec');
 
 			// No slot source; must use default fallback
 			if (!slotSrc) return defSpec;
 
-			const name = d.rr('getAttr', ['name']);
+			const name = self.getAttr('name');
 			if (typeof name === 'string') { // Named slot
 			 	// Use named source attribute if list-valued, or default fallback otherwise
-				const spec = slotSrc('getAttr', [name]);
+				const spec = slotSrc.getAttr(name);
 				return (spec instanceof NANOS) ? spec : defSpec;
 			} else { // Unnamed slot
 			 	// Source natural children, if present, or default fallback otherwise
-				const sourceSubSpec = slotSrc('getSubSpec');
+				const sourceSubSpec = slotSrc.getSubSpec();
 				return sourceSubSpec.next ? sourceSubSpec : defSpec;
 			}
 		}
 
-		// Get the sub-doc for the current source
-		function opGetSubDoc (d) {
-			const p = d.p;
+		// Class-based interface for MWICoreSlot (v4 pattern)
+		class MWICoreSlot extends MWIDocNode {
+			#ps;
 
-			if (p.has('_subDoc')) return p.at('_subDoc').rv;
+			constructor (key, type) {
+				super(key, type);
+				this.#ps = MsjsObject.getPS(this, key);
+			}
 
-			const doc = p.at('doc'), rxs = p.at('rxState');
-			const subDoc = p.at('subDoc'), subSpec = p.at('subSpec');
-			const _subDoc = reactive({ eager: true, def: () => {
-				const source = getSourceSpec(d);
+			// Get the sub-doc for the current source
+			getSubDoc (p1) {
+				const d = (p1?.msjsType === '@dispatch') ? p1 : undefined;
+				const ps = d?.p ?? this.#ps;
+				const self = d?.rr ?? this;
 
-				reactive.batch(() => {
-					rxs.set('live', false);
+				if (ps.has('_subDoc')) return ps.at('_subDoc').rv;
 
-					const nodes = doc('from', { list: source, slotSrc: d.rr });
+				const doc = ps.at('doc'), rxs = ps.at('rxState');
+				const subDoc = ps.at('subDoc'), subSpec = ps.at('subSpec');
+				const _subDoc = reactive({ eager: true, def: () => {
+					const source = getSourceSpec(self, ps);
 
-					reactive.untracked(() => {
-						subDoc.fromEntries(nodes.entries());
-						subDoc.next = nodes.length;
-						rxs.push({ live: true, docEq: source === subSpec });
+					reactive.batch(() => {
+						rxs.set('live', false);
+
+						const nodes = $c.sm(doc, 'from', { list: source, slotSrc: self });
+
+						reactive.untracked(() => {
+							subDoc.fromEntries(nodes.entries());
+							subDoc.next = nodes.length;
+							rxs.push({ live: true, docEq: source === subSpec });
+						});
 					});
-				});
 
-				return subDoc;
-			}});
+					return subDoc;
+				}});
 
-			p.set('_subDoc', _subDoc);
+				ps.set('_subDoc', _subDoc);
 
-			return _subDoc.rv;
+				return _subDoc.rv;
+			}
+
+			hasChildren (p1) {
+				const d = (p1?.msjsType === '@dispatch') ? p1 : undefined;
+				const self = d?.rr ?? this, ps = d?.p ?? this.#ps;
+				const source = getSourceSpec(self, ps);
+
+				return !!source.next;
+			}
 		}
 
-		function opHasChildren (d) {
-			const source = getSourceSpec(d);
-			return !!source.next;
-		}
+		const proto = MWICoreSlot.prototype;
 
 		getInterface(SLOT_IF).set({
 			pristine: true, lock: true,
 			chain: [ BASE_IF ],
 			handlers: {
-				getSubDoc: opGetSubDoc,
-				hasChildren: opHasChildren,
-			}
+				getSubDoc: proto.getSubDoc,
+				hasChildren: proto.hasChildren,
+			},
+			proto: MWICoreSlot,
 		});
 	})();
 
-	// MWICoreSource (m.src) interface
+	//////////////////////////////////////////////////////////////////////
+	//////////////////////////////////////////////////////////////////////
+	//////      MWICoreSource (m.src) interface
+	//////////////////////////////////////////////////////////////////////
+	//////////////////////////////////////////////////////////////////////
 	// An MWIDocNode (essentially a fragment) that is a new slot source
 	// (for "staging") with special, pass-through m.ci semantics
 	(() => {
-		function opGetAttr (d) {
-			const m = d.mp, name = m.at(0);
+		// Class-based interface for MWICoreSource (v4 pattern)
+		class MWICoreSource extends MWIDocNode {
+			#ps;
 
-			if (name === 'm.ci') {
-				const p = d.p, slotSrc = p.at('slotSrc');
-				if (slotSrc) return slotSrc('getAttr', ['m.ci']);
+			constructor (key, type) {
+				super(key, type);
+				this.#ps = MsjsObject.getPS(this, key);
 			}
 
-			return d.sm(d, 'redis');
+			// Get attribute value (bilingual)
+			// (getAttr name) OR .getAttr(name)
+			getAttr (p1) {
+				const d = (p1?.msjsType === '@dispatch') ? p1 : undefined;
+				const ps = d?.p ?? this.#ps;
+				const self = d?.rr ?? this;
+				const name = d ? d.mp.at(0) : p1;
+
+				if (name === 'm.ci') { // Pass through m.ci value
+					const slotSrc = ps.at('slotSrc');
+
+					if (slotSrc) return slotSrc.getAttr('m.ci');
+				}
+
+				// Return the standard (redis/super) value for everything else
+				return d ? d.s(d, 'redis') : super(p1);
+			}
 		}
+
+		const proto = MWICoreSource.prototype;
 
 		getInterface(SOURCE_IF).set({
 			pristine: true, lock: true,
 			chain: [ BASE_IF ],
 			handlers: {
-				'getAttr': opGetAttr,
+				getAttr: proto.getAttr,
 			},
+			proto: MWICoreSource,
 		});
 	})();
 
-	// MWICoreText (text) interface
-	// `text` or `[m.t t=text?]`
+	//////////////////////////////////////////////////////////////////////
+	//////////////////////////////////////////////////////////////////////
+	//////      MWICoreText (text) interface
+	//////      `text` or `[m.t t=text?]`
+	//////////////////////////////////////////////////////////////////////
+	//////////////////////////////////////////////////////////////////////
 	(() => {
-		// Return reactive NANOS of DOM nodes
-		function opGetDOM (d) {
-			const p = d.p;
+		// Class-based interface for MWICoreText (v4 pattern)
+		class MWICoreText extends MWIDocNode {
+			#ps;
 
-			if (p.has('_dom')) return p.at('_dom').rv;
-			if (typeof document !== 'object' || typeof document.createTextNode !== 'function') throw new Error('Missing document.createTextNode API');
+			constructor (key, type) {
+				super(key, type);
+				this.#ps = MsjsObject.getPS(this, key);
+			}
 
-			const m = d.mp, sync = m.at('sync'), existing = sync?.('sync', ['m.t', d.rr]);
-			const text = existing ?? document.createTextNode('');
+			// Return reactive NANOS of DOM nodes
+			// (getDOM sync=domNode?) OR .getDOM({ sync })
+			getDOM (p1) {
+				const d = (p1?.msjsType === '@dispatch') ? p1 : undefined;
+				const ps = d?.p ?? this.#ps;
+				const self = d?.rr ?? this;
 
-			text[NODE_SYM] = d.rr;
+				if (ps.has('_dom')) return ps.at('_dom').rv;
+				if (typeof document !== 'object' || typeof document.createTextNode !== 'function') throw new Error('Missing document.createTextNode API');
 
-			const doc = p.at('doc'), nodes = doc.rxNANOS();
-			const _dom = reactive({ eager: true, def: () => {
-				const content = d.rr('getAttr', [ 't' ]) || '';
+				const sync = d ? d.mp.at('sync') : p1?.sync;
+				const existing = sync?.sync('m.t', self);
+				const text = existing ?? document.createTextNode('');
 
-				reactive.untracked(() => {
-					if (content !== '') {
-						if (text.data !== content) text.data = content;
-						if (!nodes.has(0)) nodes.set(0, text);
-					} else {
-						text.data = '';
-						if (nodes.has(0)) nodes.clear();
-					}
-				});
+				text[NODE_SYM] = self;
 
-				return nodes;
-			}});
+				const doc = ps.at('doc'), nodes = doc.rxNANOS();
+				const _dom = reactive({ eager: true, def: () => {
+					const content = self.getAttr('t') || '';
 
-			p.set('_dom', _dom);
-			return _dom.rv;
+					reactive.untracked(() => {
+						if (content !== '') {
+							if (text.data !== content) text.data = content;
+							if (!nodes.has(0)) nodes.set(0, text);
+						} else {
+							text.data = '';
+							if (nodes.has(0)) nodes.clear();
+						}
+					});
+
+					return nodes;
+				}});
+
+				ps.set('_dom', _dom);
+				return _dom.rv;
+			}
+
+			// Render HTML (bilingual)
+			// (getHTML in=buffer) OR .getHTML({ in })
+			getHTML (p1) {
+				const d = (p1?.msjsType === '@dispatch') ? d : undefined;
+				const self = d?.rr ?? this;
+
+				if (self.getAttr('m.csr')) return '';
+
+				const output = d ? d.mp.at('in') : p1?.in;
+				const text = self.getAttr('t') || '';
+				const html = MWIDocNode.textToHTML(text);
+
+				if (html !== '' && output) output.push(html);
+				return html;
+			}
+
+			// Return the node's reactive doc-spec (bilingual)
+			// (`[type attr=value... m.rns=[content]? children...]`)
+			// (getSpec) OR .getSpec()
+			getSpec (p1) {
+				const d = (p1?.msjsType === '@dispatch') ? p1 : undefined;
+				const ps = d?.p ?? this.#ps;
+				const self = d?.rr ?? this;
+
+				// Simplify typical [m.t t=text] spec to plain string
+				const spec = d ? d.s(d, 'redis') : super.getSpec(); // A reactively-calculated value (with deps)
+				const text = spec.at('t');
+
+				return (spec.size === 2 && typeof text === 'string') ? text : spec;
+			}
+
+			getSubSpec () { return new NANOS(); }
+
+			setSubSpec () { return this; }
 		}
 
-		function opGetHTML (d) {
-			if (d.rr('getAttr', ['m.csr'])) return '';
-
-			const m = d.mp, output = m.at('in');;
-			const text = d.rr('getAttr', [ 't' ]) || '';
-			const html = d.rr.textToHTML(text);
-
-			if (html !== '' && output) output.push(html);
-			return html;
-		}
-
-		function opGetSpec (d) {
-			// Simplify typical [m.t t=text] spec to plain string
-			const spec = d.sm(d, 'redis'); // A reactively-calculated value (with deps)
-			const text = spec.at('t');
-
-			return (spec.size === 2 && typeof text === 'string') ? text : spec;
-		}
+		const proto = MWICoreText.prototype;
 
 		getInterface(TEXT_IF).set({
 			pristine: true, lock: true,
 			chain: [ BASE_IF ],
 			handlers: {
-				getDOM: opGetDOM,
-				getHTML: opGetHTML,
-				getSpec: opGetSpec,
-				getSubSpec: (_d) => new NANOS(),
+				getDOM: proto.getDOM,
+				getHTML: proto.getHTML,
+				getSpec: proto.getSpec,
+				getSubSpec: () => new NANOS(),
 				setSubSpec: (d) => d.rr,
-			}
+			},
+			proto: MWICoreText,
 		});
 	})();
 
-	// MWICoreTpl (template) interface
+	//////////////////////////////////////////////////////////////////////
+	//////////////////////////////////////////////////////////////////////
+	//////      MWICoreTpl (template) interface
+	//////////////////////////////////////////////////////////////////////
+	//////////////////////////////////////////////////////////////////////
 	// (this handler is assigned to template components by the registry)
 	(() => {
 		const tplSchema = new NANOS({
@@ -591,28 +807,49 @@ modcaps=''
 			[MRNS]: true,
 		});
 
-		function opInit (d) {
-			const p = d.p;
-			d.sm(d, 'redis'); // super-@init first
-			// This is not a registered component, so manually add the schema
-			p.set(SCHEMA, tplSchema);
+		// Class-based interface for MWICoreTpl (v4 pattern)
+		class MWICoreTpl extends MWIDocNode {
+			#ps;
+
+			constructor (key, type) {
+				super(key, type);
+				this.#ps = MsjsObject.getPS(this, key);
+
+				// This is not a registered component, so manually add the schema
+				this.#ps.set(SCHEMA, tplSchema);
+			}
+
+			// Get the sub-doc for the template
+			getSubDoc (p1) {
+				const d = (p1?.msjsType === '@dispatch') ? p1 : undefined;
+				const ps = d?.p ?? this.#ps;
+				const self = d?.rr ?? this;
+
+				const rxs = ps.at('rxState'), subDoc = ps.at('subDoc');
+
+				if (rxs.at('live')) return subDoc; // Already live
+
+				// Template should be static; one-time setup
+				reactive.batch(() => {
+					const tpl = ps.at('tpl') ?? [], doc = ps.at('doc');
+					const nodes = $c.sm(doc, 'from', { list: tpl, slotSrc: self });
+
+					subDoc.push(nodes);
+					// Doc-nodes derive from the template
+					// Natural children are used for unnamed slots
+					rxs.push({ live: true, docEq: false });
+				});
+
+				return subDoc;
+			}
 		}
 
-		function opGetSubDoc (d) {
-			const p = d.p, rxs = p.at('rxState'), subDoc = p.at('subDoc');
+		const proto = MWICoreTpl.prototype;
 
-			if (rxs.at('live')) return subDoc; // Already live
-
-			// Template should be static; one-time setup
-			reactive.batch(() => {
-				const tpl = p.at('tpl') ?? [], doc = p.at('doc'), nodes = doc('from', { list: tpl, slotSrc: d.rr });
-				subDoc.push(nodes);
-				// Doc-nodes derive from the template
-				// Natural children are used for unnamed slots
-				rxs.push({ live: true, docEq: false });
-			});
-
-			return subDoc;
+		function opInit (d) {
+			d.s(d, 'redis'); // super-@init first
+			// This is not a registered component, so manually add the schema
+			d.p.set(SCHEMA, tplSchema);
 		}
 
 		getInterface(TPL_IF).set({
@@ -620,8 +857,9 @@ modcaps=''
 			chain: [ BASE_IF ],
 			handlers: {
 				'@init': opInit,
-				getSubDoc: opGetSubDoc,
-			}
+				getSubDoc: proto.getSubDoc,
+			},
+			proto: MWICoreTpl,
 		});
 	})();
 

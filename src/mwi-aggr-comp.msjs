@@ -1,7 +1,7 @@
 [(
 modpath='mwi/mwi-aggr-comp'
 version='0.5.0'
-featreq='mwi.comp.MWICore mwi.compRegOpen MWIDocNode'
+featreq='mwi.comp.MWICore mwi.compRegOpen MWIDocNode MWIDocument'
 featpro='mwi.comp.MWIAggr mwi.comp.MWIAggrScript'
 modcaps=''
 )]
@@ -25,6 +25,9 @@ modcaps=''
 	const BASE_FT = BASE_IF;
 	const CORE_READY_FT = 'mwi.comp.MWICore';
 
+	const DOC_IF = 'MWIDocument';
+	const DOC_RDY_FT = DOC_IF;
+
 	const AGGR_IF = 'MWIAggr';
 	const AGGR_TYPE = 'm.aggr';
 	const AGGR_RDY_FT = 'mwi.comp.' + AGGR_IF;
@@ -43,7 +46,7 @@ modcaps=''
 	const SCRIPT_NS = 'm.script';
 	const STYLE_NS = 'm.style';
 
-	const { fready, fwait, getInstance, getInterface, typeChains } = globalThis.$c;
+	const { fready, fwait, getInstance, getInterface, MsjsObject } = globalThis.$c;
 
 	const aggrConfig = {
 		[AGGR_TYPE]: ls([INTERFACE, AGGR_IF, SCHEMA, ls([AUTO_DOC, false])]),
@@ -51,7 +54,11 @@ modcaps=''
 		[STYLE_TYPE]: ls([INTERFACE, SCRIPT_IF, SCHEMA, ls([AUTO_DOC, false])]), // SIC
 	};
 
-	await fwait(BASE_FT, CORE_READY_FT); // For interface chaining
+	await fwait(BASE_FT, DOC_RDY_FT, CORE_READY_FT); // For interface chaining
+
+	// "Import" parent JS class, Mesgjs-style, for sub-classing
+	const MWIDocNode = getInterface(BASE_IF).proto;
+	const MWIDocument = getInterface(DOC_IF).proto;
 
 	// MWIAggr (aggregate content) interface
 	// `[m.aggr to=bufferName? content...]` - Aggregates content to the specified buffer
@@ -92,11 +99,9 @@ modcaps=''
 		}
 
 		// SSR: `from` mode - render a placeholder for later substitution
-		function ssrAggrFrom (d, bufferName) {
-			const p = d.p, doc = p.at('doc');
-			const m = d.mp, output = m.at('in');
+		function ssrAggrFrom (doc, output, bufferName) {
 			const bufferKey = getBufferKey(bufferName);
-			const bufferId = doc('mapAggrBuffer', [bufferKey]);
+			const bufferId = doc.mapAggrBuffer(bufferKey);
 			const html = `<{${bufferId}}>`;
 
 			if (output) output.push(html);
@@ -104,17 +109,16 @@ modcaps=''
 		}
 
 		// SSR: `to` mode - render children to HTML and store in aggregation map
-		function ssrAggrTo (d, bufferName) {
-			const p = d.p, doc = p.at('doc');
-			const aggrData = doc('getAggr');
+		function ssrAggrTo (self, doc, bufferName) {
+			const aggrData = doc.getAggr();
 			const bufferKey = getBufferKey(bufferName);
 			const buffer = getSSRBuffer(aggrData, bufferKey);
 			const html = [];
 
 			// Render children to HTML
 			html.wantId = true;
-			for (const node of d.rr('getSubDoc').values()) {
-				node('getHTML', { in: html });
+			for (const node of self.getSubDoc().values()) {
+				node.getHTML({ in: html });
 			}
 
 			// Store rendered HTML with a unique symbol key (non-deduplicating)
@@ -122,123 +126,145 @@ modcaps=''
 			buffer.set(key, html.join(''));
 		}
 
-		// CSR: getDOM handler
-		function opGetDOM (d) {
-			const p = d.p;
+		class MWIAggr extends MWIDocNode {
+			#ps;
 
-			if (p.has('_dom')) return p.at('_dom').rv;
-			if (typeof document !== 'object' || typeof document.createElement !== 'function') throw new Error('Missing document.createElement API');
+			constructor (key, type) {
+				super(key, type);
+				this.#ps = MsjsObject.getPS(this, key);
+			}
 
-			const doc = p.at('doc');
-			const from = d.rr('getAttr', ['from']);
-			const to = d.rr('getAttr', ['to']);
+			// CSR: return generated DOM (bilingual)
+			// (getDOM sync=domSync?) OR .getDOM({ sync })
+			getDOM (p1) {
+				const d = (p1?.msjsType === '@dispatch') ? p1 : undefined;
+				const ps = d?.p ?? this.#ps;
+				const self = d?.rr ?? this;
 
-			if (typeof from !== 'string') {
-				// `to` mode: register this node with the aggregation buffer and return empty DOM
-				const bufferName = (typeof to === 'string') ? to : DEFAULT_BUFFER;
+				if (ps.has('_dom')) return ps.at('_dom').rv;
+				if (typeof document !== 'object' || typeof document.createElement !== 'function') throw new Error('Missing document.createElement API');
+
+				const doc = ps.at('doc');
+				const from = self.getAttr('from');
+				const to = self.getAttr('to');
+
+				if (typeof from !== 'string') {
+					// `to` mode: register this node with the aggregation buffer and return empty DOM
+					const bufferName = (typeof to === 'string') ? to : DEFAULT_BUFFER;
+					const aggrData = doc.getAggr();
+					const bufferKey = getBufferKey(bufferName);
+					const buffer = getCSRBuffer(aggrData, bufferKey, doc);
+
+					// Register this node in the buffer at the next sequential index
+					buffer.push(self);
+
+					// Note: To unmount, just remove the node from the buffer.
+					// const key = buffer.keyOf(self); // Find by node value
+					// if (key) buffer.delete(key); // Then delete by key (a string)
+
+					// `to` nodes don't render any DOM themselves
+					const nodes = new NANOS();
+					const _dom = reactive({ eager: true, def: () => nodes });
+
+					ps.set('_dom', _dom);
+					return _dom.rv;
+				}
+
+				// `from` mode: reactively render the aggregated content in node-path order
 				const aggrData = doc.getAggr();
-				const bufferKey = getBufferKey(bufferName);
+				const bufferKey = getBufferKey(from);
 				const buffer = getCSRBuffer(aggrData, bufferKey, doc);
+				const nodes = doc.rxNANOS();
+				let syncMode = d? d.mp.at('sync') : p1?.sync;
 
-				// Register this node in the buffer at the next sequential index
-				buffer.push(d.rr);
+				const _dom = reactive({ eager: true, def: () => {
+					// Defer during initial CSR while "to" nodes register
+					if (doc.initialCSR) {
+						return syncMode ? undefined : nodes;
+					}
 
-				// Note: To unmount, just remove the node from the buffer.
-				// const key = buffer.keyOf(d.rr); // Find by node value
-				// if (key) buffer.delete(key); // Then delete by key (a string)
+					// Collect all registered `to` nodes from the buffer
+					const unsorted = [...buffer.values()];
 
-				// `to` nodes don't render any DOM themselves
-				const nodes = new NANOS();
-				const _dom = reactive({ eager: true, def: () => nodes });
+					// Sort by node path for consistent tree-traversal order
+					const sorted = unsorted.sort((a, b) => {
+						const pathA = a.nodePath(), pathB = b.nodePath();
 
-				p.set('_dom', _dom);
+						return MWIDocument.compareNodePaths(pathA, pathB);
+					});
+
+					// Gather DOM nodes from each registered `to` node's sub-doc
+					// Support the local sub-doc as a CSR-only fallback
+					const newNodes = [];
+					if (sorted.length) {
+						for (const node of sorted) {
+							const sync = syncMode && getInstance('MWIDOMSync', [null]);
+							const subDOM = node.getSubDOM({ sync });
+
+							newNodes.push(...subDOM.values());
+						}
+					} else {
+						for (const node of self.getSubDoc().values()) {
+							// Fallback is always CSR when activated - nothing to SYNC
+							const subDOM = node.getDOM();
+							newNodes.push(...subDOM.values());
+						}
+					}
+
+					syncMode = false; // Only applies to first render
+					reactive.unbatch(() => {
+						nodes.fromEntries(newNodes.entries());
+						nodes.next = newNodes.length;
+					});
+
+					return nodes;
+				}});
+
+				ps.set('_dom', _dom);
 				return _dom.rv;
 			}
 
-			// `from` mode: reactively render the aggregated content in node-path order
-			const aggrData = doc.getAggr();
-			const bufferKey = getBufferKey(from);
-			const buffer = getCSRBuffer(aggrData, bufferKey, doc);
-			const nodes = doc.rxNANOS();
-			const m = d.mp;
-			let syncMode = m.at('sync');
+			// SSR: render HTML (bilingual)
+			// (getHTML in=buffer?) OR .getHTML({ in })
+			getHTML (p1) {
+				const d = (p1?.msjsType === '@dispatch') ? p1 : undefined;
+				const self = d?.rr ?? this;
 
-			const _dom = reactive({ eager: true, def: () => {
-				// Defer during initial CSR while "to" nodes register
-				if (doc('initialCSR')) {
-					return syncMode ? undefined : nodes;
-				}
+				if (self.getAttr('m.csr')) return '';
 
-				// Collect all registered `to` nodes from the buffer
-				const unsorted = [...buffer.values()];
+				const from = self.getAttr('from');
+				const to = self.getAttr('to');
+				const doc = (d?.p ?? this.#ps).at('doc');
+				const output = d ? d.mp.at('in') : p1?.in;
 
-				// Sort by node path for consistent tree-traversal order
-				const sorted = unsorted.sort((a, b) => {
-					const pathA = a('nodePath'), pathB = b('nodePath');
-
-					return doc.compareNodePaths(pathA, pathB);
-				});
-
-				// Gather DOM nodes from each registered `to` node's sub-doc
-				// Support the local sub-doc as a CSR-only fallback
-				const newNodes = [];
-				if (sorted.length) {
-					for (const node of sorted) {
-						const sync = syncMode && getInstance('MWIDOMSync', [null]);
-						const subDOM = node('getSubDOM', { sync });
-
-						newNodes.push(...subDOM.values());
-					}
+				if (typeof from === 'string') {
+					// `from` mode: render placeholder
+					return ssrAggrFrom(doc, output, from);
+				} else if (typeof to === 'string') {
+					// `to` mode with explicit buffer name
+					ssrAggrTo(self, doc, to);
+					return '';
 				} else {
-					for (const node of d.rr('getSubDoc').values()) {
-						// Fallback is always CSR when activated - nothing to SYNC
-						const subDOM = node('getDOM');
-						newNodes.push(...subDOM.values());
-					}
+					// `to` mode with default buffer name (no `from` attribute)
+					ssrAggrTo(self, doc, DEFAULT_BUFFER);
+					return '';
 				}
-
-				syncMode = false; // Only applies to first render
-				reactive.unbatch(() => {
-					nodes.fromEntries(newNodes.entries());
-					nodes.next = newNodes.length;
-				});
-
-				return nodes;
-			}});
-
-			p.set('_dom', _dom);
-			return _dom.rv;
-		}
-
-		// SSR getHTML handler
-		function opGetHTML (d) {
-			if (d.rr('getAttr', ['m.csr'])) return '';
-
-			const from = d.rr('getAttr', ['from']);
-			const to = d.rr('getAttr', ['to']);
-
-			if (typeof from === 'string') {
-				// `from` mode: render placeholder
-				return ssrAggrFrom(d, from);
-			} else if (typeof to === 'string') {
-				// `to` mode with explicit buffer name
-				ssrAggrTo(d, to);
-				return '';
-			} else {
-				// `to` mode with default buffer name (no `from` attribute)
-				ssrAggrTo(d, DEFAULT_BUFFER);
-				return '';
 			}
+
+			get subSlotSrc () { return this.#ps.at('slotSrc'); } // non-source; pass-through
 		}
+
+		const proto = MWIAggr.prototype;
 
 		getInterface(AGGR_IF).set({
 			pristine: true, lock: true,
 			chain: [ BASE_IF ],
 			handlers: {
-				getDOM: opGetDOM,
-				getHTML: opGetHTML,
+				getDOM: proto.getDOM,
+				getHTML: proto.getHTML,
 				subSlotSrc: (d) => d.p.at('slotSrc'), // non-source; pass-through
-			}
+			},
+			proto: MWIAggr,
 		});
 	})();
 
@@ -275,11 +301,12 @@ modcaps=''
 		}
 
 		// Get the deduplication key for this node (URL or m.text content)
-		function getDedupeKey (d, urlAttr) {
-			const url = d.rr('getAttr', [urlAttr]);
+		// node must be a MWIAggrScript instance (bilingual JS object)
+		function getDedupeKey (node, urlAttr) {
+			const url = node.getAttr(urlAttr);
 			if (typeof url === 'string') return url;
 
-			const text = d.rr('getAttr', ['m.text']);
+			const text = node.getAttr('m.text');
 			if (typeof text === 'string') return text;
 
 			return null;
@@ -303,11 +330,9 @@ modcaps=''
 		}
 
 		// SSR: `from` mode - render a placeholder for later substitution
-		function ssrScriptFrom (d, namespace, bufferName) {
-			const p = d.p, doc = p.at('doc');
-			const m = d.mp, output = m.at('in');
+		function ssrScriptFrom (doc, output, namespace, bufferName) {
 			const bufferKey = getBufferKey(namespace, bufferName);
-			const bufferId = doc('mapAggrBuffer', [bufferKey]);
+			const bufferId = doc.mapAggrBuffer(bufferKey);
 			const html = `<{${bufferId}}>`;
 
 			if (output) output.push(html);
@@ -315,14 +340,13 @@ modcaps=''
 		}
 
 		// SSR: `to` mode - render tag to HTML and store in aggregation map (deduped)
-		function ssrScriptTo (d, type, namespace, bufferName, urlAttr, tag) {
-			const p = d.p, doc = p.at('doc');
-			const aggrData = doc('getAggr');
+		function ssrScriptTo (self, doc, type, namespace, bufferName, urlAttr, tag) {
+			const aggrData = doc.getAggr();
 			const bufferKey = getBufferKey(namespace, bufferName);
 			const buffer = getSSRBuffer(aggrData, bufferKey);
 
 			// Get deduplication key
-			const dedupeKey = getDedupeKey(d, urlAttr);
+			const dedupeKey = getDedupeKey(self, urlAttr);
 			if (!dedupeKey) return; // No URL or m.text - skip (invalid)
 
 			// Skip if already in buffer
@@ -330,22 +354,22 @@ modcaps=''
 
 			// Render the tag
 			let html;
-			const url = d.rr('getAttr', [urlAttr]);
+			const url = self.getAttr(urlAttr);
 
-			d.rr('getAttr', ['m.id']); // Ensure id for DOM sync
+			$c.sm(self, 'getAttr', 'm.id'); // Ensure id for DOM sync (requires dispatch)
 			if (typeof url === 'string') {
 				// External script/style
 				if (type === SCRIPT_TYPE) {
 					// <script src="..."></script>
-					html = `<script${d.rr('getAttrHTML')}></script>`;
+					html = `<script${self.getAttrHTML()}></script>`;
 				} else {
 					// <link rel="stylesheet" href="...">
-					const rel = d.rr('getAttr', ['rel']) ? '' : ' rel="stylesheet"';
-					html = `<link${rel}${d.rr('getAttrHTML')}>`;
+					const rel = self.getAttr('rel') ? '' : ' rel="stylesheet"';
+					html = `<link${rel}${self.getAttrHTML()}>`;
 				}
 			} else {
 				// Inline script/style
-				const raw = d.rr('getAttr', ['m.text']) || '';
+				const raw = self.getAttr('m.text') || '';
 				let sanzd = '';
 
 				if (type === SCRIPT_TYPE) {
@@ -356,175 +380,201 @@ modcaps=''
 					sanzd = raw.replace(/<(?=\s*\/\s*style)/g, '\\3c ');
 				}
 
-				html = `<${tag}${d.rr('getAttrHTML')}>${sanzd}</${tag}>`;
+				html = `<${tag}${self.getAttrHTML()}>${sanzd}</${tag}>`;
 			}
 
 			// Store rendered HTML with deduplication key
 			buffer.set(dedupeKey, html);
 		}
 
-		// CSR: getDOM handler
-		function opGetDOM (d) {
-			const p = d.p;
+		class MWIAggrScript extends MWIDocNode {
+			#ps;
 
-			if (p.has('_dom')) return p.at('_dom').rv;
-			if (typeof document !== 'object' || typeof document.createElement !== 'function') throw new Error('Missing document.createElement API');
+			constructor (key, type) {
+				super(key, type);
+				this.#ps = MsjsObject.getPS(this, key);
+			}
 
-			const doc = p.at('doc');
-			const type = p.at('type');
-			const { ns, tag, urlAttr } = getTypeInfo(type);
-			const from = d.rr('getAttr', ['from']);
-			const to = d.rr('getAttr', ['to']);
+			// CSR: return generated DOM (bilingual)
+			// (getDOM sync=domSync?) OR .getDOM({ sync })
+			getDOM (p1) {
+				const d = (p1?.msjsType === '@dispatch') ? p1 : undefined;
+				const ps = d?.p ?? this.#ps;
+				const self = d?.rr ?? this;
 
-			if (typeof from !== 'string') {
-				// `to` mode: register this node with the aggregation buffer and return empty DOM
-				const bufferName = (typeof to === 'string') ? to : DEFAULT_HEAD_BUFFER;
+				if (ps.has('_dom')) return ps.at('_dom').rv;
+				if (typeof document !== 'object' || typeof document.createElement !== 'function') throw new Error('Missing document.createElement API');
+
+				const doc = ps.at('doc');
+				const type = ps.at('type');
+				const { ns, tag, urlAttr } = getTypeInfo(type);
+				const from = self.getAttr('from');
+				const to = self.getAttr('to');
+
+				if (typeof from !== 'string') {
+					// `to` mode: register this node with the aggregation buffer and return empty DOM
+					const bufferName = (typeof to === 'string') ? to : DEFAULT_HEAD_BUFFER;
+					const aggrData = doc.getAggr();
+					const bufferKey = getBufferKey(ns, bufferName);
+					const buffer = getCSRBuffer(aggrData, bufferKey, doc);
+
+					// Register this node in the buffer
+					buffer.push(self);
+
+					// `to` nodes don't render any DOM themselves
+					const nodes = new NANOS();
+					const _dom = reactive({ eager: true, def: () => nodes });
+
+					ps.set('_dom', _dom);
+					return _dom.rv;
+				}
+
+				// `from` mode: reactively render the aggregated content with deduplication
 				const aggrData = doc.getAggr();
-				const bufferKey = getBufferKey(ns, bufferName);
+				const bufferKey = getBufferKey(ns, from);
 				const buffer = getCSRBuffer(aggrData, bufferKey, doc);
+				const nodes = doc.rxNANOS();
+				let syncMode = d ? d.mp.at('sync') : p1?.sync;
 
-				// Register this node in the buffer
-				buffer.push(d.rr);
+				const _dom = reactive({ eager: true, def: () => {
+					// Defer during initial CSR while "to" nodes register
+					if (doc.initialCSR) {
+						return syncMode ? undefined : nodes;
+					}
 
-				// `to` nodes don't render any DOM themselves
-				const nodes = new NANOS();
-				const _dom = reactive({ eager: true, def: () => nodes });
+					// Collect all registered `to` nodes from the buffer
+					const unsorted = [...buffer.values()];
 
-				p.set('_dom', _dom);
+					// Sort by node path for consistent tree-traversal order
+					const sorted = unsorted.sort((a, b) => {
+						const pathA = a.nodePath(), pathB = b.nodePath();
+						return MWIDocument.compareNodePaths(pathA, pathB);
+					});
+
+					// Deduplicate and gather DOM nodes
+					// Support the local sub-doc as a CSR-only fallback
+					const seen = new Set();
+					const newNodes = [];
+
+					if (sorted.length) {
+						for (const node of sorted) {
+							// Get the deduplication key
+							const nodeType = node.type;
+							const nodeUrlAttr = (nodeType === SCRIPT_TYPE) ? 'src' : 'href';
+							const dedupeKey = getDedupeKey(node, nodeUrlAttr);
+
+							// Skip if already seen (deduplication)
+							if (dedupeKey && seen.has(dedupeKey)) continue;
+							if (dedupeKey) seen.add(dedupeKey);
+
+							const sync = syncMode && getInstance('MWIDOMSync', [null]);
+							const subDOM = node.getSubDOM({ sync });
+							newNodes.push(...subDOM.values());
+						}
+					} else {
+						// Fallback to local sub-doc
+						for (const node of self.getSubDoc().values()) {
+							const subDOM = node.getDOM();
+							newNodes.push(...subDOM.values());
+						}
+					}
+
+					syncMode = false; // Only applies to first render
+					reactive.unbatch(() => {
+						nodes.fromEntries(newNodes.entries());
+						nodes.next = newNodes.length;
+					});
+
+					return nodes;
+				}});
+
+				ps.set('_dom', _dom);
 				return _dom.rv;
 			}
 
-			// `from` mode: reactively render the aggregated content with deduplication
-			const aggrData = doc.getAggr();
-			const bufferKey = getBufferKey(ns, from);
-			const buffer = getCSRBuffer(aggrData, bufferKey, doc);
-			const nodes = doc.rxNANOS();
-			const m = d.mp;
-			let syncMode = m.at('sync');
+			// SSR: render HTML (bilingual)
+			// (getHTML in=buffer?) OR .getHTML({ in })
+			getHTML (p1) {
+				const d = (p1?.msjsType === '@dispatch') ? p1 : undefined;
+				const ps = d?.p ?? this.#ps;
+				const self = d?.rr ?? this;
 
-			const _dom = reactive({ eager: true, def: () => {
-				// Defer during initial CSR while "to" nodes register
-				if (doc('initialCSR')) {
-					return syncMode ? undefined : nodes;
-				}
+				if (self.getAttr('m.csr')) return '';
 
-				// Collect all registered `to` nodes from the buffer
-				const unsorted = [...buffer.values()];
+				const type = ps.at('type');
+				const { ns, tag, urlAttr } = getTypeInfo(type);
+				const from = self.getAttr('from');
+				const to = self.getAttr('to');
+				const doc = ps.at('doc');
+				const output = d ? d.mp.at('in') : p1?.in;
 
-				// Sort by node path for consistent tree-traversal order
-				const sorted = unsorted.sort((a, b) => {
-					const pathA = a('nodePath'), pathB = b('nodePath');
-					return doc.compareNodePaths(pathA, pathB);
-				});
-
-				// Deduplicate and gather DOM nodes
-				// Support the local sub-doc as a CSR-only fallback
-				const seen = new Set();
-				const newNodes = [];
-
-				if (sorted.length) {
-					for (const node of sorted) {
-						// Get the deduplication key
-						const nodeType = node('type');
-						const nodeUrlAttr = (nodeType === SCRIPT_TYPE) ? 'src' : 'href';
-						const dedupeKey = getDedupeKey({ rr: node, p: node.p, mp: m }, nodeUrlAttr);
-
-						// Skip if already seen (deduplication)
-						if (dedupeKey && seen.has(dedupeKey)) continue;
-						if (dedupeKey) seen.add(dedupeKey);
-
-						const sync = syncMode && getInstance('MWIDOMSync', [null]);
-						const subDOM = node('getSubDOM', { sync });
-						newNodes.push(...subDOM.values());
-					}
+				if (typeof from === 'string') {
+					// `from` mode: render placeholder
+					return ssrScriptFrom(doc, output, ns, from);
+				} else if (typeof to === 'string') {
+					// `to` mode with explicit buffer name
+					ssrScriptTo(self, doc, type, ns, to, urlAttr, tag);
+					return '';
 				} else {
-					// Fallback to local sub-doc
-					for (const node of d.rr('getSubDoc').values()) {
-						const subDOM = node('getDOM');
-						newNodes.push(...subDOM.values());
+					// `to` mode with default buffer name
+					ssrScriptTo(self, doc, type, ns, DEFAULT_HEAD_BUFFER, urlAttr, tag);
+					return '';
+				}
+			}
+
+			// CSR: get actual content node (bilingual)
+			// (getSubDOM sync=domSync?) OR .getSubDOM({ sync })
+			getSubDOM (p1) {
+				const d = (p1?.msjsType === '@dispatch') ? p1 : undefined;
+				const ps = d?.p ?? this.#ps;
+				const self = d?.rr ?? this;
+
+				if (ps.has('_subDom')) {
+					ps.at('_subDomAttrs').rv;
+					return ps.at('_subDom').rv;
+				}
+				if (typeof document !== 'object' || typeof document.createElement !== 'function') throw new Error('Missing document.createElement API');
+
+				const type = ps.at('type');
+				const link = type !== SCRIPT_TYPE && self.getAttr('href');
+				const tag = (type === SCRIPT_TYPE) ? 'SCRIPT' : (link ? 'LINK' : 'STYLE');
+				const sync = d ? d.mp.at('sync') : p1?.sync;
+				const existing = sync?.sync(tag, self);
+				const node = existing || document.createElement(tag);
+
+				node[NODE_SYM] = self;
+				if (link && !self.getAttr('rel')) $c.sm(self, 'setAttr', ['rel', 'stylesheet']);
+
+				const nodes = new NANOS(node);
+				const _subDomAttrs = MWIDocNode.setDOMAttrs(node, ps.at('attrs'), ps.at(SCHEMA));
+				const _subDom = reactive({ eager: true, def: () => {
+					if (!link) {
+						const content = self.getAttr('m.text') || '';
+
+						if (node.textContent !== content) node.textContent = content;
 					}
-				}
+					return nodes;
+				}});
 
-				syncMode = false; // Only applies to first render
-				reactive.unbatch(() => {
-					nodes.fromEntries(newNodes.entries());
-					nodes.next = newNodes.length;
-				});
-
-				return nodes;
-			}});
-
-			p.set('_dom', _dom);
-			return _dom.rv;
-		}
-
-		// SSR getHTML handler
-		function opGetHTML (d) {
-			if (d.rr('getAttr', ['m.csr'])) return '';
-
-			const p = d.p, type = p.at('type');
-			const { ns, tag, urlAttr } = getTypeInfo(type);
-			const from = d.rr('getAttr', ['from']);
-			const to = d.rr('getAttr', ['to']);
-
-			if (typeof from === 'string') {
-				// `from` mode: render placeholder
-				return ssrScriptFrom(d, ns, from);
-			} else if (typeof to === 'string') {
-				// `to` mode with explicit buffer name
-				ssrScriptTo(d, type, ns, to, urlAttr, tag);
-				return '';
-			} else {
-				// `to` mode with default buffer name
-				ssrScriptTo(d, type, ns, DEFAULT_HEAD_BUFFER, urlAttr, tag);
-				return '';
+				ps.push({ _subDom, _subDomAttrs });
+				return _subDom.rv;
 			}
+
+			get subSlotSrc () { return this.#ps.at('slotSrc'); } // non-source; pass-through
 		}
 
-		// CSR: get actual content node
-		function opGetSubDOM (d) {
-			const p = d.p;
-
-			if (p.has('_subDom')) {
-				p.at('_subDomAttrs').rv;
-				return p.at('_subDom').rv;
-			}
-			if (typeof document !== 'object' || typeof document.createElement !== 'function') throw new Error('Missing document.createElement API');
-
-			const type = p.at('type');
-			const link = type !== SCRIPT_TYPE && d.rr('getAttr', ['href']);
-			const tag = (type === SCRIPT_TYPE) ? 'SCRIPT' : (link ? 'LINK' : 'STYLE');
-			const m = d.mp, sync = m.at('sync');
-			const existing = sync && sync('sync', [tag, d.rr]);
-			const node = existing || document.createElement(tag);
-
-			node[NODE_SYM] = d.rr;
-			if (link && !d.rr('getAttr', ['rel'])) d.rr('setAttr', ['rel', 'stylesheet']);
-
-			const nodes = new NANOS(node);
-			const _subDomAttrs = d.rr.setDOMAttrs(node, p.at('attrs'), p.at(SCHEMA));
-			const _subDom = reactive({ eager: true, def: () => {
-				if (!link) {
-					const content = d.rr('getAttr', ['m.text']) || '';
-
-					if (node.textContent !== content) node.textContent = content;
-				}
-				return nodes;
-			}});
-
-			p.push({ _subDom, _subDomAttrs });
-			return _subDom.rv;
-		}
+		const proto = MWIAggrScript.prototype;
 
 		getInterface(SCRIPT_IF).set({
 			pristine: true, lock: true,
 			chain: [ BASE_IF ],
 			handlers: {
-				getDOM: opGetDOM,
-				getHTML: opGetHTML,
-				getSubDOM: opGetSubDOM,
+				getDOM: proto.getDOM,
+				getHTML: proto.getHTML,
+				getSubDOM: proto.getSubDOM,
 				subSlotSrc: (d) => d.p.at('slotSrc'), // non-source; pass-through
-			}
+			},
+			proto: MWIAggrScript,
 		});
 	})();
 

@@ -766,7 +766,7 @@ modcaps=''
 				const rxs = ps.at('rxState'), nodePath = doc.rxNANOS();
 				const _nodePath = reactive({ def: () => {
 					const parent = rxs.at('parent'), index = rxs.at('index');
-					const parentPath = typeof index === 'number' && parent?.('nodePath');
+					const parentPath = typeof index === 'number' && parent?.nodePath();
 
 					reactive.unbatch(() => {
 						nodePath.clear();

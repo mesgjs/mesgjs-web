@@ -184,7 +184,7 @@ modcaps=''
 
 		get initialCSR () { return this.#ps.at('initialCSR').rv; }
 		get jsv () { return this; }
-		
+
 		// (mapAggrBuffer id)
 		// (mapAggrBuffer name)
 		// Return the aggregation buffer name from id or id from name
