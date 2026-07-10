@@ -53,7 +53,7 @@ modcaps=''
 
 				reactive.untracked(() => {
 					for (const [target, spec] of entries) {
-						const value = computeAttr(d, spec);
+						const value = computeAttr(d.p, spec);
 
 						self.setAttr(target, value, { coat: false });
 					}
@@ -311,7 +311,7 @@ modcaps=''
 						const offset = subDoc.next;
 
 						subDoc.push(docNodes);
-						setNodesParent(docNodes, self, offset);
+						MWIDocNode.setNodesParent(docNodes, self, offset);
 					}
 					rxs.push({ live: true, docEq: false });
 				});
@@ -632,7 +632,7 @@ modcaps=''
 
 				const self = d?.rr ?? this;
 				const doc = ps.at('doc'), subDoc = ps.at('subDoc');
-				const slotSrc = self.subSlotSrc();
+				const slotSrc = self.subSlotSrc;
 				const _subDoc = reactive({ eager: true, def: () => {
 					if (rxs.at('live')) return subDoc; // Doc-nodes are already source of truth
 					reactive.batch(() => {
@@ -656,7 +656,7 @@ modcaps=''
 
 			// Get reactive NANOS of sub-doc DOM nodes (bilingual)
 			// The `into` option allows re-using an existing nodes list (e.g. for m.defer)
-			// The 'sync' option provides an MWIDomSync instance for hydration
+			// The 'sync' option provides an MWIDOMSync instance for hydration
 			// (getSubDOM into=list? sync=domSync?) OR .getSubDOM({ into, sync })
 			getSubDOM (p1) {
 				const d = (p1?.msjsType === '@dispatch') ? p1 : undefined, ps = d?.p ?? this.#ps;
@@ -725,7 +725,7 @@ modcaps=''
 						// Live view prefers to reflect the current document
 						const subDoc = self.getSubDoc();
 
-						newSpec = [...subDoc.values()].map((n) => n('getSpec'));
+						newSpec = [...subDoc.values()].map((n) => n.getSpec());
 					} else {
 						// Mirror the raw sub-spec when not live or when the
 						// sub-spec is semantically not the content (MRNS)
@@ -811,7 +811,7 @@ modcaps=''
 					if (!d) { // Escalate to Mesgjs for required dispatch
 						$c.sm(self, 'setAttr', ls([, 'id', , value]));
 					} else if (typeof value === 'string' || typeof value === 'number') {
-						if (coat !== false) value = computeAttr(d, value);
+						if (coat !== false) value = computeAttr(d.p, value);
 						value = String(value); // Normalize to string
 
 						const attrs = ps.at('attrs'), doc = ps.at('doc');
@@ -911,6 +911,8 @@ modcaps=''
 				const index = d ? d.mp.at(1) : p2;
 
 				if (typeChains(parent?.msjsType, IF_NAME)) {
+					const rxs = ps.at('rxState');
+
 					reactive.batch(() => {
 						rxs.set('parent', parent);
 						if (Number.isInteger(index) && index >= 0) rxs.set('index', index);
@@ -934,7 +936,7 @@ modcaps=''
 					self.setSubSpec({ spec });
 				});
 
-				return d.rr;
+				return self;
 			}
 
 			// Set node sub-spec (bilingual)
@@ -951,7 +953,7 @@ modcaps=''
 				const self = d?.rr ?? this, mp = d?.mp;
 				const subSpec = ps.at('subSpec');
 				const spec = d ? mp.at('spec') : params[0]?.spec;
-				const subList = d ? mp.at('subSpec', m) : (!params[0]?.msjsType && params[0]?.subSpec || params);
+				const subList = d ? mp.at('subSpec', mp) : (!params[0]?.msjsType && params[0]?.subSpec || params);
 				const doc = ps.at('doc'), rxs = ps.at('rxState');
 				const subDoc = ps.at('subDoc'), slotSrc = self.subSlotSrc;
 				// Note: m.rns is a virtual, non-reactive value (intended for SSR->CSR hydration)
@@ -1188,7 +1190,7 @@ modcaps=''
 			}
 		}
 
-		const proto = MWIDomSync.prototype;
+		const proto = MWIDOMSync.prototype;
 
 		// (@init cursor)
 		// Start synchronizing at DOM cursor node

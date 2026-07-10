@@ -23,7 +23,7 @@ await fwait('MWIDocument', 'mwi.comp.MWIAggr');
 Deno.test('MWIDocument - getAggr', async (t) => {
 	await t.step('(getAggr) - Returns a Map', () => {
 		const doc = getInstance('MWIDocument');
-		const aggr = doc('getAggr');
+		const aggr = $c.sm(doc, 'getAggr');
 		assert(aggr instanceof Map, 'Should return a Map');
 	});
 
@@ -35,8 +35,8 @@ Deno.test('MWIDocument - getAggr', async (t) => {
 
 	await t.step('(getAggr) - Returns same Map on repeated calls', () => {
 		const doc = getInstance('MWIDocument');
-		const aggr1 = doc('getAggr');
-		const aggr2 = doc('getAggr');
+		const aggr1 = $c.sm(doc, 'getAggr');
+		const aggr2 = $c.sm(doc, 'getAggr');
 		assertStrictEquals(aggr1, aggr2, 'Should return same Map instance');
 	});
 
@@ -50,11 +50,11 @@ Deno.test('MWIDocument - getAggr', async (t) => {
 	await t.step('(getAggr clear=@t) - Clears aggregated data', () => {
 		const doc = getInstance('MWIDocument');
 		// Populate the aggr map with something
-		const aggrBefore = doc('getAggr');
+		const aggrBefore = $c.sm(doc, 'getAggr');
 		aggrBefore.set('m.aggr:test', new Map());
 
 		// Now clear
-		const aggrAfter = doc('getAggr', ls(['clear', true]));
+		const aggrAfter = $c.sm(doc, 'getAggr', ls(['clear', true]));
 		assertEquals(aggrAfter.size, 0, 'Should be empty after clear');
 	});
 
@@ -72,14 +72,14 @@ Deno.test('MWIDocument - getAggr', async (t) => {
 	await t.step('(getAggr clear=@t) - Resets buffer id counter', () => {
 		const doc = getInstance('MWIDocument');
 		// Allocate a buffer id
-		const id1 = doc('mapAggrBuffer', ls([, 'm.aggr:counter-test']));
+		const id1 = $c.sm(doc, 'mapAggrBuffer', ls([, 'm.aggr:counter-test']));
 		assertEquals(typeof id1, 'number', 'Should return a number');
 
 		// Clear
-		doc('getAggr', ls(['clear', true]));
+		$c.sm(doc, 'getAggr', ls(['clear', true]));
 
 		// After clear, the same name should get id 0 again
-		const id2 = doc('mapAggrBuffer', ls([, 'm.aggr:counter-test']));
+		const id2 = $c.sm(doc, 'mapAggrBuffer', ls([, 'm.aggr:counter-test']));
 		assertEquals(id2, 0, 'Should restart from 0 after clear');
 	});
 
@@ -102,9 +102,9 @@ Deno.test('MWIDocument - mapAggrBuffer', async (t) => {
 	await t.step('(mapAggrBuffer) - Assigns sequential IDs to buffer names', () => {
 		const doc = getInstance('MWIDocument');
 
-		const id0 = doc('mapAggrBuffer', ls([, 'm.aggr:first']));
-		const id1 = doc('mapAggrBuffer', ls([, 'm.aggr:second']));
-		const id2 = doc('mapAggrBuffer', ls([, 'm.aggr:third']));
+		const id0 = $c.sm(doc, 'mapAggrBuffer', ls([, 'm.aggr:first']));
+		const id1 = $c.sm(doc, 'mapAggrBuffer', ls([, 'm.aggr:second']));
+		const id2 = $c.sm(doc, 'mapAggrBuffer', ls([, 'm.aggr:third']));
 
 		assertEquals(id0, 0, 'First buffer should get id 0');
 		assertEquals(id1, 1, 'Second buffer should get id 1');
@@ -124,8 +124,8 @@ Deno.test('MWIDocument - mapAggrBuffer', async (t) => {
 	await t.step('(mapAggrBuffer) - Returns same ID for same name', () => {
 		const doc = getInstance('MWIDocument');
 
-		const id1 = doc('mapAggrBuffer', ls([, 'm.aggr:stable']));
-		const id2 = doc('mapAggrBuffer', ls([, 'm.aggr:stable']));
+		const id1 = $c.sm(doc, 'mapAggrBuffer', ls([, 'm.aggr:stable']));
+		const id2 = $c.sm(doc, 'mapAggrBuffer', ls([, 'm.aggr:stable']));
 
 		assertEquals(id1, id2, 'Same name should return same ID');
 	});
@@ -143,8 +143,8 @@ Deno.test('MWIDocument - mapAggrBuffer', async (t) => {
 		const doc = getInstance('MWIDocument');
 
 		const name = 'm.aggr:reverse-test';
-		const id = doc('mapAggrBuffer', ls([, name]));
-		const lookedUp = doc('mapAggrBuffer', ls([, id]));
+		const id = $c.sm(doc, 'mapAggrBuffer', ls([, name]));
+		const lookedUp = $c.sm(doc, 'mapAggrBuffer', ls([, id]));
 
 		assertEquals(lookedUp, name, 'Should return name for given ID');
 	});
@@ -162,7 +162,7 @@ Deno.test('MWIDocument - mapAggrBuffer', async (t) => {
 	await t.step('(mapAggrBuffer) - Unknown ID returns undefined', () => {
 		const doc = getInstance('MWIDocument');
 
-		const result = doc('mapAggrBuffer', ls([, 999]));
+		const result = $c.sm(doc, 'mapAggrBuffer', ls([, 999]));
 		assertEquals(result, undefined, 'Unknown ID should return undefined');
 	});
 

@@ -21,7 +21,7 @@ Deno.test("MWICoreFrag (m.frg) - Basic Interface Tests", async (t) => {
 	const fragNode = doc.createNode('m.frg');
 
 	await t.step("(type) - Get node type", () => {
-		assertEquals(fragNode('type'), 'm.frg');
+		assertEquals($c.sm(fragNode, 'type'), 'm.frg');
 	});
 
 	await t.step(".type - Get node type via JS", () => {
@@ -41,7 +41,7 @@ Deno.test("MWICoreFrag (m.frg) - Basic Interface Tests", async (t) => {
 	});
 
 	await t.step("(document) - Get document reference", () => {
-		const docRef = fragNode('document');
+		const docRef = $c.sm(fragNode, 'document');
 		assertStrictEquals(docRef, doc);
 	});
 
@@ -54,8 +54,8 @@ Deno.test("MWICoreFrag (m.frg) - Inherited MWIDocNode Operations", async (t) => 
 	const fragNode = doc.createNode('m.frg');
 
 	await t.step("(setAttr) - Set basic attribute", () => {
-		fragNode('setAttr', ls([, 'data-test', , 'value123']));
-		assertEquals(fragNode('getAttr', ls([, 'data-test'])), 'value123');
+		$c.sm(fragNode, 'setAttr', ls([, 'data-test', , 'value123']));
+		assertEquals($c.sm(fragNode, 'getAttr', ls([, 'data-test'])), 'value123');
 	});
 
 	await t.step(".setAttr() - Set basic attribute via JS", () => {
@@ -64,8 +64,8 @@ Deno.test("MWICoreFrag (m.frg) - Inherited MWIDocNode Operations", async (t) => 
 	});
 
 	await t.step("(getAttr) - Get attribute", () => {
-		fragNode('setAttr', ls([, 'title', , 'Fragment Title']));
-		assertEquals(fragNode('getAttr', ls([, 'title'])), 'Fragment Title');
+		$c.sm(fragNode, 'setAttr', ls([, 'title', , 'Fragment Title']));
+		assertEquals($c.sm(fragNode, 'getAttr', ls([, 'title'])), 'Fragment Title');
 	});
 
 	await t.step(".getAttr() - Get attribute via JS", () => {
@@ -74,9 +74,9 @@ Deno.test("MWICoreFrag (m.frg) - Inherited MWIDocNode Operations", async (t) => 
 	});
 
 	await t.step("(hasAttr) - Check attribute existence", () => {
-		fragNode('setAttr', ls([, 'test-attr', , 'exists']));
-		assertEquals(fragNode('hasAttr', ls([, 'test-attr'])), true);
-		assertEquals(fragNode('hasAttr', ls([, 'nonexistent'])), false);
+		$c.sm(fragNode, 'setAttr', ls([, 'test-attr', , 'exists']));
+		assertEquals($c.sm(fragNode, 'hasAttr', ls([, 'test-attr'])), true);
+		assertEquals($c.sm(fragNode, 'hasAttr', ls([, 'nonexistent'])), false);
 	});
 
 	await t.step(".hasAttr() - Check attribute existence via JS", () => {
@@ -86,10 +86,10 @@ Deno.test("MWICoreFrag (m.frg) - Inherited MWIDocNode Operations", async (t) => 
 	});
 
 	await t.step("(delAttr) - Delete attribute", () => {
-		fragNode('setAttr', ls([, 'temp-attr', , 'temporary']));
-		assertEquals(fragNode('hasAttr', ls([, 'temp-attr'])), true);
-		fragNode('delAttr', ls([, 'temp-attr']));
-		assertEquals(fragNode('hasAttr', ls([, 'temp-attr'])), false);
+		$c.sm(fragNode, 'setAttr', ls([, 'temp-attr', , 'temporary']));
+		assertEquals($c.sm(fragNode, 'hasAttr', ls([, 'temp-attr'])), true);
+		$c.sm(fragNode, 'delAttr', ls([, 'temp-attr']));
+		assertEquals($c.sm(fragNode, 'hasAttr', ls([, 'temp-attr'])), false);
 	});
 
 	await t.step(".delAttr() - Delete attribute via JS", () => {
@@ -100,9 +100,9 @@ Deno.test("MWICoreFrag (m.frg) - Inherited MWIDocNode Operations", async (t) => 
 	});
 
 	await t.step("(hasClass) - Basic class check", () => {
-		fragNode('setAttr', ls([, 'class', , 'test-class']));
-		assertEquals(fragNode('hasClass', ls([, 'test-class'])), true);
-		assertEquals(fragNode('hasClass', ls([, 'missing-class'])), false);
+		$c.sm(fragNode, 'setAttr', ls([, 'class', , 'test-class']));
+		assertEquals($c.sm(fragNode, 'hasClass', ls([, 'test-class'])), true);
+		assertEquals($c.sm(fragNode, 'hasClass', ls([, 'missing-class'])), false);
 	});
 
 	await t.step(".hasClass() - Basic class check via JS", () => {
@@ -116,7 +116,7 @@ Deno.test("MWICoreFrag (m.frg) - Inherited MWIDocNode Operations", async (t) => 
 Deno.test("MWICoreFrag (m.frg) - Spec Management", async (t) => {
 	await t.step("(getSpec) - Get spec with no attributes", () => {
 		const fragNode = doc.createNode('m.frg');
-		const spec = fragNode('getSpec');
+		const spec = $c.sm(fragNode, 'getSpec');
 		assertEquals(spec.at(0), 'm.frg');
 		const slidStr = spec.toSLID();
 		assert(slidStr.includes('m.frg'));
@@ -130,9 +130,9 @@ Deno.test("MWICoreFrag (m.frg) - Spec Management", async (t) => {
 
 	await t.step("(getSpec) - Get spec with attributes", () => {
 		const fragNode = doc.createNode('m.frg');
-		fragNode('setAttr', ls([, 'id', , 'frag-123']));
-		fragNode('setAttr', ls([, 'data-role', , 'container']));
-		const spec = fragNode('getSpec');
+		$c.sm(fragNode, 'setAttr', ls([, 'id', , 'frag-123']));
+		$c.sm(fragNode, 'setAttr', ls([, 'data-role', , 'container']));
+		const spec = $c.sm(fragNode, 'getSpec');
 		assertEquals(spec.at(0), 'm.frg');
 		assertEquals(spec.at('id'), 'frag-123');
 		assertEquals(spec.at('data-role'), 'container');
@@ -150,7 +150,7 @@ Deno.test("MWICoreFrag (m.frg) - Spec Management", async (t) => {
 
 	await t.step("(getSubSpec) - Empty fragment returns empty NANOS", () => {
 		const fragNode = doc.createNode('m.frg');
-		const subSpec = fragNode('getSubSpec');
+		const subSpec = $c.sm(fragNode, 'getSubSpec');
 		assert(subSpec instanceof NANOS, 'Sub-spec should be a NANOS list');
 		assertEquals(subSpec.size, 0);
 	});
@@ -165,9 +165,9 @@ Deno.test("MWICoreFrag (m.frg) - Spec Management", async (t) => {
 	await t.step("(getAttr m.rns) - Fragment with appended children returns child specs via m.rns", async () => {
 		const fragNode = doc.createNode('m.frg');
 		const textNode = doc.createNode('m.t');
-		textNode('setAttr', ls([, 't', , 'Child text']));
-		fragNode('append', ls([, textNode]));
-		const subSpec = fragNode('getSubSpec');
+		$c.sm(textNode, 'setAttr', ls([, 't', , 'Child text']));
+		$c.sm(fragNode, 'append', ls([, textNode]));
+		const subSpec = $c.sm(fragNode, 'getSubSpec');
 		assert(subSpec instanceof NANOS, 'Sub-spec should be a NANOS list');
 		assertEquals(subSpec.size, 1);
 		assertEquals(subSpec.at(0), 'Child text'); // Simplified text spec
@@ -187,9 +187,9 @@ Deno.test("MWICoreFrag (m.frg) - Spec Management", async (t) => {
 	await t.step("(setSpec) - Set attributes from spec", () => {
 		const fragNode = doc.createNode('m.frg');
 		const spec = ps('[(m.frg id=spec-frag data-test=value)]');
-		fragNode('setSpec', ls([, spec]));
-		assertEquals(fragNode('getAttr', ls([, 'id'])), 'spec-frag');
-		assertEquals(fragNode('getAttr', ls([, 'data-test'])), 'value');
+		$c.sm(fragNode, 'setSpec', ls([, spec]));
+		assertEquals($c.sm(fragNode, 'getAttr', ls([, 'id'])), 'spec-frag');
+		assertEquals($c.sm(fragNode, 'getAttr', ls([, 'data-test'])), 'value');
 	});
 
 	await t.step(".setSpec() - Set attributes from spec via JS", () => {
@@ -203,8 +203,8 @@ Deno.test("MWICoreFrag (m.frg) - Spec Management", async (t) => {
 	await t.step("(setSpec) - Set children from spec", () => {
 		const fragNode = doc.createNode('m.frg');
 		const spec = ps('[(m.frg "Child 1" "Child 2")]');
-		fragNode('setSpec', ls([, spec]));
-		const subSpec = fragNode('getSubSpec');
+		$c.sm(fragNode, 'setSpec', ls([, spec]));
+		const subSpec = $c.sm(fragNode, 'getSubSpec');
 		assert(subSpec instanceof NANOS, 'Sub-spec should be a NANOS list');
 		assertEquals(subSpec.size, 2);
 		assertEquals(subSpec.at(0), 'Child 1');
@@ -225,8 +225,8 @@ Deno.test("MWICoreFrag (m.frg) - Spec Management", async (t) => {
 	await t.step("(setSubSpec) - Set children with NANOS list", () => {
 		const fragNode = doc.createNode('m.frg');
 		const subList = ps('[("Sub 1" "Sub 2")]');
-		fragNode('setSubSpec', ls(['subSpec', subList]));
-		const subSpec = fragNode('getSubSpec');
+		$c.sm(fragNode, 'setSubSpec', ls(['subSpec', subList]));
+		const subSpec = $c.sm(fragNode, 'getSubSpec');
 		assert(subSpec instanceof NANOS, 'Sub-spec should be a NANOS list');
 		assertEquals(subSpec.size, 2);
 		assertEquals(subSpec.at(0), 'Sub 1');
@@ -247,8 +247,8 @@ Deno.test("MWICoreFrag (m.frg) - Spec Management", async (t) => {
 	await t.step("(setSubSpec) - Set children with spec parameter", () => {
 		const fragNode = doc.createNode('m.frg');
 		const fullSpec = ps('[(m.frg "Spec Child")]');
-		fragNode('setSubSpec', ls(['spec', fullSpec]));
-		const subSpec = fragNode('getSubSpec');
+		$c.sm(fragNode, 'setSubSpec', ls(['spec', fullSpec]));
+		const subSpec = $c.sm(fragNode, 'getSubSpec');
 		assert(subSpec instanceof NANOS, 'Sub-spec should be a NANOS list');
 		assertEquals(subSpec.size, 1);
 		assertEquals(subSpec.at(0), 'Spec Child');
@@ -268,8 +268,8 @@ Deno.test("MWICoreFrag (m.frg) - Spec Management", async (t) => {
 Deno.test("MWICoreFrag (m.frg) - Content Aggregation", async (t) => {
 	await t.step("(append) - Append text string (auto-converts to m.t)", async () => {
 		const fragNode = doc.createNode('m.frg');
-		fragNode('append', ls([, 'Plain text']));
-		const subSpec = fragNode('getSubSpec');
+		$c.sm(fragNode, 'append', ls([, 'Plain text']));
+		const subSpec = $c.sm(fragNode, 'getSubSpec');
 		assert(subSpec instanceof NANOS, 'Sub-spec should be a NANOS list');
 		assertEquals(subSpec.size, 1);
 		assertEquals(subSpec.at(0), 'Plain text'); // Simplified text spec
@@ -287,9 +287,9 @@ Deno.test("MWICoreFrag (m.frg) - Content Aggregation", async (t) => {
 	await t.step("(append) - Append doc-node", async () => {
 		const fragNode = doc.createNode('m.frg');
 		const textNode = doc.createNode('m.t');
-		textNode('setAttr', ls([, 't', , 'Appended node']));
-		fragNode('append', ls([, textNode]));
-		const subSpec = fragNode('getSubSpec');
+		$c.sm(textNode, 'setAttr', ls([, 't', , 'Appended node']));
+		$c.sm(fragNode, 'append', ls([, textNode]));
+		const subSpec = $c.sm(fragNode, 'getSubSpec');
 		assert(subSpec instanceof NANOS, 'Sub-spec should be a NANOS list');
 		assertEquals(subSpec.size, 1);
 		assertEquals(subSpec.at(0), 'Appended node'); // Simplified text spec
@@ -309,11 +309,11 @@ Deno.test("MWICoreFrag (m.frg) - Content Aggregation", async (t) => {
 	await t.step("(append) - Append multiple items at once", async () => {
 		const fragNode = doc.createNode('m.frg');
 		const text1 = doc.createNode('m.t');
-		text1('setAttr', ls([, 't', , 'First']));
+		$c.sm(text1, 'setAttr', ls([, 't', , 'First']));
 		const text2 = doc.createNode('m.t');
-		text2('setAttr', ls([, 't', , 'Second']));
-		fragNode('append', ls([, text1, , text2]));
-		const subSpec = fragNode('getSubSpec');
+		$c.sm(text2, 'setAttr', ls([, 't', , 'Second']));
+		$c.sm(fragNode, 'append', ls([, text1, , text2]));
+		const subSpec = $c.sm(fragNode, 'getSubSpec');
 		assert(subSpec instanceof NANOS, 'Sub-spec should be a NANOS list');
 		assertEquals(subSpec.size, 2);
 		assertEquals(subSpec.at(0), 'First'); // Simplified text spec
@@ -337,9 +337,9 @@ Deno.test("MWICoreFrag (m.frg) - Content Aggregation", async (t) => {
 	await t.step("(append) - Append mixed text and nodes", async () => {
 		const fragNode = doc.createNode('m.frg');
 		const textNode = doc.createNode('m.t');
-		textNode('setAttr', ls([, 't', , 'Node text']));
-		fragNode('append', ls([, 'String text', , textNode]));
-		const subSpec = fragNode('getSubSpec');
+		$c.sm(textNode, 'setAttr', ls([, 't', , 'Node text']));
+		$c.sm(fragNode, 'append', ls([, 'String text', , textNode]));
+		const subSpec = $c.sm(fragNode, 'getSubSpec');
 		assert(subSpec instanceof NANOS, 'Sub-spec should be a NANOS list');
 		assertEquals(subSpec.size, 2);
 		assertEquals(subSpec.at(0), 'String text'); // Simplified text spec
@@ -360,7 +360,7 @@ Deno.test("MWICoreFrag (m.frg) - Content Aggregation", async (t) => {
 
 	await t.step("(append) - Returns fragment for chaining", () => {
 		const fragNode = doc.createNode('m.frg');
-		const result = fragNode('append', ls([, 'text']));
+		const result = $c.sm(fragNode, 'append', ls([, 'text']));
 		assertStrictEquals(result, fragNode);
 	});
 

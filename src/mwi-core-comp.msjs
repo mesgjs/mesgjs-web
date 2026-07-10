@@ -674,7 +674,7 @@ modcaps=''
 				}
 
 				// Return the standard (redis/super) value for everything else
-				return d ? d.s(d, 'redis') : super(p1);
+				return d ? d.s(d, 'redis') : super.getAttr(p1);
 			}
 		}
 

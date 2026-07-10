@@ -16,7 +16,7 @@ const { fwait, fready, getInstance } = globalThis.$c;
 await fwait(REG_READY_FT);
 
 const doc = getInstance('MWIDocument');
-const registry = doc.registry();
+const registry = doc.registry;
 const ls = globalThis.ls;
 const ps = globalThis.ps;
 
@@ -33,7 +33,7 @@ Deno.test("MWICoreDefer (m.defer) - Basic Interface Tests", async (t) => {
 
 	await t.step("(type) - Get node type (should be m.defer)", () => {
 		// Type is m.defer (placeholder node)
-		assertEquals(deferNode('type'), 'm.defer');
+		assertEquals($c.sm(deferNode, 'type'), 'm.defer');
 	});
 
 	await t.step(".type - Get node type via JS (should be m.defer)", () => {
@@ -53,7 +53,7 @@ Deno.test("MWICoreDefer (m.defer) - Basic Interface Tests", async (t) => {
 	});
 
 	await t.step("(document) - Get document reference", () => {
-		const docRef = deferNode('document');
+		const docRef = $c.sm(deferNode, 'document');
 		assertStrictEquals(docRef, doc);
 	});
 
@@ -65,7 +65,7 @@ Deno.test("MWICoreDefer (m.defer) - Basic Interface Tests", async (t) => {
 Deno.test("MWICoreDefer (m.defer) - Placeholder Behavior", async (t) => {
 	await t.step("Type remains m.defer (placeholder node)", () => {
 		const deferNode = doc.createNode('m.defer');
-		assertEquals(deferNode('type'), 'm.defer');
+		assertEquals($c.sm(deferNode, 'type'), 'm.defer');
 	});
 
 	// "Placeholder node doesn't render HTML" removed - covered in test/ssr-html/defer.test.js
@@ -81,8 +81,8 @@ Deno.test("MWICoreDefer (m.defer) - Inherited MWIDocNode Operations", async (t) 
 	const deferNode = doc.createNode('m.defer');
 
 	await t.step("(setAttr) - Set basic attribute", () => {
-		deferNode('setAttr', ls([, 'data-test', , 'value123']));
-		assertEquals(deferNode('getAttr', ls([, 'data-test'])), 'value123');
+		$c.sm(deferNode, 'setAttr', ls([, 'data-test', , 'value123']));
+		assertEquals($c.sm(deferNode, 'getAttr', ls([, 'data-test'])), 'value123');
 	});
 
 	await t.step(".setAttr() - Set basic attribute via JS", () => {
@@ -91,8 +91,8 @@ Deno.test("MWICoreDefer (m.defer) - Inherited MWIDocNode Operations", async (t) 
 	});
 
 	await t.step("(getAttr) - Get attribute", () => {
-		deferNode('setAttr', ls([, 'title', , 'Defer Title']));
-		assertEquals(deferNode('getAttr', ls([, 'title'])), 'Defer Title');
+		$c.sm(deferNode, 'setAttr', ls([, 'title', , 'Defer Title']));
+		assertEquals($c.sm(deferNode, 'getAttr', ls([, 'title'])), 'Defer Title');
 	});
 
 	await t.step(".getAttr() - Get attribute via JS", () => {
@@ -101,9 +101,9 @@ Deno.test("MWICoreDefer (m.defer) - Inherited MWIDocNode Operations", async (t) 
 	});
 
 	await t.step("(hasAttr) - Check attribute existence", () => {
-		deferNode('setAttr', ls([, 'test-attr', , 'exists']));
-		assertEquals(deferNode('hasAttr', ls([, 'test-attr'])), true);
-		assertEquals(deferNode('hasAttr', ls([, 'nonexistent'])), false);
+		$c.sm(deferNode, 'setAttr', ls([, 'test-attr', , 'exists']));
+		assertEquals($c.sm(deferNode, 'hasAttr', ls([, 'test-attr'])), true);
+		assertEquals($c.sm(deferNode, 'hasAttr', ls([, 'nonexistent'])), false);
 	});
 
 	await t.step(".hasAttr() - Check attribute existence via JS", () => {
@@ -113,10 +113,10 @@ Deno.test("MWICoreDefer (m.defer) - Inherited MWIDocNode Operations", async (t) 
 	});
 
 	await t.step("(delAttr) - Delete attribute", () => {
-		deferNode('setAttr', ls([, 'temp-attr', , 'temporary']));
-		assertEquals(deferNode('hasAttr', ls([, 'temp-attr'])), true);
-		deferNode('delAttr', ls([, 'temp-attr']));
-		assertEquals(deferNode('hasAttr', ls([, 'temp-attr'])), false);
+		$c.sm(deferNode, 'setAttr', ls([, 'temp-attr', , 'temporary']));
+		assertEquals($c.sm(deferNode, 'hasAttr', ls([, 'temp-attr'])), true);
+		$c.sm(deferNode, 'delAttr', ls([, 'temp-attr']));
+		assertEquals($c.sm(deferNode, 'hasAttr', ls([, 'temp-attr'])), false);
 	});
 
 	await t.step(".delAttr() - Delete attribute via JS", () => {
@@ -127,9 +127,9 @@ Deno.test("MWICoreDefer (m.defer) - Inherited MWIDocNode Operations", async (t) 
 	});
 
 	await t.step("(hasClass) - Basic class check", () => {
-		deferNode('setAttr', ls([, 'class', , 'test-class']));
-		assertEquals(deferNode('hasClass', ls([, 'test-class'])), true);
-		assertEquals(deferNode('hasClass', ls([, 'missing-class'])), false);
+		$c.sm(deferNode, 'setAttr', ls([, 'class', , 'test-class']));
+		assertEquals($c.sm(deferNode, 'hasClass', ls([, 'test-class'])), true);
+		assertEquals($c.sm(deferNode, 'hasClass', ls([, 'missing-class'])), false);
 	});
 
 	await t.step(".hasClass() - Basic class check via JS", () => {
@@ -143,7 +143,7 @@ Deno.test("MWICoreDefer (m.defer) - Inherited MWIDocNode Operations", async (t) 
 Deno.test("MWICoreDefer (m.defer) - Spec Management", async (t) => {
 	await t.step("(getSpec) - Get spec", () => {
 		const deferNode = doc.createNode('m.defer');
-		const spec = deferNode('getSpec');
+		const spec = $c.sm(deferNode, 'getSpec');
 		// Type should be m.defer (placeholder node)
 		assertEquals(spec.at(0), 'm.defer');
 	});
@@ -157,9 +157,9 @@ Deno.test("MWICoreDefer (m.defer) - Spec Management", async (t) => {
 	await t.step("(setSpec) - Set attributes from spec", () => {
 		const deferNode = doc.createNode('m.defer');
 		const spec = ps('[(m.defer data-test=value class=defer-class)]');
-		deferNode('setSpec', ls([, spec]));
-		assertEquals(deferNode('getAttr', ls([, 'data-test'])), 'value');
-		assert(deferNode('getAttr', ls([, 'class'])).includes('defer-class'));
+		$c.sm(deferNode, 'setSpec', ls([, spec]));
+		assertEquals($c.sm(deferNode, 'getAttr', ls([, 'data-test'])), 'value');
+		assert($c.sm(deferNode, 'getAttr', ls([, 'class'])).includes('defer-class'));
 	});
 
 	await t.step(".setSpec() - Set attributes from spec via JS", () => {
@@ -173,7 +173,7 @@ Deno.test("MWICoreDefer (m.defer) - Spec Management", async (t) => {
 Deno.test("MWICoreDefer (m.defer) - Sub-Spec Behavior (new: children accepted)", async (t) => {
 	await t.step("(getSubSpec) - Returns empty NANOS when no children", () => {
 		const deferNode = doc.createNode('m.defer');
-		const subSpec = deferNode('getSubSpec');
+		const subSpec = $c.sm(deferNode, 'getSubSpec');
 		assertEquals(subSpec.size, 0);
 	});
 
@@ -186,8 +186,8 @@ Deno.test("MWICoreDefer (m.defer) - Sub-Spec Behavior (new: children accepted)",
 	await t.step("(setSubSpec) - Children are stored in sub-spec", () => {
 		const deferNode = doc.createNode('m.defer');
 		const childSpec = ps('[(hello)]');
-		deferNode('setSubSpec', { subSpec: childSpec });
-		const subSpec = deferNode('getSubSpec');
+		$c.sm(deferNode, 'setSubSpec', { subSpec: childSpec });
+		const subSpec = $c.sm(deferNode, 'getSubSpec');
 		assertEquals(subSpec.size, 1);
 	});
 
@@ -215,14 +215,14 @@ Deno.test("MWICoreDefer (m.defer) - Real-World Creation via Document", async (t)
 	await t.step("Document creates defer node for unloaded component", () => {
 		const node = doc.createNode('test.deferred');
 		assertEquals(node.msjsType, 'MWICoreDefer', 'Should be MWICoreDefer');
-		assertEquals(node('type'), 'm.defer');
+		assertEquals($c.sm(node, 'type'), 'm.defer');
 	});
 
 	await t.step("Document.from() creates defer nodes from specs with sub-spec", () => {
-		const nodes = doc('from', ls(['list', '[([test.deferred] [test.deferred])]']));
+		const nodes = $c.sm(doc, 'from', ls(['list', '[([test.deferred] [test.deferred])]']));
 		assert(Array.isArray(nodes), 'Should return array');
 		assertEquals(nodes.length, 2, 'Should create two nodes');
-		assertEquals(nodes[0]('type'), 'm.defer', 'First should be defer');
+		assertEquals($c.sm(nodes[0], 'type'), 'm.defer', 'First should be defer');
 		assertEquals(nodes[0].msjsType, 'MWICoreDefer', 'First should be defer');
 		assertEquals(nodes[1].type, 'm.defer', 'Second should be defer');
 		assertEquals(nodes[1].msjsType, 'MWICoreDefer', 'Second should be defer');
@@ -232,7 +232,7 @@ Deno.test("MWICoreDefer (m.defer) - Real-World Creation via Document", async (t)
 	});
 
 	await t.step("from() defer node sub-spec contains original component spec", () => {
-		const nodes = doc('from', ls(['list', '[([test.deferred class=widget data-value=42])]']));
+		const nodes = $c.sm(doc, 'from', ls(['list', '[([test.deferred class=widget data-value=42])]']));
 		assert(Array.isArray(nodes), 'Should return array');
 		assertEquals(nodes.length, 1, 'Should create one node');
 		const deferNode = nodes[0];
@@ -245,19 +245,19 @@ Deno.test("MWICoreDefer (m.defer) - Real-World Creation via Document", async (t)
 	});
 
 	await t.step("Mixed content with defer and loaded components", () => {
-		const nodes = doc('from', ls(['list', '[([m.t t=Text] [test.deferred] [h.div])]']));
+		const nodes = $c.sm(doc, 'from', ls(['list', '[([m.t t=Text] [test.deferred] [h.div])]']));
 		assert(Array.isArray(nodes), 'Should return array');
 		assertEquals(nodes.length, 3, 'Should create three nodes');
-		assertEquals(nodes[0]('type'), 'm.t', 'First should be text node');
+		assertEquals($c.sm(nodes[0], 'type'), 'm.t', 'First should be text node');
 		assertEquals(nodes[1].msjsType, 'MWICoreDefer', 'Second should be defer');
-		assertEquals(nodes[2]('type'), 'h.div', 'Third should be div');
+		assertEquals($c.sm(nodes[2], 'type'), 'h.div', 'Third should be div');
 	});
 
 	await t.step("Defer nodes can be appended to document", async () => {
 		const testDoc = getInstance('MWIDocument');
-		testDoc('append', ls(['list', '[([test.deferred])]']));
-		const root = testDoc('root');
-		const subSpec = root('getSubSpec');
+		$c.sm(testDoc, 'append', ls(['list', '[([test.deferred])]']));
+		const root = $c.sm(testDoc, 'root');
+		const subSpec = $c.sm(root, 'getSubSpec');
 		assertEquals(subSpec.size, 1, 'Root should have one child');
 	});
 });
@@ -268,22 +268,22 @@ Deno.test("MWICoreDefer (m.defer) - Complex Scenarios", async (t) => {
 		const deferNode = doc.from({ item: spec });
 
 		// Check that attributes can be set
-		assertEquals(deferNode('getAttr', ls([, 'id'])), 'defer-123');
-		assert(deferNode('getAttr', ls([, 'class'])).includes('defer-placeholder'));
-		assert(deferNode('getAttr', ls([, 'class'])).includes('loading'));
-		assertEquals(deferNode('getAttr', ls([, 'data-priority'])), 'high');
+		assertEquals($c.sm(deferNode, 'getAttr', ls([, 'id'])), 'defer-123');
+		assert($c.sm(deferNode, 'getAttr', ls([, 'class'])).includes('defer-placeholder'));
+		assert($c.sm(deferNode, 'getAttr', ls([, 'class'])).includes('loading'));
+		assertEquals($c.sm(deferNode, 'getAttr', ls([, 'data-priority'])), 'high');
 	});
 
 	await t.step("Defer node attribute modifications", () => {
 		const deferNode = doc.createNode('m.defer');
 
 		// Modify attributes after creation
-		deferNode('setAttr', ls([, 'class', , 'updated-class']));
-		deferNode('setAttr', ls([, 'data-status', , 'loading']));
+		$c.sm(deferNode, 'setAttr', ls([, 'class', , 'updated-class']));
+		$c.sm(deferNode, 'setAttr', ls([, 'data-status', , 'loading']));
 
 		// Verify modifications
-		assertEquals(deferNode('getAttr', ls([, 'class'])), 'updated-class');
-		assertEquals(deferNode('getAttr', ls([, 'data-status'])), 'loading');
+		assertEquals($c.sm(deferNode, 'getAttr', ls([, 'class'])), 'updated-class');
+		assertEquals($c.sm(deferNode, 'getAttr', ls([, 'data-status'])), 'loading');
 	});
 
 	// "Defer node doesn't render HTML (placeholder only)" removed - covered in test/ssr-html/defer.test.js
