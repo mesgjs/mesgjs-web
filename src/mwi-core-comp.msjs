@@ -139,7 +139,7 @@ modcaps=''
 			// Render HTML (bilingual)
 			// (getHTML in=buffer) OR .getHTML({ in })
 			getHTML (p1) {
-				const d = (p1?.msjsType === '@dispatch') ? d : undefined;
+				const d = (p1?.msjsType === '@dispatch') ? p1 : undefined;
 				const self = d?.rr ?? this;
 
 				if (self.getAttr('m.csr')) return '';
@@ -339,7 +339,7 @@ modcaps=''
 				if (ssrStatic instanceof NANOS) {
 					const doc = ps.at('doc'), frag = doc.createNode('m.frg');
 
-					frag.setSubSpec(...ssrStatic.values());
+					frag.setSubSpec({ subSpec: ssrStatic });
 					frag.getHTML({ in: html });
 				}
 
@@ -746,7 +746,7 @@ modcaps=''
 			// Render HTML (bilingual)
 			// (getHTML in=buffer) OR .getHTML({ in })
 			getHTML (p1) {
-				const d = (p1?.msjsType === '@dispatch') ? d : undefined;
+				const d = (p1?.msjsType === '@dispatch') ? p1 : undefined;
 				const self = d?.rr ?? this;
 
 				if (self.getAttr('m.csr')) return '';

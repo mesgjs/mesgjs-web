@@ -23,8 +23,8 @@ const registry = getInstance('MWIRegistry');
 Deno.test("MWICoreTpl (template handler) - Basic HTML Rendering", async (t) => {
 	await t.step("(getHTML) - Renders simple template content", () => {
 		registry.register('test.tpl.simple', ls(['allowLate', true, 'tpl', ps('[([m.t t="Simple template"])]')]));
-		const tplNode = doc('createNode', ls([, 'test.tpl.simple']));
-		const html = tplNode('getHTML');
+		const tplNode = $c.sm(doc, 'createNode', ls([, 'test.tpl.simple']));
+		const html =  $c.sm(tplNode, 'getHTML');
 		assertEquals(html, 'Simple template', 'template content rendered');
 	});
 
@@ -37,8 +37,8 @@ Deno.test("MWICoreTpl (template handler) - Basic HTML Rendering", async (t) => {
 
 	await t.step("(getHTML) - Renders empty template", () => {
 		registry.register('test.tpl.empty', ls(['allowLate', true, 'tpl', ps('[()]')]));
-		const tplNode = doc('createNode', ls([, 'test.tpl.empty']));
-		const html = tplNode('getHTML');
+		const tplNode = $c.sm(doc, 'createNode', ls([, 'test.tpl.empty']));
+		const html =  $c.sm(tplNode, 'getHTML');
 		assertEquals(html, '', 'empty template renders empty string');
 	});
 
@@ -56,8 +56,8 @@ Deno.test("MWICoreTpl (template handler) - Multiple Items", async (t) => {
 			'allowLate', true,
 			'tpl', ps('[([m.t t="First"] [m.t t="Second"] [m.t t="Third"])]')
 		]));
-		const tplNode = doc('createNode', ls([, 'test.tpl.multi']));
-		const html = tplNode('getHTML');
+		const tplNode = $c.sm(doc, 'createNode', ls([, 'test.tpl.multi']));
+		const html =  $c.sm(tplNode, 'getHTML');
 		assertEquals(html, 'FirstSecondThird', 'all items rendered in sequence');
 	});
 
@@ -78,8 +78,8 @@ Deno.test("MWICoreTpl (template handler) - Nested Structure", async (t) => {
 			'allowLate', true,
 			'tpl', ps('[([m.frg [m.t t="Outer"] [m.frg [m.t t="Inner"]]])]')
 		]));
-		const tplNode = doc('createNode', ls([, 'test.tpl.nested']));
-		const html = tplNode('getHTML');
+		const tplNode = $c.sm(doc, 'createNode', ls([, 'test.tpl.nested']));
+		const html =  $c.sm(tplNode, 'getHTML');
 		assertEquals(html, 'OuterInner', 'nested content rendered correctly');
 	});
 
@@ -100,8 +100,8 @@ Deno.test("MWICoreTpl (template handler) - Mixed Content Types", async (t) => {
 			'allowLate', true,
 			'tpl', ps('[([m.t t="Text"] [m.com t="Comment"] [m.frg [m.t t="Fragment"]])]')
 		]));
-		const tplNode = doc('createNode', ls([, 'test.tpl.mixed']));
-		const html = tplNode('getHTML');
+		const tplNode = $c.sm(doc, 'createNode', ls([, 'test.tpl.mixed']));
+		const html =  $c.sm(tplNode, 'getHTML');
 		assertEquals(html, 'Text<!--Comment-->Fragment', 'mixed content rendered correctly');
 	});
 
@@ -122,8 +122,8 @@ Deno.test("MWICoreTpl (template handler) - Slot Integration (Template as SlotSrc
 			'allowLate', true,
 			'tpl', ps('[([m.slot name=content])]')
 		]));
-		const tplNode = doc('createNode', ls([, 'test.tpl.slot']));
-		const html = tplNode('getHTML');
+		const tplNode = $c.sm(doc, 'createNode', ls([, 'test.tpl.slot']));
+		const html =  $c.sm(tplNode, 'getHTML');
 		assertEquals(html, '', 'named slot without matching template attribute renders empty');
 	});
 
@@ -142,8 +142,8 @@ Deno.test("MWICoreTpl (template handler) - Slot Integration (Template as SlotSrc
 			'allowLate', true,
 			'tpl', ps('[([m.slot [m.t t="Default content"]])]')
 		]));
-		const tplNode = doc('createNode', ls([, 'test.tpl.slot.default']));
-		const html = tplNode('getHTML');
+		const tplNode = $c.sm(doc, 'createNode', ls([, 'test.tpl.slot.default']));
+		const html =  $c.sm(tplNode, 'getHTML');
 		assertEquals(html, 'Default content', 'default slot content rendered');
 	});
 
@@ -162,12 +162,12 @@ Deno.test("MWICoreTpl (template handler) - Slot Integration (Template as SlotSrc
 			'allowLate', true,
 			'tpl', ps('[([m.slot name=header] [m.t t="Body"] [m.slot name=footer])]')
 		]));
-		const tplNode = doc('createNode', ls([, 'test.tpl.slot.named']));
+		const tplNode = $c.sm(doc, 'createNode', ls([, 'test.tpl.slot.named']));
 		// The template itself is the slotSrc for its content
 		// Set attributes on the template that its slots will reference
-		tplNode('setAttr', ls([, 'header', , ps('[([m.t t="Header content"])]')]));
-		tplNode('setAttr', ls([, 'footer', , ps('[([m.t t="Footer content"])]')]));
-		const html = tplNode('getHTML');
+		$c.sm(tplNode, 'setAttr', ls([, 'header', , ps('[([m.t t="Header content"])]')]));
+		$c.sm(tplNode, 'setAttr', ls([, 'footer', , ps('[([m.t t="Footer content"])]')]));
+		const html =  $c.sm(tplNode, 'getHTML');
 		assertEquals(html, 'Header contentBodyFooter content', 'named slots filled from template attributes');
 	});
 
@@ -189,11 +189,11 @@ Deno.test("MWICoreTpl (template handler) - Slot Integration (Template as SlotSrc
 			'allowLate', true,
 			'tpl', ps('[([m.slot [m.t t="Default"]])]')
 		]));
-		const tplNode = doc('createNode', ls([, 'test.tpl.slot.children']));
+		const tplNode = $c.sm(doc, 'createNode', ls([, 'test.tpl.slot.children']));
 		// The template itself is the slotSrc for its content
 		// Add natural children to the template
-		tplNode('setSubSpec', ls([, 'Natural child content']));
-		const html = tplNode('getHTML');
+		$c.sm(tplNode, 'setSubSpec', ls([, 'Natural child content']));
+		const html =  $c.sm(tplNode, 'getHTML');
 		assertEquals(html, 'Natural child content', 'default slot filled from template natural children');
 	});
 
@@ -216,8 +216,8 @@ Deno.test("MWICoreTpl (template handler) - HTML Elements", async (t) => {
 			'allowLate', true,
 			'tpl', ps('[([h.div [m.t t="Template with HTML"]])]')
 		]));
-		const tplNode = doc('createNode', ls([, 'test.tpl.html']));
-		const html = tplNode('getHTML');
+		const tplNode = $c.sm(doc, 'createNode', ls([, 'test.tpl.html']));
+		const html =  $c.sm(tplNode, 'getHTML');
 		assertEquals(html, '<div>Template with HTML</div>', 'HTML element rendered correctly');
 	});
 
@@ -236,8 +236,8 @@ Deno.test("MWICoreTpl (template handler) - HTML Elements", async (t) => {
 			'allowLate', true,
 			'tpl', ps('[([h.div class=container [h.h1 [m.t t="Title"]] [h.p [m.t t="Content"]]])]')
 		]));
-		const tplNode = doc('createNode', ls([, 'test.tpl.complex']));
-		const html = tplNode('getHTML');
+		const tplNode = $c.sm(doc, 'createNode', ls([, 'test.tpl.complex']));
+		const html =  $c.sm(tplNode, 'getHTML');
 		assertEquals(html, '<div class="container"><h1>Title</h1><p>Content</p></div>', 'complex HTML rendered correctly');
 	});
 
@@ -258,12 +258,12 @@ Deno.test("MWICoreTpl (template handler) - Template Attributes Don't Render", as
 			'allowLate', true,
 			'tpl', ps('[([m.slot name=header] [m.t t="Body"] [m.slot name=footer])]')
 		]));
-		const tplNode = doc('createNode', ls([, 'test.tpl.noattr']));
-		tplNode('setAttr', ls([, 'header', , ps('[([m.t t="Header"])]')]));
-		tplNode('setAttr', ls([, 'footer', , ps('[([m.t t="Footer"])]')]));
-		tplNode('setAttr', ls([, 'id', , 'tpl-id']));
-		tplNode('setAttr', ls([, 'class', , 'tpl-class']));
-		const html = tplNode('getHTML');
+		const tplNode = $c.sm(doc, 'createNode', ls([, 'test.tpl.noattr']));
+		$c.sm(tplNode, 'setAttr', ls([, 'header', , ps('[([m.t t="Header"])]')]));
+		$c.sm(tplNode, 'setAttr', ls([, 'footer', , ps('[([m.t t="Footer"])]')]));
+		$c.sm(tplNode, 'setAttr', ls([, 'id', , 'tpl-id']));
+		$c.sm(tplNode, 'setAttr', ls([, 'class', , 'tpl-class']));
+		const html =  $c.sm(tplNode, 'getHTML');
 		// The template's attributes are used for slotting but don't render as HTML attributes
 		assertEquals(html, 'HeaderBodyFooter', 'template content rendered');
 		assert(!html.includes('tpl-id'), 'template id not in output');
@@ -296,14 +296,14 @@ Deno.test("MWICoreTpl (template handler) - Attribute Slotting with m.slat", asyn
 		]));
 
 		// Create an external node with c.title attribute
-		const externalNode = doc('createNode', ls([, 'h.div']));
-		externalNode('setAttr', ls([, 'c.title', , ps('[([m.t t="Custom Title"])]')]));
+		const externalNode = $c.sm(doc, 'createNode', ls([, 'h.div']));
+		$c.sm(externalNode, 'setAttr', ls([, 'c.title', , ps('[([m.t t="Custom Title"])]')]));
 
 		// Create the template with slotSrc and m.slat to remap c.title -> title
-		const tplNode = doc('createNode', ls([, 'test.tpl.slat', 'slotSrc', externalNode]));
-		tplNode('setAttr', ls([, 'm.slat', , ps('[(title=[c.title])]')]));
+		const tplNode = $c.sm(doc, 'createNode', ls([, 'test.tpl.slat', 'slotSrc', externalNode]));
+		$c.sm(tplNode, 'setAttr', ls([, 'm.slat', , ps('[(title=[c.title])]')]));
 
-		const html = tplNode('getHTML');
+		const html =  $c.sm(tplNode, 'getHTML');
 		// The slot looks for 'title' and m.slat remaps c.title from slotSrc -> title on template
 		assertEquals(html, 'Custom Title', 'attribute slotting works correctly');
 	});
@@ -333,8 +333,8 @@ Deno.test("MWICoreTpl (template handler) - Special Characters in Template", asyn
 			'allowLate', true,
 			'tpl', ps('[([m.t t="<>&\\"\'"])]')
 		]));
-		const tplNode = doc('createNode', ls([, 'test.tpl.entities']));
-		const html = tplNode('getHTML');
+		const tplNode = $c.sm(doc, 'createNode', ls([, 'test.tpl.entities']));
+		const html =  $c.sm(tplNode, 'getHTML');
 		assertEquals(html, '&lt;&gt;&amp;"\'', 'HTML entities escaped correctly');
 	});
 
@@ -352,8 +352,8 @@ Deno.test("MWICoreTpl (template handler) - Special Characters in Template", asyn
 Deno.test("MWICoreTpl (template handler) - Template with External SlotSrc", async (t) => {
 	await t.step("(getHTML) - Template's slotSrc property is for the template itself, not its content", () => {
 		// Create an external node to act as slotSrc for the template
-		const externalNode = doc('createNode', ls([, 'h.div']));
-		externalNode('setAttr', ls([, 'external-attr', , ps('[([m.t t="External"])]')]));
+		const externalNode = $c.sm(doc, 'createNode', ls([, 'h.div']));
+		$c.sm(externalNode, 'setAttr', ls([, 'external-attr', , ps('[([m.t t="External"])]')]));
 
 		// Create a template with a slot that references an attribute
 		registry.register('test.tpl.external', ls([
@@ -362,12 +362,12 @@ Deno.test("MWICoreTpl (template handler) - Template with External SlotSrc", asyn
 		]));
 
 		// Create the template with the external slotSrc
-		const tplNode = doc('createNode', ls([, 'test.tpl.external', 'slotSrc', externalNode]));
+		const tplNode = $c.sm(doc, 'createNode', ls([, 'test.tpl.external', 'slotSrc', externalNode]));
 
 		// The template's content slots from the template itself, not from externalNode
 		// So setting 'content' on the template should work
-		tplNode('setAttr', ls([, 'content', , ps('[([m.t t="Template Content"])]')]));
-		const html = tplNode('getHTML');
+		$c.sm(tplNode, 'setAttr', ls([, 'content', , ps('[([m.t t="Template Content"])]')]));
+		const html =  $c.sm(tplNode, 'getHTML');
 		assertEquals(html, 'Template Content', 'template content slots from template, not external slotSrc');
 	});
 

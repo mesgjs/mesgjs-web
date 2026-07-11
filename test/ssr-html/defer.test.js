@@ -28,8 +28,8 @@ registry.register('test.deferred.ssr', deferredEntry);
 
 Deno.test("MWICoreDefer (m.defer) - SSR-HTML No Rendering", async (t) => {
 	await t.step("(getHTML) - Returns empty string (no rendering)", () => {
-		const deferNode = doc('createNode', ['m.defer']);
-		const html = deferNode('getHTML');
+		const deferNode = $c.sm(doc, 'createNode', ['m.defer']);
+		const html =  $c.sm(deferNode, 'getHTML');
 		assertEquals(html, '', 'Should return empty string');
 	});
 
@@ -40,11 +40,11 @@ Deno.test("MWICoreDefer (m.defer) - SSR-HTML No Rendering", async (t) => {
 	});
 
 	await t.step("(getHTML) - No rendering even with attributes", () => {
-		const deferNode = doc('createNode', ['m.defer']);
-		deferNode('setAttr', ['class', 'test-class']);
-		deferNode('setAttr', ['id', 'test-id']);
-		deferNode('setAttr', ['data-custom', 'value']);
-		const html = deferNode('getHTML');
+		const deferNode = $c.sm(doc, 'createNode', ['m.defer']);
+		$c.sm(deferNode, 'setAttr', ['class', 'test-class']);
+		$c.sm(deferNode, 'setAttr', ['id', 'test-id']);
+		$c.sm(deferNode, 'setAttr', ['data-custom', 'value']);
+		const html =  $c.sm(deferNode, 'getHTML');
 		assertEquals(html, '', 'Should return empty string regardless of attributes');
 	});
 
@@ -59,8 +59,8 @@ Deno.test("MWICoreDefer (m.defer) - SSR-HTML No Rendering", async (t) => {
 
 Deno.test("MWICoreDefer (m.defer) - SSR-HTML Real-World Scenarios", async (t) => {
 	await t.step("(getHTML) - Defer node created for unloaded component", () => {
-		const node = doc('createNode', ['test.deferred.ssr']);
-		const html = node('getHTML');
+		const node = $c.sm(doc, 'createNode', ['test.deferred.ssr']);
+		const html =  $c.sm(node, 'getHTML');
 		assertEquals(html, '', 'Should return empty string (no rendering)');
 	});
 
@@ -72,8 +72,8 @@ Deno.test("MWICoreDefer (m.defer) - SSR-HTML Real-World Scenarios", async (t) =>
 
 	await t.step("(getHTML) - Defer node in document fragment (not visible in HTML)", () => {
 		const testDoc = getInstance('MWIDocument');
-		testDoc('append', { list: '[([test.deferred.ssr])]' });
-		const html = testDoc('getHTML');
+		$c.sm(testDoc, 'append', { list: '[([test.deferred.ssr])]' });
+		const html =  $c.sm(testDoc, 'getHTML');
 		// Defer node contributes no HTML
 		assertEquals(html, '', 'Document with only defer node should produce empty HTML');
 	});
@@ -87,8 +87,8 @@ Deno.test("MWICoreDefer (m.defer) - SSR-HTML Real-World Scenarios", async (t) =>
 
 	await t.step("(getHTML) - Mixed content with defer node (defer invisible)", () => {
 		const testDoc = getInstance('MWIDocument');
-		testDoc('append', { list: '[([m.t t=Before] [test.deferred.ssr] [m.t t=After])]' });
-		const html = testDoc('getHTML');
+		$c.sm(testDoc, 'append', { list: '[([m.t t=Before] [test.deferred.ssr] [m.t t=After])]' });
+		const html =  $c.sm(testDoc, 'getHTML');
 		// Should only see content from text nodes
 		assertEquals(html.includes('Before'), true, 'Should include text before');
 		assertEquals(html.includes('After'), true, 'Should include text after');
@@ -108,10 +108,10 @@ Deno.test("MWICoreDefer (m.defer) - SSR-HTML Real-World Scenarios", async (t) =>
 
 Deno.test("MWICoreDefer (m.defer) - SSR-HTML Children Accepted But Not Rendered", async (t) => {
 	await t.step("(getHTML) - Defer node with children renders nothing", () => {
-		const deferNode = doc('createNode', ['m.defer']);
+		const deferNode = $c.sm(doc, 'createNode', ['m.defer']);
 		// Children are now accepted (stored in sub-spec) but not rendered during SSR
-		deferNode('setSubSpec', { subSpec: ps('[(hello)]') });
-		const html = deferNode('getHTML');
+		$c.sm(deferNode, 'setSubSpec', { subSpec: ps('[(hello)]') });
+		const html =  $c.sm(deferNode, 'getHTML');
 		assertEquals(html, '', 'Should return empty string even with children');
 	});
 
@@ -123,7 +123,7 @@ Deno.test("MWICoreDefer (m.defer) - SSR-HTML Children Accepted But Not Rendered"
 	});
 
 	await t.step("(getHTML) - from() defer node with original spec renders nothing", () => {
-		const nodes = doc('from', { list: '[([test.deferred.ssr class=widget])]' });
+		const nodes =  $c.sm(doc, 'from', { list: '[([test.deferred.ssr class=widget])]' });
 		assert(Array.isArray(nodes), 'Should return array');
 		assertEquals(nodes.length, 1, 'Should create one node');
 		const deferNode = nodes[0];
@@ -131,7 +131,7 @@ Deno.test("MWICoreDefer (m.defer) - SSR-HTML Children Accepted But Not Rendered"
 		// Sub-spec should contain the original spec
 		assertEquals(deferNode.getSubSpec().size, 1, 'Should have sub-spec');
 		// But rendering produces nothing
-		assertEquals(deferNode('getHTML'), '', 'Should render nothing');
+		assertEquals($c.sm(deferNode, 'getHTML'), '', 'Should render nothing');
 	});
 
 	await t.step(".getHTML() - from() defer node with original spec renders nothing via JS", () => {

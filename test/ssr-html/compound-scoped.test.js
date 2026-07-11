@@ -28,16 +28,16 @@ Deno.test("MWICoreScpCSS SSR Compound - Complete Page with Scoped CSS", async (t
 
 		const doc = getInstance('MWIDocument');
 		const scpNode = doc.createNode('m.scpcss');
-		doc('append', scpNode);
+		$c.sm(doc, 'append', scpNode);
 
 		const cardNode = doc.createNode('test.ssr.compound.card');
-		cardNode('setAttr', ls([, 'header', , ps('[([m.t t="Card Header"])]')]));
+		$c.sm(cardNode, 'setAttr', ls([, 'header', , ps('[([m.t t="Card Header"])]')]));
 		const textNode = doc.createNode('m.t');
-		textNode('setAttr', ls([, 't', , 'Card content']));
-		cardNode('append', textNode);
-		doc('append', cardNode);
+		$c.sm(textNode, 'setAttr', ls([, 't', , 'Card content']));
+		$c.sm(cardNode, 'append', textNode);
+		$c.sm(doc, 'append', cardNode);
 
-		const html = doc('getHTML');
+		const html =  $c.sm(doc, 'getHTML');
 
 		// Should have style tag with scoped CSS
 		assert(html.includes('<style'), "Should include style tag");
@@ -65,15 +65,15 @@ Deno.test("MWICoreScpCSS SSR Compound - Complete Page with Scoped CSS", async (t
 		// Create structure: [m.head [m.scpcss]][m.body [custom]]
 		const headNode = doc.createNode('h.head');
 		const scpNode = doc.createNode('m.scpcss');
-		headNode('append', scpNode);
-		doc('append', headNode);
+		$c.sm(headNode, 'append', scpNode);
+		$c.sm(doc, 'append', headNode);
 
 		const bodyNode = doc.createNode('h.body');
 		const customNode = doc.createNode('test.ssr.compound.order');
-		bodyNode('append', customNode);
-		doc('append', bodyNode);
+		$c.sm(bodyNode, 'append', customNode);
+		$c.sm(doc, 'append', bodyNode);
 
-		const html = doc('getHTML');
+		const html =  $c.sm(doc, 'getHTML');
 
 		// Find positions
 		const styleIdx = html.indexOf('<style');
@@ -103,14 +103,14 @@ Deno.test("MWICoreScpCSS SSR Compound - Nested Components with Scoped CSS", asyn
 
 		const doc = getInstance('MWIDocument');
 		const scpNode = doc.createNode('m.scpcss');
-		doc('append', scpNode);
+		$c.sm(doc, 'append', scpNode);
 
 		const parentNode = doc.createNode('test.ssr.compound.parent');
 		const childNode = doc.createNode('test.ssr.compound.child');
-		parentNode('append', childNode);
-		doc('append', parentNode);
+		$c.sm(parentNode, 'append', childNode);
+		$c.sm(doc, 'append', parentNode);
 
-		const html = doc('getHTML');
+		const html =  $c.sm(doc, 'getHTML');
 
 		// Both CSS blocks should be present
 		assert(html.includes('background: #f0f0f0'), "Should include parent CSS");
@@ -131,13 +131,13 @@ Deno.test("MWICoreScpCSS SSR Compound - Nested Components with Scoped CSS", asyn
 
 		const doc = getInstance('MWIDocument');
 		const scpNode = doc.createNode('m.scpcss');
-		doc('append', scpNode);
+		$c.sm(doc, 'append', scpNode);
 
 		const tplNode = doc.createNode('test.ssr.compound.tplslot');
-		tplNode('setAttr', ls([, 'content', , ps('[([m.t t="Slotted content"])]')]));
-		doc('append', tplNode);
+		$c.sm(tplNode, 'setAttr', ls([, 'content', , ps('[([m.t t="Slotted content"])]')]));
+		$c.sm(doc, 'append', tplNode);
 
-		const html = doc('getHTML');
+		const html =  $c.sm(doc, 'getHTML');
 
 		// Should have scoped CSS
 		assert(html.includes('padding: 2rem'), "Should include template CSS");
@@ -175,8 +175,8 @@ Deno.test("MWICoreScpCSS SSR Compound - Component Library Pattern", async (t) =>
 		// Add m.scpcss in head
 		const headNode = doc.createNode('h.head');
 		const scpNode = doc.createNode('m.scpcss');
-		headNode('append', scpNode);
-		doc('append', headNode);
+		$c.sm(headNode, 'append', scpNode);
+		$c.sm(doc, 'append', headNode);
 
 		// Add body with components
 		const bodyNode = doc.createNode('h.body');
@@ -185,15 +185,15 @@ Deno.test("MWICoreScpCSS SSR Compound - Component Library Pattern", async (t) =>
 		const inputNode = doc.createNode('test.ssr.compound.input');
 		const buttonNode = doc.createNode('test.ssr.compound.button');
 		const submitText = doc.createNode('m.t');
-		submitText('setAttr', ls([, 't', , 'Submit']));
-		buttonNode('append', submitText);
+		$c.sm(submitText, 'setAttr', ls([, 't', , 'Submit']));
+		$c.sm(buttonNode, 'append', submitText);
 
-		cardNode('append', inputNode);
-		cardNode('append', buttonNode);
-		bodyNode('append', cardNode);
-		doc('append', bodyNode);
+		$c.sm(cardNode, 'append', inputNode);
+		$c.sm(cardNode, 'append', buttonNode);
+		$c.sm(bodyNode, 'append', cardNode);
+		$c.sm(doc, 'append', bodyNode);
 
-		const html = doc('getHTML');
+		const html =  $c.sm(doc, 'getHTML');
 
 		// All component CSS should be present
 		assert(html.includes('padding: 0.5rem 1rem'), "Should include button CSS");
@@ -223,18 +223,18 @@ Deno.test("MWICoreScpCSS SSR Compound - CSS Deduplication in Complex Structures"
 
 		const doc = getInstance('MWIDocument');
 		const scpNode = doc.createNode('m.scpcss');
-		doc('append', scpNode);
+		$c.sm(doc, 'append', scpNode);
 
 		// Create multiple instances
 		for (let i = 0; i < 5; i++) {
 			const itemNode = doc.createNode('test.ssr.compound.item');
 			const textNode = doc.createNode('m.t');
-			textNode('setAttr', ls([, 't', , `Item ${i}`]));
-			itemNode('append', textNode);
-			doc('append', itemNode);
+			$c.sm(textNode, 'setAttr', ls([, 't', , `Item ${i}`]));
+			$c.sm(itemNode, 'append', textNode);
+			$c.sm(doc, 'append', itemNode);
 		}
 
-		const html = doc('getHTML');
+		const html =  $c.sm(doc, 'getHTML');
 
 		// CSS should appear only once
 		const cssMatches = html.match(/margin: 0\.5rem/g);
@@ -250,13 +250,13 @@ Deno.test("MWICoreScpCSS SSR Compound - Edge Cases", async (t) => {
 	await t.step("m.scpcss with no components in document", () => {
 		const doc = getInstance('MWIDocument');
 		const scpNode = doc.createNode('m.scpcss');
-		doc('append', scpNode);
+		$c.sm(doc, 'append', scpNode);
 
 		const textNode = doc.createNode('m.t');
-		textNode('setAttr', ls([, 't', , 'Just text']));
-		doc('append', textNode);
+		$c.sm(textNode, 'setAttr', ls([, 't', , 'Just text']));
+		$c.sm(doc, 'append', textNode);
 
-		const html = doc('getHTML');
+		const html =  $c.sm(doc, 'getHTML');
 
 		// Should not have style tag
 		assert(!html.includes('<style'), "Should not have style tag when no scoped CSS");
@@ -274,16 +274,16 @@ Deno.test("MWICoreScpCSS SSR Compound - Edge Cases", async (t) => {
 
 		// Add m.scpcss at start
 		const scpNode1 = doc.createNode('m.scpcss');
-		doc('append', scpNode1);
+		$c.sm(doc, 'append', scpNode1);
 
 		// Add component
 		doc.createNode('test.ssr.compound.multi');
 
 		// Add another m.scpcss at end
 		const scpNode2 = doc.createNode('m.scpcss');
-		doc('append', scpNode2);
+		$c.sm(doc, 'append', scpNode2);
 
-		const html = doc('getHTML');
+		const html =  $c.sm(doc, 'getHTML');
 
 		// Should have two style tags with same CSS
 		const styleTags = html.match(/<style/g);
@@ -304,15 +304,15 @@ Deno.test("MWICoreScpCSS SSR Compound - Edge Cases", async (t) => {
 
 		const headNode = doc.createNode('h.head');
 		const scpNode = doc.createNode('m.scpcss');
-		headNode('append', scpNode);
-		doc('append', headNode);
+		$c.sm(headNode, 'append', scpNode);
+		$c.sm(doc, 'append', headNode);
 
 		const bodyNode = doc.createNode('h.body');
 		const compNode = doc.createNode('test.ssr.compound.escape');
-		bodyNode('append', compNode);
-		doc('append', bodyNode);
+		$c.sm(bodyNode, 'append', compNode);
+		$c.sm(doc, 'append', bodyNode);
 
-		const html = doc('getHTML');
+		const html =  $c.sm(doc, 'getHTML');
 
 		// Should escape </style> in CSS
 		assert(html.includes('\\3c /style>'), "Should escape </style>");

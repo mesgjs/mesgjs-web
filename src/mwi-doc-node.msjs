@@ -533,7 +533,7 @@ modcaps=''
 					if (allowAttr && !allowAttr.has(name)) continue; // Filter if specified
 					if (value === true) HTML.push(` ${name}`);
 					else if (typeof value === 'string' || typeof value === 'number') {
-						HTML.push(` ${name}="${textToHTML(String(value), { dq: true })}"`);
+						HTML.push(` ${name}="${MWIDocNode.textToHTML(String(value), { dq: true })}"`);
 					}
 				}
 				return HTML.join('');
@@ -805,7 +805,7 @@ modcaps=''
 				case 'id':
 					// Type check and normalize
 					if (!d) { // Escalate to Mesgjs for required dispatch
-						$c.sm(self, 'setAttr', ls([, 'id', , value]));
+						$c.sm(self, 'setAttr', ls([, 'id', , value, 'coat', coat]));
 					} else if (typeof value === 'string' || typeof value === 'number') {
 						if (coat !== false) value = computeAttr(ps, value);
 						value = String(value); // Normalize to string
