@@ -36,7 +36,7 @@ function ssrHTML (spec) {
 	const doc = makeDoc();
 	const nodes = doc('from', ls(['list', spec]));
 	doc('append', nodes);
-	return doc('getHTML');
+	return $c.sm(doc, 'getHTML');
 }
 
 // Load an HTML string into document.body so we can inspect the resulting DOM.
@@ -62,7 +62,7 @@ function csrSync (spec, cursor) {
 	const nodes = doc('from', ls(['list', spec]));
 	doc('append', nodes);
 	const sync = getInstance('MWIDOMSync', [cursor]);
-	const domNodes = doc('getDOM', { sync });
+	const domNodes = $c.sm(doc, 'getDOM', { sync });
 	return { doc, domNodes };
 }
 

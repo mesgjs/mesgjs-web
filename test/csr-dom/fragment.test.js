@@ -19,8 +19,8 @@ const doc = getInstance('MWIDocument');
 
 Deno.test("MWICoreFrag (m.frg) - CSR-DOM Tests", async (t) => {
 	await t.step("(getDOM) - Empty fragment", async () => {
-		const fragNode = await doc('createNode', ['m.frg']);
-		const domNodes = await fragNode('getDOM');
+		const fragNode = $c.sm(doc, 'createNode', ['m.frg']);
+		const domNodes = await $c.sm(fragNode, 'getDOM');
 
 		// Empty fragment should return empty reactive NANOS
 		assertEquals(domNodes.size, 0);
@@ -34,11 +34,11 @@ Deno.test("MWICoreFrag (m.frg) - CSR-DOM Tests", async (t) => {
 	});
 
 	await t.step("(getDOM) - Fragment with single text child", async () => {
-		const fragNode = await doc('createNode', ['m.frg']);
-		const textNode = await doc('createNode', ['m.t']);
-		textNode('setAttr', ['t', 'Hello World']);
-		fragNode('append', [textNode]);
-		const domNodes = await fragNode('getDOM');
+		const fragNode = $c.sm(doc, 'createNode', ['m.frg']);
+		const textNode = $c.sm(doc, 'createNode', ['m.t']);
+		$c.sm(textNode, 'setAttr', ['t', 'Hello World']);
+		$c.sm(fragNode, 'append', [textNode]);
+		const domNodes = await $c.sm(fragNode, 'getDOM');
 
 		// Should have one text node from the text node
 		const textDomNode = domNodes.at(0);
@@ -62,15 +62,15 @@ Deno.test("MWICoreFrag (m.frg) - CSR-DOM Tests", async (t) => {
 	});
 
 	await t.step("(getDOM) - Fragment with multiple text children", async () => {
-		const fragNode = await doc('createNode', ['m.frg']);
-		const text1 = await doc('createNode', ['m.t']);
-		text1('setAttr', ['t', 'First']);
-		const text2 = await doc('createNode', ['m.t']);
-		text2('setAttr', ['t', 'Second']);
-		const text3 = await doc('createNode', ['m.t']);
-		text3('setAttr', ['t', 'Third']);
-		fragNode('append', [text1, text2, text3]);
-		const domNodes = await fragNode('getDOM');
+		const fragNode = $c.sm(doc, 'createNode', ['m.frg']);
+		const text1 = $c.sm(doc, 'createNode', ['m.t']);
+		$c.sm(text1, 'setAttr', ['t', 'First']);
+		const text2 = $c.sm(doc, 'createNode', ['m.t']);
+		$c.sm(text2, 'setAttr', ['t', 'Second']);
+		const text3 = $c.sm(doc, 'createNode', ['m.t']);
+		$c.sm(text3, 'setAttr', ['t', 'Third']);
+		$c.sm(fragNode, 'append', [text1, text2, text3]);
+		const domNodes = await $c.sm(fragNode, 'getDOM');
 
 		// Should have three text nodes
 		assertEquals(domNodes.size, 3);
@@ -97,13 +97,13 @@ Deno.test("MWICoreFrag (m.frg) - CSR-DOM Tests", async (t) => {
 	});
 
 	await t.step("(getDOM) - Fragment with mixed content (text and comment)", async () => {
-		const fragNode = await doc('createNode', ['m.frg']);
-		const textNode = await doc('createNode', ['m.t']);
-		textNode('setAttr', ['t', 'Text content']);
-		const commentNode = await doc('createNode', ['m.com']);
-		commentNode('setAttr', ['t', 'Comment content']);
-		fragNode('append', [textNode, commentNode]);
-		const domNodes = await fragNode('getDOM');
+		const fragNode = $c.sm(doc, 'createNode', ['m.frg']);
+		const textNode = $c.sm(doc, 'createNode', ['m.t']);
+		$c.sm(textNode, 'setAttr', ['t', 'Text content']);
+		const commentNode = $c.sm(doc, 'createNode', ['m.com']);
+		$c.sm(commentNode, 'setAttr', ['t', 'Comment content']);
+		$c.sm(fragNode, 'append', [textNode, commentNode]);
+		const domNodes = await $c.sm(fragNode, 'getDOM');
 
 		// Should have two nodes: text node and comment
 		assertEquals(domNodes.size, 2);
@@ -129,13 +129,13 @@ Deno.test("MWICoreFrag (m.frg) - CSR-DOM Tests", async (t) => {
 	});
 
 	await t.step("(getDOM) - Nested fragments flatten transparently", async () => {
-		const outerFrag = await doc('createNode', ['m.frg']);
-		const innerFrag = await doc('createNode', ['m.frg']);
-		const textNode = await doc('createNode', ['m.t']);
-		textNode('setAttr', ['t', 'Inner content']);
-		innerFrag('append', [textNode]);
-		outerFrag('append', [innerFrag]);
-		const domNodes = await outerFrag('getDOM');
+		const outerFrag = $c.sm(doc, 'createNode', ['m.frg']);
+		const innerFrag = $c.sm(doc, 'createNode', ['m.frg']);
+		const textNode = $c.sm(doc, 'createNode', ['m.t']);
+		$c.sm(textNode, 'setAttr', ['t', 'Inner content']);
+		$c.sm(innerFrag, 'append', [textNode]);
+		$c.sm(outerFrag, 'append', [innerFrag]);
+		const domNodes = await $c.sm(outerFrag, 'getDOM');
 
 		// Should have one text node (fragments are transparent)
 		assertEquals(domNodes.size, 1);
@@ -156,18 +156,18 @@ Deno.test("MWICoreFrag (m.frg) - CSR-DOM Tests", async (t) => {
 	});
 
 	await t.step("(getDOM) - Reactive child update", async () => {
-		const fragNode = await doc('createNode', ['m.frg']);
-		const textNode = await doc('createNode', ['m.t']);
-		textNode('setAttr', ['t', 'Initial']);
-		fragNode('append', [textNode]);
-		const domNodes = await fragNode('getDOM');
+		const fragNode = $c.sm(doc, 'createNode', ['m.frg']);
+		const textNode = $c.sm(doc, 'createNode', ['m.t']);
+		$c.sm(textNode, 'setAttr', ['t', 'Initial']);
+		$c.sm(fragNode, 'append', [textNode]);
+		const domNodes = await $c.sm(fragNode, 'getDOM');
 
 		const textDomNode = domNodes.at(0);
 		assertEquals(textDomNode.nodeValue, 'Initial');
 		assertEquals(domNodes.size, 1);
 
 		// Update child text
-		textNode('setAttr', ['t', 'Updated']);
+		$c.sm(textNode, 'setAttr', ['t', 'Updated']);
 		await globalThis.reactive.wait();
 
 		// Same node, updated content
@@ -193,19 +193,19 @@ Deno.test("MWICoreFrag (m.frg) - CSR-DOM Tests", async (t) => {
 	});
 
 	await t.step("(getDOM) - Reactive child empty to non-empty", async () => {
-		const fragNode = await doc('createNode', ['m.frg']);
-		const textNode = await doc('createNode', ['m.t']);
-		textNode('setAttr', ['t', '']);
-		fragNode('append', [textNode]);
-		const domNodes = await fragNode('getDOM');
+		const fragNode = $c.sm(doc, 'createNode', ['m.frg']);
+		const textNode = $c.sm(doc, 'createNode', ['m.t']);
+		$c.sm(textNode, 'setAttr', ['t', '']);
+		$c.sm(fragNode, 'append', [textNode]);
+		const domNodes = await $c.sm(fragNode, 'getDOM');
 
 		// Initially empty - no nodes from text child
 		assertEquals(domNodes.size, 0);
 
 		// Update to non-empty
-		textNode('setAttr', ['t', 'Now has text']);
+		$c.sm(textNode, 'setAttr', ['t', 'Now has text']);
 		await globalThis.reactive.wait();
-		assertEquals(await fragNode('getDOM'), domNodes, 'always same DOM-node list');
+		assertEquals(await $c.sm(fragNode, 'getDOM'), domNodes, 'always same DOM-node list');
 
 		// Should now have one text node
 		assertEquals(domNodes.size, 1);
@@ -229,15 +229,15 @@ Deno.test("MWICoreFrag (m.frg) - CSR-DOM Tests", async (t) => {
 	});
 
 	await t.step("(getDOM) - Fragment with empty text nodes", async () => {
-		const fragNode = await doc('createNode', ['m.frg']);
-		const text1 = await doc('createNode', ['m.t']);
-		text1('setAttr', ['t', '']);
-		const text2 = await doc('createNode', ['m.t']);
-		text2('setAttr', ['t', 'Content']);
-		const text3 = await doc('createNode', ['m.t']);
-		text3('setAttr', ['t', '']);
-		fragNode('append', [text1, text2, text3]);
-		const domNodes = await fragNode('getDOM');
+		const fragNode = $c.sm(doc, 'createNode', ['m.frg']);
+		const text1 = $c.sm(doc, 'createNode', ['m.t']);
+		$c.sm(text1, 'setAttr', ['t', '']);
+		const text2 = $c.sm(doc, 'createNode', ['m.t']);
+		$c.sm(text2, 'setAttr', ['t', 'Content']);
+		const text3 = $c.sm(doc, 'createNode', ['m.t']);
+		$c.sm(text3, 'setAttr', ['t', '']);
+		$c.sm(fragNode, 'append', [text1, text2, text3]);
+		const domNodes = await $c.sm(fragNode, 'getDOM');
 
 		// Only the non-empty text node should contribute a DOM node
 		assertEquals(domNodes.size, 1);

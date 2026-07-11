@@ -22,8 +22,8 @@ const ls = globalThis.ls;
 
 Deno.test("MWIHTML (h.*) - CSR-DOM Basic Element Rendering", async (t) => {
 	await t.step("(getDOM) - Simple div element", () => {
-		const divNode = doc('createNode', ['h.div']);
-		const domNodes = divNode('getDOM');
+		const divNode = $c.sm(doc, 'createNode', ['h.div']);
+		const domNodes = $c.sm(divNode, 'getDOM');
 
 		const divElem = domNodes.at(0);
 		assertExists(divElem);
@@ -41,9 +41,9 @@ Deno.test("MWIHTML (h.*) - CSR-DOM Basic Element Rendering", async (t) => {
 	});
 
 	await t.step("(getDOM) - Div with class attribute", () => {
-		const divNode = doc('createNode', ['h.div']);
-		divNode('setAttr', ['class', 'test-class']);
-		const domNodes = divNode('getDOM');
+		const divNode = $c.sm(doc, 'createNode', ['h.div']);
+		$c.sm(divNode, 'setAttr', ['class', 'test-class']);
+		const domNodes = $c.sm(divNode, 'getDOM');
 
 		const divElem = domNodes.at(0);
 		assertEquals(divElem.className, 'test-class');
@@ -61,11 +61,11 @@ Deno.test("MWIHTML (h.*) - CSR-DOM Basic Element Rendering", async (t) => {
 	});
 
 	await t.step("(getDOM) - Div with multiple attributes", () => {
-		const divNode = doc('createNode', ['h.div']);
-		divNode('setAttr', ['class', 'container']);
-		divNode('setAttr', ['id', 'main']);
-		divNode('setAttr', ['data-test', 'value']);
-		const domNodes = divNode('getDOM');
+		const divNode = $c.sm(doc, 'createNode', ['h.div']);
+		$c.sm(divNode, 'setAttr', ['class', 'container']);
+		$c.sm(divNode, 'setAttr', ['id', 'main']);
+		$c.sm(divNode, 'setAttr', ['data-test', 'value']);
+		const domNodes = $c.sm(divNode, 'getDOM');
 
 		const divElem = domNodes.at(0);
 		assertEquals(divElem.className, 'container');
@@ -91,11 +91,11 @@ Deno.test("MWIHTML (h.*) - CSR-DOM Basic Element Rendering", async (t) => {
 
 Deno.test("MWIHTML (h.*) - CSR-DOM Element with Children", async (t) => {
 	await t.step("(getDOM) - Div with text child", () => {
-		const divNode = doc('createNode', ['h.div']);
-		const textNode = doc('createNode', ['m.t']);
-		textNode('setAttr', ['t', 'Hello World']);
-		divNode('append', [textNode]);
-		const domNodes = divNode('getDOM');
+		const divNode = $c.sm(doc, 'createNode', ['h.div']);
+		const textNode = $c.sm(doc, 'createNode', ['m.t']);
+		$c.sm(textNode, 'setAttr', ['t', 'Hello World']);
+		$c.sm(divNode, 'append', [textNode]);
+		const domNodes = $c.sm(divNode, 'getDOM');
 
 		const divElem = domNodes.at(0);
 		assertEquals(divElem.tagName, 'DIV');
@@ -123,13 +123,13 @@ Deno.test("MWIHTML (h.*) - CSR-DOM Element with Children", async (t) => {
 	});
 
 	await t.step("(getDOM) - Div with multiple children", () => {
-		const divNode = doc('createNode', ['h.div']);
-		const text1 = doc('createNode', ['m.t']);
-		text1('setAttr', ['t', 'First']);
-		const text2 = doc('createNode', ['m.t']);
-		text2('setAttr', ['t', 'Second']);
-		divNode('append', [text1, text2]);
-		const domNodes = divNode('getDOM');
+		const divNode = $c.sm(doc, 'createNode', ['h.div']);
+		const text1 = $c.sm(doc, 'createNode', ['m.t']);
+		$c.sm(text1, 'setAttr', ['t', 'First']);
+		const text2 = $c.sm(doc, 'createNode', ['m.t']);
+		$c.sm(text2, 'setAttr', ['t', 'Second']);
+		$c.sm(divNode, 'append', [text1, text2]);
+		const domNodes = $c.sm(divNode, 'getDOM');
 
 		const divElem = domNodes.at(0);
 		assertEquals(divElem.children.length, 0);
@@ -157,15 +157,15 @@ Deno.test("MWIHTML (h.*) - CSR-DOM Element with Children", async (t) => {
 	});
 
 	await t.step("(getDOM) - Nested div elements", () => {
-		const outerDiv = doc('createNode', ['h.div']);
-		outerDiv('setAttr', ['class', 'outer']);
-		const innerDiv = doc('createNode', ['h.div']);
-		innerDiv('setAttr', ['class', 'inner']);
-		const textNode = doc('createNode', ['m.t']);
-		textNode('setAttr', ['t', 'Nested content']);
-		innerDiv('append', [textNode]);
-		outerDiv('append', [innerDiv]);
-		const domNodes = outerDiv('getDOM');
+		const outerDiv = $c.sm(doc, 'createNode', ['h.div']);
+		$c.sm(outerDiv, 'setAttr', ['class', 'outer']);
+		const innerDiv = $c.sm(doc, 'createNode', ['h.div']);
+		$c.sm(innerDiv, 'setAttr', ['class', 'inner']);
+		const textNode = $c.sm(doc, 'createNode', ['m.t']);
+		$c.sm(textNode, 'setAttr', ['t', 'Nested content']);
+		$c.sm(innerDiv, 'append', [textNode]);
+		$c.sm(outerDiv, 'append', [innerDiv]);
+		const domNodes = $c.sm(outerDiv, 'getDOM');
 
 		const outerElem = domNodes.at(0);
 		assertEquals(outerElem.className, 'outer');
@@ -199,8 +199,8 @@ Deno.test("MWIHTML (h.*) - CSR-DOM Element with Children", async (t) => {
 
 Deno.test("MWIHTML (h.*) - CSR-DOM Void Elements", async (t) => {
 	await t.step("(getDOM) - Void element (br)", () => {
-		const brNode = doc('createNode', ['h.br']);
-		const domNodes = brNode('getDOM');
+		const brNode = $c.sm(doc, 'createNode', ['h.br']);
+		const domNodes = $c.sm(brNode, 'getDOM');
 
 		const brElem = domNodes.at(0);
 		assertEquals(brElem.tagName, 'BR');
@@ -217,9 +217,9 @@ Deno.test("MWIHTML (h.*) - CSR-DOM Void Elements", async (t) => {
 	});
 
 	await t.step("(getDOM) - Void element with attributes", () => {
-		const brNode = doc('createNode', ['h.br']);
-		brNode('setAttr', ['class', 'line-break']);
-		const domNodes = brNode('getDOM');
+		const brNode = $c.sm(doc, 'createNode', ['h.br']);
+		$c.sm(brNode, 'setAttr', ['class', 'line-break']);
+		const domNodes = $c.sm(brNode, 'getDOM');
 
 		const brElem = domNodes.at(0);
 		assertEquals(brElem.className, 'line-break');
@@ -237,11 +237,11 @@ Deno.test("MWIHTML (h.*) - CSR-DOM Void Elements", async (t) => {
 	});
 
 	await t.step("(getDOM) - Void element ignores children", () => {
-		const brNode = doc('createNode', ['h.br']);
-		const textNode = doc('createNode', ['m.t']);
-		textNode('setAttr', ['t', 'Ignored']);
-		brNode('append', [textNode]);
-		const domNodes = brNode('getDOM');
+		const brNode = $c.sm(doc, 'createNode', ['h.br']);
+		const textNode = $c.sm(doc, 'createNode', ['m.t']);
+		$c.sm(textNode, 'setAttr', ['t', 'Ignored']);
+		$c.sm(brNode, 'append', [textNode]);
+		const domNodes = $c.sm(brNode, 'getDOM');
 
 		const brElem = domNodes.at(0);
 		// Void elements should not have children
@@ -264,15 +264,15 @@ Deno.test("MWIHTML (h.*) - CSR-DOM Void Elements", async (t) => {
 
 Deno.test("MWIHTML (h.*) - CSR-DOM Reactive Updates", async (t) => {
 	await t.step("(getDOM) - Reactive attribute update", async () => {
-		const divNode = doc('createNode', ['h.div']);
-		divNode('setAttr', ['class', 'initial']);
-		const domNodes = divNode('getDOM');
+		const divNode = $c.sm(doc, 'createNode', ['h.div']);
+		$c.sm(divNode, 'setAttr', ['class', 'initial']);
+		const domNodes = $c.sm(divNode, 'getDOM');
 
 		const divElem = domNodes.at(0);
 		assertEquals(divElem.className, 'initial');
 
 		// Update attribute
-		divNode('setAttr', ['class', 'updated']);
+		$c.sm(divNode, 'setAttr', ['class', 'updated']);
 		await globalThis.reactive.wait();
 
 		// Same element, updated attribute
@@ -296,17 +296,17 @@ Deno.test("MWIHTML (h.*) - CSR-DOM Reactive Updates", async (t) => {
 	});
 
 	await t.step("(getDOM) - Reactive child content update", async () => {
-		const divNode = doc('createNode', ['h.div']);
-		const textNode = doc('createNode', ['m.t']);
-		textNode('setAttr', ['t', 'Initial']);
-		divNode('append', [textNode]);
-		const domNodes = divNode('getDOM');
+		const divNode = $c.sm(doc, 'createNode', ['h.div']);
+		const textNode = $c.sm(doc, 'createNode', ['m.t']);
+		$c.sm(textNode, 'setAttr', ['t', 'Initial']);
+		$c.sm(divNode, 'append', [textNode]);
+		const domNodes = $c.sm(divNode, 'getDOM');
 
 		const divElem = domNodes.at(0);
 		assertEquals(divElem.childNodes[0].nodeValue, 'Initial');
 
 		// Update child text
-		textNode('setAttr', ['t', 'Updated']);
+		$c.sm(textNode, 'setAttr', ['t', 'Updated']);
 		await globalThis.reactive.wait();
 
 		// Same div, updated child content
@@ -332,18 +332,18 @@ Deno.test("MWIHTML (h.*) - CSR-DOM Reactive Updates", async (t) => {
 	});
 
 	await t.step("(getDOM) - Reactive child empty to non-empty", async () => {
-		const divNode = doc('createNode', ['h.div']);
-		const textNode = doc('createNode', ['m.t']);
-		textNode('setAttr', ['t', '']);
-		divNode('append', [textNode]);
-		const domNodes = divNode('getDOM');
+		const divNode = $c.sm(doc, 'createNode', ['h.div']);
+		const textNode = $c.sm(doc, 'createNode', ['m.t']);
+		$c.sm(textNode, 'setAttr', ['t', '']);
+		$c.sm(divNode, 'append', [textNode]);
+		const domNodes = $c.sm(divNode, 'getDOM');
 
 		const divElem = domNodes.at(0);
 		// Initially empty - no children
 		assertEquals(divElem.childNodes.length, 0);
 
 		// Update to non-empty
-		textNode('setAttr', ['t', 'Now has text']);
+		$c.sm(textNode, 'setAttr', ['t', 'Now has text']);
 		await globalThis.reactive.wait();
 
 		// Should now have one text node child
@@ -375,11 +375,11 @@ Deno.test("MWIHTML (h.*) - CSR-DOM Reactive Updates", async (t) => {
 
 Deno.test("MWIHTML (h.*) - CSR-DOM Various Element Types", async (t) => {
 	await t.step("(getDOM) - Paragraph element", () => {
-		const pNode = doc('createNode', ['h.p']);
-		const textNode = doc('createNode', ['m.t']);
-		textNode('setAttr', ['t', 'Paragraph text']);
-		pNode('append', [textNode]);
-		const domNodes = pNode('getDOM');
+		const pNode = $c.sm(doc, 'createNode', ['h.p']);
+		const textNode = $c.sm(doc, 'createNode', ['m.t']);
+		$c.sm(textNode, 'setAttr', ['t', 'Paragraph text']);
+		$c.sm(pNode, 'append', [textNode]);
+		const domNodes = $c.sm(pNode, 'getDOM');
 
 		const pElem = domNodes.at(0);
 		assertEquals(pElem.tagName, 'P');
@@ -401,12 +401,12 @@ Deno.test("MWIHTML (h.*) - CSR-DOM Various Element Types", async (t) => {
 	});
 
 	await t.step("(getDOM) - Span element", () => {
-		const spanNode = doc('createNode', ['h.span']);
-		spanNode('setAttr', ['class', 'highlight']);
-		const textNode = doc('createNode', ['m.t']);
-		textNode('setAttr', ['t', 'Highlighted']);
-		spanNode('append', [textNode]);
-		const domNodes = spanNode('getDOM');
+		const spanNode = $c.sm(doc, 'createNode', ['h.span']);
+		$c.sm(spanNode, 'setAttr', ['class', 'highlight']);
+		const textNode = $c.sm(doc, 'createNode', ['m.t']);
+		$c.sm(textNode, 'setAttr', ['t', 'Highlighted']);
+		$c.sm(spanNode, 'append', [textNode]);
+		const domNodes = $c.sm(spanNode, 'getDOM');
 
 		const spanElem = domNodes.at(0);
 		assertEquals(spanElem.tagName, 'SPAN');
@@ -435,8 +435,8 @@ Deno.test("MWIHTML (h.*) - CSR-DOM HTMLElement[MWINode] back-reference", async (
 	const NODE_SYM = Symbol.for('MWINode');
 
 	await t.step("(getDOM) - DOM element has MWINode back-reference", () => {
-		const divNode = doc('createNode', ['h.div']);
-		const domNodes = divNode('getDOM');
+		const divNode = $c.sm(doc, 'createNode', ['h.div']);
+		const domNodes = $c.sm(divNode, 'getDOM');
 
 		assertStrictEquals(domNodes.at(0)[NODE_SYM], divNode);
 	});
@@ -449,10 +449,10 @@ Deno.test("MWIHTML (h.*) - CSR-DOM HTMLElement[MWINode] back-reference", async (
 	});
 
 	await t.step("(getDOM) - Each element has its own MWINode back-reference", () => {
-		const outerDiv = doc('createNode', ['h.div']);
-		const innerSpan = doc('createNode', ['h.span']);
-		outerDiv('append', [innerSpan]);
-		const domNodes = outerDiv('getDOM');
+		const outerDiv = $c.sm(doc, 'createNode', ['h.div']);
+		const innerSpan = $c.sm(doc, 'createNode', ['h.span']);
+		$c.sm(outerDiv, 'append', [innerSpan]);
+		const domNodes = $c.sm(outerDiv, 'getDOM');
 
 		const outerElem = domNodes.at(0);
 		assertStrictEquals(outerElem[NODE_SYM], outerDiv);
@@ -471,12 +471,12 @@ Deno.test("MWIHTML (h.*) - CSR-DOM HTMLElement[MWINode] back-reference", async (
 	});
 
 	await t.step("(getDOM) - MWINode back-reference stable across reactive updates", async () => {
-		const divNode = doc('createNode', ['h.div']);
-		divNode('setAttr', ['title', 'Initial']);
-		const domNodes = divNode('getDOM');
+		const divNode = $c.sm(doc, 'createNode', ['h.div']);
+		$c.sm(divNode, 'setAttr', ['title', 'Initial']);
+		const domNodes = $c.sm(divNode, 'getDOM');
 
 		const divElem = domNodes.at(0);
-		divNode('setAttr', ['title', 'Updated']);
+		$c.sm(divNode, 'setAttr', ['title', 'Updated']);
 		await globalThis.reactive.wait();
 
 		assertStrictEquals(divElem[NODE_SYM], divNode);
@@ -495,8 +495,8 @@ Deno.test("MWIHTML (h.*) - CSR-DOM HTMLElement[MWINode] back-reference", async (
 	});
 
 	await t.step("(getDOM) - Void element also has MWINode back-reference", () => {
-		const brNode = doc('createNode', ['h.br']);
-		const domNodes = brNode('getDOM');
+		const brNode = $c.sm(doc, 'createNode', ['h.br']);
+		const domNodes = $c.sm(brNode, 'getDOM');
 
 		assertStrictEquals(domNodes.at(0)[NODE_SYM], brNode);
 	});

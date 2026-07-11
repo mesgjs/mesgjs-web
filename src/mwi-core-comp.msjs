@@ -398,7 +398,7 @@ modcaps=''
 
 					const doc = ps.at('doc'), frag = doc.createNode('m.frg');
 
-					frag.setSubSpec(...csrStatic.values());
+					frag.setSubSpec({ subSpec: csrStatic });
 					const csrNodes = [...frag.getSubDOM().values()];
 					if (csrNodes.length) {
 						// Find the end marker and append after it

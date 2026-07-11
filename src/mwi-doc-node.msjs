@@ -427,7 +427,7 @@ modcaps=''
 				let prev = null, child = null;
 
 				for (child of children.values()) {
-					domAppendAfter(parent, child, prev);
+					MWIDocNode.domAppendAfter(parent, child, prev);
 					prev = child;
 				}
 				// Remove any "extra nodes left over" after the last child
@@ -437,16 +437,16 @@ modcaps=''
 
 			// Synchronize children within the managed region (between begin/end boundary markers)
 			static domSyncManagedChildren (parent, children) {
-				let { begin, end } = getManagedRegion(parent);
+				let { begin, end } = MWIDocNode.getManagedRegion(parent);
 
 				// Add managed-region boundary-markers if absent
 				if (!begin) {
-					begin = createDOMBoundary('begin');
+					begin = MWIDocNode.createDOMBoundary('begin');
 					if (end) parent.insertBefore(begin, end);
 					else parent.append(begin);
 				}
 				if (!end) {
-					end = createDOMBoundary('end');
+					end = MWIDocNode.createDOMBoundary('end');
 					parent.insertBefore(end, begin.nextSibling);
 				}
 
@@ -454,7 +454,7 @@ modcaps=''
 				let prev = begin, child = null;
 
 				for (child of children.values()) {
-					domAppendAfter(parent, child, prev);
+					MWIDocNode.domAppendAfter(parent, child, prev);
 					prev = child;
 				}
 

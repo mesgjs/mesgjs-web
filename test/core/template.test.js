@@ -252,7 +252,7 @@ Deno.test("MWICoreTpl (template handler) - SlotSrc Integration", async (t) => {
 	await t.step("(slotSrc) - Get slotSrc when set", async () => {
 		registry.register('test.tpl.slotsrc5', ls(['allowLate', true, 'tpl', ps('[([m.t t="Content"])]')]));
 		const divNode = await doc.createNode('h.div');
-		const tplNode = await $c.sm(doc, 'createNode', ls([, 'test.tpl.slotsrc5', 'slotSrc', divNode]));
+		const tplNode = $c.sm(doc, 'createNode', ls([, 'test.tpl.slotsrc5', 'slotSrc', divNode]));
 		assertStrictEquals($c.sm(tplNode, 'slotSrc'), divNode);
 	});
 

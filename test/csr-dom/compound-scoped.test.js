@@ -32,19 +32,19 @@ Deno.test("MWICoreScpCSS CSR Compound - Card Component with m.coat", async (t) =
 
 		// Create m.scpcss node
 		const scpNode = doc.createNode('m.scpcss');
-		doc('append', scpNode);
+		$c.sm(doc, 'append', scpNode);
 
 		// Create card instance with slotted content via attributes
 		const cardNode = doc.createNode('test.csr.compound.card');
-		cardNode('setAttr', ls([, 'header', , ps('[([m.t t="Card Title"])]')]));
-		cardNode('setAttr', ls([, 'body', , ps('[([m.t t="Card content goes here"])]')]));
+		$c.sm(cardNode, 'setAttr', ls([, 'header', , ps('[([m.t t="Card Title"])]')]));
+		$c.sm(cardNode, 'setAttr', ls([, 'body', , ps('[([m.t t="Card content goes here"])]')]));
 
-		doc('append', cardNode);
+		$c.sm(doc, 'append', cardNode);
 
 		await globalThis.reactive.wait();
 
 		// Verify style element exists
-		const styleDom = scpNode('getDOM');
+		const styleDom = $c.sm(scpNode, 'getDOM');
 		assertEquals(styleDom.size, 1, "Should have style element");
 		const styleElem = styleDom.at(0);
 
@@ -55,7 +55,7 @@ Deno.test("MWICoreScpCSS CSR Compound - Card Component with m.coat", async (t) =
 		assert(!styleElem.textContent.includes('@@'), "Should not contain @@ placeholder");
 
 		// Verify card DOM structure
-		const cardDom = cardNode('getDOM');
+		const cardDom = $c.sm(cardNode, 'getDOM');
 		assert(cardDom.size > 0, "Card should have DOM elements");
 
 		const cardDiv = cardDom.at(0);
@@ -76,21 +76,21 @@ Deno.test("MWICoreScpCSS CSR Compound - Card Component with m.coat", async (t) =
 
 		const doc = getInstance('MWIDocument');
 		const scpNode = doc.createNode('m.scpcss');
-		doc('append', scpNode);
+		$c.sm(doc, 'append', scpNode);
 
 		// Initially no card
-		let styleDom = scpNode('getDOM');
+		let styleDom = $c.sm(scpNode, 'getDOM');
 		assertEquals(styleDom.size, 0, "Should be empty initially");
 
 		// Add card dynamically
 		const cardNode = doc.createNode('test.csr.compound.card2');
-		cardNode('setAttr', ls([, 'content', , ps('[([m.t t="Initial content"])]')]));
-		doc('append', cardNode);
+		$c.sm(cardNode, 'setAttr', ls([, 'content', , ps('[([m.t t="Initial content"])]')]));
+		$c.sm(doc, 'append', cardNode);
 
 		await globalThis.reactive.wait();
 
 		// Style should now exist
-		styleDom = scpNode('getDOM');
+		styleDom = $c.sm(scpNode, 'getDOM');
 		assertEquals(styleDom.size, 1, "Should have style element after card added");
 		const styleElem = styleDom.at(0);
 		assert(styleElem.textContent.includes('background: #f9f9f9'), "Should include card CSS");
@@ -115,26 +115,26 @@ Deno.test("MWICoreScpCSS CSR Compound - Nested Components", async (t) => {
 
 		const doc = getInstance('MWIDocument');
 		const scpNode = doc.createNode('m.scpcss');
-		doc('append', scpNode);
+		$c.sm(doc, 'append', scpNode);
 
 		// Create parent with nested children
 		const parentNode = doc.createNode('test.csr.compound.parent');
 
 		const child1 = doc.createNode('test.csr.compound.child');
-		child1('setAttr', ls([, 'content', , ps('[([m.t t="Child 1"])]')]));
+		$c.sm(child1, 'setAttr', ls([, 'content', , ps('[([m.t t="Child 1"])]')]));
 
 		const child2 = doc.createNode('test.csr.compound.child');
-		child2('setAttr', ls([, 'content', , ps('[([m.t t="Child 2"])]')]));
+		$c.sm(child2, 'setAttr', ls([, 'content', , ps('[([m.t t="Child 2"])]')]));
 
-		parentNode('append', child1);
-		parentNode('append', child2);
+		$c.sm(parentNode, 'append', child1);
+		$c.sm(parentNode, 'append', child2);
 
-		doc('append', parentNode);
+		$c.sm(doc, 'append', parentNode);
 
 		await globalThis.reactive.wait();
 
 		// Verify both CSS blocks are present
-		const styleDom = scpNode('getDOM');
+		const styleDom = $c.sm(scpNode, 'getDOM');
 		assertEquals(styleDom.size, 1, "Should have style element");
 		const styleElem = styleDom.at(0);
 
@@ -170,26 +170,26 @@ Deno.test("MWICoreScpCSS CSR Compound - Nested Components", async (t) => {
 
 		const doc = getInstance('MWIDocument');
 		const scpNode = doc.createNode('m.scpcss');
-		doc('append', scpNode);
+		$c.sm(doc, 'append', scpNode);
 
 		// Start with level1 only
 		const level1 = doc.createNode('test.csr.compound.level1');
-		doc('append', level1);
+		$c.sm(doc, 'append', level1);
 
 		await globalThis.reactive.wait();
 
-		let styleDom = scpNode('getDOM');
+		let styleDom = $c.sm(scpNode, 'getDOM');
 		let styleElem = styleDom.at(0);
 		assert(styleElem.textContent.includes('#f0f0f0'), "Should include level1 CSS");
 		assert(!styleElem.textContent.includes('#e0e0e0'), "Should not include level2 CSS yet");
 
 		// Add level2 nested in level1
 		const level2 = doc.createNode('test.csr.compound.level2');
-		level1('setAttr', ls([, 'content', , level2]));
+		$c.sm(level1, 'setAttr', ls([, 'content', , level2]));
 
 		await globalThis.reactive.wait();
 
-		styleDom = scpNode('getDOM');
+		styleDom = $c.sm(scpNode, 'getDOM');
 		styleElem = styleDom.at(0);
 		assert(styleElem.textContent.includes('#f0f0f0'), "Should still include level1 CSS");
 		assert(styleElem.textContent.includes('#e0e0e0'), "Should now include level2 CSS");
@@ -197,12 +197,12 @@ Deno.test("MWICoreScpCSS CSR Compound - Nested Components", async (t) => {
 
 		// Add level3 nested in level2
 		const level3 = doc.createNode('test.csr.compound.level3');
-		level3('setAttr', ls([, 'content', , ps('[([m.t t="Deep content"])]')]));
-		level2('setAttr', ls([, 'content', , level3]));
+		$c.sm(level3, 'setAttr', ls([, 'content', , ps('[([m.t t="Deep content"])]')]));
+		$c.sm(level2, 'setAttr', ls([, 'content', , level3]));
 
 		await globalThis.reactive.wait();
 
-		styleDom = scpNode('getDOM');
+		styleDom = $c.sm(scpNode, 'getDOM');
 		styleElem = styleDom.at(0);
 		assert(styleElem.textContent.includes('#f0f0f0'), "Should include level1 CSS");
 		assert(styleElem.textContent.includes('#e0e0e0'), "Should include level2 CSS");
@@ -220,21 +220,21 @@ Deno.test("MWICoreScpCSS CSR Compound - Template with Scoped CSS", async (t) => 
 
 		const doc = getInstance('MWIDocument');
 		const scpNode = doc.createNode('m.scpcss');
-		doc('append', scpNode);
+		$c.sm(doc, 'append', scpNode);
 
 		const tplNode = doc.createNode('test.csr.compound.tpl');
 
 		// Add slotted content via attributes
-		tplNode('setAttr', ls([, 'item1', , ps('[([m.t t="Item 1"])]')]));
-		tplNode('setAttr', ls([, 'item2', , ps('[([m.t t="Item 2"])]')]));
-		tplNode('setAttr', ls([, 'item3', , ps('[([m.t t="Item 3"])]')]));
+		$c.sm(tplNode, 'setAttr', ls([, 'item1', , ps('[([m.t t="Item 1"])]')]));
+		$c.sm(tplNode, 'setAttr', ls([, 'item2', , ps('[([m.t t="Item 2"])]')]));
+		$c.sm(tplNode, 'setAttr', ls([, 'item3', , ps('[([m.t t="Item 3"])]')]));
 
-		doc('append', tplNode);
+		$c.sm(doc, 'append', tplNode);
 
 		await globalThis.reactive.wait();
 
 		// Verify CSS
-		const styleDom = scpNode('getDOM');
+		const styleDom = $c.sm(scpNode, 'getDOM');
 		const styleElem = styleDom.at(0);
 
 		assert(styleElem.textContent.includes('display: flex'), "Should include flex display");
@@ -243,7 +243,7 @@ Deno.test("MWICoreScpCSS CSR Compound - Template with Scoped CSS", async (t) => 
 		assert(styleElem.textContent.includes('flex: 1'), "Should include flex property");
 
 		// Verify DOM structure
-		const tplDom = tplNode('getDOM');
+		const tplDom = $c.sm(tplNode, 'getDOM');
 		assert(tplDom.size > 0, "Template should have DOM elements");
 
 		const containerDiv = tplDom.at(0);
@@ -264,25 +264,25 @@ Deno.test("MWICoreScpCSS CSR Compound - Template with Scoped CSS", async (t) => 
 
 		const doc = getInstance('MWIDocument');
 		const scpNode = doc.createNode('m.scpcss');
-		doc('append', scpNode);
+		$c.sm(doc, 'append', scpNode);
 
 		const tplNode = doc.createNode('test.csr.compound.conditional');
-		doc('append', tplNode);
+		$c.sm(doc, 'append', tplNode);
 
 		await globalThis.reactive.wait();
 
 		// Initially with no slotted content
-		let styleDom = scpNode('getDOM');
+		let styleDom = $c.sm(scpNode, 'getDOM');
 		let styleElem = styleDom.at(0);
 		assert(styleElem.textContent.includes('border: 1px dashed gray'), "Should include CSS even without slotted content");
 
 		// Add slotted content
-		tplNode('setAttr', ls([, 'content', , ps('[([m.t t="Now with content"])]')]));
+		$c.sm(tplNode, 'setAttr', ls([, 'content', , ps('[([m.t t="Now with content"])]')]));
 
 		await globalThis.reactive.wait();
 
 		// CSS should remain the same
-		styleDom = scpNode('getDOM');
+		styleDom = $c.sm(scpNode, 'getDOM');
 		styleElem = styleDom.at(0);
 		assert(styleElem.textContent.includes('border: 1px dashed gray'), "CSS should remain after adding content");
 	});
@@ -313,26 +313,26 @@ Deno.test("MWICoreScpCSS CSR Compound - Component Library Pattern", async (t) =>
 
 		const doc = getInstance('MWIDocument');
 		const scpNode = doc.createNode('m.scpcss');
-		doc('append', scpNode);
+		$c.sm(doc, 'append', scpNode);
 
 		// Create a form using all components
 		const cardNode = doc.createNode('test.csr.compound.libcard');
 
 		const inputNode = doc.createNode('test.csr.compound.input');
 		const buttonNode = doc.createNode('test.csr.compound.button');
-		buttonNode('setAttr', ls([, 'label', , ps('[([m.t t="Submit"])]')]));
+		$c.sm(buttonNode, 'setAttr', ls([, 'label', , ps('[([m.t t="Submit"])]')]));
 
 		const formFrag = doc.createNode('m.frg');
-		formFrag('append', inputNode);
-		formFrag('append', buttonNode);
+		$c.sm(formFrag, 'append', inputNode);
+		$c.sm(formFrag, 'append', buttonNode);
 
-		cardNode('setAttr', ls([, 'content', , formFrag]));
-		doc('append', cardNode);
+		$c.sm(cardNode, 'setAttr', ls([, 'content', , formFrag]));
+		$c.sm(doc, 'append', cardNode);
 
 		await globalThis.reactive.wait();
 
 		// Verify all component CSS is present
-		const styleDom = scpNode('getDOM');
+		const styleDom = $c.sm(scpNode, 'getDOM');
 		const styleElem = styleDom.at(0);
 
 		assert(styleElem.textContent.includes('background: #007bff'), "Should include button CSS");
@@ -359,7 +359,7 @@ Deno.test("MWICoreScpCSS CSR Compound - Component Library Pattern", async (t) =>
 
 		const doc = getInstance('MWIDocument');
 		const scpNode = doc.createNode('m.scpcss');
-		doc('append', scpNode);
+		$c.sm(doc, 'append', scpNode);
 
 		// Use only a subset
 		doc.createNode('test.csr.compound.comp1');
@@ -368,7 +368,7 @@ Deno.test("MWICoreScpCSS CSR Compound - Component Library Pattern", async (t) =>
 
 		await globalThis.reactive.wait();
 
-		const styleDom = scpNode('getDOM');
+		const styleDom = $c.sm(scpNode, 'getDOM');
 		const styleElem = styleDom.at(0);
 
 		// Should only include used components
@@ -390,18 +390,18 @@ Deno.test("MWICoreScpCSS CSR Compound - CSS Deduplication", async (t) => {
 
 		const doc = getInstance('MWIDocument');
 		const scpNode = doc.createNode('m.scpcss');
-		doc('append', scpNode);
+		$c.sm(doc, 'append', scpNode);
 
 		// Create multiple instances
 		for (let i = 0; i < 5; i++) {
 			const instance = doc.createNode('test.csr.compound.dedup');
-			instance('setAttr', ls([, 'content', , ps(`[([m.t t="Instance ${i}"])]`)]));
-			doc('append', instance);
+			$c.sm(instance, 'setAttr', ls([, 'content', , ps(`[([m.t t="Instance ${i}"])]`)]));
+			$c.sm(doc, 'append', instance);
 		}
 
 		await globalThis.reactive.wait();
 
-		const styleDom = scpNode('getDOM');
+		const styleDom = $c.sm(scpNode, 'getDOM');
 		const styleElem = styleDom.at(0);
 
 		// CSS should appear only once
@@ -418,7 +418,7 @@ Deno.test("MWICoreScpCSS CSR Compound - CSS Deduplication", async (t) => {
 
 		const doc = getInstance('MWIDocument');
 		const scpNode = doc.createNode('m.scpcss');
-		doc('append', scpNode);
+		$c.sm(doc, 'append', scpNode);
 
 		// Create nested structure with same component type
 		const parent = doc.createNode('test.csr.compound.reuse');
@@ -426,15 +426,15 @@ Deno.test("MWICoreScpCSS CSR Compound - CSS Deduplication", async (t) => {
 		const child2 = doc.createNode('test.csr.compound.reuse');
 
 		const childFrag = doc.createNode('m.frg');
-		childFrag('append', child1);
-		childFrag('append', child2);
-		parent('setAttr', ls([, 'content', , childFrag]));
+		$c.sm(childFrag, 'append', child1);
+		$c.sm(childFrag, 'append', child2);
+		$c.sm(parent, 'setAttr', ls([, 'content', , childFrag]));
 
-		doc('append', parent);
+		$c.sm(doc, 'append', parent);
 
 		await globalThis.reactive.wait();
 
-		const styleDom = scpNode('getDOM');
+		const styleDom = $c.sm(scpNode, 'getDOM');
 		const styleElem = styleDom.at(0);
 
 		// CSS should appear only once
@@ -455,20 +455,20 @@ Deno.test("MWICoreScpCSS CSR Compound - Multiple m.scpcss Nodes", async (t) => {
 
 		// Add first m.scpcss
 		const scpNode1 = doc.createNode('m.scpcss');
-		doc('append', scpNode1);
+		$c.sm(doc, 'append', scpNode1);
 
 		// Add component
 		doc.createNode('test.csr.compound.multiscpcss');
 
 		// Add second m.scpcss
 		const scpNode2 = doc.createNode('m.scpcss');
-		doc('append', scpNode2);
+		$c.sm(doc, 'append', scpNode2);
 
 		await globalThis.reactive.wait();
 
 		// Both should have style elements with same CSS
-		const dom1 = scpNode1('getDOM');
-		const dom2 = scpNode2('getDOM');
+		const dom1 = $c.sm(scpNode1, 'getDOM');
+		const dom2 = $c.sm(scpNode2, 'getDOM');
 
 		assertEquals(dom1.size, 1, "First m.scpcss should have style element");
 		assertEquals(dom2.size, 1, "Second m.scpcss should have style element");
@@ -485,11 +485,11 @@ Deno.test("MWICoreScpCSS CSR Compound - Edge Cases", async (t) => {
 	await t.step("Empty document with m.scpcss", async () => {
 		const doc = getInstance('MWIDocument');
 		const scpNode = doc.createNode('m.scpcss');
-		doc('append', scpNode);
+		$c.sm(doc, 'append', scpNode);
 
 		await globalThis.reactive.wait();
 
-		const styleDom = scpNode('getDOM');
+		const styleDom = $c.sm(scpNode, 'getDOM');
 		assertEquals(styleDom.size, 0, "Should have no style element for empty document");
 	});
 
@@ -502,15 +502,15 @@ Deno.test("MWICoreScpCSS CSR Compound - Edge Cases", async (t) => {
 
 		const doc = getInstance('MWIDocument');
 		const scpNode = doc.createNode('m.scpcss');
-		doc('append', scpNode);
+		$c.sm(doc, 'append', scpNode);
 
 		const compNode = doc.createNode('test.csr.compound.escape');
-		compNode('setAttr', ls([, 'content', , ps('[([m.t t="Test"])]')]));
-		doc('append', compNode);
+		$c.sm(compNode, 'setAttr', ls([, 'content', , ps('[([m.t t="Test"])]')]));
+		$c.sm(doc, 'append', compNode);
 
 		await globalThis.reactive.wait();
 
-		const styleDom = scpNode('getDOM');
+		const styleDom = $c.sm(scpNode, 'getDOM');
 		const styleElem = styleDom.at(0);
 
 		// In DOM, the content should be properly handled
@@ -527,19 +527,19 @@ Deno.test("MWICoreScpCSS CSR Compound - Edge Cases", async (t) => {
 
 		const doc = getInstance('MWIDocument');
 		const scpNode = doc.createNode('m.scpcss');
-		doc('append', scpNode);
+		$c.sm(doc, 'append', scpNode);
 
 		// Rapidly add multiple components
 		const nodes = [];
 		for (let i = 0; i < 10; i++) {
 			const node = doc.createNode('test.csr.compound.rapid');
 			nodes.push(node);
-			doc('append', node);
+			$c.sm(doc, 'append', node);
 		}
 
 		await globalThis.reactive.wait();
 
-		const styleDom = scpNode('getDOM');
+		const styleDom = $c.sm(scpNode, 'getDOM');
 		const styleElem = styleDom.at(0);
 
 		assert(styleElem.textContent.includes('transition: all 0.3s'), "Should include CSS after rapid additions");

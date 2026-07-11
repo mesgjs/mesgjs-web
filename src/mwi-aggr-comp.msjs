@@ -175,7 +175,7 @@ modcaps=''
 				const bufferKey = getBufferKey(from);
 				const buffer = getCSRBuffer(aggrData, bufferKey, doc);
 				const nodes = doc.rxNANOS();
-				let syncMode = d? d.mp.at('sync') : p1?.sync;
+				let syncMode = d ? d.mp.at('sync') : p1?.sync;
 
 				const _dom = reactive({ eager: true, def: () => {
 					// Defer during initial CSR while "to" nodes register
@@ -198,7 +198,7 @@ modcaps=''
 					const newNodes = [];
 					if (sorted.length) {
 						for (const node of sorted) {
-							const sync = syncMode && getInstance('MWIDOMSync', [null]);
+							const sync = syncMode ? getInstance('MWIDOMSync', [null]) : undefined;
 							const subDOM = node.getSubDOM({ sync });
 
 							newNodes.push(...subDOM.values());
@@ -467,7 +467,7 @@ modcaps=''
 							if (dedupeKey && seen.has(dedupeKey)) continue;
 							if (dedupeKey) seen.add(dedupeKey);
 
-							const sync = syncMode && getInstance('MWIDOMSync', [null]);
+							const sync = syncMode ? getInstance('MWIDOMSync', [null]) : undefined;
 							const subDOM = node.getSubDOM({ sync });
 							newNodes.push(...subDOM.values());
 						}
