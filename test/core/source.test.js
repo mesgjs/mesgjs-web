@@ -23,7 +23,7 @@ const registry = getInstance('MWIRegistry');
 Deno.test("MWICoreSource - Basic Interface", async (t) => {
 	await t.step("m.src node can be created", () => {
 		const srcNode = doc.createNode('m.src');
-		assertEquals(srcNode('type'), 'm.src');
+		assertEquals($c.sm(srcNode, 'type'), 'm.src');
 		assertEquals(srcNode.type, 'm.src');
 	});
 
@@ -31,7 +31,7 @@ Deno.test("MWICoreSource - Basic Interface", async (t) => {
 		const srcNode = doc.createNode('m.src');
 		srcNode.setSubSpec(ps('[( "text" [h.div] )]'));
 
-		const subSpec = srcNode('getSubSpec');
+		const subSpec = $c.sm(srcNode, 'getSubSpec');
 		assertEquals(subSpec.next, 2);
 	});
 
@@ -39,7 +39,7 @@ Deno.test("MWICoreSource - Basic Interface", async (t) => {
 		const parentNode = doc.createNode('h.div');
 		const srcNode = doc.createNode('m.src', { slotSrc: parentNode });
 
-		assertStrictEquals(srcNode('slotSrc'), parentNode);
+		assertStrictEquals($c.sm(srcNode, 'slotSrc'), parentNode);
 		assertStrictEquals(srcNode.slotSrc, parentNode);
 	});
 });
@@ -49,7 +49,7 @@ Deno.test("MWICoreSource - Slot Source Boundary", async (t) => {
 		const srcNode = doc.createNode('m.src');
 
 		// m.src becomes the slot source for its content (like m.slot and m.tpl)
-		assertStrictEquals(srcNode('subSlotSrc'), srcNode);
+		assertStrictEquals($c.sm(srcNode, 'subSlotSrc'), srcNode);
 		assertStrictEquals(srcNode.subSlotSrc, srcNode);
 	});
 
@@ -59,9 +59,9 @@ Deno.test("MWICoreSource - Slot Source Boundary", async (t) => {
 		const srcNode = doc.createNode('m.src', { slotSrc: parentSource });
 
 		// m.src's slotSrc is set to parent
-		assertStrictEquals(srcNode('slotSrc'), parentSource);
+		assertStrictEquals($c.sm(srcNode, 'slotSrc'), parentSource);
 		// But m.src's subSlotSrc is still itself (new boundary)
-		assertStrictEquals(srcNode('subSlotSrc'), srcNode);
+		assertStrictEquals($c.sm(srcNode, 'subSlotSrc'), srcNode);
 		assertStrictEquals(srcNode.subSlotSrc, srcNode);
 	});
 
@@ -77,7 +77,7 @@ Deno.test("MWICoreSource - Slot Source Boundary", async (t) => {
 Deno.test("MWICoreSource - m.ci Pass-Through Behavior", async (t) => {
 	await t.step("m.src without slotSrc - returns its own m.ci", () => {
 		const srcNode = doc.createNode('m.src');
-		const ci = srcNode('getAttr', ['m.ci']);
+		const ci = $c.sm(srcNode, 'getAttr', ['m.ci']);
 
 		// Top-level m.src has no slot source, returns its own CI
 		assert(typeof ci === 'string');
@@ -91,10 +91,10 @@ Deno.test("MWICoreSource - m.ci Pass-Through Behavior", async (t) => {
 
 	await t.step("m.src with slotSrc - returns slotSrc's m.ci", () => {
 		const parentNode = doc.createNode('h.div');
-		const parentCI = parentNode('getAttr', ['m.ci']);
+		const parentCI = $c.sm(parentNode, 'getAttr', ['m.ci']);
 
 		const srcNode = doc.createNode('m.src', { slotSrc: parentNode });
-		const srcCI = srcNode('getAttr', ['m.ci']);
+		const srcCI = $c.sm(srcNode, 'getAttr', ['m.ci']);
 
 		// m.src prefers to return its slot source's m.ci
 		assertStrictEquals(srcCI, parentCI);
@@ -107,12 +107,12 @@ Deno.test("MWICoreSource - m.ci Pass-Through Behavior", async (t) => {
 		]));
 
 		const tplNode = await doc.createNode('test.tpl.withsrc');
-		const tplCI = tplNode('getAttr', ['m.ci']);
+		const tplCI = $c.sm(tplNode, 'getAttr', ['m.ci']);
 
 		// Get the m.src child
-		const subDoc = tplNode('getSubDoc');
+		const subDoc = $c.sm(tplNode, 'getSubDoc');
 		const srcNode = subDoc.at(0);
-		const srcCI = srcNode('getAttr', ['m.ci']);
+		const srcCI = $c.sm(srcNode, 'getAttr', ['m.ci']);
 
 		// m.src inside template should return template's CI
 		assertStrictEquals(srcCI, tplCI);
@@ -120,15 +120,15 @@ Deno.test("MWICoreSource - m.ci Pass-Through Behavior", async (t) => {
 
 	await t.step("Nested m.src - all return outermost slotSrc's m.ci", () => {
 		const parentNode = doc.createNode('h.div');
-		const parentCI = parentNode('getAttr', ['m.ci']);
+		const parentCI = $c.sm(parentNode, 'getAttr', ['m.ci']);
 
 		const src1 = doc.createNode('m.src', { slotSrc: parentNode });
 		const src2 = doc.createNode('m.src', { slotSrc: src1 });
 		const src3 = doc.createNode('m.src', { slotSrc: src2 });
 
-		const ci1 = src1('getAttr', ['m.ci']);
-		const ci2 = src2('getAttr', ['m.ci']);
-		const ci3 = src3('getAttr', ['m.ci']);
+		const ci1 = $c.sm(src1, 'getAttr', ['m.ci']);
+		const ci2 = $c.sm(src2, 'getAttr', ['m.ci']);
+		const ci3 = $c.sm(src3, 'getAttr', ['m.ci']);
 
 		// All nested m.src nodes should return the parent's CI
 		assertStrictEquals(ci1, parentCI);
@@ -143,10 +143,10 @@ Deno.test("MWICoreSource - m.ci Pass-Through Behavior", async (t) => {
 		]));
 
 		const tplNode = await doc.createNode('test.tpl.assrc');
-		const tplCI = tplNode('getAttr', ['m.ci']);
+		const tplCI = $c.sm(tplNode, 'getAttr', ['m.ci']);
 
 		const srcNode = doc.createNode('m.src', { slotSrc: tplNode });
-		const srcCI = srcNode('getAttr', ['m.ci']);
+		const srcCI = $c.sm(srcNode, 'getAttr', ['m.ci']);
 
 		// m.src with template as slotSrc returns template's CI
 		assertStrictEquals(srcCI, tplCI);
@@ -160,7 +160,7 @@ Deno.test("MWICoreSource - Attribute Access", async (t) => {
 		const srcNode = doc.createNode('m.src');
 		srcNode.setAttr('data-test', 'value');
 
-		assertEquals(srcNode('getAttr', ['data-test']), 'value');
+		assertEquals($c.sm(srcNode, 'getAttr', ['data-test']), 'value');
 		assertEquals(srcNode.getAttr('data-test'), 'value');
 	});
 
@@ -168,8 +168,8 @@ Deno.test("MWICoreSource - Attribute Access", async (t) => {
 		const parentNode = doc.createNode('h.div');
 		const srcNode = doc.createNode('m.src', { slotSrc: parentNode });
 
-		const parentCI = parentNode('getAttr', ['m.ci']);
-		const srcCI = srcNode('getAttr', ['m.ci']);
+		const parentCI = $c.sm(parentNode, 'getAttr', ['m.ci']);
+		const srcCI = $c.sm(srcNode, 'getAttr', ['m.ci']);
 
 		// m.ci uses special pass-through logic
 		assertStrictEquals(srcCI, parentCI);
@@ -184,21 +184,21 @@ Deno.test("MWICoreSource - Comparison with m.frg", async (t) => {
 		const fragNode = doc.createNode('m.frg', { slotSrc: parentNode });
 
 		// m.src creates new boundary (returns itself)
-		assertStrictEquals(srcNode('subSlotSrc'), srcNode);
+		assertStrictEquals($c.sm(srcNode, 'subSlotSrc'), srcNode);
 
 		// m.frg passes through (returns parent)
-		assertStrictEquals(fragNode('subSlotSrc'), parentNode);
+		assertStrictEquals($c.sm(fragNode, 'subSlotSrc'), parentNode);
 	});
 
 	await t.step("m.src has special m.ci behavior, m.frg does not", () => {
 		const parentNode = doc.createNode('h.div');
-		const parentCI = parentNode('getAttr', ['m.ci']);
+		const parentCI = $c.sm(parentNode, 'getAttr', ['m.ci']);
 
 		const srcNode = doc.createNode('m.src', { slotSrc: parentNode });
 		const fragNode = doc.createNode('m.frg', { slotSrc: parentNode });
 
-		const srcCI = srcNode('getAttr', ['m.ci']);
-		const fragCI = fragNode('getAttr', ['m.ci']);
+		const srcCI = $c.sm(srcNode, 'getAttr', ['m.ci']);
+		const fragCI = $c.sm(fragNode, 'getAttr', ['m.ci']);
 
 		// m.src returns parent's CI
 		assertStrictEquals(srcCI, parentCI);
@@ -219,16 +219,16 @@ Deno.test("MWICoreSource - Integration with Templates", async (t) => {
 		tplNode.setAttr('myattr', 'template-value');
 
 		// Get the m.src child
-		const subDoc = tplNode('getSubDoc');
+		const subDoc = $c.sm(tplNode, 'getSubDoc');
 		const srcNode = subDoc.at(0);
 
 		// m.src can see template's attributes (it has template as slotSrc)
-		assertEquals(srcNode('slotSrc'), tplNode);
+		assertEquals($c.sm(srcNode, 'slotSrc'), tplNode);
 
 		// But m.src's children see m.src as their slotSrc (not the template)
-		const srcSubDoc = srcNode('getSubDoc');
+		const srcSubDoc = $c.sm(srcNode, 'getSubDoc');
 		const divNode = srcSubDoc.at(0);
-		assertEquals(divNode('slotSrc'), srcNode);
+		assertEquals($c.sm(divNode, 'slotSrc'), srcNode);
 
 		// Rendering assertions are covered in test/ssr-html/source.test.js
 		// ("m.src creates boundary - children can't see template attributes directly")
@@ -241,14 +241,14 @@ Deno.test("MWICoreSource - Integration with Templates", async (t) => {
 		]));
 
 		const tplNode = await doc.createNode('test.tpl.multisrc');
-		const tplCI = tplNode('getAttr', ['m.ci']);
+		const tplCI = $c.sm(tplNode, 'getAttr', ['m.ci']);
 
-		const subDoc = tplNode('getSubDoc');
+		const subDoc = $c.sm(tplNode, 'getSubDoc');
 		const src1 = subDoc.at(0);
 		const src2 = subDoc.at(1);
 
-		const ci1 = src1('getAttr', ['m.ci']);
-		const ci2 = src2('getAttr', ['m.ci']);
+		const ci1 = $c.sm(src1, 'getAttr', ['m.ci']);
+		const ci2 = $c.sm(src2, 'getAttr', ['m.ci']);
 
 		// Both m.src nodes should return template's CI
 		assertStrictEquals(ci1, tplCI);
@@ -262,19 +262,19 @@ Deno.test("MWICoreSource - Integration with Templates", async (t) => {
 		]));
 
 		const tplNode = await doc.createNode('test.tpl.nestedsrc');
-		const tplCI = tplNode('getAttr', ['m.ci']);
+		const tplCI = $c.sm(tplNode, 'getAttr', ['m.ci']);
 
 		// Navigate to nested m.src nodes
-		const subDoc = tplNode('getSubDoc');
+		const subDoc = $c.sm(tplNode, 'getSubDoc');
 		const src1 = subDoc.at(0);
-		const src1SubDoc = src1('getSubDoc');
+		const src1SubDoc = $c.sm(src1, 'getSubDoc');
 		const src2 = src1SubDoc.at(0);
-		const src2SubDoc = src2('getSubDoc');
+		const src2SubDoc = $c.sm(src2, 'getSubDoc');
 		const src3 = src2SubDoc.at(0);
 
-		const ci1 = src1('getAttr', ['m.ci']);
-		const ci2 = src2('getAttr', ['m.ci']);
-		const ci3 = src3('getAttr', ['m.ci']);
+		const ci1 = $c.sm(src1, 'getAttr', ['m.ci']);
+		const ci2 = $c.sm(src2, 'getAttr', ['m.ci']);
+		const ci3 = $c.sm(src3, 'getAttr', ['m.ci']);
 
 		// All nested m.src nodes should return template's CI
 		assertStrictEquals(ci1, tplCI);
@@ -288,12 +288,12 @@ Deno.test("MWICoreSource - Integration with Slots", async (t) => {
 		const slotNode = doc.createNode('m.slot');
 		slotNode.setSubSpec(ps('[( [m.src [h.div]] )]'));
 
-		const slotCI = slotNode('getAttr', ['m.ci']);
+		const slotCI = $c.sm(slotNode, 'getAttr', ['m.ci']);
 
 		// Get the m.src child
-		const subDoc = slotNode('getSubDoc');
+		const subDoc = $c.sm(slotNode, 'getSubDoc');
 		const srcNode = subDoc.at(0);
-		const srcCI = srcNode('getAttr', ['m.ci']);
+		const srcCI = $c.sm(srcNode, 'getAttr', ['m.ci']);
 
 		// m.src inside slot should return slot's CI
 		assertStrictEquals(srcCI, slotCI);
@@ -301,10 +301,10 @@ Deno.test("MWICoreSource - Integration with Slots", async (t) => {
 
 	await t.step("m.src with slot as slotSrc - returns slot's m.ci", () => {
 		const slotNode = doc.createNode('m.slot');
-		const slotCI = slotNode('getAttr', ['m.ci']);
+		const slotCI = $c.sm(slotNode, 'getAttr', ['m.ci']);
 
 		const srcNode = doc.createNode('m.src', { slotSrc: slotNode });
-		const srcCI = srcNode('getAttr', ['m.ci']);
+		const srcCI = $c.sm(srcNode, 'getAttr', ['m.ci']);
 
 		// m.src with slot as slotSrc returns slot's CI
 		assertStrictEquals(srcCI, slotCI);
@@ -316,22 +316,22 @@ Deno.test("MWICoreSource - Edge Cases", async (t) => {
 		const srcNode = doc.createNode('m.src');
 
 		// Should have its own CI
-		const ci = srcNode('getAttr', ['m.ci']);
+		const ci = $c.sm(srcNode, 'getAttr', ['m.ci']);
 		assert(typeof ci === 'string');
 
 		// Should be its own boundary
-		assertStrictEquals(srcNode('subSlotSrc'), srcNode);
+		assertStrictEquals($c.sm(srcNode, 'subSlotSrc'), srcNode);
 	});
 
 	await t.step("m.src with undefined slotSrc", () => {
 		const srcNode = doc.createNode('m.src', { slotSrc: undefined });
 
 		// Should behave like no slotSrc
-		assertEquals(srcNode('slotSrc'), undefined);
-		assertStrictEquals(srcNode('subSlotSrc'), srcNode);
+		assertEquals($c.sm(srcNode, 'slotSrc'), undefined);
+		assertStrictEquals($c.sm(srcNode, 'subSlotSrc'), srcNode);
 
 		// Should have its own CI
-		const ci = srcNode('getAttr', ['m.ci']);
+		const ci = $c.sm(srcNode, 'getAttr', ['m.ci']);
 		assert(typeof ci === 'string');
 	});
 
@@ -340,7 +340,7 @@ Deno.test("MWICoreSource - Edge Cases", async (t) => {
 		const srcNode = doc.createNode('m.src', { slotSrc: parentNode });
 
 		// Should return undefined for non-existent attributes
-		assertEquals(srcNode('getAttr', ['nonexistent']), undefined);
+		assertEquals($c.sm(srcNode, 'getAttr', ['nonexistent']), undefined);
 	});
 });
 
@@ -349,7 +349,7 @@ Deno.test("MWICoreSource - Spec Operations", async (t) => {
 		const srcNode = doc.createNode('m.src');
 		srcNode.setAttr('data-test', 'value');
 
-		const spec = srcNode('getSpec');
+		const spec = $c.sm(srcNode, 'getSpec');
 
 		assertEquals(spec.at(0), 'm.src');
 		assertEquals(spec.at('data-test'), 'value');
@@ -358,17 +358,17 @@ Deno.test("MWICoreSource - Spec Operations", async (t) => {
 	await t.step("setSpec updates m.src node", () => {
 		const srcNode = doc.createNode('m.src');
 
-		srcNode('setSpec', ps('[( [m.src data-test="value" [h.div]] )]'));
+		$c.sm(srcNode, 'setSpec', ps('[( [m.src data-test="value" [h.div]] )]'));
 
-		assertEquals(srcNode('getAttr', ['data-test']), 'value');
-		assertEquals(srcNode('getSubSpec').next, 1);
+		assertEquals($c.sm(srcNode, 'getAttr', ['data-test']), 'value');
+		assertEquals($c.sm(srcNode, 'getSubSpec').next, 1);
 	});
 
 	await t.step("getSubSpec returns children spec", () => {
 		const srcNode = doc.createNode('m.src');
 		srcNode.setSubSpec(ps('[( [h.div] [h.span] )]'));
 
-		const subSpec = srcNode('getSubSpec');
+		const subSpec = $c.sm(srcNode, 'getSubSpec');
 
 		assertEquals(subSpec.next, 2);
 		assertEquals(subSpec.at([0, 0]), 'h.div');
@@ -378,9 +378,9 @@ Deno.test("MWICoreSource - Spec Operations", async (t) => {
 	await t.step("setSubSpec updates children", () => {
 		const srcNode = doc.createNode('m.src');
 
-		srcNode('setSubSpec', ps('[( "text" [h.div] )]'));
+		$c.sm(srcNode, 'setSubSpec', ps('[( "text" [h.div] )]'));
 
-		const subSpec = srcNode('getSubSpec');
+		const subSpec = $c.sm(srcNode, 'getSubSpec');
 		assertEquals(subSpec.next, 2);
 	});
 });

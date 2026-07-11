@@ -51,13 +51,11 @@ modcaps=''
 				const value = attrs.get('m.coat');
 				const entries = [...value.namedEntries()];
 
-				reactive.untracked(() => {
-					for (const [target, spec] of entries) {
-						const value = computeAttr(d.p, spec);
+				for (const [target, spec] of entries) {
+					const value = computeAttr(ps, spec);
 
-						self.setAttr(target, value, { coat: false });
-					}
-				});
+					reactive.untracked(() => self.setAttr(target, value, { coat: false }));
+				}
 			}});
 
 			ps.set('_mCoat', _mCoat);
@@ -78,14 +76,12 @@ modcaps=''
 				const value = attrs.get('m.slat');
 				const entries = [...value.namedEntries()];
 
-				reactive.untracked(() => {
-					for (const [target, spec] of value.namedEntries()) {
-						const source = spec.at(0, target);
-						const value = slotSrc ? slotSrc.getAttr(source) : spec.at('else');
+				for (const [target, spec] of value.namedEntries()) {
+					const source = spec.at(0, target);
+					const value = slotSrc?.getAttr(source) ?? spec.at('else');
 
-						self.setAttr(target, value, { coat: false });
-					}
-				});
+					reactive.untracked(() => self.setAttr(target, value, { coat: false }));
+				}
 			}});
 
 			ps.set('_mSlat', _mSlat);
@@ -484,7 +480,7 @@ modcaps=''
 				case 'm.id': // Mandatory id value (read-only)
 					if (!attrs.has('id')) {
 						// There's no user-assigned id, so auto-assign one
-						const doc = ps.at('doc'), mid = doc('nextId');
+						const doc = ps.at('doc'), mid = doc.nextId();
 
 						if (d) { // Handle here if we have the necessary Mesgjs dispatch
 							attrs.set('id', mid);
@@ -811,7 +807,7 @@ modcaps=''
 					if (!d) { // Escalate to Mesgjs for required dispatch
 						$c.sm(self, 'setAttr', ls([, 'id', , value]));
 					} else if (typeof value === 'string' || typeof value === 'number') {
-						if (coat !== false) value = computeAttr(d.p, value);
+						if (coat !== false) value = computeAttr(ps, value);
 						value = String(value); // Normalize to string
 
 						const attrs = ps.at('attrs'), doc = ps.at('doc');
@@ -830,7 +826,7 @@ modcaps=''
 					// Ignore any other types
 					break;
 				case 'style': // Smart style
-					setStyle(d, value);
+					setStyle(ps, value);
 					break;
 				case 'm.id': // Auto-generate ID if needed (supplied value ignored)
 					$c.sm(self, 'getAttr', 'm.id'); // Dispatch will be needed for this
@@ -940,7 +936,7 @@ modcaps=''
 			}
 
 			// Set node sub-spec (bilingual)
-			// (setSubSpec m.rns=[spec]? subspec...) (positional form, sub-spec only) (with m.rns only on Mesgjs)
+			// (setSubSpec m.rns=[spec]? subspec...) (positional form, sub-spec only) (must use NANOS to supply m.rns)
 			// (setSubSpec m.rns=[spec]? subSpec=[subspec...]) (named-parameter variant)
 			// (setSubSpec m.rns=[spec]? spec=[type attr=value... m.rns=[spec]? subspec...])
 			//     (named, full spec from which sub-spec is extracted)
@@ -950,14 +946,15 @@ modcaps=''
 
 				if (schema?.at(VOID)) return;
 
-				const self = d?.rr ?? this, mp = d?.mp;
+				const self = d?.rr ?? this;
 				const subSpec = ps.at('subSpec');
-				const spec = d ? mp.at('spec') : params[0]?.spec;
-				const subList = d ? mp.at('subSpec', mp) : (!params[0]?.msjsType && params[0]?.subSpec || params);
 				const doc = ps.at('doc'), rxs = ps.at('rxState');
 				const subDoc = ps.at('subDoc'), slotSrc = self.subSlotSrc;
+				const mp = d ? d.mp : new NANOS(params.length === 1 ? params[0] : params);
+				const spec = mp.at('spec');
+				const subList = mp.at('subSpec', mp);
 				// Note: m.rns is a virtual, non-reactive value (intended for SSR->CSR hydration)
-				const rns = mp?.at('m.rns') ?? spec?.at('m.rns');
+				const rns = mp.at('m.rns') ?? spec?.at('m.rns');
 
 				reactive.batch(() => {
 					// Update sub-spec

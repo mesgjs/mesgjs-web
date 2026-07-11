@@ -21,7 +21,7 @@ Deno.test("MWICoreSlot (m.slot) - Basic Interface Tests", async (t) => {
 	const slotNode = doc.createNode('m.slot');
 
 	await t.step("(type) - Get node type", () => {
-		assertEquals(slotNode('type'), 'm.slot');
+		assertEquals($c.sm(slotNode, 'type'), 'm.slot');
 	});
 
 	await t.step(".type - Get node type via JS", () => {
@@ -41,7 +41,7 @@ Deno.test("MWICoreSlot (m.slot) - Basic Interface Tests", async (t) => {
 	});
 
 	await t.step("(document) - Get document reference", () => {
-		const docRef = slotNode('document');
+		const docRef = $c.sm(slotNode, 'document');
 		assertStrictEquals(docRef, doc);
 	});
 
@@ -54,8 +54,8 @@ Deno.test("MWICoreSlot (m.slot) - Inherited MWIDocNode Operations", async (t) =>
 	const slotNode = doc.createNode('m.slot');
 
 	await t.step("(setAttr) - Set basic attribute", () => {
-		slotNode('setAttr', ls([, 'data-test', , 'value123']));
-		assertEquals(slotNode('getAttr', ls([, 'data-test'])), 'value123');
+		$c.sm(slotNode, 'setAttr', ls([, 'data-test', , 'value123']));
+		assertEquals($c.sm(slotNode, 'getAttr', ls([, 'data-test'])), 'value123');
 	});
 
 	await t.step(".setAttr() - Set basic attribute via JS", () => {
@@ -64,8 +64,8 @@ Deno.test("MWICoreSlot (m.slot) - Inherited MWIDocNode Operations", async (t) =>
 	});
 
 	await t.step("(getAttr) - Get attribute", () => {
-		slotNode('setAttr', ls([, 'title', , 'Slot Title']));
-		assertEquals(slotNode('getAttr', ls([, 'title'])), 'Slot Title');
+		$c.sm(slotNode, 'setAttr', ls([, 'title', , 'Slot Title']));
+		assertEquals($c.sm(slotNode, 'getAttr', ls([, 'title'])), 'Slot Title');
 	});
 
 	await t.step(".getAttr() - Get attribute via JS", () => {
@@ -74,9 +74,9 @@ Deno.test("MWICoreSlot (m.slot) - Inherited MWIDocNode Operations", async (t) =>
 	});
 
 	await t.step("(hasAttr) - Check attribute existence", () => {
-		slotNode('setAttr', ls([, 'test-attr', , 'exists']));
-		assertEquals(slotNode('hasAttr', ls([, 'test-attr'])), true);
-		assertEquals(slotNode('hasAttr', ls([, 'nonexistent'])), false);
+		$c.sm(slotNode, 'setAttr', ls([, 'test-attr', , 'exists']));
+		assertEquals($c.sm(slotNode, 'hasAttr', ls([, 'test-attr'])), true);
+		assertEquals($c.sm(slotNode, 'hasAttr', ls([, 'nonexistent'])), false);
 	});
 
 	await t.step(".hasAttr() - Check attribute existence via JS", () => {
@@ -86,10 +86,10 @@ Deno.test("MWICoreSlot (m.slot) - Inherited MWIDocNode Operations", async (t) =>
 	});
 
 	await t.step("(delAttr) - Delete attribute", () => {
-		slotNode('setAttr', ls([, 'temp-attr', , 'temporary']));
-		assertEquals(slotNode('hasAttr', ls([, 'temp-attr'])), true);
-		slotNode('delAttr', ls([, 'temp-attr']));
-		assertEquals(slotNode('hasAttr', ls([, 'temp-attr'])), false);
+		$c.sm(slotNode, 'setAttr', ls([, 'temp-attr', , 'temporary']));
+		assertEquals($c.sm(slotNode, 'hasAttr', ls([, 'temp-attr'])), true);
+		$c.sm(slotNode, 'delAttr', ls([, 'temp-attr']));
+		assertEquals($c.sm(slotNode, 'hasAttr', ls([, 'temp-attr'])), false);
 	});
 
 	await t.step(".delAttr() - Delete attribute via JS", () => {
@@ -100,9 +100,9 @@ Deno.test("MWICoreSlot (m.slot) - Inherited MWIDocNode Operations", async (t) =>
 	});
 
 	await t.step("(hasClass) - Basic class check", () => {
-		slotNode('setAttr', ls([, 'class', , 'test-class']));
-		assertEquals(slotNode('hasClass', ls([, 'test-class'])), true);
-		assertEquals(slotNode('hasClass', ls([, 'missing-class'])), false);
+		$c.sm(slotNode, 'setAttr', ls([, 'class', , 'test-class']));
+		assertEquals($c.sm(slotNode, 'hasClass', ls([, 'test-class'])), true);
+		assertEquals($c.sm(slotNode, 'hasClass', ls([, 'missing-class'])), false);
 	});
 
 	await t.step(".hasClass() - Basic class check via JS", () => {
@@ -116,7 +116,7 @@ Deno.test("MWICoreSlot (m.slot) - Inherited MWIDocNode Operations", async (t) =>
 Deno.test("MWICoreSlot (m.slot) - Spec Management", async (t) => {
 	await t.step("(getSpec) - Get spec with no attributes", () => {
 		const slotNode = doc.createNode('m.slot');
-		const spec = slotNode('getSpec');
+		const spec = $c.sm(slotNode, 'getSpec');
 		assertEquals(spec.at(0), 'm.slot');
 		const slidStr = spec.toSLID();
 		assert(slidStr.includes('m.slot'));
@@ -130,8 +130,8 @@ Deno.test("MWICoreSlot (m.slot) - Spec Management", async (t) => {
 
 	await t.step("(getSpec) - Get spec with name attribute", () => {
 		const slotNode = doc.createNode('m.slot');
-		slotNode('setAttr', ls([, 'name', , 'header']));
-		const spec = slotNode('getSpec');
+		$c.sm(slotNode, 'setAttr', ls([, 'name', , 'header']));
+		const spec = $c.sm(slotNode, 'getSpec');
 		assertEquals(spec.at(0), 'm.slot');
 		assertEquals(spec.at('name'), 'header');
 	});
@@ -147,9 +147,9 @@ Deno.test("MWICoreSlot (m.slot) - Spec Management", async (t) => {
 	await t.step("(setSpec) - Set attributes from spec", () => {
 		const slotNode = doc.createNode('m.slot');
 		const spec = ps('[(m.slot name=content data-test=value)]');
-		slotNode('setSpec', ls([, spec]));
-		assertEquals(slotNode('getAttr', ls([, 'name'])), 'content');
-		assertEquals(slotNode('getAttr', ls([, 'data-test'])), 'value');
+		$c.sm(slotNode, 'setSpec', ls([, spec]));
+		assertEquals($c.sm(slotNode, 'getAttr', ls([, 'name'])), 'content');
+		assertEquals($c.sm(slotNode, 'getAttr', ls([, 'data-test'])), 'value');
 	});
 
 	await t.step(".setSpec() - Set attributes from spec via JS", () => {
@@ -163,8 +163,8 @@ Deno.test("MWICoreSlot (m.slot) - Spec Management", async (t) => {
 	await t.step("(setSpec) - Set default content from spec", () => {
 		const slotNode = doc.createNode('m.slot');
 		const spec = ps('[(m.slot "Default content")]');
-		slotNode('setSpec', ls([, spec]));
-		const subSpec = slotNode('getSubSpec');
+		$c.sm(slotNode, 'setSpec', ls([, spec]));
+		const subSpec = $c.sm(slotNode, 'getSubSpec');
 		assertEquals(subSpec.size, 1);
 		assertEquals(subSpec.at(0), 'Default content');
 	});
@@ -182,12 +182,12 @@ Deno.test("MWICoreSlot (m.slot) - Spec Management", async (t) => {
 Deno.test("MWICoreSlot (m.slot) - Default Content Management", async (t) => {
 	await t.step("(append) - Append text string (auto-converts to m.t)", () => {
 		const slotNode = doc.createNode('m.slot');
-		slotNode('append', ls([, 'Default text']));
-		const subDoc = slotNode('getSubDoc');
+		$c.sm(slotNode, 'append', ls([, 'Default text']));
+		const subDoc = $c.sm(slotNode, 'getSubDoc');
 		assertEquals(subDoc.size, 1);
 		const textNode = subDoc.at(0);
-		assertEquals(textNode('type'), 'm.t');
-		assertEquals(textNode('getAttr', 't'), 'Default text');
+		assertEquals($c.sm(textNode, 'type'), 'm.t');
+		assertEquals($c.sm(textNode, 'getAttr', 't'), 'Default text');
 	});
 
 	await t.step(".append() - Append text string via JS (auto-converts to m.t)", () => {
@@ -203,15 +203,15 @@ Deno.test("MWICoreSlot (m.slot) - Default Content Management", async (t) => {
 	await t.step("(append) - Append doc-node", () => {
 		const slotNode = doc.createNode('m.slot');
 		const textNode = doc.createNode('m.t');
-		textNode('setAttr', ls([, 't', , 'Appended node']));
-		slotNode('append', ls([, textNode]));
+		$c.sm(textNode, 'setAttr', ls([, 't', , 'Appended node']));
+		$c.sm(slotNode, 'append', ls([, textNode]));
 		// Appended nodes are live, not spec - check m.rns
-		const rns = slotNode('getAttr', ls([, 'm.rns']));
+		const rns = $c.sm(slotNode, 'getAttr', ls([, 'm.rns']));
 		assertEquals(rns.size, 1);
 		// Text node getSpec is simplified to just the string
 		assertEquals(rns.at(0), 'Appended node');
 		// getSubSpec returns original sub-spec (empty in this case)
-		const subSpec = slotNode('getSubSpec');
+		const subSpec = $c.sm(slotNode, 'getSubSpec');
 		assertEquals(subSpec.size, 0);
 	});
 
@@ -233,18 +233,18 @@ Deno.test("MWICoreSlot (m.slot) - Default Content Management", async (t) => {
 	await t.step("(append) - Append multiple default content items", () => {
 		const slotNode = doc.createNode('m.slot');
 		const text1 = doc.createNode('m.t');
-		text1('setAttr', ls([, 't', , 'First']));
+		$c.sm(text1, 'setAttr', ls([, 't', , 'First']));
 		const text2 = doc.createNode('m.t');
-		text2('setAttr', ls([, 't', , 'Second']));
-		slotNode('append', ls([, text1, , text2]));
+		$c.sm(text2, 'setAttr', ls([, 't', , 'Second']));
+		$c.sm(slotNode, 'append', ls([, text1, , text2]));
 		// Appended nodes are live, not spec - check m.rns
-		const rns = slotNode('getAttr', ls([, 'm.rns']));
+		const rns = $c.sm(slotNode, 'getAttr', ls([, 'm.rns']));
 		assertEquals(rns.size, 2);
 		// Text node getSpec is simplified to just the string
 		assertEquals(rns.at(0), 'First');
 		assertEquals(rns.at(1), 'Second');
 		// getSubSpec returns original sub-spec (empty in this case)
-		const subSpec = slotNode('getSubSpec');
+		const subSpec = $c.sm(slotNode, 'getSubSpec');
 		assertEquals(subSpec.size, 0);
 	});
 
@@ -269,8 +269,8 @@ Deno.test("MWICoreSlot (m.slot) - Default Content Management", async (t) => {
 	await t.step("(setSubSpec) - Set default content with NANOS list", () => {
 		const slotNode = doc.createNode('m.slot');
 		const subList = ps('[("Sub 1" "Sub 2")]');
-		slotNode('setSubSpec', ls(['subSpec', subList]));
-		const subSpec = slotNode('getSubSpec');
+		$c.sm(slotNode, 'setSubSpec', ls(['subSpec', subList]));
+		const subSpec = $c.sm(slotNode, 'getSubSpec');
 		assertEquals(subSpec.size, 2);
 		assertEquals(subSpec.at(0), 'Sub 1');
 		assertEquals(subSpec.at(1), 'Sub 2');
@@ -290,7 +290,7 @@ Deno.test("MWICoreSlot (m.slot) - Default Content Management", async (t) => {
 Deno.test("MWICoreSlot (m.slot) - SlotSrc Property", async (t) => {
 	await t.step("(slotSrc) - Get slotSrc when not set", () => {
 		const slotNode = doc.createNode('m.slot');
-		assertEquals(slotNode('slotSrc'), undefined);
+		assertEquals($c.sm(slotNode, 'slotSrc'), undefined);
 	});
 
 	await t.step(".slotSrc - Get slotSrc when not set via JS", () => {
@@ -306,8 +306,8 @@ Deno.test("MWICoreSlot (m.slot) - SlotSrc Property", async (t) => {
 
 	await t.step("(slotSrc) - Get slotSrc when set", () => {
 		const divNode = doc.createNode('h.div');
-		const slotNode = doc('createNode', ls([, 'm.slot', 'slotSrc', divNode]));
-		assertStrictEquals(slotNode('slotSrc'), divNode);
+		const slotNode = $c.sm(doc, 'createNode', ls([, 'm.slot', 'slotSrc', divNode]));
+		assertStrictEquals($c.sm(slotNode, 'slotSrc'), divNode);
 	});
 
 	await t.step(".slotSrc - Get slotSrc when set via JS", () => {
@@ -320,8 +320,8 @@ Deno.test("MWICoreSlot (m.slot) - SlotSrc Property", async (t) => {
 Deno.test("MWICoreSlot (m.slot) - Name Attribute Behavior", async (t) => {
 	await t.step("(setAttr) - Set name attribute for named slot", () => {
 		const slotNode = doc.createNode('m.slot');
-		slotNode('setAttr', ls([, 'name', , 'header']));
-		assertEquals(slotNode('getAttr', ls([, 'name'])), 'header');
+		$c.sm(slotNode, 'setAttr', ls([, 'name', , 'header']));
+		assertEquals($c.sm(slotNode, 'getAttr', ls([, 'name'])), 'header');
 	});
 
 	await t.step(".setAttr() - Set name attribute for named slot via JS", () => {

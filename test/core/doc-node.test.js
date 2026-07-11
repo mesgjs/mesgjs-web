@@ -25,7 +25,7 @@ const modScope = globalThis.$modScope();
 // Call via msjsFunction('call', messageParams)
 function makeMsjsFunction (jsFunction) {
 	const msjsCode = modScope.d.b({ cd: jsFunction }); // -> @code object
-	const msjsFunction = msjsCode('fn'); // -> @function object
+	const msjsFunction = msjsCode.fn(); // -> @function object
 	return msjsFunction;
 }
 
@@ -33,7 +33,7 @@ Deno.test("MWIDocNode - Basic Interface Tests", async (t) => {
 	const divNode = doc.createNode('h.div');
 
 	await t.step("(type) - Get node type", () => {
-		assertEquals(divNode('type'), 'h.div');
+		assertEquals($c.sm(divNode, 'type'), 'h.div');
 	});
 
 	await t.step(".type - Get node type via JS", () => {
@@ -53,7 +53,7 @@ Deno.test("MWIDocNode - Basic Interface Tests", async (t) => {
 	});
 
 	await t.step("(document) - Get document reference", () => {
-		const docRef = divNode('document');
+		const docRef = $c.sm(divNode, 'document');
 		assertStrictEquals(docRef, doc);
 	});
 
@@ -65,8 +65,8 @@ Deno.test("MWIDocNode - Basic Interface Tests", async (t) => {
 Deno.test("MWIDocNode - Attribute Operations", async (t) => {
 	await t.step("(setAttr) - Set string attribute", () => {
 		const divNode = doc.createNode('h.div');
-		divNode('setAttr', ls([, 'data-test', , 'value123']));
-		assertEquals(divNode('getAttr', ls([, 'data-test'])), 'value123');
+		$c.sm(divNode, 'setAttr', ls([, 'data-test', , 'value123']));
+		assertEquals($c.sm(divNode, 'getAttr', ls([, 'data-test'])), 'value123');
 	});
 
 	await t.step(".setAttr() - Set string attribute via JS", () => {
@@ -77,8 +77,8 @@ Deno.test("MWIDocNode - Attribute Operations", async (t) => {
 
 	await t.step("(setAttr) - Set boolean attribute", () => {
 		const divNode = doc.createNode('h.div');
-		divNode('setAttr', ls([, 'disabled', , true]));
-		assertEquals(divNode('getAttr', ls([, 'disabled'])), true);
+		$c.sm(divNode, 'setAttr', ls([, 'disabled', , true]));
+		assertEquals($c.sm(divNode, 'getAttr', ls([, 'disabled'])), true);
 	});
 
 	await t.step(".setAttr() - Set boolean attribute via JS", () => {
@@ -90,8 +90,8 @@ Deno.test("MWIDocNode - Attribute Operations", async (t) => {
 	await t.step("(setAttr) - Set list-valued attribute", () => {
 		const divNode = doc.createNode('h.div');
 		const listVal = ps('[(item1 item2 item3)]');
-		divNode('setAttr', ls([, 'c.items', , listVal]));
-		const retrieved = divNode('getAttr', ls([, 'c.items']));
+		$c.sm(divNode, 'setAttr', ls([, 'c.items', , listVal]));
+		const retrieved = $c.sm(divNode, 'getAttr', ls([, 'c.items']));
 		assertEquals(retrieved.at(0), 'item1');
 		assertEquals(retrieved.at(1), 'item2');
 		assertEquals(retrieved.at(2), 'item3');
@@ -109,7 +109,7 @@ Deno.test("MWIDocNode - Attribute Operations", async (t) => {
 
 	await t.step("(setAttr) - Chaining returns node", () => {
 		const divNode = doc.createNode('h.div');
-		const result = divNode('setAttr', ls([, 'title', , 'Test']));
+		const result = $c.sm(divNode, 'setAttr', ls([, 'title', , 'Test']));
 		assertStrictEquals(result, divNode);
 	});
 
@@ -121,8 +121,8 @@ Deno.test("MWIDocNode - Attribute Operations", async (t) => {
 
 	await t.step("(getAttr) - Get existing attribute", () => {
 		const divNode = doc.createNode('h.div');
-		divNode('setAttr', ls([, 'title', , 'My Title']));
-		assertEquals(divNode('getAttr', ls([, 'title'])), 'My Title');
+		$c.sm(divNode, 'setAttr', ls([, 'title', , 'My Title']));
+		assertEquals($c.sm(divNode, 'getAttr', ls([, 'title'])), 'My Title');
 	});
 
 	await t.step(".getAttr() - Get existing attribute via JS", () => {
@@ -133,7 +133,7 @@ Deno.test("MWIDocNode - Attribute Operations", async (t) => {
 
 	await t.step("(getAttr) - Get non-existent attribute", () => {
 		const divNode = doc.createNode('h.div');
-		assertEquals(divNode('getAttr', ls([, 'nonexistent'])), undefined);
+		assertEquals($c.sm(divNode, 'getAttr', ls([, 'nonexistent'])), undefined);
 	});
 
 	await t.step(".getAttr() - Get non-existent attribute via JS", () => {
@@ -143,8 +143,8 @@ Deno.test("MWIDocNode - Attribute Operations", async (t) => {
 
 	await t.step("(hasAttr) - Check existing attribute", () => {
 		const divNode = doc.createNode('h.div');
-		divNode('setAttr', ls([, 'test-attr', , 'exists']));
-		assertEquals(divNode('hasAttr', ls([, 'test-attr'])), true);
+		$c.sm(divNode, 'setAttr', ls([, 'test-attr', , 'exists']));
+		assertEquals($c.sm(divNode, 'hasAttr', ls([, 'test-attr'])), true);
 	});
 
 	await t.step(".hasAttr() - Check existing attribute via JS", () => {
@@ -155,7 +155,7 @@ Deno.test("MWIDocNode - Attribute Operations", async (t) => {
 
 	await t.step("(hasAttr) - Check non-existent attribute", () => {
 		const divNode = doc.createNode('h.div');
-		assertEquals(divNode('hasAttr', ls([, 'nonexistent'])), false);
+		assertEquals($c.sm(divNode, 'hasAttr', ls([, 'nonexistent'])), false);
 	});
 
 	await t.step(".hasAttr() - Check non-existent attribute via JS", () => {
@@ -165,10 +165,10 @@ Deno.test("MWIDocNode - Attribute Operations", async (t) => {
 
 	await t.step("(delAttr) - Delete existing attribute", () => {
 		const divNode = doc.createNode('h.div');
-		divNode('setAttr', ls([, 'temp-attr', , 'temporary']));
-		assertEquals(divNode('hasAttr', ls([, 'temp-attr'])), true);
-		divNode('delAttr', ls([, 'temp-attr']));
-		assertEquals(divNode('hasAttr', ls([, 'temp-attr'])), false);
+		$c.sm(divNode, 'setAttr', ls([, 'temp-attr', , 'temporary']));
+		assertEquals($c.sm(divNode, 'hasAttr', ls([, 'temp-attr'])), true);
+		$c.sm(divNode, 'delAttr', ls([, 'temp-attr']));
+		assertEquals($c.sm(divNode, 'hasAttr', ls([, 'temp-attr'])), false);
 	});
 
 	await t.step(".delAttr() - Delete existing attribute via JS", () => {
@@ -182,10 +182,10 @@ Deno.test("MWIDocNode - Attribute Operations", async (t) => {
 	await t.step("(delAttr) - Delete list-valued attribute", () => {
 		const divNode = doc.createNode('h.div');
 		const listVal = ps('[(a b c)]');
-		divNode('setAttr', ls([, 'c.list', , listVal]));
-		assertEquals(divNode('hasAttr', ls([, 'c.list'])), true);
-		divNode('delAttr', ls([, 'c.list']));
-		assertEquals(divNode('hasAttr', ls([, 'c.list'])), false);
+		$c.sm(divNode, 'setAttr', ls([, 'c.list', , listVal]));
+		assertEquals($c.sm(divNode, 'hasAttr', ls([, 'c.list'])), true);
+		$c.sm(divNode, 'delAttr', ls([, 'c.list']));
+		assertEquals($c.sm(divNode, 'hasAttr', ls([, 'c.list'])), false);
 	});
 
 	await t.step(".delAttr() - Delete list-valued attribute via JS", () => {
@@ -202,8 +202,8 @@ Deno.test("MWIDocNode - Special Attribute: m.id", async (t) => {
 	await t.step("(getAttr) - Auto-generate ID when not set", () => {
 		const divNode = doc.createNode('h.div');
 		// Confirm id starts undefined
-		assertEquals(divNode('getAttr', ls([, 'id'])), undefined);
-		const id1 = divNode('getAttr', ls([, 'm.id']));
+		assertEquals($c.sm(divNode, 'getAttr', ls([, 'id'])), undefined);
+		const id1 = $c.sm(divNode, 'getAttr', ls([, 'm.id']));
 		assert(typeof id1 === 'string');
 		assert(id1.length > 0);
 	});
@@ -219,8 +219,8 @@ Deno.test("MWIDocNode - Special Attribute: m.id", async (t) => {
 
 	await t.step("(getAttr) - Return explicit ID when set", () => {
 		const divNode = doc.createNode('h.div');
-		divNode('setAttr', ls([, 'id', , 'my-explicit-id']));
-		assertEquals(divNode('getAttr', ls([, 'm.id'])), 'my-explicit-id');
+		$c.sm(divNode, 'setAttr', ls([, 'id', , 'my-explicit-id']));
+		assertEquals($c.sm(divNode, 'getAttr', ls([, 'm.id'])), 'my-explicit-id');
 	});
 
 	await t.step(".getAttr() - Return explicit ID when set via JS", () => {
@@ -232,8 +232,8 @@ Deno.test("MWIDocNode - Special Attribute: m.id", async (t) => {
 	await t.step("(getAttr) - Auto-generated IDs are unique", () => {
 		const div1 = doc.createNode('h.div');
 		const div2 = doc.createNode('h.div');
-		const id1 = div1('getAttr', ls([, 'm.id']));
-		const id2 = div2('getAttr', ls([, 'm.id']));
+		const id1 = $c.sm(div1, 'getAttr', ls([, 'm.id']));
+		const id2 = $c.sm(div2, 'getAttr', ls([, 'm.id']));
 		assertNotEquals(id1, id2);
 	});
 
@@ -247,8 +247,8 @@ Deno.test("MWIDocNode - Special Attribute: m.id", async (t) => {
 
 	await t.step("(getAttr) - Auto-generated ID is persisted", () => {
 		const divNode = doc.createNode('h.div');
-		const id1 = divNode('getAttr', ls([, 'm.id']));
-		const id2 = divNode('getAttr', ls([, 'm.id']));
+		const id1 = $c.sm(divNode, 'getAttr', ls([, 'm.id']));
+		const id2 = $c.sm(divNode, 'getAttr', ls([, 'm.id']));
 		assertEquals(id1, id2);
 	});
 
@@ -262,9 +262,9 @@ Deno.test("MWIDocNode - Special Attribute: m.id", async (t) => {
 	await t.step("(getAttr) - m.id sets id attribute", () => {
 		const divNode = doc.createNode('h.div');
 		// Confirm id starts undefined
-		assertEquals(divNode('getAttr', ls([, 'id'])), undefined);
-		const mid = divNode('getAttr', ls([, 'm.id']));
-		const id = divNode('getAttr', ls([, 'id']));
+		assertEquals($c.sm(divNode, 'getAttr', ls([, 'id'])), undefined);
+		const mid = $c.sm(divNode, 'getAttr', ls([, 'm.id']));
+		const id = $c.sm(divNode, 'getAttr', ls([, 'id']));
 		assertEquals(mid, id);
 	});
 
@@ -280,10 +280,10 @@ Deno.test("MWIDocNode - Special Attribute: m.id", async (t) => {
 	await t.step("(setAttr) - m.id auto-assigns id when not set (supplied value ignored)", () => {
 		const divNode = doc.createNode('h.div');
 		// Confirm id starts undefined
-		assertEquals(divNode('getAttr', ls([, 'id'])), undefined);
+		assertEquals($c.sm(divNode, 'getAttr', ls([, 'id'])), undefined);
 		// setAttr with m.id should auto-assign an id; the supplied value is ignored
-		divNode('setAttr', ls([, 'm.id', , 'ignored-value']));
-		const id = divNode('getAttr', ls([, 'id']));
+		$c.sm(divNode, 'setAttr', ls([, 'm.id', , 'ignored-value']));
+		const id = $c.sm(divNode, 'getAttr', ls([, 'id']));
 		assert(typeof id === 'string');
 		assert(id.length > 0);
 		assert(id !== 'ignored-value');
@@ -303,10 +303,10 @@ Deno.test("MWIDocNode - Special Attribute: m.id", async (t) => {
 
 	await t.step("(setAttr) - m.id does not override existing id (supplied value ignored)", () => {
 		const divNode = doc.createNode('h.div');
-		divNode('setAttr', ls([, 'id', , 'existing-id']));
+		$c.sm(divNode, 'setAttr', ls([, 'id', , 'existing-id']));
 		// setAttr with m.id should NOT change the existing id; the supplied value is ignored
-		divNode('setAttr', ls([, 'm.id', , 'should-be-ignored']));
-		assertEquals(divNode('getAttr', ls([, 'id'])), 'existing-id');
+		$c.sm(divNode, 'setAttr', ls([, 'm.id', , 'should-be-ignored']));
+		assertEquals($c.sm(divNode, 'getAttr', ls([, 'id'])), 'existing-id');
 	});
 
 	await t.step(".setAttr() - m.id does not override existing id (supplied value ignored) via JS", () => {
@@ -319,7 +319,7 @@ Deno.test("MWIDocNode - Special Attribute: m.id", async (t) => {
 
 	await t.step("(setAttr) - m.id returns node for chaining", () => {
 		const divNode = doc.createNode('h.div');
-		const result = divNode('setAttr', ls([, 'm.id', , 'any-value']));
+		const result = $c.sm(divNode, 'setAttr', ls([, 'm.id', , 'any-value']));
 		assertStrictEquals(result, divNode);
 	});
 
@@ -333,8 +333,8 @@ Deno.test("MWIDocNode - Special Attribute: m.id", async (t) => {
 Deno.test("MWIDocNode - Special Attribute: class", async (t) => {
 	await t.step("(setAttr) - Basic class setting", () => {
 		const divNode = doc.createNode('h.div');
-		divNode('setAttr', ls([, 'class', , 'test-class']));
-		assertEquals(divNode('getAttr', ls([, 'class'])), 'test-class');
+		$c.sm(divNode, 'setAttr', ls([, 'class', , 'test-class']));
+		assertEquals($c.sm(divNode, 'getAttr', ls([, 'class'])), 'test-class');
 	});
 
 	await t.step(".setAttr() - Basic class setting via JS", () => {
@@ -345,8 +345,8 @@ Deno.test("MWIDocNode - Special Attribute: class", async (t) => {
 
 	await t.step("(setAttr) - Multiple classes", () => {
 		const divNode = doc.createNode('h.div');
-		divNode('setAttr', ls([, 'class', , 'class1 class2 class3']));
-		const classStr = divNode('getAttr', ls([, 'class']));
+		$c.sm(divNode, 'setAttr', ls([, 'class', , 'class1 class2 class3']));
+		const classStr = $c.sm(divNode, 'getAttr', ls([, 'class']));
 		assert(classStr.includes('class1'));
 		assert(classStr.includes('class2'));
 		assert(classStr.includes('class3'));
@@ -363,9 +363,9 @@ Deno.test("MWIDocNode - Special Attribute: class", async (t) => {
 
 	await t.step("(setAttr) - Conditional clear (=)", () => {
 		const divNode = doc.createNode('h.div');
-		divNode('setAttr', ls([, 'class', , 'old-class']));
-		divNode('setAttr', ls([, 'class', , '= new-class']));
-		const classStr = divNode('getAttr', ls([, 'class']));
+		$c.sm(divNode, 'setAttr', ls([, 'class', , 'old-class']));
+		$c.sm(divNode, 'setAttr', ls([, 'class', , '= new-class']));
+		const classStr = $c.sm(divNode, 'getAttr', ls([, 'class']));
 		assert(!classStr.includes('old-class'));
 		assert(classStr.includes('new-class'));
 	});
@@ -381,9 +381,9 @@ Deno.test("MWIDocNode - Special Attribute: class", async (t) => {
 
 	await t.step("(setAttr) - Unconditional clear (==)", () => {
 		const divNode = doc.createNode('h.div');
-		divNode('setAttr', ls([, 'class', , 'old-class']));
-		divNode('setAttr', ls([, 'class', , '== new-class']));
-		const classStr = divNode('getAttr', ls([, 'class']));
+		$c.sm(divNode, 'setAttr', ls([, 'class', , 'old-class']));
+		$c.sm(divNode, 'setAttr', ls([, 'class', , '== new-class']));
+		const classStr = $c.sm(divNode, 'getAttr', ls([, 'class']));
 		assert(!classStr.includes('old-class'));
 		assert(classStr.includes('new-class'));
 	});
@@ -399,9 +399,9 @@ Deno.test("MWIDocNode - Special Attribute: class", async (t) => {
 
 	await t.step("(setAttr) - Unconditional clear with nothing after (==)", () => {
 		const divNode = doc.createNode('h.div');
-		divNode('setAttr', ls([, 'class', , 'old-class']));
-		divNode('setAttr', ls([, 'class', , '==']));
-		const classStr = divNode('getAttr', ls([, 'class']));
+		$c.sm(divNode, 'setAttr', ls([, 'class', , 'old-class']));
+		$c.sm(divNode, 'setAttr', ls([, 'class', , '==']));
+		const classStr = $c.sm(divNode, 'getAttr', ls([, 'class']));
 		assertEquals(classStr, undefined);
 	});
 
@@ -415,9 +415,9 @@ Deno.test("MWIDocNode - Special Attribute: class", async (t) => {
 
 	await t.step("(setAttr) - Supplement mode (+)", () => {
 		const divNode = doc.createNode('h.div');
-		divNode('setAttr', ls([, 'class', , 'existing']));
-		divNode('setAttr', ls([, 'class', , '+ additional']));
-		const classStr = divNode('getAttr', ls([, 'class']));
+		$c.sm(divNode, 'setAttr', ls([, 'class', , 'existing']));
+		$c.sm(divNode, 'setAttr', ls([, 'class', , '+ additional']));
+		const classStr = $c.sm(divNode, 'getAttr', ls([, 'class']));
 		assert(classStr.includes('existing'));
 		assert(classStr.includes('additional'));
 	});
@@ -433,9 +433,9 @@ Deno.test("MWIDocNode - Special Attribute: class", async (t) => {
 
 	await t.step("(setAttr) - Remove class (!)", () => {
 		const divNode = doc.createNode('h.div');
-		divNode('setAttr', ls([, 'class', , 'keep remove']));
-		divNode('setAttr', ls([, 'class', , '+ !remove']));
-		const classStr = divNode('getAttr', ls([, 'class']));
+		$c.sm(divNode, 'setAttr', ls([, 'class', , 'keep remove']));
+		$c.sm(divNode, 'setAttr', ls([, 'class', , '+ !remove']));
+		const classStr = $c.sm(divNode, 'getAttr', ls([, 'class']));
 		assert(classStr.includes('keep'));
 		assert(!classStr.includes('remove'));
 	});
@@ -451,11 +451,11 @@ Deno.test("MWIDocNode - Special Attribute: class", async (t) => {
 
 	await t.step("(setAttr) - Toggle class (~)", () => {
 		const divNode = doc.createNode('h.div');
-		divNode('setAttr', ls([, 'class', , 'existing']));
-		divNode('setAttr', ls([, 'class', , '+ ~toggle']));
-		assert(divNode('hasClass', ls([, 'toggle'])));
-		divNode('setAttr', ls([, 'class', , '+ ~toggle']));
-		assert(!divNode('hasClass', ls([, 'toggle'])));
+		$c.sm(divNode, 'setAttr', ls([, 'class', , 'existing']));
+		$c.sm(divNode, 'setAttr', ls([, 'class', , '+ ~toggle']));
+		assert($c.sm(divNode, 'hasClass', ls([, 'toggle'])));
+		$c.sm(divNode, 'setAttr', ls([, 'class', , '+ ~toggle']));
+		assert(!$c.sm(divNode, 'hasClass', ls([, 'toggle'])));
 	});
 
 	await t.step(".setAttr() - Toggle class (~) via JS", () => {
@@ -469,9 +469,9 @@ Deno.test("MWIDocNode - Special Attribute: class", async (t) => {
 
 	await t.step("(setAttr) - Empty/whitespace clears classes", () => {
 		const divNode = doc.createNode('h.div');
-		divNode('setAttr', ls([, 'class', , 'some-class']));
-		divNode('setAttr', ls([, 'class', , '   ']));
-		const classStr = divNode('getAttr', ls([, 'class']));
+		$c.sm(divNode, 'setAttr', ls([, 'class', , 'some-class']));
+		$c.sm(divNode, 'setAttr', ls([, 'class', , '   ']));
+		const classStr = $c.sm(divNode, 'getAttr', ls([, 'class']));
 		assertEquals(classStr, undefined);
 	});
 
@@ -485,8 +485,8 @@ Deno.test("MWIDocNode - Special Attribute: class", async (t) => {
 
 	await t.step("(hasClass) - Check existing class", () => {
 		const divNode = doc.createNode('h.div');
-		divNode('setAttr', ls([, 'class', , 'test-class']));
-		assertEquals(divNode('hasClass', ls([, 'test-class'])), true);
+		$c.sm(divNode, 'setAttr', ls([, 'class', , 'test-class']));
+		assertEquals($c.sm(divNode, 'hasClass', ls([, 'test-class'])), true);
 	});
 
 	await t.step(".hasClass() - Check existing class via JS", () => {
@@ -497,8 +497,8 @@ Deno.test("MWIDocNode - Special Attribute: class", async (t) => {
 
 	await t.step("(hasClass) - Check non-existent class", () => {
 		const divNode = doc.createNode('h.div');
-		divNode('setAttr', ls([, 'class', , 'test-class']));
-		assertEquals(divNode('hasClass', ls([, 'missing-class'])), false);
+		$c.sm(divNode, 'setAttr', ls([, 'class', , 'test-class']));
+		assertEquals($c.sm(divNode, 'hasClass', ls([, 'missing-class'])), false);
 	});
 
 	await t.step(".hasClass() - Check non-existent class via JS", () => {
@@ -509,11 +509,11 @@ Deno.test("MWIDocNode - Special Attribute: class", async (t) => {
 
 	await t.step("(hasClass) - After modifications", () => {
 		const divNode = doc.createNode('h.div');
-		divNode('setAttr', ls([, 'class', , 'class1 class2']));
-		assertEquals(divNode('hasClass', ls([, 'class1'])), true);
-		divNode('setAttr', ls([, 'class', , '+ !class1']));
-		assertEquals(divNode('hasClass', ls([, 'class1'])), false);
-		assertEquals(divNode('hasClass', ls([, 'class2'])), true);
+		$c.sm(divNode, 'setAttr', ls([, 'class', , 'class1 class2']));
+		assertEquals($c.sm(divNode, 'hasClass', ls([, 'class1'])), true);
+		$c.sm(divNode, 'setAttr', ls([, 'class', , '+ !class1']));
+		assertEquals($c.sm(divNode, 'hasClass', ls([, 'class1'])), false);
+		assertEquals($c.sm(divNode, 'hasClass', ls([, 'class2'])), true);
 	});
 
 	await t.step(".hasClass() - After modifications via JS", () => {
@@ -529,8 +529,8 @@ Deno.test("MWIDocNode - Special Attribute: class", async (t) => {
 Deno.test("MWIDocNode - Special Attribute: m.percl", async (t) => {
 	await t.step("(setAttr) - Set permanent classes", async () => {
 		const divNode = doc.createNode('h.div');
-		divNode('setAttr', ls([, 'm.percl', , 'perm1 perm2']));
-		const classStr = divNode('getAttr', ls([, 'class']));
+		$c.sm(divNode, 'setAttr', ls([, 'm.percl', , 'perm1 perm2']));
+		const classStr = $c.sm(divNode, 'getAttr', ls([, 'class']));
 		assert(classStr.includes('perm1'));
 		assert(classStr.includes('perm2'));
 	});
@@ -545,13 +545,13 @@ Deno.test("MWIDocNode - Special Attribute: m.percl", async (t) => {
 
 	await t.step("(setAttr) - Permanent classes persist through modifications", async () => {
 		const divNode = doc.createNode('h.div');
-		divNode('setAttr', ls([, 'm.percl', , 'permanent']));
-		divNode('setAttr', ls([, 'class', , 'temporary']));
-		let classStr = divNode('getAttr', ls([, 'class']));
+		$c.sm(divNode, 'setAttr', ls([, 'm.percl', , 'permanent']));
+		$c.sm(divNode, 'setAttr', ls([, 'class', , 'temporary']));
+		let classStr = $c.sm(divNode, 'getAttr', ls([, 'class']));
 		assert(classStr.includes('permanent'));
 		assert(classStr.includes('temporary'));
-		divNode('setAttr', ls([, 'class', , '==']));
-		classStr = divNode('getAttr', ls([, 'class']));
+		$c.sm(divNode, 'setAttr', ls([, 'class', , '==']));
+		classStr = $c.sm(divNode, 'getAttr', ls([, 'class']));
 		assert(classStr.includes('permanent'));
 		assert(!classStr.includes('temporary'));
 	});
@@ -571,11 +571,11 @@ Deno.test("MWIDocNode - Special Attribute: m.percl", async (t) => {
 
 	await t.step("(delAttr) - Clear permanent classes", async () => {
 		const divNode = doc.createNode('h.div');
-		divNode('setAttr', ls([, 'm.percl', , 'perm']));
-		assert(divNode('hasClass', ls([, 'perm'])));
-		divNode('delAttr', ls([, 'm.percl']));
-		divNode('setAttr', ls([, 'class', , '!perm']));
-		assert(!divNode('hasClass', ls([, 'perm'])));
+		$c.sm(divNode, 'setAttr', ls([, 'm.percl', , 'perm']));
+		assert($c.sm(divNode, 'hasClass', ls([, 'perm'])));
+		$c.sm(divNode, 'delAttr', ls([, 'm.percl']));
+		$c.sm(divNode, 'setAttr', ls([, 'class', , '!perm']));
+		assert(!$c.sm(divNode, 'hasClass', ls([, 'perm'])));
 	});
 
 	await t.step(".delAttr() - Clear permanent classes via JS", async () => {
@@ -589,11 +589,11 @@ Deno.test("MWIDocNode - Special Attribute: m.percl", async (t) => {
 
 	await t.step("(setAttr) - Permanent classes remain after class clear", async () => {
 		const divNode = doc.createNode('h.div');
-		divNode('setAttr', ls([, 'm.percl', , 'perm']));
-		divNode('setAttr', ls([, 'class', , 'temp']));
-		divNode('setAttr', ls([, 'class', , '==']));
-		assert(divNode('hasClass', ls([, 'perm'])));
-		assert(!divNode('hasClass', ls([, 'temp'])));
+		$c.sm(divNode, 'setAttr', ls([, 'm.percl', , 'perm']));
+		$c.sm(divNode, 'setAttr', ls([, 'class', , 'temp']));
+		$c.sm(divNode, 'setAttr', ls([, 'class', , '==']));
+		assert($c.sm(divNode, 'hasClass', ls([, 'perm'])));
+		assert(!$c.sm(divNode, 'hasClass', ls([, 'temp'])));
 	});
 
 	await t.step(".setAttr() - Permanent classes remain after class clear via JS", async () => {
@@ -607,9 +607,9 @@ Deno.test("MWIDocNode - Special Attribute: m.percl", async (t) => {
 
 	await t.step("(setAttr) - Cannot remove permanent class with !", async () => {
 		const divNode = doc.createNode('h.div');
-		divNode('setAttr', ls([, 'm.percl', , 'perm']));
-		divNode('setAttr', ls([, 'class', , '+ !perm']));
-		assert(divNode('hasClass', ls([, 'perm'])));
+		$c.sm(divNode, 'setAttr', ls([, 'm.percl', , 'perm']));
+		$c.sm(divNode, 'setAttr', ls([, 'class', , '+ !perm']));
+		assert($c.sm(divNode, 'hasClass', ls([, 'perm'])));
 	});
 
 	await t.step(".setAttr() - Cannot remove permanent class with ! via JS", async () => {
@@ -621,9 +621,9 @@ Deno.test("MWIDocNode - Special Attribute: m.percl", async (t) => {
 
 	await t.step("(setAttr) - Cannot toggle permanent class with ~", async () => {
 		const divNode = doc.createNode('h.div');
-		divNode('setAttr', ls([, 'm.percl', , 'perm']));
-		divNode('setAttr', ls([, 'class', , '+ ~perm']));
-		assert(divNode('hasClass', ls([, 'perm'])));
+		$c.sm(divNode, 'setAttr', ls([, 'm.percl', , 'perm']));
+		$c.sm(divNode, 'setAttr', ls([, 'class', , '+ ~perm']));
+		assert($c.sm(divNode, 'hasClass', ls([, 'perm'])));
 	});
 
 	await t.step(".setAttr() - Cannot toggle permanent class with ~ via JS", async () => {
@@ -637,8 +637,8 @@ Deno.test("MWIDocNode - Special Attribute: m.percl", async (t) => {
 Deno.test("MWIDocNode - Special Attribute: id type checking", async (t) => {
 	await t.step("(setAttr) - id accepts string", () => {
 		const divNode = doc.createNode('h.div');
-		divNode('setAttr', ls([, 'id', , 'my-id']));
-		assertEquals(divNode('getAttr', ls([, 'id'])), 'my-id');
+		$c.sm(divNode, 'setAttr', ls([, 'id', , 'my-id']));
+		assertEquals($c.sm(divNode, 'getAttr', ls([, 'id'])), 'my-id');
 	});
 
 	await t.step(".setAttr() - id accepts string via JS", () => {
@@ -649,8 +649,8 @@ Deno.test("MWIDocNode - Special Attribute: id type checking", async (t) => {
 
 	await t.step("(setAttr) - id accepts number (normalized to string)", () => {
 		const divNode = doc.createNode('h.div');
-		divNode('setAttr', ls([, 'id', , 123]));
-		assertEquals(divNode('getAttr', ls([, 'id'])), '123');
+		$c.sm(divNode, 'setAttr', ls([, 'id', , 123]));
+		assertEquals($c.sm(divNode, 'getAttr', ls([, 'id'])), '123');
 	});
 
 	await t.step(".setAttr() - id accepts number (normalized to string) via JS", () => {
@@ -661,9 +661,9 @@ Deno.test("MWIDocNode - Special Attribute: id type checking", async (t) => {
 
 	await t.step("(setAttr) - id clears on undefined", () => {
 		const divNode = doc.createNode('h.div');
-		divNode('setAttr', ls([, 'id', , 'initial']));
-		divNode('setAttr', ls([, 'id', , undefined]));
-		assertEquals(divNode('getAttr', ls([, 'id'])), undefined);
+		$c.sm(divNode, 'setAttr', ls([, 'id', , 'initial']));
+		$c.sm(divNode, 'setAttr', ls([, 'id', , undefined]));
+		assertEquals($c.sm(divNode, 'getAttr', ls([, 'id'])), undefined);
 	});
 
 	await t.step(".setAttr() - id clears on null via JS", () => {
@@ -675,9 +675,9 @@ Deno.test("MWIDocNode - Special Attribute: id type checking", async (t) => {
 
 	await t.step("(setAttr) - id clears on false", () => {
 		const divNode = doc.createNode('h.div');
-		divNode('setAttr', ls([, 'id', , 'initial']));
-		divNode('setAttr', ls([, 'id', , false]));
-		assertEquals(divNode('getAttr', ls([, 'id'])), undefined);
+		$c.sm(divNode, 'setAttr', ls([, 'id', , 'initial']));
+		$c.sm(divNode, 'setAttr', ls([, 'id', , false]));
+		assertEquals($c.sm(divNode, 'getAttr', ls([, 'id'])), undefined);
 	});
 
 	await t.step(".setAttr() - id ignores other types", () => {
@@ -693,9 +693,9 @@ Deno.test("MWIDocNode - Special Attribute: id type checking", async (t) => {
 Deno.test("MWIDocNode - document.getDocById()", async (t) => {
 	await t.step("(getDocById) - Find node by string id", () => {
 		const divNode = doc.createNode('h.div');
-		divNode('setAttr', ls([, 'id', , 'test-node-1']));
+		$c.sm(divNode, 'setAttr', ls([, 'id', , 'test-node-1']));
 
-		const found = doc('getDocById', ls([, 'test-node-1']));
+		const found = $c.sm(doc, 'getDocById', ls([, 'test-node-1']));
 		assertStrictEquals(found, divNode);
 	});
 
@@ -709,9 +709,9 @@ Deno.test("MWIDocNode - document.getDocById()", async (t) => {
 
 	await t.step("(getDocById) - Find node by numeric id", () => {
 		const divNode = doc.createNode('h.div');
-		divNode('setAttr', ls([, 'id', , 12345]));
+		$c.sm(divNode, 'setAttr', ls([, 'id', , 12345]));
 
-		const found = doc('getDocById', ls([, 12345]));
+		const found = $c.sm(doc, 'getDocById', ls([, 12345]));
 		assertStrictEquals(found, divNode);
 	});
 
@@ -725,10 +725,10 @@ Deno.test("MWIDocNode - document.getDocById()", async (t) => {
 
 	await t.step("(getDocById) - Numeric id normalized to string for lookup", () => {
 		const divNode = doc.createNode('h.div');
-		divNode('setAttr', ls([, 'id', , '78901']));
+		$c.sm(divNode, 'setAttr', ls([, 'id', , '78901']));
 
 		// Should find with numeric lookup
-		const found = doc('getDocById', ls([, 78901]));
+		const found = $c.sm(doc, 'getDocById', ls([, 78901]));
 		assertStrictEquals(found, divNode);
 	});
 
@@ -739,10 +739,10 @@ Deno.test("MWIDocNode - document.getDocById()", async (t) => {
 
 	await t.step("(getDocById) - Works with disconnected nodes", () => {
 		const divNode = doc.createNode('h.div');
-		divNode('setAttr', ls([, 'id', , 'disconnected-node']));
+		$c.sm(divNode, 'setAttr', ls([, 'id', , 'disconnected-node']));
 
 		// Node is not in any rendering tree
-		const found = doc('getDocById', ls([, 'disconnected-node']));
+		const found = $c.sm(doc, 'getDocById', ls([, 'disconnected-node']));
 		assertStrictEquals(found, divNode);
 	});
 
@@ -760,14 +760,14 @@ Deno.test("MWIDocNode - document.getDocById()", async (t) => {
 
 	await t.step("(getDocById) - Cleared id removes from index", () => {
 		const divNode = doc.createNode('h.div');
-		divNode('setAttr', ls([, 'id', , 'temp-id-test']));
+		$c.sm(divNode, 'setAttr', ls([, 'id', , 'temp-id-test']));
 
-		let found = doc('getDocById', ls([, 'temp-id-test']));
+		let found = $c.sm(doc, 'getDocById', ls([, 'temp-id-test']));
 		assertStrictEquals(found, divNode);
 
 		// Clear the id
-		divNode('delAttr', ls([, 'id']));
-		found = doc('getDocById', ls([, 'temp-id-test']));
+		$c.sm(divNode, 'delAttr', ls([, 'id']));
+		found = $c.sm(doc, 'getDocById', ls([, 'temp-id-test']));
 		assertEquals(found, undefined);
 	});
 
@@ -792,8 +792,8 @@ Deno.test("MWIDocNode - document.getDocById()", async (t) => {
 Deno.test("MWIDocNode - Special Attribute: style", async (t) => {
 	await t.step("(setAttr) - Basic style", () => {
 		const divNode = doc.createNode('h.div');
-		divNode('setAttr', ls([, 'style', , 'color: red']));
-		const styleStr = divNode('getAttr', ls([, 'style']));
+		$c.sm(divNode, 'setAttr', ls([, 'style', , 'color: red']));
+		const styleStr = $c.sm(divNode, 'getAttr', ls([, 'style']));
 		assert(styleStr.includes('color:red'));
 	});
 
@@ -806,8 +806,8 @@ Deno.test("MWIDocNode - Special Attribute: style", async (t) => {
 
 	await t.step("(setAttr) - Multiple styles", () => {
 		const divNode = doc.createNode('h.div');
-		divNode('setAttr', ls([, 'style', , 'color: red; background: blue']));
-		const styleStr = divNode('getAttr', ls([, 'style']));
+		$c.sm(divNode, 'setAttr', ls([, 'style', , 'color: red; background: blue']));
+		const styleStr = $c.sm(divNode, 'getAttr', ls([, 'style']));
 		assert(styleStr.includes('color:red'));
 		assert(styleStr.includes('background:blue'));
 	});
@@ -822,9 +822,9 @@ Deno.test("MWIDocNode - Special Attribute: style", async (t) => {
 
 	await t.step("(setAttr) - Conditional clear (=)", () => {
 		const divNode = doc.createNode('h.div');
-		divNode('setAttr', ls([, 'style', , 'color: red']));
-		divNode('setAttr', ls([, 'style', , '= color: green']));
-		const styleStr = divNode('getAttr', ls([, 'style']));
+		$c.sm(divNode, 'setAttr', ls([, 'style', , 'color: red']));
+		$c.sm(divNode, 'setAttr', ls([, 'style', , '= color: green']));
+		const styleStr = $c.sm(divNode, 'getAttr', ls([, 'style']));
 		assert(styleStr.includes('color:green'));
 		assert(!styleStr.includes('red'));
 	});
@@ -840,9 +840,9 @@ Deno.test("MWIDocNode - Special Attribute: style", async (t) => {
 
 	await t.step("(setAttr) - Unconditional clear (==)", () => {
 		const divNode = doc.createNode('h.div');
-		divNode('setAttr', ls([, 'style', , 'color: red; margin: 10px']));
-		divNode('setAttr', ls([, 'style', , '== color: green']));
-		const styleStr = divNode('getAttr', ls([, 'style']));
+		$c.sm(divNode, 'setAttr', ls([, 'style', , 'color: red; margin: 10px']));
+		$c.sm(divNode, 'setAttr', ls([, 'style', , '== color: green']));
+		const styleStr = $c.sm(divNode, 'getAttr', ls([, 'style']));
 		assert(styleStr.includes('color:green'));
 		assert(!styleStr.includes('margin'));
 	});
@@ -858,9 +858,9 @@ Deno.test("MWIDocNode - Special Attribute: style", async (t) => {
 
 	await t.step("(setAttr) - Unconditional clear with nothing after (==)", () => {
 		const divNode = doc.createNode('h.div');
-		divNode('setAttr', ls([, 'style', , 'color: red']));
-		divNode('setAttr', ls([, 'style', , '==']));
-		const styleStr = divNode('getAttr', ls([, 'style']));
+		$c.sm(divNode, 'setAttr', ls([, 'style', , 'color: red']));
+		$c.sm(divNode, 'setAttr', ls([, 'style', , '==']));
+		const styleStr = $c.sm(divNode, 'getAttr', ls([, 'style']));
 		assertEquals(styleStr, undefined);
 	});
 
@@ -874,9 +874,9 @@ Deno.test("MWIDocNode - Special Attribute: style", async (t) => {
 
 	await t.step("(setAttr) - Supplement mode (+)", () => {
 		const divNode = doc.createNode('h.div');
-		divNode('setAttr', ls([, 'style', , 'color: red']));
-		divNode('setAttr', ls([, 'style', , '+ margin: 10px']));
-		const styleStr = divNode('getAttr', ls([, 'style']));
+		$c.sm(divNode, 'setAttr', ls([, 'style', , 'color: red']));
+		$c.sm(divNode, 'setAttr', ls([, 'style', , '+ margin: 10px']));
+		const styleStr = $c.sm(divNode, 'getAttr', ls([, 'style']));
 		assert(styleStr.includes('color:red'));
 		assert(styleStr.includes('margin:10px'));
 	});
@@ -892,9 +892,9 @@ Deno.test("MWIDocNode - Special Attribute: style", async (t) => {
 
 	await t.step("(setAttr) - Remove style (empty value)", () => {
 		const divNode = doc.createNode('h.div');
-		divNode('setAttr', ls([, 'style', , 'color: red; margin: 10px']));
-		divNode('setAttr', ls([, 'style', , '+ color: ;']));
-		const styleStr = divNode('getAttr', ls([, 'style']));
+		$c.sm(divNode, 'setAttr', ls([, 'style', , 'color: red; margin: 10px']));
+		$c.sm(divNode, 'setAttr', ls([, 'style', , '+ color: ;']));
+		const styleStr = $c.sm(divNode, 'getAttr', ls([, 'style']));
 		assert(!styleStr.includes('color'));
 		assert(styleStr.includes('margin:10px'));
 	});
@@ -910,9 +910,9 @@ Deno.test("MWIDocNode - Special Attribute: style", async (t) => {
 
 	await t.step("(setAttr) - Empty/whitespace clears styles", () => {
 		const divNode = doc.createNode('h.div');
-		divNode('setAttr', ls([, 'style', , 'color: red']));
-		divNode('setAttr', ls([, 'style', , '   ']));
-		const styleStr = divNode('getAttr', ls([, 'style']));
+		$c.sm(divNode, 'setAttr', ls([, 'style', , 'color: red']));
+		$c.sm(divNode, 'setAttr', ls([, 'style', , '   ']));
+		const styleStr = $c.sm(divNode, 'getAttr', ls([, 'style']));
 		assertEquals(styleStr, undefined);
 	});
 
@@ -926,9 +926,9 @@ Deno.test("MWIDocNode - Special Attribute: style", async (t) => {
 
 	await t.step("(delAttr) - Clear all styles", () => {
 		const divNode = doc.createNode('h.div');
-		divNode('setAttr', ls([, 'style', , 'color: red; margin: 10px']));
-		divNode('delAttr', ls([, 'style']));
-		const styleStr = divNode('getAttr', ls([, 'style']));
+		$c.sm(divNode, 'setAttr', ls([, 'style', , 'color: red; margin: 10px']));
+		$c.sm(divNode, 'delAttr', ls([, 'style']));
+		const styleStr = $c.sm(divNode, 'getAttr', ls([, 'style']));
 		assertEquals(styleStr, undefined);
 	});
 
@@ -944,12 +944,12 @@ Deno.test("MWIDocNode - Special Attribute: style", async (t) => {
 Deno.test("MWIDocNode - Attribute Slotting: m.slat", async (t) => {
 	await t.step("(setAttr) - Default source (empty spec)", async () => {
 		const fragNode = doc.createNode('m.frg');
-		fragNode('setAttr', ls([, 'title', , 'Source Title']));
+		$c.sm(fragNode, 'setAttr', ls([, 'title', , 'Source Title']));
 
 		const divNode = doc.createNode('h.div', { slotSrc: fragNode });
-		divNode('setAttr', ls([, 'm.slat', , ps('[(title=[])]')]));
+		$c.sm(divNode, 'setAttr', ls([, 'm.slat', , ps('[(title=[])]')]));
 
-		assertEquals(divNode('getAttr', ls([, 'title'])), 'Source Title');
+		assertEquals($c.sm(divNode, 'getAttr', ls([, 'title'])), 'Source Title');
 	});
 
 	await t.step(".setAttr() - Default source (empty spec) via JS", async () => {
@@ -964,12 +964,12 @@ Deno.test("MWIDocNode - Attribute Slotting: m.slat", async (t) => {
 
 	await t.step("(setAttr) - Explicit source", async () => {
 		const fragNode = doc.createNode('m.frg');
-		fragNode('setAttr', ls([, 'data-source', , 'Source Value']));
+		$c.sm(fragNode, 'setAttr', ls([, 'data-source', , 'Source Value']));
 
 		const divNode = doc.createNode('h.div', { slotSrc: fragNode });
-		divNode('setAttr', ls([, 'm.slat', , ps('[(title=[data-source])]')]));
+		$c.sm(divNode, 'setAttr', ls([, 'm.slat', , ps('[(title=[data-source])]')]));
 
-		assertEquals(divNode('getAttr', ls([, 'title'])), 'Source Value');
+		assertEquals($c.sm(divNode, 'getAttr', ls([, 'title'])), 'Source Value');
 	});
 
 	await t.step(".setAttr() - Explicit source via JS", async () => {
@@ -987,9 +987,9 @@ Deno.test("MWIDocNode - Attribute Slotting: m.slat", async (t) => {
 		// Don't set the source attribute
 
 		const divNode = doc.createNode('h.div', { slotSrc: fragNode });
-		divNode('setAttr', ls([, 'm.slat', , ps('[(title=[missing else=Default])]')]));
+		$c.sm(divNode, 'setAttr', ls([, 'm.slat', , ps('[(title=[missing else=Default])]')]));
 
-		assertEquals(divNode('getAttr', ls([, 'title'])), 'Default');
+		assertEquals($c.sm(divNode, 'getAttr', ls([, 'title'])), 'Default');
 	});
 
 	await t.step(".setAttr() - With else fallback via JS", async () => {
@@ -1004,14 +1004,14 @@ Deno.test("MWIDocNode - Attribute Slotting: m.slat", async (t) => {
 
 	await t.step("(setAttr) - Multiple slottings", async () => {
 		const fragNode = doc.createNode('m.frg');
-		fragNode('setAttr', ls([, 'src1', , 'Value1']));
-		fragNode('setAttr', ls([, 'src2', , 'Value2']));
+		$c.sm(fragNode, 'setAttr', ls([, 'src1', , 'Value1']));
+		$c.sm(fragNode, 'setAttr', ls([, 'src2', , 'Value2']));
 
 		const divNode = doc.createNode('h.div', { slotSrc: fragNode });
-		divNode('setAttr', ls([, 'm.slat', , ps('[(title=[src1] data-info=[src2])]')]));
+		$c.sm(divNode, 'setAttr', ls([, 'm.slat', , ps('[(title=[src1] data-info=[src2])]')]));
 
-		assertEquals(divNode('getAttr', ls([, 'title'])), 'Value1');
-		assertEquals(divNode('getAttr', ls([, 'data-info'])), 'Value2');
+		assertEquals($c.sm(divNode, 'getAttr', ls([, 'title'])), 'Value1');
+		assertEquals($c.sm(divNode, 'getAttr', ls([, 'data-info'])), 'Value2');
 	});
 
 	await t.step(".setAttr() - Multiple slottings via JS", async () => {
@@ -1029,12 +1029,12 @@ Deno.test("MWIDocNode - Attribute Slotting: m.slat", async (t) => {
 	await t.step("(setAttr) - List-valued attribute preservation", async () => {
 		const fragNode = doc.createNode('m.frg');
 		const listVal = ps('[(item1 item2 item3)]');
-		fragNode('setAttr', ls([, 'c.items', , listVal]));
+		$c.sm(fragNode, 'setAttr', ls([, 'c.items', , listVal]));
 
 		const divNode = doc.createNode('h.div', { slotSrc: fragNode });
-		divNode('setAttr', ls([, 'm.slat', , ps('[(c.data=[c.items])]')]));
+		$c.sm(divNode, 'setAttr', ls([, 'm.slat', , ps('[(c.data=[c.items])]')]));
 
-		const retrieved = divNode('getAttr', ls([, 'c.data']));
+		const retrieved = $c.sm(divNode, 'getAttr', ls([, 'c.data']));
 		assertEquals(retrieved.at(0), 'item1');
 		assertEquals(retrieved.at(1), 'item2');
 		assertEquals(retrieved.at(2), 'item3');
@@ -1057,9 +1057,9 @@ Deno.test("MWIDocNode - Attribute Slotting: m.slat", async (t) => {
 	await t.step("(setAttr) - m.slat attribute is set", async () => {
 		const divNode = doc.createNode('h.div');
 		const slatVal = ps('[(title=[])]');
-		divNode('setAttr', ls([, 'm.slat', , slatVal]));
+		$c.sm(divNode, 'setAttr', ls([, 'm.slat', , slatVal]));
 
-		const retrieved = divNode('getAttr', ls([, 'm.slat']));
+		const retrieved = $c.sm(divNode, 'getAttr', ls([, 'm.slat']));
 		assert(retrieved !== undefined);
 	});
 
@@ -1074,15 +1074,15 @@ Deno.test("MWIDocNode - Attribute Slotting: m.slat", async (t) => {
 
 	await t.step("(setAttr) - Triggers slotting immediately", async () => {
 		const fragNode = doc.createNode('m.frg');
-		fragNode('setAttr', ls([, 'title', , 'Slotted']));
+		$c.sm(fragNode, 'setAttr', ls([, 'title', , 'Slotted']));
 
 		const divNode = doc.createNode('h.div', { slotSrc: fragNode });
 
 		// Slotting happens immediately when m.slat is set
-		divNode('setAttr', ls([, 'm.slat', , ps('[(title=[])]')]));
+		$c.sm(divNode, 'setAttr', ls([, 'm.slat', , ps('[(title=[])]')]));
 
 		// Verify slotting occurred immediately
-		assertEquals(divNode('getAttr', ls([, 'title'])), 'Slotted');
+		assertEquals($c.sm(divNode, 'getAttr', ls([, 'title'])), 'Slotted');
 	});
 
 	await t.step(".setAttr() - Triggers slotting immediately via JS", async () => {
@@ -1101,9 +1101,9 @@ Deno.test("MWIDocNode - Attribute Slotting: m.slat", async (t) => {
 	await t.step("(setAttr) - No slot source uses else default", async () => {
 		// Node with NO slotSrc
 		const divNode = doc.createNode('h.div');
-		divNode('setAttr', ls([, 'm.slat', , ps('[(title=[missing else=DefaultValue])]')]));
+		$c.sm(divNode, 'setAttr', ls([, 'm.slat', , ps('[(title=[missing else=DefaultValue])]')]));
 
-		assertEquals(divNode('getAttr', ls([, 'title'])), 'DefaultValue');
+		assertEquals($c.sm(divNode, 'getAttr', ls([, 'title'])), 'DefaultValue');
 	});
 
 	await t.step(".setAttr() - No slot source uses else default via JS", async () => {
@@ -1117,10 +1117,10 @@ Deno.test("MWIDocNode - Attribute Slotting: m.slat", async (t) => {
 	await t.step("(setAttr) - No slot source, multiple targets with defaults", async () => {
 		// Node with NO slotSrc
 		const divNode = doc.createNode('h.div');
-		divNode('setAttr', ls([, 'm.slat', , ps('[(title=[src1 else=Default1] data-info=[src2 else=Default2])]')]));
+		$c.sm(divNode, 'setAttr', ls([, 'm.slat', , ps('[(title=[src1 else=Default1] data-info=[src2 else=Default2])]')]));
 
-		assertEquals(divNode('getAttr', ls([, 'title'])), 'Default1');
-		assertEquals(divNode('getAttr', ls([, 'data-info'])), 'Default2');
+		assertEquals($c.sm(divNode, 'getAttr', ls([, 'title'])), 'Default1');
+		assertEquals($c.sm(divNode, 'getAttr', ls([, 'data-info'])), 'Default2');
 	});
 
 	await t.step(".setAttr() - No slot source, multiple targets with defaults via JS", async () => {
@@ -1136,12 +1136,12 @@ Deno.test("MWIDocNode - Attribute Slotting: m.slat", async (t) => {
 Deno.test("MWIDocNode - Computed Attributes: m.coat", async (t) => {
 	await t.step("(setAttr) - Simple interpolation", async () => {
 		const fragNode = doc.createNode('m.frg');
-		fragNode('setAttr', ls([, 'name', , 'World']));
+		$c.sm(fragNode, 'setAttr', ls([, 'name', , 'World']));
 
 		const divNode = doc.createNode('h.div', { slotSrc: fragNode });
-		divNode('setAttr', ls([, 'm.coat', , ps('[(title="<name>")]')]));
+		$c.sm(divNode, 'setAttr', ls([, 'm.coat', , ps('[(title="<name>")]')]));
 
-		assertEquals(divNode('getAttr', ls([, 'title'])), 'World');
+		assertEquals($c.sm(divNode, 'getAttr', ls([, 'title'])), 'World');
 	});
 
 	await t.step(".setAttr() - Simple interpolation via JS", async () => {
@@ -1156,12 +1156,12 @@ Deno.test("MWIDocNode - Computed Attributes: m.coat", async (t) => {
 
 	await t.step("(setAttr) - Conditional (?)", async () => {
 		const fragNode = doc.createNode('m.frg');
-		fragNode('setAttr', ls([, 'name', , 'Test']));
+		$c.sm(fragNode, 'setAttr', ls([, 'name', , 'Test']));
 
 		const divNode = doc.createNode('h.div', { slotSrc: fragNode });
-		divNode('setAttr', ls([, 'm.coat', , ps('[(title="<name?Hello >")]')]));
+		$c.sm(divNode, 'setAttr', ls([, 'm.coat', , ps('[(title="<name?Hello >")]')]));
 
-		assertEquals(divNode('getAttr', ls([, 'title'])), 'Hello ');
+		assertEquals($c.sm(divNode, 'getAttr', ls([, 'title'])), 'Hello ');
 	});
 
 	await t.step(".setAttr() - Conditional (?) via JS", async () => {
@@ -1176,12 +1176,12 @@ Deno.test("MWIDocNode - Computed Attributes: m.coat", async (t) => {
 
 	await t.step("(setAttr) - Conditional (??)", async () => {
 		const fragNode = doc.createNode('m.frg');
-		fragNode('setAttr', ls([, 'name', , 'Test']));
+		$c.sm(fragNode, 'setAttr', ls([, 'name', , 'Test']));
 
 		const divNode = doc.createNode('h.div', { slotSrc: fragNode });
-		divNode('setAttr', ls([, 'm.coat', , ps('[(title="<name??Hello >")]')]));
+		$c.sm(divNode, 'setAttr', ls([, 'm.coat', , ps('[(title="<name??Hello >")]')]));
 
-		assertEquals(divNode('getAttr', ls([, 'title'])), 'Hello ');
+		assertEquals($c.sm(divNode, 'getAttr', ls([, 'title'])), 'Hello ');
 	});
 
 	await t.step(".setAttr() - Conditional (??) via JS", async () => {
@@ -1199,9 +1199,9 @@ Deno.test("MWIDocNode - Computed Attributes: m.coat", async (t) => {
 		// Don't set name
 
 		const divNode = doc.createNode('h.div', { slotSrc: fragNode });
-		divNode('setAttr', ls([, 'm.coat', , ps('[(title="<name|Default>")]')]));
+		$c.sm(divNode, 'setAttr', ls([, 'm.coat', , ps('[(title="<name|Default>")]')]));
 
-		assertEquals(divNode('getAttr', ls([, 'title'])), 'Default');
+		assertEquals($c.sm(divNode, 'getAttr', ls([, 'title'])), 'Default');
 	});
 
 	await t.step(".setAttr() - Default (|) via JS", async () => {
@@ -1216,12 +1216,12 @@ Deno.test("MWIDocNode - Computed Attributes: m.coat", async (t) => {
 
 	await t.step("(setAttr) - Default (||)", async () => {
 		const fragNode = doc.createNode('m.frg');
-		fragNode('setAttr', ls([, 'name', , ''])); // Empty string
+		$c.sm(fragNode, 'setAttr', ls([, 'name', , ''])); // Empty string
 
 		const divNode = doc.createNode('h.div', { slotSrc: fragNode });
-		divNode('setAttr', ls([, 'm.coat', , ps('[(title="<name||Default>")]')]));
+		$c.sm(divNode, 'setAttr', ls([, 'm.coat', , ps('[(title="<name||Default>")]')]));
 
-		assertEquals(divNode('getAttr', ls([, 'title'])), 'Default');
+		assertEquals($c.sm(divNode, 'getAttr', ls([, 'title'])), 'Default');
 	});
 
 	await t.step(".setAttr() - Default (||) via JS", async () => {
@@ -1236,12 +1236,12 @@ Deno.test("MWIDocNode - Computed Attributes: m.coat", async (t) => {
 
 	await t.step("(setAttr) - Literal text", async () => {
 		const fragNode = doc.createNode('m.frg');
-		fragNode('setAttr', ls([, 'name', , 'World']));
+		$c.sm(fragNode, 'setAttr', ls([, 'name', , 'World']));
 
 		const divNode = doc.createNode('h.div', { slotSrc: fragNode });
-		divNode('setAttr', ls([, 'm.coat', , ps('[(title="Prefix <name> Suffix")]')]));
+		$c.sm(divNode, 'setAttr', ls([, 'm.coat', , ps('[(title="Prefix <name> Suffix")]')]));
 
-		assertEquals(divNode('getAttr', ls([, 'title'])), 'Prefix World Suffix');
+		assertEquals($c.sm(divNode, 'getAttr', ls([, 'title'])), 'Prefix World Suffix');
 	});
 
 	await t.step(".setAttr() - Literal text via JS", async () => {
@@ -1256,14 +1256,14 @@ Deno.test("MWIDocNode - Computed Attributes: m.coat", async (t) => {
 
 	await t.step("(setAttr) - Multiple targets", async () => {
 		const fragNode = doc.createNode('m.frg');
-		fragNode('setAttr', ls([, 'name', , 'Test']));
-		fragNode('setAttr', ls([, 'cls', , 'my-class']));
+		$c.sm(fragNode, 'setAttr', ls([, 'name', , 'Test']));
+		$c.sm(fragNode, 'setAttr', ls([, 'cls', , 'my-class']));
 
 		const divNode = doc.createNode('h.div', { slotSrc: fragNode });
-		divNode('setAttr', ls([, 'm.coat', , ps('[(title=<name> class=<cls>)]')]));
+		$c.sm(divNode, 'setAttr', ls([, 'm.coat', , ps('[(title=<name> class=<cls>)]')]));
 
-		assertEquals(divNode('getAttr', ls([, 'title'])), 'Test');
-		assertEquals(divNode('getAttr', ls([, 'class'])), 'my-class');
+		assertEquals($c.sm(divNode, 'getAttr', ls([, 'title'])), 'Test');
+		assertEquals($c.sm(divNode, 'getAttr', ls([, 'class'])), 'my-class');
 	});
 
 	await t.step(".setAttr() - Multiple targets via JS", async () => {
@@ -1282,9 +1282,9 @@ Deno.test("MWIDocNode - Computed Attributes: m.coat", async (t) => {
 		const fragNode = doc.createNode('m.frg');
 
 		const divNode = doc.createNode('h.div', { slotSrc: fragNode });
-		divNode('setAttr', ls([, 'm.coat', , ps('[(title=<.lt>tag<.gt>)]')]));
+		$c.sm(divNode, 'setAttr', ls([, 'm.coat', , ps('[(title=<.lt>tag<.gt>)]')]));
 
-		assertEquals(divNode('getAttr', ls([, 'title'])), '<tag>');
+		assertEquals($c.sm(divNode, 'getAttr', ls([, 'title'])), '<tag>');
 	});
 
 	await t.step(".setAttr() - Escapes via JS", async () => {
@@ -1299,9 +1299,9 @@ Deno.test("MWIDocNode - Computed Attributes: m.coat", async (t) => {
 	await t.step("(setAttr) - m.coat attribute is set", async () => {
 		const divNode = doc.createNode('h.div');
 		const coatVal = ps('[(title=<name>)]');
-		divNode('setAttr', ls([, 'm.coat', , coatVal]));
+		$c.sm(divNode, 'setAttr', ls([, 'm.coat', , coatVal]));
 
-		const retrieved = divNode('getAttr', ls([, 'm.coat']));
+		const retrieved = $c.sm(divNode, 'getAttr', ls([, 'm.coat']));
 		assert(retrieved !== undefined);
 	});
 
@@ -1316,15 +1316,15 @@ Deno.test("MWIDocNode - Computed Attributes: m.coat", async (t) => {
 
 	await t.step("(setAttr) - Triggers computation immediately", async () => {
 		const fragNode = doc.createNode('m.frg');
-		fragNode('setAttr', ls([, 'name', , 'Computed']));
+		$c.sm(fragNode, 'setAttr', ls([, 'name', , 'Computed']));
 
 		const divNode = doc.createNode('h.div', { slotSrc: fragNode });
 
 		// Computation happens immediately when m.coat is set
-		divNode('setAttr', ls([, 'm.coat', , ps('[(title=<name>)]')]));
+		$c.sm(divNode, 'setAttr', ls([, 'm.coat', , ps('[(title=<name>)]')]));
 
 		// Verify computation occurred immediately
-		assertEquals(divNode('getAttr', ls([, 'title'])), 'Computed');
+		assertEquals($c.sm(divNode, 'getAttr', ls([, 'title'])), 'Computed');
 	});
 
 	await t.step(".setAttr() - Triggers computation immediately via JS", async () => {
@@ -1344,16 +1344,16 @@ Deno.test("MWIDocNode - Computed Attributes: m.coat", async (t) => {
 Deno.test("MWIDocNode - m.coat Reactivity", async (t) => {
 	await t.step("(getAttr) - Updates when slot source attribute changes", async () => {
 		const fragNode = doc.createNode('m.frg');
-		fragNode('setAttr', ls([, 'name', , 'Initial']));
+		$c.sm(fragNode, 'setAttr', ls([, 'name', , 'Initial']));
 
 		const divNode = doc.createNode('h.div', { slotSrc: fragNode });
-		divNode('setAttr', ls([, 'm.coat', , ps('[(title=<name>)]')]));
+		$c.sm(divNode, 'setAttr', ls([, 'm.coat', , ps('[(title=<name>)]')]));
 
-		assertEquals(divNode('getAttr', ls([, 'title'])), 'Initial');
+		assertEquals($c.sm(divNode, 'getAttr', ls([, 'title'])), 'Initial');
 
 		// Change the source attribute - m.coat should reactively update
-		fragNode('setAttr', ls([, 'name', , 'Updated']));
-		assertEquals(divNode('getAttr', ls([, 'title'])), 'Updated');
+		$c.sm(fragNode, 'setAttr', ls([, 'name', , 'Updated']));
+		assertEquals($c.sm(divNode, 'getAttr', ls([, 'title'])), 'Updated');
 	});
 
 	await t.step(".getAttr() - Updates when slot source attribute changes via JS", async () => {
@@ -1372,17 +1372,17 @@ Deno.test("MWIDocNode - m.coat Reactivity", async (t) => {
 
 	await t.step("(getAttr) - Updates when m.coat spec changes", async () => {
 		const fragNode = doc.createNode('m.frg');
-		fragNode('setAttr', ls([, 'name', , 'World']));
-		fragNode('setAttr', ls([, 'greeting', , 'Hello']));
+		$c.sm(fragNode, 'setAttr', ls([, 'name', , 'World']));
+		$c.sm(fragNode, 'setAttr', ls([, 'greeting', , 'Hello']));
 
 		const divNode = doc.createNode('h.div', { slotSrc: fragNode });
-		divNode('setAttr', ls([, 'm.coat', , ps('[(title=<name>)]')]));
+		$c.sm(divNode, 'setAttr', ls([, 'm.coat', , ps('[(title=<name>)]')]));
 
-		assertEquals(divNode('getAttr', ls([, 'title'])), 'World');
+		assertEquals($c.sm(divNode, 'getAttr', ls([, 'title'])), 'World');
 
 		// Change the m.coat spec itself - should re-compute
-		divNode('setAttr', ls([, 'm.coat', , ps('[(title=<greeting>)]')]));
-		assertEquals(divNode('getAttr', ls([, 'title'])), 'Hello');
+		$c.sm(divNode, 'setAttr', ls([, 'm.coat', , ps('[(title=<greeting>)]')]));
+		assertEquals($c.sm(divNode, 'getAttr', ls([, 'title'])), 'Hello');
 	});
 
 	await t.step(".getAttr() - Updates when m.coat spec changes via JS", async () => {
@@ -1405,18 +1405,18 @@ Deno.test("MWIDocNode - m.coat Reactivity", async (t) => {
 		// Start with name unset
 
 		const divNode = doc.createNode('h.div', { slotSrc: fragNode });
-		divNode('setAttr', ls([, 'm.coat', , ps('[(title=<name|Default>)]')]));
+		$c.sm(divNode, 'setAttr', ls([, 'm.coat', , ps('[(title=<name|Default>)]')]));
 
 		// Initially unset - should use default
-		assertEquals(divNode('getAttr', ls([, 'title'])), 'Default');
+		assertEquals($c.sm(divNode, 'getAttr', ls([, 'title'])), 'Default');
 
 		// Set the source attribute - should now use the value
-		fragNode('setAttr', ls([, 'name', , 'Set Value']));
-		assertEquals(divNode('getAttr', ls([, 'title'])), 'Set Value');
+		$c.sm(fragNode, 'setAttr', ls([, 'name', , 'Set Value']));
+		assertEquals($c.sm(divNode, 'getAttr', ls([, 'title'])), 'Set Value');
 
 		// Clear the source attribute - should revert to default
-		fragNode('delAttr', ls([, 'name']));
-		assertEquals(divNode('getAttr', ls([, 'title'])), 'Default');
+		$c.sm(fragNode, 'delAttr', ls([, 'name']));
+		assertEquals($c.sm(divNode, 'getAttr', ls([, 'title'])), 'Default');
 	});
 
 	await t.step(".getAttr() - Conditional expression updates reactively via JS", async () => {
@@ -1442,16 +1442,16 @@ Deno.test("MWIDocNode - m.coat Reactivity", async (t) => {
 Deno.test("MWIDocNode - m.slat Reactivity", async (t) => {
 	await t.step("(getAttr) - Updates when slot source attribute changes", async () => {
 		const fragNode = doc.createNode('m.frg');
-		fragNode('setAttr', ls([, 'title', , 'Initial']));
+		$c.sm(fragNode, 'setAttr', ls([, 'title', , 'Initial']));
 
 		const divNode = doc.createNode('h.div', { slotSrc: fragNode });
-		divNode('setAttr', ls([, 'm.slat', , ps('[(title=[])]')]));
+		$c.sm(divNode, 'setAttr', ls([, 'm.slat', , ps('[(title=[])]')]));
 
-		assertEquals(divNode('getAttr', ls([, 'title'])), 'Initial');
+		assertEquals($c.sm(divNode, 'getAttr', ls([, 'title'])), 'Initial');
 
 		// Change the source attribute - m.slat should reactively update
-		fragNode('setAttr', ls([, 'title', , 'Updated']));
-		assertEquals(divNode('getAttr', ls([, 'title'])), 'Updated');
+		$c.sm(fragNode, 'setAttr', ls([, 'title', , 'Updated']));
+		assertEquals($c.sm(divNode, 'getAttr', ls([, 'title'])), 'Updated');
 	});
 
 	await t.step(".getAttr() - Updates when slot source attribute changes via JS", async () => {
@@ -1470,17 +1470,17 @@ Deno.test("MWIDocNode - m.slat Reactivity", async (t) => {
 
 	await t.step("(getAttr) - Updates when m.slat spec changes", async () => {
 		const fragNode = doc.createNode('m.frg');
-		fragNode('setAttr', ls([, 'src1', , 'Value1']));
-		fragNode('setAttr', ls([, 'src2', , 'Value2']));
+		$c.sm(fragNode, 'setAttr', ls([, 'src1', , 'Value1']));
+		$c.sm(fragNode, 'setAttr', ls([, 'src2', , 'Value2']));
 
 		const divNode = doc.createNode('h.div', { slotSrc: fragNode });
-		divNode('setAttr', ls([, 'm.slat', , ps('[(title=[src1])]')]));
+		$c.sm(divNode, 'setAttr', ls([, 'm.slat', , ps('[(title=[src1])]')]));
 
-		assertEquals(divNode('getAttr', ls([, 'title'])), 'Value1');
+		assertEquals($c.sm(divNode, 'getAttr', ls([, 'title'])), 'Value1');
 
 		// Change the m.slat spec to use a different source
-		divNode('setAttr', ls([, 'm.slat', , ps('[(title=[src2])]')]));
-		assertEquals(divNode('getAttr', ls([, 'title'])), 'Value2');
+		$c.sm(divNode, 'setAttr', ls([, 'm.slat', , ps('[(title=[src2])]')]));
+		assertEquals($c.sm(divNode, 'getAttr', ls([, 'title'])), 'Value2');
 	});
 
 	await t.step(".getAttr() - Updates when m.slat spec changes via JS", async () => {
@@ -1503,18 +1503,18 @@ Deno.test("MWIDocNode - m.slat Reactivity", async (t) => {
 		// Start with source attribute unset
 
 		const divNode = doc.createNode('h.div', { slotSrc: fragNode });
-		divNode('setAttr', ls([, 'm.slat', , ps('[(title=[missing else=Default])]')]));
+		$c.sm(divNode, 'setAttr', ls([, 'm.slat', , ps('[(title=[missing else=Default])]')]));
 
 		// Initially unset - should use else default
-		assertEquals(divNode('getAttr', ls([, 'title'])), 'Default');
+		assertEquals($c.sm(divNode, 'getAttr', ls([, 'title'])), 'Default');
 
 		// Set the source attribute - should now use the value
-		fragNode('setAttr', ls([, 'missing', , 'Found']));
-		assertEquals(divNode('getAttr', ls([, 'title'])), 'Found');
+		$c.sm(fragNode, 'setAttr', ls([, 'missing', , 'Found']));
+		assertEquals($c.sm(divNode, 'getAttr', ls([, 'title'])), 'Found');
 
 		// Clear the source attribute - should revert to else default
-		fragNode('delAttr', ls([, 'missing']));
-		assertEquals(divNode('getAttr', ls([, 'title'])), 'Default');
+		$c.sm(fragNode, 'delAttr', ls([, 'missing']));
+		assertEquals($c.sm(divNode, 'getAttr', ls([, 'title'])), 'Default');
 	});
 
 	await t.step(".getAttr() - Else fallback updates reactively via JS", async () => {
@@ -1540,18 +1540,18 @@ Deno.test("MWIDocNode - m.slat Reactivity", async (t) => {
 Deno.test("MWIDocNode - Combined m.slat and m.coat", async (t) => {
 	await t.step("(setAttr) - Both processed immediately", async () => {
 		const fragNode = doc.createNode('m.frg');
-		fragNode('setAttr', ls([, 'src-title', , 'Slotted']));
-		fragNode('setAttr', ls([, 'name', , 'Computed']));
+		$c.sm(fragNode, 'setAttr', ls([, 'src-title', , 'Slotted']));
+		$c.sm(fragNode, 'setAttr', ls([, 'name', , 'Computed']));
 		const listVal = ps('[(a b c)]');
-		fragNode('setAttr', ls([, 'c.items', , listVal]));
+		$c.sm(fragNode, 'setAttr', ls([, 'c.items', , listVal]));
 
 		const divNode = doc.createNode('h.div', { slotSrc: fragNode });
-		divNode('setAttr', ls([, 'm.slat', , ps('[(title=[src-title] c.data=[c.items])]')]));
-		divNode('setAttr', ls([, 'm.coat', , ps('[(data-name=<name>)]')]));
+		$c.sm(divNode, 'setAttr', ls([, 'm.slat', , ps('[(title=[src-title] c.data=[c.items])]')]));
+		$c.sm(divNode, 'setAttr', ls([, 'm.coat', , ps('[(data-name=<name>)]')]));
 
-		assertEquals(divNode('getAttr', ls([, 'title'])), 'Slotted');
-		assertEquals(divNode('getAttr', ls([, 'data-name'])), 'Computed');
-		const retrieved = divNode('getAttr', ls([, 'c.data']));
+		assertEquals($c.sm(divNode, 'getAttr', ls([, 'title'])), 'Slotted');
+		assertEquals($c.sm(divNode, 'getAttr', ls([, 'data-name'])), 'Computed');
+		const retrieved = $c.sm(divNode, 'getAttr', ls([, 'c.data']));
 		assertEquals(retrieved.at(0), 'a');
 	});
 
@@ -1576,7 +1576,7 @@ Deno.test("MWIDocNode - Combined m.slat and m.coat", async (t) => {
 Deno.test("MWIDocNode - Spec Management", async (t) => {
 	await t.step("(getSpec) - No attributes", async () => {
 		const divNode = doc.createNode('h.div');
-		const spec = divNode('getSpec');
+		const spec = $c.sm(divNode, 'getSpec');
 		assertEquals(spec.at(0), 'h.div');
 		const slidStr = spec.toSLID();
 		assert(slidStr.includes('h.div'));
@@ -1590,9 +1590,9 @@ Deno.test("MWIDocNode - Spec Management", async (t) => {
 
 	await t.step("(getSpec) - With basic attributes", async () => {
 		const divNode = doc.createNode('h.div');
-		divNode('setAttr', ls([, 'id', , 'test-id']));
-		divNode('setAttr', ls([, 'class', , 'test-class']));
-		const spec = divNode('getSpec');
+		$c.sm(divNode, 'setAttr', ls([, 'id', , 'test-id']));
+		$c.sm(divNode, 'setAttr', ls([, 'class', , 'test-class']));
+		const spec = $c.sm(divNode, 'getSpec');
 		assertEquals(spec.at(0), 'h.div');
 		assertEquals(spec.at('id'), 'test-id');
 		assert(spec.at('class').includes('test-class'));
@@ -1611,8 +1611,8 @@ Deno.test("MWIDocNode - Spec Management", async (t) => {
 	await t.step("(getSpec) - With list-valued attributes", async () => {
 		const divNode = doc.createNode('h.div');
 		const listVal = ps('[(item1 item2)]');
-		divNode('setAttr', ls([, 'c.items', , listVal]));
-		const spec = divNode('getSpec');
+		$c.sm(divNode, 'setAttr', ls([, 'c.items', , listVal]));
+		const spec = $c.sm(divNode, 'getSpec');
 		const retrieved = spec.at('c.items');
 		assertEquals(retrieved.at(0), 'item1');
 		assertEquals(retrieved.at(1), 'item2');
@@ -1631,9 +1631,9 @@ Deno.test("MWIDocNode - Spec Management", async (t) => {
 	await t.step("(getSpec) - With children", async () => {
 		const divNode = doc.createNode('h.div');
 		const textNode = doc.createNode('m.t');
-		textNode('setAttr', ls([, 't', , 'Child text']));
-		divNode('append', ls([, textNode]));
-		const spec = divNode('getSpec');
+		$c.sm(textNode, 'setAttr', ls([, 't', , 'Child text']));
+		$c.sm(divNode, 'append', ls([, textNode]));
+		const spec = $c.sm(divNode, 'getSpec');
 		assertEquals(spec.size, 2);
 		assertEquals(spec.at(0), 'h.div');
 		assertEquals(spec.at(1), 'Child text'); // Simplified text spec
@@ -1652,7 +1652,7 @@ Deno.test("MWIDocNode - Spec Management", async (t) => {
 
 	await t.step("(getSubSpec) - No children", async () => {
 		const divNode = doc.createNode('h.div');
-		const subSpec = divNode('getSubSpec');
+		const subSpec = $c.sm(divNode, 'getSubSpec');
 		assertEquals(subSpec.size, 0);
 	});
 
@@ -1665,9 +1665,9 @@ Deno.test("MWIDocNode - Spec Management", async (t) => {
 	await t.step("(getAttr m.rns) - With appended children", async () => {
 		const divNode = doc.createNode('h.div');
 		const textNode = doc.createNode('m.t');
-		textNode('setAttr', ls([, 't', , 'Child']));
-		divNode('append', ls([, textNode]));
-		const subSpec = divNode('getSubSpec');
+		$c.sm(textNode, 'setAttr', ls([, 't', , 'Child']));
+		$c.sm(divNode, 'append', ls([, textNode]));
+		const subSpec = $c.sm(divNode, 'getSubSpec');
 		assertEquals(subSpec.size, 1);
 		assertEquals(subSpec.at(0), 'Child'); // Simplified text spec
 	});
@@ -1684,7 +1684,7 @@ Deno.test("MWIDocNode - Spec Management", async (t) => {
 
 	await t.step("(getSubSpec) - Void node always empty", async () => {
 		const brNode = doc.createNode('h.br');
-		const subSpec = brNode('getSubSpec');
+		const subSpec = $c.sm(brNode, 'getSubSpec');
 		assertEquals(subSpec.size, 0);
 	});
 
@@ -1697,9 +1697,9 @@ Deno.test("MWIDocNode - Spec Management", async (t) => {
 	await t.step("(setSpec) - Set basic attributes", async () => {
 		const divNode = doc.createNode('h.div');
 		const spec = ps('[(h.div id=spec-id class=spec-class)]');
-		await divNode('setSpec', ls([, spec]));
-		assertEquals(divNode('getAttr', ls([, 'id'])), 'spec-id');
-		assert(divNode('getAttr', ls([, 'class'])).includes('spec-class'));
+		await $c.sm(divNode, 'setSpec', ls([, spec]));
+		assertEquals($c.sm(divNode, 'getAttr', ls([, 'id'])), 'spec-id');
+		assert($c.sm(divNode, 'getAttr', ls([, 'class'])).includes('spec-class'));
 	});
 
 	await t.step(".setSpec() - Set basic attributes via JS", async () => {
@@ -1713,8 +1713,8 @@ Deno.test("MWIDocNode - Spec Management", async (t) => {
 	await t.step("(setSpec) - Set list-valued attributes", async () => {
 		const divNode = doc.createNode('h.div');
 		const spec = ps('[(h.div c.items=[a b c])]');
-		await divNode('setSpec', ls([, spec]));
-		const retrieved = divNode('getAttr', ls([, 'c.items']));
+		await $c.sm(divNode, 'setSpec', ls([, spec]));
+		const retrieved = $c.sm(divNode, 'getAttr', ls([, 'c.items']));
 		assertEquals(retrieved.at(0), 'a');
 		assertEquals(retrieved.at(1), 'b');
 		assertEquals(retrieved.at(2), 'c');
@@ -1733,8 +1733,8 @@ Deno.test("MWIDocNode - Spec Management", async (t) => {
 	await t.step("(setSpec) - Set children", async () => {
 		const divNode = doc.createNode('h.div');
 		const spec = ps('[(h.div [m.t t="Child 1"] [m.t t="Child 2"])]');
-		await divNode('setSpec', ls([, spec]));
-		const subSpec = divNode('getSubSpec');
+		await $c.sm(divNode, 'setSpec', ls([, spec]));
+		const subSpec = $c.sm(divNode, 'getSubSpec');
 		assertEquals(subSpec.size, 2);
 		// Text node getSpec is simplified to just the string
 		assertEquals(subSpec.at(0), 'Child 1');
@@ -1755,8 +1755,8 @@ Deno.test("MWIDocNode - Spec Management", async (t) => {
 	await t.step("(setSubSpec) - With NANOS list", () => {
 		const divNode = doc.createNode('h.div');
 		const subList = ps('[([m.t t="Sub 1"] [m.t t="Sub 2"])]');
-		divNode('setSubSpec', ls(['subSpec', subList]));
-		const subSpec = divNode('getSubSpec');
+		$c.sm(divNode, 'setSubSpec', ls(['subSpec', subList]));
+		const subSpec = $c.sm(divNode, 'getSubSpec');
 		assertEquals(subSpec.size, 2);
 		// Text node getSpec is simplified to just the string
 		assertEquals(subSpec.at(0), 'Sub 1');
@@ -1777,8 +1777,8 @@ Deno.test("MWIDocNode - Spec Management", async (t) => {
 	await t.step("(setSubSpec) - With spec parameter", () => {
 		const divNode = doc.createNode('h.div');
 		const fullSpec = ps('[(h.div [m.t t="Spec Child"])]');
-		divNode('setSubSpec', ls(['spec', fullSpec]));
-		const subSpec = divNode('getSubSpec');
+		$c.sm(divNode, 'setSubSpec', ls(['spec', fullSpec]));
+		const subSpec = $c.sm(divNode, 'getSubSpec');
 		assertEquals(subSpec.size, 1);
 		// Text node getSpec is simplified to just the string
 		assertEquals(subSpec.at(0), 'Spec Child');
@@ -1798,8 +1798,8 @@ Deno.test("MWIDocNode - Spec Management", async (t) => {
 		const divNode = doc.createNode('h.div');
 		const spec1 = ps('[(m.t t="Pos 1")]');
 		const spec2 = ps('[(m.t t="Pos 2")]');
-		divNode('setSubSpec', ls([, spec1, , spec2]));
-		const subSpec = divNode('getSubSpec');
+		$c.sm(divNode, 'setSubSpec', ls([, spec1, , spec2]));
+		const subSpec = $c.sm(divNode, 'getSubSpec');
 		assertEquals(subSpec.size, 2);
 		// Text node getSpec is simplified to just the string
 		assertEquals(subSpec.at(0), 'Pos 1');
@@ -1821,8 +1821,8 @@ Deno.test("MWIDocNode - Spec Management", async (t) => {
 	await t.step("(setSubSpec) - Void node ignores children", () => {
 		const brNode = doc.createNode('h.br');
 		const subList = ps('[([m.t t="Should not appear"])]');
-		brNode('setSubSpec', ls(['subSpec', subList]));
-		const subSpec = brNode('getSubSpec');
+		$c.sm(brNode, 'setSubSpec', ls(['subSpec', subList]));
+		const subSpec = $c.sm(brNode, 'getSubSpec');
 		assertEquals(subSpec.size, 0);
 	});
 
@@ -1845,7 +1845,7 @@ Deno.test("MWIDocNode - closest", async (t) => {
 	parent.append(child);
 
 	await t.step("(closest) - String predicate: finds self when type matches", () => {
-		const result = child('closest', ls([, 'm.t']));
+		const result = $c.sm(child, 'closest', ls([, 'm.t']));
 		assertStrictEquals(result, child);
 	});
 
@@ -1855,7 +1855,7 @@ Deno.test("MWIDocNode - closest", async (t) => {
 	});
 
 	await t.step("(closest) - String predicate: finds ancestor by type", () => {
-		const result = child('closest', ls([, 'h.div']));
+		const result = $c.sm(child, 'closest', ls([, 'h.div']));
 		assertStrictEquals(result, parent);
 	});
 
@@ -1865,7 +1865,7 @@ Deno.test("MWIDocNode - closest", async (t) => {
 	});
 
 	await t.step("(closest) - String predicate: finds distant ancestor by type", () => {
-		const result = child('closest', ls([, 'h.section']));
+		const result = $c.sm(child, 'closest', ls([, 'h.section']));
 		assertStrictEquals(result, grandparent);
 	});
 
@@ -1876,7 +1876,7 @@ Deno.test("MWIDocNode - closest", async (t) => {
 
 	await t.step("(closest) - String predicate: comma-separated types (first match wins)", () => {
 		// Both h.div and h.section are ancestors; h.div is closer
-		const result = child('closest', ls([, 'h.div,h.section']));
+		const result = $c.sm(child, 'closest', ls([, 'h.div,h.section']));
 		assertStrictEquals(result, parent);
 	});
 
@@ -1886,7 +1886,7 @@ Deno.test("MWIDocNode - closest", async (t) => {
 	});
 
 	await t.step("(closest) - String predicate: returns null when no match", () => {
-		const result = child('closest', ls([, 'h.span']));
+		const result = $c.sm(child, 'closest', ls([, 'h.span']));
 		assertEquals(result, null);
 	});
 
@@ -1896,7 +1896,7 @@ Deno.test("MWIDocNode - closest", async (t) => {
 	});
 
 	await t.step("(closest) - String predicate: empty string returns null", () => {
-		const result = child('closest', ls([, '']));
+		const result = $c.sm(child, 'closest', ls([, '']));
 		assertEquals(result, null);
 	});
 
@@ -1906,7 +1906,7 @@ Deno.test("MWIDocNode - closest", async (t) => {
 	});
 
 	await t.step("(closest) - JS function predicate: finds self", () => {
-		const result = child('closest', ls([, (node) => node === child]));
+		const result = $c.sm(child, 'closest', ls([, (node) => node === child]));
 		assertStrictEquals(result, child);
 	});
 
@@ -1916,7 +1916,7 @@ Deno.test("MWIDocNode - closest", async (t) => {
 	});
 
 	await t.step("(closest) - JS function predicate: finds ancestor", () => {
-		const result = child('closest', ls([, (node) => node.type === 'h.div']));
+		const result = $c.sm(child, 'closest', ls([, (node) => node.type === 'h.div']));
 		assertStrictEquals(result, parent);
 	});
 
@@ -1926,7 +1926,7 @@ Deno.test("MWIDocNode - closest", async (t) => {
 	});
 
 	await t.step("(closest) - JS function predicate: returns null when no match", () => {
-		const result = child('closest', ls([, (_node) => false]));
+		const result = $c.sm(child, 'closest', ls([, (_node) => false]));
 		assertEquals(result, null);
 	});
 
@@ -1937,8 +1937,8 @@ Deno.test("MWIDocNode - closest", async (t) => {
 
 	await t.step("(closest) - Mesgjs @function predicate: finds ancestor", () => {
 		// Construct a Mesgjs @function that checks if the node type is 'h.div'
-		const msjsFn = makeMsjsFunction((d) => d.mp.at(0)('type') === 'h.div');
-		const result = child('closest', ls([, msjsFn]));
+		const msjsFn = makeMsjsFunction((d) => d.mp.at(0).type === 'h.div');
+		const result = $c.sm(child, 'closest', ls([, msjsFn]));
 		assertStrictEquals(result, parent);
 	});
 
@@ -1949,7 +1949,7 @@ Deno.test("MWIDocNode - closest", async (t) => {
 	});
 
 	await t.step("(closest) - Non-function/non-string predicate returns null", () => {
-		const result = child('closest', ls([, 42]));
+		const result = $c.sm(child, 'closest', ls([, 42]));
 		assertEquals(result, null);
 	});
 
@@ -1960,7 +1960,7 @@ Deno.test("MWIDocNode - closest", async (t) => {
 
 	await t.step("(closest) - Unparented node: only finds self", () => {
 		const orphan = doc.createNode('h.div');
-		const result = orphan('closest', ls([, 'h.div']));
+		const result = $c.sm(orphan, 'closest', ls([, 'h.div']));
 		assertStrictEquals(result, orphan);
 	});
 
@@ -1974,12 +1974,12 @@ Deno.test("MWIDocNode - closest", async (t) => {
 Deno.test("MWIDocNode - Content Operations", async (t) => {
 	await t.step("(append) - Text string auto-converts to m.t", async () => {
 		const divNode = doc.createNode('h.div');
-		divNode('append', ls([, 'Plain text']));
-		const subDoc = divNode('getSubDoc');
+		$c.sm(divNode, 'append', ls([, 'Plain text']));
+		const subDoc = $c.sm(divNode, 'getSubDoc');
 		assertEquals(subDoc.size, 1);
 		const textNode = subDoc.at(0);
-		assertEquals(textNode('type'), 'm.t');
-		assertEquals(textNode('getAttr', ['t']), 'Plain text');
+		assertEquals($c.sm(textNode, 'type'), 'm.t');
+		assertEquals($c.sm(textNode, 'getAttr', ['t']), 'Plain text');
 	});
 
 	await t.step(".append() - Text string auto-converts to m.t via JS", async () => {
@@ -1995,9 +1995,9 @@ Deno.test("MWIDocNode - Content Operations", async (t) => {
 	await t.step("(append) - Doc-node", async () => {
 		const divNode = doc.createNode('h.div');
 		const textNode = doc.createNode('m.t');
-		textNode('setAttr', ls([, 't', , 'Appended node']));
-		divNode('append', ls([, textNode]));
-		const subSpec = divNode('getSubSpec');
+		$c.sm(textNode, 'setAttr', ls([, 't', , 'Appended node']));
+		$c.sm(divNode, 'append', ls([, textNode]));
+		const subSpec = $c.sm(divNode, 'getSubSpec');
 		assertEquals(subSpec.size, 1);
 		// Text node getSpec is simplified to just the string
 		assertEquals(subSpec.at(0), 'Appended node');
@@ -2017,11 +2017,11 @@ Deno.test("MWIDocNode - Content Operations", async (t) => {
 	await t.step("(append) - Multiple items at once", async () => {
 		const divNode = doc.createNode('h.div');
 		const text1 = doc.createNode('m.t');
-		text1('setAttr', ls([, 't', , 'First']));
+		$c.sm(text1, 'setAttr', ls([, 't', , 'First']));
 		const text2 = doc.createNode('m.t');
-		text2('setAttr', ls([, 't', , 'Second']));
-		divNode('append', ls([, text1, , text2]));
-		const subSpec = divNode('getSubSpec');
+		$c.sm(text2, 'setAttr', ls([, 't', , 'Second']));
+		$c.sm(divNode, 'append', ls([, text1, , text2]));
+		const subSpec = $c.sm(divNode, 'getSubSpec');
 		assertEquals(subSpec.size, 2);
 		// Text node getSpec is simplified to just the string
 		assertEquals(subSpec.at(0), 'First');
@@ -2045,9 +2045,9 @@ Deno.test("MWIDocNode - Content Operations", async (t) => {
 	await t.step("(append) - Mixed text and nodes", async () => {
 		const divNode = doc.createNode('h.div');
 		const textNode = doc.createNode('m.t');
-		textNode('setAttr', ls([, 't', , 'Node text']));
-		divNode('append', ls([, 'String text', , textNode]));
-		const subSpec = divNode('getSubSpec');
+		$c.sm(textNode, 'setAttr', ls([, 't', , 'Node text']));
+		$c.sm(divNode, 'append', ls([, 'String text', , textNode]));
+		const subSpec = $c.sm(divNode, 'getSubSpec');
 		assertEquals(subSpec.size, 2);
 		// Text node getSpec is simplified to just the string
 		assertEquals(subSpec.at(0), 'String text');
@@ -2068,7 +2068,7 @@ Deno.test("MWIDocNode - Content Operations", async (t) => {
 
 	await t.step("(append) - Returns node for chaining", async () => {
 		const divNode = doc.createNode('h.div');
-		const result = divNode('append', ls([, 'text']));
+		const result = $c.sm(divNode, 'append', ls([, 'text']));
 		assertStrictEquals(result, divNode);
 	});
 
@@ -2080,8 +2080,8 @@ Deno.test("MWIDocNode - Content Operations", async (t) => {
 
 	await t.step("(append) - Void node is no-op", async () => {
 		const brNode = doc.createNode('h.br');
-		brNode('append', ls([, 'text']));
-		const subSpec = brNode('getSubSpec');
+		$c.sm(brNode, 'append', ls([, 'text']));
+		const subSpec = $c.sm(brNode, 'getSubSpec');
 		assertEquals(subSpec.size, 0);
 	});
 

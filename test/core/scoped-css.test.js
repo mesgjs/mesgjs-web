@@ -29,11 +29,11 @@ Deno.test("MWICoreScpCSS Core - Basic Interface Behavior", async (t) => {
 		const scpNode = doc.createNode('m.scpcss');
 
 		assertExists(scpNode, "Node creation should succeed");
-		assertEquals(scpNode('type'), 'm.scpcss', "Node should have correct type");
+		assertEquals(scpNode.type, 'm.scpcss', "Node should have correct type");
 
 		// Verify void behavior - setSubSpec should be no-op
-		scpNode('setSubSpec', ps('[( [m.t t="test"] )]'));
-		assertEquals(scpNode('hasChildren'), false, "Void node should not accept children");
+		$c.sm(scpNode, 'setSubSpec', ps('[( [m.t t="test"] )]'));
+		assertEquals($c.sm(scpNode, 'hasChildren'), false, "Void node should not accept children");
 	});
 });
 
@@ -48,7 +48,7 @@ Deno.test("MWICoreScpCSS Core - m.ci Virtual Attribute", async (t) => {
 		const doc = getInstance('MWIDocument');
 		const node = doc.createNode('test.core.scpcss.ci1');
 
-		const ci = node('getAttr', ls([, 'm.ci']));
+		const ci = $c.sm(node, 'getAttr', ls([, 'm.ci']));
 		assertExists(ci, "m.ci should be defined for node");
 		assert(ci.startsWith('_MO_'), "Component ID should start with _MO_");
 	});
@@ -62,12 +62,12 @@ Deno.test("MWICoreScpCSS Core - m.ci Virtual Attribute", async (t) => {
 		const doc = getInstance('MWIDocument');
 		const node = doc.createNode('test.core.scpcss.ci3');
 
-		const originalCi = node('getAttr', ls([, 'm.ci']));
+		const originalCi = $c.sm(node, 'getAttr', ls([, 'm.ci']));
 
 		// Attempt to set m.ci
-		node('setAttr', ls([, 'm.ci', , 'fake-id']));
+		$c.sm(node, 'setAttr', ls([, 'm.ci', , 'fake-id']));
 
-		const afterCi = node('getAttr', ls([, 'm.ci']));
+		const afterCi = $c.sm(node, 'getAttr', ls([, 'm.ci']));
 		assertEquals(afterCi, originalCi, "m.ci should remain unchanged (read-only)");
 	});
 });

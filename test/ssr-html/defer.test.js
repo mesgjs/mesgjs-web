@@ -15,7 +15,7 @@ const { fwait, getInstance } = globalThis.$c;
 await fwait(REG_READY_FT);
 
 const doc = getInstance('MWIDocument');
-const registry = doc.registry();
+const registry = doc.registry;
 const ls = globalThis.ls;
 const ps = globalThis.ps;
 

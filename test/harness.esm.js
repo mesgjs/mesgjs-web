@@ -72,21 +72,21 @@ export async function setupRuntime ({ modules, standard = true, extended = false
 
 // Render a new MWIDocument with the specified spec-list content and return the DOM
 export function renderDOM (content) {
-	const { fwait, getInstance } = globalThis.$c;
+	const { fwait, getInstance, sm } = globalThis.$c;
 	const doc = getInstance('MWIDocument');
-	const nodes = doc('from', ls(['list', content]));
-	doc('append', nodes);
-	return doc('getDOM');
+	const nodes = sm(doc, 'from', ls(['list', content]));
+	sm(doc, 'append', nodes);
+	return doc.getDOM();
 }
 
 // Render a new MWIDocument with the specified spec-list content and return the HTML
 export function renderHTML (content) {
-	const { fwait, getInstance } = globalThis.$c;
+	const { fwait, getInstance, sm } = globalThis.$c;
 	const doc = getInstance('MWIDocument');
-	const nodes = doc('from', ls(['list', content]));
-	doc('append', nodes);
-	// console.log('HTML (debug):', doc('getHTML'));
-	return doc('getHTML');
+	const nodes = sm(doc, 'from', ls(['list', content]));
+	sm(doc, 'append', nodes);
+	// console.log('HTML (debug):', sm(doc, 'getHTML'));
+	return doc.getHTML();
 }
 
 // Use JSDOM to simulate browser-like environment
