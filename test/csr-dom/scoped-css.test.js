@@ -24,7 +24,7 @@ Deno.test("MWICoreScpCSS CSR - Basic DOM Rendering", async (t) => {
 	await t.step("Create empty style element", () => {
 		const doc = getInstance('MWIDocument');
 		const scpNode = doc.createNode('m.scpcss');
-		const dom = scpNode('getDOM');
+		const dom = $c.sm(scpNode, 'getDOM');
 		assertEquals(dom.size, 0, "Empty document should return empty NANOS");
 	});
 
@@ -37,7 +37,7 @@ Deno.test("MWICoreScpCSS CSR - Basic DOM Rendering", async (t) => {
 		const doc = getInstance('MWIDocument');
 		doc.createNode('test.csr.scpcss.basic');
 		const scpNode = doc.createNode('m.scpcss');
-		const dom = scpNode('getDOM');
+		const dom = $c.sm(scpNode, 'getDOM');
 
 		assertEquals(dom.size, 1, "Should return NANOS with one element");
 		const styleElem = dom.at(0);
@@ -55,7 +55,7 @@ Deno.test("MWICoreScpCSS CSR - Basic DOM Rendering", async (t) => {
 		const doc = getInstance('MWIDocument');
 		doc.createNode('test.csr.scpcss.props');
 		const scpNode = doc.createNode('m.scpcss');
-		const dom = scpNode('getDOM');
+		const dom = $c.sm(scpNode, 'getDOM');
 
 		const styleElem = dom.at(0);
 		assertEquals(styleElem.tagName, 'STYLE', "Should be STYLE tag");
@@ -74,14 +74,14 @@ Deno.test("MWICoreScpCSS CSR - Reactive Behavior", async (t) => {
 		const scpNode = doc.createNode('m.scpcss');
 
 		// Initially empty
-		let dom = scpNode('getDOM');
+		let dom = $c.sm(scpNode, 'getDOM');
 		assertEquals(dom.size, 0, "Should be empty initially");
 
 		// Add component
 		doc.createNode('test.csr.scpcss.reactive1');
 
 		// Should now have style element
-		dom = scpNode('getDOM');
+		dom = $c.sm(scpNode, 'getDOM');
 		assertEquals(dom.size, 1, "Should have style element after component added");
 		const styleElem = dom.at(0);
 		assert(styleElem.textContent.includes('color: red'), "Should include CSS");
@@ -104,7 +104,7 @@ Deno.test("MWICoreScpCSS CSR - Reactive Behavior", async (t) => {
 		// Add first component
 		doc.createNode('test.csr.scpcss.reactive2a');
 
-		let dom = scpNode('getDOM');
+		let dom = $c.sm(scpNode, 'getDOM');
 		let styleElem = dom.at(0);
 		assert(styleElem.textContent.includes('color: red'), "Should include first CSS");
 		assert(!styleElem.textContent.includes('color: green'), "Should not include second CSS yet");
@@ -112,7 +112,7 @@ Deno.test("MWICoreScpCSS CSR - Reactive Behavior", async (t) => {
 		// Add second component
 		doc.createNode('test.csr.scpcss.reactive2b');
 
-		dom = scpNode('getDOM');
+		dom = $c.sm(scpNode, 'getDOM');
 		styleElem = dom.at(0);
 		assert(styleElem.textContent.includes('color: red'), "Should still include first CSS");
 		assert(styleElem.textContent.includes('color: green'), "Should now include second CSS");
@@ -128,11 +128,11 @@ Deno.test("MWICoreScpCSS CSR - Reactive Behavior", async (t) => {
 		doc.createNode('test.csr.scpcss.stable');
 		const scpNode = doc.createNode('m.scpcss');
 
-		const dom1 = scpNode('getDOM');
+		const dom1 = $c.sm(scpNode, 'getDOM');
 		const styleElem1 = dom1.at(0);
 
 		// Get DOM again
-		const dom2 = scpNode('getDOM');
+		const dom2 = $c.sm(scpNode, 'getDOM');
 		const styleElem2 = dom2.at(0);
 
 		assertStrictEquals(styleElem1, styleElem2, "Should return same style element");
@@ -149,14 +149,14 @@ Deno.test("MWICoreScpCSS CSR - Reactive Behavior", async (t) => {
 		const scpNode = doc.createNode('m.scpcss');
 
 		// Initially empty
-		let dom = scpNode('getDOM');
+		let dom = $c.sm(scpNode, 'getDOM');
 		assertEquals(dom.size, 0, "Should be empty initially");
 
 		// Add component
 		doc.createNode('test.csr.scpcss.update');
 
 		// Get the style element
-		dom = scpNode('getDOM');
+		dom = $c.sm(scpNode, 'getDOM');
 		const styleElem = dom.at(0);
 		const initialContent = styleElem.textContent;
 
@@ -180,16 +180,16 @@ Deno.test("MWICoreScpCSS CSR - Integration with Document", async (t) => {
 
 		// Add m.scpcss to root
 		const scpNode = doc.createNode('m.scpcss');
-		doc('append', scpNode);
+		$c.sm(doc, 'append', scpNode);
 
 		// Add body content with styled component
 		doc.createNode('test.csr.scpcss.head');
 
-		const docDOM = doc('getDOM');
+		const docDOM = $c.sm(doc, 'getDOM');
 		assert(docDOM.size > 0, "Document should have DOM nodes");
 
 		// The style element should be in the document
-		const scpDOM = scpNode('getDOM');
+		const scpDOM = $c.sm(scpNode, 'getDOM');
 		assertEquals(scpDOM.size, 1, "m.scpcss should have style element");
 	});
 
@@ -205,8 +205,8 @@ Deno.test("MWICoreScpCSS CSR - Integration with Document", async (t) => {
 		const scpNode1 = doc.createNode('m.scpcss');
 		const scpNode2 = doc.createNode('m.scpcss');
 
-		const dom1 = scpNode1('getDOM');
-		const dom2 = scpNode2('getDOM');
+		const dom1 = $c.sm(scpNode1, 'getDOM');
+		const dom2 = $c.sm(scpNode2, 'getDOM');
 
 		assertEquals(dom1.size, 1, "First m.scpcss should have style element");
 		assertEquals(dom2.size, 1, "Second m.scpcss should have style element");
@@ -243,7 +243,7 @@ Deno.test("MWICoreScpCSS CSR - Edge Cases", async (t) => {
 
 		// Wait for reactive updates
 
-		const dom = scpNode('getDOM');
+		const dom = $c.sm(scpNode, 'getDOM');
 		const styleElem = dom.at(0);
 
 		// All CSS should be present
@@ -266,7 +266,7 @@ Deno.test("MWICoreScpCSS CSR - Edge Cases", async (t) => {
 		doc.createNode('test.csr.scpcss.reuse');
 		doc.createNode('test.csr.scpcss.reuse');
 
-		const dom = scpNode('getDOM');
+		const dom = $c.sm(scpNode, 'getDOM');
 		const styleElem = dom.at(0);
 
 		// CSS should only appear once
@@ -279,7 +279,7 @@ Deno.test("MWICoreScpCSS CSR - Edge Cases", async (t) => {
 		const scpNode = doc.createNode('m.scpcss');
 
 		// Initially empty
-		let dom = scpNode('getDOM');
+		let dom = $c.sm(scpNode, 'getDOM');
 		assertEquals(dom.size, 0, "Should be empty initially");
 
 		// Register new component late (in test mode)
@@ -293,7 +293,7 @@ Deno.test("MWICoreScpCSS CSR - Edge Cases", async (t) => {
 		doc.createNode('test.csr.scpcss.late');
 
 		// Should now include the late component's CSS
-		dom = scpNode('getDOM');
+		dom = $c.sm(scpNode, 'getDOM');
 		assertEquals(dom.size, 1, "Should have style element");
 		const styleElem = dom.at(0);
 		assert(styleElem.textContent.includes('height: 100vh'), "Should include late component CSS");
@@ -309,17 +309,17 @@ Deno.test("MWICoreScpCSS CSR - Real-World Integration", async (t) => {
 		]));
 		const doc = getInstance('MWIDocument');
 		const scpNode = doc.createNode('m.scpcss');
-		doc('append', scpNode);
+		$c.sm(doc, 'append', scpNode);
 
 		// Initially no components
-		let dom = scpNode('getDOM');
+		let dom = $c.sm(scpNode, 'getDOM');
 		assertEquals(dom.size, 0, "Should be empty initially");
 
 		// Dynamically add styled component
 		doc.createNode('test.csr.scpcss.dynamic');
 
 		// Style element should update
-		dom = scpNode('getDOM');
+		dom = $c.sm(scpNode, 'getDOM');
 		assertEquals(dom.size, 1, "Should have style element");
 		const styleElem = dom.at(0);
 		assert(styleElem.textContent.includes('background: #f0f0f0'), "Should include CSS");
@@ -335,7 +335,7 @@ Deno.test("MWICoreScpCSS CSR - Real-World Integration", async (t) => {
 		doc.createNode('test.csr.scpcss.card');
 		const scpNode = doc.createNode('m.scpcss');
 
-		const dom = scpNode('getDOM');
+		const dom = $c.sm(scpNode, 'getDOM');
 		const styleElem = dom.at(0);
 
 		assert(styleElem.textContent.includes('border: 1px solid #ccc'), "Should include card border");
@@ -362,7 +362,7 @@ Deno.test("MWICoreScpCSS CSR - Real-World Integration", async (t) => {
 		doc.createNode('test.csr.scpcss.complib5');
 		doc.createNode('test.csr.scpcss.complib8');
 
-		const dom = scpNode('getDOM');
+		const dom = $c.sm(scpNode, 'getDOM');
 		const styleElem = dom.at(0);
 
 		// Should only include used components
@@ -385,14 +385,14 @@ Deno.test("MWICoreScpCSS CSR - Empty to Non-Empty Transitions", async (t) => {
 		const scpNode = doc.createNode('m.scpcss');
 
 		// Start empty
-		let dom = scpNode('getDOM');
+		let dom = $c.sm(scpNode, 'getDOM');
 		assertEquals(dom.size, 0, "Should start empty");
 
 		// Add component
 		doc.createNode('test.csr.scpcss.transition');
 
 		// Should now have element
-		dom = scpNode('getDOM');
+		dom = $c.sm(scpNode, 'getDOM');
 		assertEquals(dom.size, 1, "Should have element after transition");
 		assert(dom.at(0).textContent.includes('display: block'), "Should have CSS content");
 	});
@@ -407,7 +407,7 @@ Deno.test("MWICoreScpCSS CSR - Empty to Non-Empty Transitions", async (t) => {
 		doc.createNode('test.csr.scpcss.whitespace');
 		const scpNode = doc.createNode('m.scpcss');
 
-		const dom = scpNode('getDOM');
+		const dom = $c.sm(scpNode, 'getDOM');
 		// Whitespace-only CSS should still create a style element
 		assertEquals(dom.size, 1, "Should have style element for whitespace CSS");
 	});
@@ -424,7 +424,7 @@ Deno.test("MWICoreScpCSS CSR - CSS Content in DOM", async (t) => {
 		doc.createNode('test.csr.scpcss.newlines');
 		const scpNode = doc.createNode('m.scpcss');
 
-		const dom = scpNode('getDOM');
+		const dom = $c.sm(scpNode, 'getDOM');
 		const styleElem = dom.at(0);
 
 		assert(styleElem.textContent.includes('color: red'), "Should preserve CSS");
@@ -441,7 +441,7 @@ Deno.test("MWICoreScpCSS CSR - CSS Content in DOM", async (t) => {
 		doc.createNode('test.csr.scpcss.media');
 		const scpNode = doc.createNode('m.scpcss');
 
-		const dom = scpNode('getDOM');
+		const dom = $c.sm(scpNode, 'getDOM');
 		const styleElem = dom.at(0);
 
 		assert(styleElem.textContent.includes('@media'), "Should include media query");
@@ -458,7 +458,7 @@ Deno.test("MWICoreScpCSS CSR - CSS Content in DOM", async (t) => {
 		doc.createNode('test.csr.scpcss.keyframes');
 		const scpNode = doc.createNode('m.scpcss');
 
-		const dom = scpNode('getDOM');
+		const dom = $c.sm(scpNode, 'getDOM');
 		const styleElem = dom.at(0);
 
 		assert(styleElem.textContent.includes('@keyframes'), "Should include keyframes");

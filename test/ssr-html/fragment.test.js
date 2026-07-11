@@ -18,8 +18,8 @@ const ps = globalThis.ps;
 
 Deno.test("MWICoreFrag (m.frg) - Transparent Rendering", async (t) => {
 	await t.step("(getHTML) - Empty fragment renders as empty string", () => {
-		const fragNode = doc('createNode', ls([, 'm.frg']));
-		const html = fragNode('getHTML');
+		const fragNode = $c.sm(doc, 'createNode', ls([, 'm.frg']));
+		const html =  $c.sm(fragNode, 'getHTML');
 		assertEquals(html, '');
 	});
 
@@ -30,11 +30,11 @@ Deno.test("MWICoreFrag (m.frg) - Transparent Rendering", async (t) => {
 	});
 
 	await t.step("(getHTML) - Fragment with single text child", () => {
-		const fragNode = doc('createNode', ls([, 'm.frg']));
-		const textNode = doc('createNode', ls([, 'm.t']));
-		textNode('setAttr', ls([, 't', , 'Hello World']));
-		fragNode('append', ls([, textNode]));
-		const html = fragNode('getHTML');
+		const fragNode = $c.sm(doc, 'createNode', ls([, 'm.frg']));
+		const textNode = $c.sm(doc, 'createNode', ls([, 'm.t']));
+		$c.sm(textNode, 'setAttr', ls([, 't', , 'Hello World']));
+		$c.sm(fragNode, 'append', ls([, textNode]));
+		const html =  $c.sm(fragNode, 'getHTML');
 		assertEquals(html, 'Hello World');
 	});
 
@@ -48,15 +48,15 @@ Deno.test("MWICoreFrag (m.frg) - Transparent Rendering", async (t) => {
 	});
 
 	await t.step("(getHTML) - Fragment with multiple text children", () => {
-		const fragNode = doc('createNode', ls([, 'm.frg']));
-		const text1 = doc('createNode', ls([, 'm.t']));
-		text1('setAttr', ls([, 't', , 'First']));
-		const text2 = doc('createNode', ls([, 'm.t']));
-		text2('setAttr', ls([, 't', , 'Second']));
-		const text3 = doc('createNode', ls([, 'm.t']));
-		text3('setAttr', ls([, 't', , 'Third']));
-		fragNode('append', ls([, text1, , text2, , text3]));
-		const html = fragNode('getHTML');
+		const fragNode = $c.sm(doc, 'createNode', ls([, 'm.frg']));
+		const text1 = $c.sm(doc, 'createNode', ls([, 'm.t']));
+		$c.sm(text1, 'setAttr', ls([, 't', , 'First']));
+		const text2 = $c.sm(doc, 'createNode', ls([, 'm.t']));
+		$c.sm(text2, 'setAttr', ls([, 't', , 'Second']));
+		const text3 = $c.sm(doc, 'createNode', ls([, 'm.t']));
+		$c.sm(text3, 'setAttr', ls([, 't', , 'Third']));
+		$c.sm(fragNode, 'append', ls([, text1, , text2, , text3]));
+		const html =  $c.sm(fragNode, 'getHTML');
 		assertEquals(html, 'FirstSecondThird');
 	});
 
@@ -74,13 +74,13 @@ Deno.test("MWICoreFrag (m.frg) - Transparent Rendering", async (t) => {
 	});
 
 	await t.step("(getHTML) - Fragment with mixed content (text and comment)", () => {
-		const fragNode = doc('createNode', ls([, 'm.frg']));
-		const textNode = doc('createNode', ls([, 'm.t']));
-		textNode('setAttr', ls([, 't', , 'Text content']));
-		const commentNode = doc('createNode', ls([, 'm.com']));
-		commentNode('setAttr', ls([, 't', , 'Comment content']));
-		fragNode('append', ls([, textNode, , commentNode]));
-		const html = fragNode('getHTML');
+		const fragNode = $c.sm(doc, 'createNode', ls([, 'm.frg']));
+		const textNode = $c.sm(doc, 'createNode', ls([, 'm.t']));
+		$c.sm(textNode, 'setAttr', ls([, 't', , 'Text content']));
+		const commentNode = $c.sm(doc, 'createNode', ls([, 'm.com']));
+		$c.sm(commentNode, 'setAttr', ls([, 't', , 'Comment content']));
+		$c.sm(fragNode, 'append', ls([, textNode, , commentNode]));
+		const html =  $c.sm(fragNode, 'getHTML');
 		assertEquals(html, 'Text content<!--Comment content-->');
 	});
 

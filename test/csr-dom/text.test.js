@@ -19,9 +19,9 @@ const doc = getInstance('MWIDocument');
 
 Deno.test("MWICoreText (m.t) - CSR-DOM Tests", async (t) => {
 	await t.step("(getDOM) - Simple text as text node", async () => {
-		const textNode = doc('createNode', ['m.t']);
-		textNode('setAttr', ['t', 'Hello World']);
-		const domNodes = textNode('getDOM');
+		const textNode = $c.sm(doc, 'createNode', ['m.t']);
+		$c.sm(textNode, 'setAttr', ['t', 'Hello World']);
+		const domNodes = $c.sm(textNode, 'getDOM');
 
 		// Should return a reactive NANOS with one text node
 		const textDomNode = domNodes.at(0);
@@ -43,9 +43,9 @@ Deno.test("MWICoreText (m.t) - CSR-DOM Tests", async (t) => {
 	});
 
 	await t.step("(getDOM) - Empty text removes node", async () => {
-		const textNode = doc('createNode', ['m.t']);
-		textNode('setAttr', ['t', '']);
-		const domNodes = textNode('getDOM');
+		const textNode = $c.sm(doc, 'createNode', ['m.t']);
+		$c.sm(textNode, 'setAttr', ['t', '']);
+		const domNodes = $c.sm(textNode, 'getDOM');
 
 		// Empty text should result in no DOM nodes
 		assertEquals(domNodes.size, 0);
@@ -61,9 +61,9 @@ Deno.test("MWICoreText (m.t) - CSR-DOM Tests", async (t) => {
 	});
 
 	await t.step("(getDOM) - Text with special characters", async () => {
-		const textNode = doc('createNode', ['m.t']);
-		textNode('setAttr', ['t', '<tag> & "quotes"']);
-		const domNodes = textNode('getDOM');
+		const textNode = $c.sm(doc, 'createNode', ['m.t']);
+		$c.sm(textNode, 'setAttr', ['t', '<tag> & "quotes"']);
+		const domNodes = $c.sm(textNode, 'getDOM');
 
 		// DOM text content doesn't need escaping
 		const textDomNode = domNodes.at(0);
@@ -84,16 +84,16 @@ Deno.test("MWICoreText (m.t) - CSR-DOM Tests", async (t) => {
 	});
 
 	await t.step("(getDOM) - Reactive text update", async () => {
-		const textNode = doc('createNode', ['m.t']);
-		textNode('setAttr', ['t', 'Initial text']);
-		const domNodes = textNode('getDOM');
+		const textNode = $c.sm(doc, 'createNode', ['m.t']);
+		$c.sm(textNode, 'setAttr', ['t', 'Initial text']);
+		const domNodes = $c.sm(textNode, 'getDOM');
 
 		const textDomNode = domNodes.at(0);
 		assertEquals(textDomNode.nodeValue, 'Initial text');
 		assertEquals(domNodes.size, 1);
 
 		// Update the text attribute
-		textNode('setAttr', ['t', 'Updated text']);
+		$c.sm(textNode, 'setAttr', ['t', 'Updated text']);
 		await reactive.wait();
 
 		// The same DOM node should be updated reactively
@@ -120,15 +120,15 @@ Deno.test("MWICoreText (m.t) - CSR-DOM Tests", async (t) => {
 	});
 
 	await t.step("(getDOM) - Reactive empty to non-empty", async () => {
-		const textNode = doc('createNode', ['m.t']);
-		textNode('setAttr', ['t', '']);
-		const domNodes = textNode('getDOM');
+		const textNode = $c.sm(doc, 'createNode', ['m.t']);
+		$c.sm(textNode, 'setAttr', ['t', '']);
+		const domNodes = $c.sm(textNode, 'getDOM');
 
 		// Initially empty - no nodes
 		assertEquals(domNodes.size, 0);
 
 		// Update to non-empty text
-		textNode('setAttr', ['t', 'Now has text']);
+		$c.sm(textNode, 'setAttr', ['t', 'Now has text']);
 		await reactive.wait();
 
 		// Should now have one text node
@@ -154,16 +154,16 @@ Deno.test("MWICoreText (m.t) - CSR-DOM Tests", async (t) => {
 	});
 
 	await t.step("(getDOM) - Reactive non-empty to empty", async () => {
-		const textNode = doc('createNode', ['m.t']);
-		textNode('setAttr', ['t', 'Has text']);
-		const domNodes = textNode('getDOM');
+		const textNode = $c.sm(doc, 'createNode', ['m.t']);
+		$c.sm(textNode, 'setAttr', ['t', 'Has text']);
+		const domNodes = $c.sm(textNode, 'getDOM');
 
 		// Initially has one node
 		const textDomNode = domNodes.at(0);
 		assertEquals(domNodes.size, 1);
 
 		// Update to empty text
-		textNode('setAttr', ['t', '']);
+		$c.sm(textNode, 'setAttr', ['t', '']);
 		await reactive.wait();
 
 		// Should now have no nodes

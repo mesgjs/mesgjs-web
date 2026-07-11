@@ -28,9 +28,9 @@ Deno.test("MWICoreSource SSR - m.ci Pass-Through in Rendering", async (t) => {
 		]));
 
 		const tplNode = await doc.createNode('test.tpl.srccipass');
-		const tplCI = tplNode('getAttr', ['m.ci']);
+		const tplCI =  $c.sm(tplNode, 'getAttr', ['m.ci']);
 
-		const html = tplNode('getHTML');
+		const html =  $c.sm(tplNode, 'getHTML');
 
 		// h.div sees m.src as slotSrc
 		// m.src's m.ci returns template's CI (pass-through)
@@ -45,9 +45,9 @@ Deno.test("MWICoreSource SSR - m.ci Pass-Through in Rendering", async (t) => {
 		]));
 
 		const tplNode = await doc.createNode('test.tpl.nestedsrcci');
-		const tplCI = tplNode('getAttr', ['m.ci']);
+		const tplCI =  $c.sm(tplNode, 'getAttr', ['m.ci']);
 
-		const html = tplNode('getHTML');
+		const html =  $c.sm(tplNode, 'getHTML');
 
 		// Both m.src nodes pass through template's CI
 		// So @@ should resolve to template's CI
@@ -58,8 +58,8 @@ Deno.test("MWICoreSource SSR - m.ci Pass-Through in Rendering", async (t) => {
 		const srcNode = doc.createNode('m.src');
 		srcNode.setSubSpec(ps('[( [h.div m.coat=[data-ci="@@"]] )]'));
 
-		const srcCI = srcNode('getAttr', ['m.ci']);
-		const html = srcNode('getHTML');
+		const srcCI =  $c.sm(srcNode, 'getAttr', ['m.ci']);
+		const html =  $c.sm(srcNode, 'getHTML');
 
 		// m.src has no slotSrc, so returns its own CI (registry entry)
 		const regEntry = registry.get('m.src');
@@ -71,12 +71,12 @@ Deno.test("MWICoreSource SSR - m.ci Pass-Through in Rendering", async (t) => {
 
 	await t.step("@@ in m.src with HTML element slotSrc", () => {
 		const parentNode = doc.createNode('h.div');
-		const parentCI = parentNode('getAttr', ['m.ci']);
+		const parentCI =  $c.sm(parentNode, 'getAttr', ['m.ci']);
 
 		const srcNode = doc.createNode('m.src', { slotSrc: parentNode });
 		srcNode.setSubSpec(ps('[( [h.div m.coat=[data-ci="@@"]] )]'));
 
-		const html = srcNode('getHTML');
+		const html =  $c.sm(srcNode, 'getHTML');
 
 		// m.src passes through parent's CI
 		assert(html.includes(`data-ci="${parentCI}"`));
@@ -93,7 +93,7 @@ Deno.test("MWICoreSource SSR - Slotting Boundary Behavior", async (t) => {
 		const tplNode = await doc.createNode('test.tpl.srcboundary');
 		tplNode.setAttr('myattr', 'template-value');
 
-		const html = tplNode('getHTML');
+		const html =  $c.sm(tplNode, 'getHTML');
 
 		// h.div sees m.src as slotSrc (not template)
 		// So it gets myattr from m.src, not from template
@@ -110,7 +110,7 @@ Deno.test("MWICoreSource SSR - Slotting Boundary Behavior", async (t) => {
 		const tplNode = await doc.createNode('test.tpl.srcaccess');
 		tplNode.setAttr('myattr', 'template-value');
 
-		const html = tplNode('getHTML');
+		const html =  $c.sm(tplNode, 'getHTML');
 
 		// m.src itself can see template's attributes (template is its slotSrc)
 		// But m.src has no wrapper element, so attributes don't render
@@ -127,7 +127,7 @@ Deno.test("MWICoreSource SSR - Slotting Boundary Behavior", async (t) => {
 		const tplNode = await doc.createNode('test.tpl.slotthrough');
 		tplNode.setAttr('tplattr', 'from-template');
 
-		const html = tplNode('getHTML');
+		const html =  $c.sm(tplNode, 'getHTML');
 
 		// m.src slots tplattr from template to srcattr on itself
 		// h.div can then access srcattr from m.src
@@ -143,9 +143,9 @@ Deno.test("MWICoreSource SSR - Comparison with m.frg", async (t) => {
 		]));
 
 		const tplNode = await doc.createNode('test.tpl.srcvsfrag');
-		const tplCI = tplNode('getAttr', ['m.ci']);
+		const tplCI =  $c.sm(tplNode, 'getAttr', ['m.ci']);
 
-		const html = tplNode('getHTML');
+		const html =  $c.sm(tplNode, 'getHTML');
 
 		// m.src passes through template's CI
 		assert(html.includes(`data-src="${tplCI}"`));
@@ -163,7 +163,7 @@ Deno.test("MWICoreSource SSR - Comparison with m.frg", async (t) => {
 		const tplNode = await doc.createNode('test.tpl.boundaries');
 		tplNode.setAttr('myattr', 'template');
 
-		const html = tplNode('getHTML');
+		const html =  $c.sm(tplNode, 'getHTML');
 
 		// m.src creates boundary - its children see m.src as slotSrc
 		assert(html.includes('data-src="src"'));
@@ -183,9 +183,9 @@ Deno.test("MWICoreSource SSR - Complex m.ci Scenarios", async (t) => {
 		]));
 
 		const tplNode = await doc.createNode('test.tpl.multilevel');
-		const tplCI = tplNode('getAttr', ['m.ci']);
+		const tplCI =  $c.sm(tplNode, 'getAttr', ['m.ci']);
 
-		const html = tplNode('getHTML');
+		const html =  $c.sm(tplNode, 'getHTML');
 
 		// All m.src nodes pass through template's CI
 		assert(html.includes(`data-ci="${tplCI}"`));
@@ -195,8 +195,8 @@ Deno.test("MWICoreSource SSR - Complex m.ci Scenarios", async (t) => {
 		const slotNode = doc.createNode('m.slot');
 		slotNode.setSubSpec(ps('[( [m.src [h.div m.coat=[data-ci="@@"]]] )]'));
 
-		const slotCI = slotNode('getAttr', ['m.ci']);
-		const html = slotNode('getHTML');
+		const slotCI =  $c.sm(slotNode, 'getAttr', ['m.ci']);
+		const html =  $c.sm(slotNode, 'getHTML');
 
 		// m.src passes through slot's CI
 		assert(html.includes(`data-ci="${slotCI}"`));
@@ -209,9 +209,9 @@ Deno.test("MWICoreSource SSR - Complex m.ci Scenarios", async (t) => {
 		]));
 
 		const tplNode = await doc.createNode('test.tpl.ciprefix');
-		const tplCI = tplNode('getAttr', ['m.ci']);
+		const tplCI =  $c.sm(tplNode, 'getAttr', ['m.ci']);
 
-		const html = tplNode('getHTML');
+		const html =  $c.sm(tplNode, 'getHTML');
 
 		// @@ should be replaced with template's CI
 		assert(html.includes(`data-ci="prefix-${tplCI}-suffix"`));
@@ -224,9 +224,9 @@ Deno.test("MWICoreSource SSR - Complex m.ci Scenarios", async (t) => {
 		]));
 
 		const tplNode = await doc.createNode('test.tpl.multici');
-		const tplCI = tplNode('getAttr', ['m.ci']);
+		const tplCI =  $c.sm(tplNode, 'getAttr', ['m.ci']);
 
-		const html = tplNode('getHTML');
+		const html =  $c.sm(tplNode, 'getHTML');
 
 		// Both @@ should be replaced
 		assert(html.includes(`data-ci="${tplCI}-${tplCI}"`));

@@ -1,6 +1,6 @@
 [(
 modpath='mwi/mwi-document'
-version='0.5.0'
+version='1.0.0'
 featreq='mwi.comp.MWICore mwi.compRegReady MWIDocNode'
 featpro='MWIDocument'
 modcaps=''
@@ -8,7 +8,7 @@ modcaps=''
 
 /*
  * MWIDocument - MWI Document Rendering Coordinator
- * Copyright 2025 by Kappa Computer Solutions, LLC and Brian Katzung
+ * Copyright 2025-2026 by Kappa Computer Solutions, LLC and Brian Katzung
  */
 
 @e @js{
@@ -20,7 +20,7 @@ modcaps=''
 	const REG_READY_FT = 'mwi.compRegReady';
 	const NODE_IF = 'MWIDocNode';
 	const NODE_READY_FT = NODE_IF;
-	const CORE_READY_FT = 'mwi.comp.MWICore'
+	const CORE_READY_FT = 'mwi.comp.MWICore';
 	const FRAG_TYPE = 'm.frg';
 	const TPL_IF = 'MWICoreTpl';
 
@@ -28,9 +28,11 @@ modcaps=''
 	const TEMPLATE = 'tpl';
 	const FEATURE = 'ftr';
 
-	const { fready, fwait, getInstance, getInterface, setRO, typeChains } = globalThis.$c;
+	const { fready, fwait, getInstance, getInterface, MsjsObject, setRO, typeChains } = globalThis.$c;
 
 	await fwait(REG_READY_FT, NODE_READY_FT, CORE_READY_FT);
+
+	const reactiveBox = $c.getInstance('@reactive');
 
 	// Clear all aggregated data
 	function clearAggr (p) {
@@ -41,58 +43,204 @@ modcaps=''
 		p.set('nextAggrId', 0);
 	}
 
-	// Compare two node paths (arrays of integers) for ordering
-	// Returns negative if a < b, 0 if equal, positive if a > b
-	function compareNodePaths (a, b) {
-		const aLen = a.next ?? 0, bLen = b.next ?? 0;
-		const minLen = Math.min(aLen, bLen);
-		for (let i = 0; i < minLen; i++) {
-			const diff = a.at(i) - b.at(i);
-			if (diff !== 0) return diff;
+	// JS interface class
+	class MWIDocument extends MsjsObject {
+		#ps;
+
+		constructor (key, type) {
+			super(key, type);
+			this.#ps = MsjsObject.getPS(this, key);
 		}
-		return aLen - bLen;
-	}
 
-	// Helper to create a reactive NANOS
-	// **IMPORTANT:**
-	// Any operation that returns a reactive NANOS should probably be returning the same one every time!
-	function rxNANOS (...args) {
-		const rxn = new NANOS();
-		rxn.setOpts({ autoReactive: true });
-		rxn.rio = getInstance('@reactive')('rio');
-		if (args.length) rxn.push(...args);
-		return rxn;
-	}
-
-	// JS interface prototype
-	const docProto = Object.setPrototypeOf({
 		// append({ item: itemSpec?, list: listSpec? });
 		// append(...nodes)
-		append (...params) { return this('append', (params.length === 1) ? params[0] : params); },
-		/* async */ appendWait (params) { return this('appendWait', params); },
-		compareNodePaths,
-		compIdStr (id) { return '_MC_' + id.toString(36); },
-		createNode (type, { slotSrc } = {}) { return this('createNode', { 0: type, slotSrc }); },
-		/* async */ createNodeWait (type, { slotSrc } = {}) { return this('createNodeWait', { 0: type, slotSrc }); },
-		from (params) { return this('from', params); },
-		/* async */ fromWait (params) { return this('fromWait', params); },
-		getDocById (id) { return this('getDocById', [ id ]); },
-		getAggr (options = {}) { return this('getAggr', options); },
-		getDOM () { return this('getDOM'); },
-		getHTML (node) { return this('getHTML', [node]); },
-		getId () { return this('getElemId'); },
-		initialCSR () { return this('initialCSR'); },
-		get jsv () { return this; },
-		mapAggrBuffer (from) { return this('mapAggrBuffer', [from]); },
-		registry () { return this('registry'); },
-		get root () { return this('root'); },
-		rxNANOS,
-		valueOf () { return this; },
-	}, Function.prototype);
+		// append, appendWait have parameter subtleties; do not merge w/ Mesgjs handlers (at least for now)
+		append (...params) { return $c.sm(this, 'append', (params.length === 1) ? params[0] : params); }
+		/* async */ appendWait (...params) { return $c.sm(this, 'appendWait', (params.length === 1) ? params[0] : params); }
+
+		// Compare two node paths (arrays of integers) for ordering
+		// Returns negative if a < b, 0 if equal, positive if a > b
+		static compareNodePaths (a, b) {
+			const aLen = a.next ?? 0, bLen = b.next ?? 0;
+			const minLen = Math.min(aLen, bLen);
+
+			for (let i = 0; i < minLen; i++) {
+				const diff = a.at(i) - b.at(i);
+
+				if (diff !== 0) return diff;
+			}
+			return aLen - bLen;
+		}
+
+		compIdStr (id) { return '_MC_' + id.toString(36); }
+
+		// createNodeCommon sends attributed message; do not combine these w/ Mesgjs handlers
+		createNode (type, { slotSrc } = {}) { return $c.sm(this, 'createNode', { 0: type, slotSrc }); }
+		/* async */ createNodeWait (type, { slotSrc } = {}) { return $c.sm(this, 'createNodeWait', { 0: type, slotSrc }); }
+
+		// from, fromWait may send attributed message; do not combine w/ Mesgjs handlers
+		from (params) { return $c.sm(this, 'from', params); }
+		/* async */ fromWait (params) { return $c.sm(this, 'fromWait', params); }
+
+		// (getAggr clear=@f)
+		// Optionally clear, and then return, the aggregated-data map
+		getAggr (p1) {
+			const d = p1?.msjsType === '@dispatch' ? p1 : undefined;
+			const options = (d ? d.mp?.storage : p1) ?? {};
+			const ps = d?.p ?? this.#ps;
+			const data = ps.at('aggrData');
+
+			if (options.clear) clearAggr(ps); // Clear all aggregated data
+			return data;
+		}
+
+		// Get doc-node by id
+		// (getDocById id)
+		getDocById (p1) {
+			const d = p1?.msjsType === '@dispatch' ? p1 : undefined;
+			const ps = d?.p ?? this.#ps;
+			const id = d ? d.mp.at(0) : p1;
+			// Normalize numeric id to string before lookup
+			const normalId = (typeof id === 'number') ? String(id) : id;
+
+			if (typeof normalId !== 'string') return undefined;
+
+			const idIndex = ps.at('idIndex');
+			const weakRef = idIndex.get(normalId);
+
+			// Dereference WeakRef and return node (or undefined if collected)
+			return weakRef?.deref();
+		}
+
+		getDOM (p1) {
+			const d = p1?.msjsType === '@dispatch' ? p1 : undefined;
+			const ps = d?.p ?? this.#ps;
+			const opts = (d ? d.mp?.storage : p1) ?? {};
+			const root = ps.at('root');
+			const sync = opts.sync;
+
+			// Two-pass generation
+			// Initial CSR discovers aggregate "to" nodes
+			// Second CSR fills in aggregate "from" nodes, if any
+			ps.at('initialCSR').wv = true;
+			root.getDOM({ sync });
+			ps.at('initialCSR').wv = false;
+			return root.getDOM();
+		}
+
+		// (getHTML node?)
+		// Return the rendered HTML for the document or specific node
+		// Replaces aggregation placeholders before returning the result
+		getHTML (p1) {
+			const d = p1?.msjsType === '@dispatch' ? p1 : undefined;
+			const ps = d?.p ?? this.#ps;
+			const node = (d ? d.mp.at(0) : p1) ?? ps.at('root');
+			const initial = node.getHTML();
+
+			// Return the initial rendering if nothing was ever aggregated
+			if (!ps.at('nextAggrId')) return initial;
+
+			const data = ps.at('aggrData');
+			const map = ps.at('aggrMap');
+			const output = []; // Accumulated output segments
+			const refCount = new Map(); // Number of times each placeholder has been referenced
+			// Replace `<{id}>` placeholders, but not in comments / scripts / styles
+			// Pushes to output for assembly; returns nothing
+			const process = (input) => {
+				if (!input) return; // Skip empty segments
+				if (!input.includes('<{')) { // No placeholder candidates; accept as-is
+					output.push(input);
+					return;
+				}
+
+				// Locate markers for all the interesting parts of the input
+				const markers = input.matchAll(/\<!--.*?-->|\<\s*script.*?\<\s*\/\s*script>|\<\s*style.*?\<\s*\/\s*style>|\<{(\d+)}>/gis);
+				let cursor = 0;
+
+				for (const marker of markers) {
+					const [ outer, inner ] = marker; // Sample marker: [ '{0}', '0', index: 5, ... ]
+
+					if (inner === undefined) continue; // Ignore comment / script / style
+
+					const { index } = marker, number = parseInt(inner, 10), seen = refCount.get(number) ?? 0;
+
+					if (seen === 1) console.warn(`MWI HTML placeholder ${number} has already been processed`);
+					refCount.set(number, seen + 1);
+					output.push(input.slice(cursor, index)); // Keep segment from last position to placeholder
+					cursor = index + outer.length; // Cursor resumes after the placeholder
+					if (seen) continue;
+
+					const name = map.get(number), partMap = (name && data.get(name)) || [];
+
+					for (const part of partMap.values()) process(part); // Add recursively-processed placeholder value
+				}
+
+				if (cursor < input.length) output.push(input.slice(cursor)); // Add final segment
+			};
+
+			process(initial);
+			return output.join(''); // Return assembled processed segments
+		}
+
+		get initialCSR () { return this.#ps.at('initialCSR').rv; }
+		get jsv () { return this; }
+
+		// (mapAggrBuffer id)
+		// (mapAggrBuffer name)
+		// Return the aggregation buffer name from id or id from name
+		mapAggrBuffer (p1) {
+			const d = p1?.msjsType === '@dispatch' ? p1 : undefined;
+			const ps = d?.p ?? this.#ps;
+			const map = ps.at('aggrMap');
+			const from = d ? d.mp.at(0) : p1;
+
+			// Return the buffer name (or undefined) for the buffer id
+			if (typeof from === 'number') return map.get(from);
+
+			// Return the existing id for the buffer name if there is one
+			const curId = map.get(from);
+
+			if (curId !== undefined) return curId;
+
+			// Assign and return the next sequential id
+			const nextId = ps.at('nextAggrId');
+
+			ps.set('nextAggrId', nextId + 1);
+			map.set(nextId, from);
+			map.set(from, nextId);
+
+			return nextId;
+		}
+
+		nextId () { return this.#ps.at('registry').nextId(); }
+		get registry () { return this.#ps.at('registry'); }
+		get root () { return this.#ps.at('root'); }
+
+		// Helper to create a reactive NANOS
+		// **IMPORTANT:**
+		// Any operation that returns a reactive NANOS should probably be returning the same one every time!
+		static rxNANOS (...args) {
+			const rxn = new NANOS();
+
+			rxn.setOpts({ autoReactive: true });
+			rxn.rio = $c.sm(reactiveBox, 'rio');
+			if (args.length) rxn.push(...args);
+			return rxn;
+		}
+
+		get typesUsed () { return [...this.#ps.at('typesUsed').keys()]; }
+		valueOf () { return this; }
+	}
+
+	const rxNANOS = MWIDocument.rxNANOS;
+	const docProto = MWIDocument.prototype;
+
+	docProto.rxNANOS = rxNANOS; // Support rxNANOS from either class or instance
 
 	function opInit (d) {
 		const p = d.p;
 		const registry = getInstance(REG_IF);
+
 		p.push({
 			registry: registry,
 			typesUsed: rxNANOS(), // The *keys* form a reactive list of unique types created on the document
@@ -103,11 +251,9 @@ modcaps=''
 			initialCSR: reactive({ v: false }),
 		});
 
-		// Add JS interface
-		Object.setPrototypeOf(d.rr, docProto);
-
 		// Add document root (m.frg fragment)
-		const root = d.rr('createNode', ['m.frg']);
+		const root = $c.sm(d.rr, 'createNode', ['m.frg']);
+
 		p.set('root', root);
 	}
 
@@ -118,12 +264,13 @@ modcaps=''
 		const p = d.p, root = p.at('root'), m = d.mp;
 		const hasItem = m.has('item'), hasList = m.has('list');
 		let content = m;
+
 		if (hasItem) {
-			content = [ d.rr('from', { item: m.at('item') }) ];
+			content = [ $c.sm(d.rr, 'from', { item: m.at('item') }) ];
 		} else if (hasList) {
-			content = d.rr('from', { list: m.at('list') });
+			content = $c.sm(d.rr, 'from', { list: m.at('list') });
 		}
-		root('append', content);
+		$c.sm(root, 'append', content);
 		return d.rr;
 	}
 
@@ -134,22 +281,26 @@ modcaps=''
 		const p = d.p, root = p.at('root'), m = d.mp;
 		const hasItem = m.has('item'), hasList = m.has('list');
 		let content = m;
+
 		if (hasItem) {
-			content = [ await d.rr('fromWait', { item: m.at('item') }) ];
+			content = [ await $c.sm(d.rr, 'fromWait', { item: m.at('item') }) ];
 		} else if (hasList) {
-			content = await d.rr('fromWait', { list: m.at('list') });
+			content = await $c.sm(d.rr, 'fromWait', { list: m.at('list') });
 		}
-		root('append', content);
+		$c.sm(root, 'append', content);
 		return d.rr;
 	}
 
 	// Create a new document node (common logic for both sync and async)
 	function createNodeCommon (d, entry, type, registry) {
 		if (!entry) throw new TypeError(`No MWI registry entry found for component type "${type}"`);
+
 		const { p, mp } = d;
 		const used = p.at('typesUsed');
+
 		if (!used.has(type)) used.set(type, 1);
 		// Check if this is a deferred component (has feature but no interface/template)
+
 		const hasInterface = entry.has(INTERFACE) || entry.has(TEMPLATE);
 		const hasFeature = entry.has(FEATURE);
 
@@ -162,6 +313,7 @@ modcaps=''
 		const config = new NANOS({ type, slotSrc }, entry);
 		const nodeIf = getInterface(nodeIfName);
 		const node = d.sm(nodeIf, 'instance', config);
+
 		return node;
 	}
 
@@ -170,6 +322,7 @@ modcaps=''
 		const p = d.p, m = d.mp;
 		const registry = p.at('registry'), type = m.at(0);
 		const entry = registry.get(type);
+
 		return createNodeCommon(d, entry, type, registry);
 	}
 
@@ -178,10 +331,11 @@ modcaps=''
 		const p = d.p, m = d.mp;
 		const registry = p.at('registry'), type = m.at(0);
 		const entry = await registry.getWait(type);
+
 		return createNodeCommon(d, entry, type, registry);
 	}
 
-	// Return document node(s) from a doc-spec item or list (synchronous)
+	// Return document $c.sm(node, s) from a doc-spec item or list (synchronous)
 	// (from item=text|[node]? list='[(SLID string)]'|[[node] ...]? slotSrc=source?)
 	function opFrom (d) {
 		const m = d.mp, slotSrc = m.at('slotSrc');
@@ -189,61 +343,73 @@ modcaps=''
 		const fromItem = (spec) => {
 			if (typeof spec === 'string') {
 				const node = d.sm(d.rr, 'createNode', [ 'm.t' ]);
-				node('setAttr', [ 't', spec ]);
+
+				$c.sm(node, 'setAttr', [ 't', spec ]);
 				return node;
 			}
 			if (spec instanceof NANOS) {
 				const type = spec.at(0);
 				const node = d.sm(d.rr, 'createNode', { 0: type, slotSrc });
+
 				// If createNode returned an m.defer placeholder for a different type,
 				// enrich it with the original spec as its sub-spec (for CSR feature-gating)
-				if (node('type') === DEFER_TYPE && type !== DEFER_TYPE) {
-					node('setSubSpec', [ spec ]);
+				if ($c.sm(node, 'type') === DEFER_TYPE && type !== DEFER_TYPE) {
+					$c.sm(node, 'setSubSpec', [ spec ]);
 				} else {
-					node('setSpec', [ spec ]);
+					$c.sm(node, 'setSpec', [ spec ]);
 				}
 				return node;
 			}
 		};
+
 		const item = m.at('item');
+
 		if (item) {
 			return fromItem(item);
 		}
+
 		const rawList = m.at('list');
 		const list = (typeof rawList === 'string') ? NANOS.parseSLID(rawList) : rawList;
+
 		if (typeof list?.values === 'function') {
 			return [...list.values()].map((item) => fromItem(item));
 		}
 		throw new TypeError(`${IF_NAME}(from) without "item" or "list"`);
 	}
 
-	// Return a promise for document node(s) from a doc-spec item or list (async - waits for deferred)
+	// Return a promise for document $c.sm(node, s) from a doc-spec item or list (async - waits for deferred)
 	// (fromWait item=text|[node]? list='[(SLID string)]'|[[node] ...]? slotSrc=source?)
 	async function opFromWait (d) {
 		const m = d.mp, slotSrc = m.at('slotSrc');
 		const fromItem = async (spec) => {
 			if (typeof spec === 'string') {
 				const node = await d.sm(d.rr, 'createNodeWait', [ 'm.t' ]);
-				node('setAttr', [ 't', spec ]);
+
+				$c.sm(node, 'setAttr', [ 't', spec ]);
 				return node;
 			}
 			if (spec instanceof NANOS) {
 				const type = spec.at(0);
 				const node = await d.sm(d.rr, 'createNodeWait', { 0: type, slotSrc });
-				await node('setSpec', [ spec ]);
+
+				await $c.sm(node, 'setSpec', [ spec ]);
 				return node;
 			}
 		};
 		const item = m.at('item');
+
 		if (item) {
 			return fromItem(item);
 		}
+
 		const rawList = m.at('list');
 		const list = (typeof rawList === 'string') ? NANOS.parseSLID(rawList) : rawList;
+
 		if (typeof list?.values === 'function') {
 			const items = [...list.values()].map((item) => fromItem(item));
 			const collect = getInstance('@promise');
 			const res = await collect.all(items);
+
 			return res;
 		}
 		throw new TypeError(`${IF_NAME}(fromWait) without "item" or "list"`);
@@ -257,111 +423,6 @@ modcaps=''
 
 		if (clear) clearAggr(p); // Clear all aggregated data
 		return data;
-	}
-
-	// Get doc-node by id
-	// (getDocById id)
-	function opGetDocById (d) {
-		const m = d.mp, id = m.at(0);
-		// Normalize numeric id to string before lookup
-		const normalId = (typeof id === 'number') ? String(id) : id;
-		if (typeof normalId !== 'string') return undefined;
-		const idIndex = d.p.at('idIndex');
-		const weakRef = idIndex.get(normalId);
-		// Dereference WeakRef and return node (or undefined if collected)
-		return weakRef?.deref();
-	}
-
-	// Full-document CSR
-	function opGetDOM (d) {
-		const p = d.p, m = d.mp;
-		const root = p.at('root');
-		const sync = m.at('sync');
-
-		// Two-pass generation
-		// Initial CSR discovers aggregate "to" nodes
-		// Second CSR fills in aggregate "from" nodes, if any
-		p.at('initialCSR').wv = true;
-		root('getDOM', { sync });
-		p.at('initialCSR').wv = false;
-		return root('getDOM');
-	}
-
-	// (getHTML node?)
-	// Return the rendered HTML for the document or specific node
-	// Replaces aggregation placeholders before returning the result
-	function opGetHTML (d) {
-		const p = d.p, m = d.mp;
-		const node = m.at(0) || p.at('root');
-		const initial = node('getHTML');
-
-		// Return the initial rendering if nothing was ever aggregated
-		if (!p.at('nextAggrId')) return initial;
-
-		const data = p.at('aggrData'), map = p.at('aggrMap');
-		const output = []; // Accumulated output segments
-		const refCount = new Map(); // Number of times each placeholder has been referenced
-		// Replace `<{id}>` placeholders, but not in comments / scripts / styles
-		// Pushes to output for assembly; returns nothing
-		const process = (input) => {
-			if (!input) return; // Skip empty segments
-			if (!input.includes('<{')) { // No placeholder candidates; accept as-is
-				output.push(input);
-				return;
-			}
-
-			// Locate markers for all the interesting parts of the input
-			const markers = input.matchAll(/\<!--.*?-->|\<\s*script.*?\<\s*\/\s*script>|\<\s*style.*?\<\s*\/\s*style>|\<{(\d+)}>/gis);
-			let cursor = 0;
-
-			for (const marker of markers) {
-				const [ outer, inner ] = marker; // Sample marker: [ '{0}', '0', index: 5, ... ]
-
-				if (inner === undefined) continue; // Ignore comment / script / style
-
-				const { index } = marker, number = parseInt(inner, 10), seen = refCount.get(number) ?? 0;
-
-				if (seen === 1) console.warn(`MWI HTML placeholder ${number} has already been processed`);
-				refCount.set(number, seen + 1);
-				output.push(input.slice(cursor, index)); // Keep segment from last position to placeholder
-				cursor = index + outer.length; // Cursor resumes after the placeholder
-				if (seen) continue;
-
-				const name = map.get(number), partMap = (name && data.get(name)) || [];
-
-				for (const part of partMap.values()) process(part); // Add recursively-processed placeholder value
-			}
-
-			if (cursor < input.length) output.push(input.slice(cursor)); // Add final segment
-		};
-
-		process(initial);
-		return output.join(''); // Return assembled processed segments
-	}
-
-	// (mapAggrBuffer id)
-	// (mapAggrBuffer name)
-	// Return the aggregation buffer name from id or id from name
-	function opMapAggrBuffer (d) {
-		const p = d.p, map = p.at('aggrMap');
-		const m = d.mp, from = m.at(0);
-
-		// Return the buffer name (or undefined) for the buffer id
-		if (typeof from === 'number') return map.get(from);
-
-		// Return the existing id for the buffer name if there is one
-		const curId = map.get(from);
-
-		if (curId !== undefined) return curId;
-
-		// Assign and return the next sequential id
-		const nextId = p.at('nextAggrId');
-
-		p.set('nextAggrId', nextId + 1);
-		map.set(nextId, from);
-		map.set(from, nextId);
-
-		return nextId;
 	}
 
 	// Update id index of MWIDocNode sender (internal, attributed message)
@@ -399,19 +460,20 @@ modcaps=''
 			/* async */ createNodeWait: opCreateNodeWait,
 			from: opFrom,
 			/* async */ fromWait: opFromWait,
-			getAggr: opGetAggr,
-			getDocById: opGetDocById,
-			getDOM: opGetDOM,
-			getHTML: opGetHTML,
+			getAggr: docProto.getAggr,
+			getDocById: docProto.getDocById,
+			getDOM: docProto.getDOM,
+			getHTML: docProto.getHTML,
 			initialCSR: (d) => d.p.at('initialCSR').rv,
-			mapAggrBuffer: opMapAggrBuffer,
-			nextId: (d) => d.p.at('registry')('nextId'),
+			mapAggrBuffer: docProto.mapAggrBuffer,
+			nextId: (d) => d.p.at('registry').nextId(),
 			registry: (d) => d.p.at('registry'),
 			root: (d) => d.p.at('root'),
-			rxNANOS: (_d) => rxNANOS().fromEntries(d.mp.entries()),
+			rxNANOS: (d) => rxNANOS().fromEntries(d.mp.entries()),
 			typesUsed: (d) => [...d.p.at('typesUsed').keys()],
 			updIdIndex: opUpdIdIndex,
-		}
+		},
+		proto: MWIDocument,
 	});
 
 	fready(mid, READY_FT);

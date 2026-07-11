@@ -17,15 +17,15 @@ const doc = getInstance('MWIDocument');
 const ls = globalThis.ls;
 
 Deno.test("MWIHTML interface renders standard and void elements", async (t) => {
-	const divNode = doc('createNode', ls([, 'h.div']));
-	divNode('setAttr', [ 'class', 'test' ]);
-	divNode('setSubSpec', 'Content');
-	const divHTML = divNode('getHTML');
+	const divNode = $c.sm(doc, 'createNode', ls([, 'h.div']));
+	$c.sm(divNode, 'setAttr', [ 'class', 'test' ]);
+	$c.sm(divNode, 'setSubSpec', 'Content');
+	const divHTML =  $c.sm(divNode, 'getHTML');
 	assertEquals(divHTML, '<div class="test">Content</div>', 'standard element rendered');
 
-	const brNode = doc('createNode', ls([, 'h.br']));
-	brNode('setAttr', ls([, 'class', , 'break']));
-	const brHTML = brNode('getHTML');
+	const brNode = $c.sm(doc, 'createNode', ls([, 'h.br']));
+	$c.sm(brNode, 'setAttr', ls([, 'class', , 'break']));
+	const brHTML =  $c.sm(brNode, 'getHTML');
 	assertEquals(brHTML, '<br class="break">', 'void element rendered');
 });
 
@@ -68,11 +68,11 @@ Deno.test("MWIHTMLDocType interface renders correctly", async (t) => {
 
 Deno.test("MWIHTML - Numeric Attribute Values", async (t) => {
 	await t.step("(setAttr) - Numeric value via JS number", () => {
-		const divNode = doc('createNode', ls([, 'h.div']));
-		divNode('setAttr', ['data-count', 42]);
-		divNode('setAttr', ['data-index', 0]);
-		divNode('setAttr', ['tabindex', -1]);
-		const html = divNode('getHTML');
+		const divNode = $c.sm(doc, 'createNode', ls([, 'h.div']));
+		$c.sm(divNode, 'setAttr', ['data-count', 42]);
+		$c.sm(divNode, 'setAttr', ['data-index', 0]);
+		$c.sm(divNode, 'setAttr', ['tabindex', -1]);
+		const html =  $c.sm(divNode, 'getHTML');
 
 		assert(html.includes('data-count="42"'), 'Should render positive number');
 		assert(html.includes('data-index="0"'), 'Should render zero');

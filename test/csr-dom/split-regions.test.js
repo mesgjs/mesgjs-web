@@ -14,16 +14,18 @@ import {
 import { setupRuntime, simulateBrowser } from '../harness.esm.js';
 
 const REG_READY_FT = 'mwi.compRegReady';
+const DOC_NODE_RDY_FT = 'MWIDocNode';
 
 await setupRuntime();
 
-const { fwait, getInstance } = globalThis.$c;
-await fwait(REG_READY_FT);
+const { fwait, getInstance, getInterface } = globalThis.$c;
+await fwait(REG_READY_FT, DOC_NODE_RDY_FT);
 
 // Set up browser-like environment for DOM testing
 await simulateBrowser();
 
 const doc = getInstance('MWIDocument');
+const MWIDocNode = getInterface('MWIDocNode').proto;
 const ls = globalThis.ls;
 const ps = globalThis.ps;
 
@@ -220,7 +222,7 @@ Deno.test("MWICoreHeadBody - CSR getManagedRegion helper", async (t) => {
 		const headNode = doc.createNode('m.head');
 		headNode.getDOM();
 
-		const { begin, end } = headNode.getManagedRegion(document.head);
+		const { begin, end } = MWIDocNode.getManagedRegion(document.head);
 		assertExists(begin, 'begin marker found');
 		assertExists(end, 'end marker found');
 		assertEquals(begin.dataset.mwi, 'begin', 'begin marker has correct data-mwi');
@@ -231,7 +233,7 @@ Deno.test("MWICoreHeadBody - CSR getManagedRegion helper", async (t) => {
 
 	await t.step(".getManagedRegion() - returns null for missing markers", () => {
 		// Fresh document.head with no markers
-		const { begin, end } = doc.createNode('m.head').getManagedRegion(document.head);
+		const { begin, end } = MWIDocNode.getManagedRegion(document.head);
 		assertEquals(begin, null, 'begin is null when no markers');
 		assertEquals(end, null, 'end is null when no markers');
 	});

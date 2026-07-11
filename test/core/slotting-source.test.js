@@ -23,16 +23,16 @@ const registry = getInstance('MWIRegistry');
 Deno.test("Slotting Source Boundaries - Base MWIDocNode", async (t) => {
 	await t.step("MWIDocNode - slotSrc, subSlotSrc are undefined by default", () => {
 		const divNode = doc.createNode('h.div');
-		assertEquals(divNode('slotSrc'), undefined);
+		assertEquals($c.sm(divNode, 'slotSrc'), undefined);
 		assertEquals(divNode.slotSrc, undefined);
-		assertStrictEquals(divNode('subSlotSrc'), undefined);
+		assertStrictEquals($c.sm(divNode, 'subSlotSrc'), undefined);
 		assertStrictEquals(divNode.subSlotSrc, undefined);
 	});
 
 	await t.step("MWIDocNode - slotSrc can be set during creation", () => {
 		const parentNode = doc.createNode('h.div');
 		const childNode = doc.createNode('h.span', { slotSrc: parentNode });
-		assertStrictEquals(childNode('slotSrc'), parentNode);
+		assertStrictEquals($c.sm(childNode, 'slotSrc'), parentNode);
 		assertStrictEquals(childNode.slotSrc, parentNode);
 	});
 });
@@ -44,7 +44,7 @@ Deno.test("Slotting Source Boundaries - HTML Elements (h.*)", async (t) => {
 		const htmlNode = doc.createNode('h.span', { slotSrc: sourceNode });
 
 		// HTML elements pass through their slotSrc to subSlotSrc
-		assertStrictEquals(htmlNode('subSlotSrc'), sourceNode);
+		assertStrictEquals($c.sm(htmlNode, 'subSlotSrc'), sourceNode);
 		assertStrictEquals(htmlNode.subSlotSrc, sourceNode);
 	});
 
@@ -52,7 +52,7 @@ Deno.test("Slotting Source Boundaries - HTML Elements (h.*)", async (t) => {
 		const htmlNode = doc.createNode('h.p');
 
 		// When no slotSrc is set, subSlotSrc returns undefined (pass-through of slotSrc)
-		assertEquals(htmlNode('subSlotSrc'), undefined);
+		assertEquals($c.sm(htmlNode, 'subSlotSrc'), undefined);
 		assertEquals(htmlNode.subSlotSrc, undefined);
 	});
 
@@ -75,7 +75,7 @@ Deno.test("Slotting Source Boundaries - Fragment (m.frg)", async (t) => {
 		const fragNode = doc.createNode('m.frg', { slotSrc: sourceNode });
 
 		// Fragments pass through their slotSrc to subSlotSrc
-		assertStrictEquals(fragNode('subSlotSrc'), sourceNode);
+		assertStrictEquals($c.sm(fragNode, 'subSlotSrc'), sourceNode);
 		assertStrictEquals(fragNode.subSlotSrc, sourceNode);
 	});
 
@@ -83,7 +83,7 @@ Deno.test("Slotting Source Boundaries - Fragment (m.frg)", async (t) => {
 		const fragNode = doc.createNode('m.frg');
 
 		// When no slotSrc is set, subSlotSrc returns undefined (pass-through of slotSrc)
-		assertEquals(fragNode('subSlotSrc'), undefined);
+		assertEquals($c.sm(fragNode, 'subSlotSrc'), undefined);
 		assertEquals(fragNode.subSlotSrc, undefined);
 	});
 
@@ -109,7 +109,7 @@ Deno.test("Slotting Source Boundaries - Template (m.tpl)", async (t) => {
 
 		// Template becomes the slot source for its content
 		// subSlotSrc returns the template itself (not its parent's slotSrc)
-		assertStrictEquals(tplNode('subSlotSrc'), tplNode);
+		assertStrictEquals($c.sm(tplNode, 'subSlotSrc'), tplNode);
 		assertStrictEquals(tplNode.subSlotSrc, tplNode);
 	});
 
@@ -123,9 +123,9 @@ Deno.test("Slotting Source Boundaries - Template (m.tpl)", async (t) => {
 		const tplNode = await doc.createNode('test.tpl.boundary2', { slotSrc: parentSource });
 
 		// Template's slotSrc is set to parent
-		assertStrictEquals(tplNode('slotSrc'), parentSource);
+		assertStrictEquals($c.sm(tplNode, 'slotSrc'), parentSource);
 		// But template's subSlotSrc is still itself (new boundary)
-		assertStrictEquals(tplNode('subSlotSrc'), tplNode);
+		assertStrictEquals($c.sm(tplNode, 'subSlotSrc'), tplNode);
 		assertStrictEquals(tplNode.subSlotSrc, tplNode);
 	});
 
@@ -146,7 +146,7 @@ Deno.test("Slotting Source Boundaries - Slot (m.slot)", async (t) => {
 		const slotNode = doc.createNode('m.slot');
 
 		// Slot becomes the slot source for its content
-		assertStrictEquals(slotNode('subSlotSrc'), slotNode);
+		assertStrictEquals($c.sm(slotNode, 'subSlotSrc'), slotNode);
 		assertStrictEquals(slotNode.subSlotSrc, slotNode);
 	});
 
@@ -156,9 +156,9 @@ Deno.test("Slotting Source Boundaries - Slot (m.slot)", async (t) => {
 		const slotNode = doc.createNode('m.slot', { slotSrc: parentSource });
 
 		// Slot's slotSrc is set to parent
-		assertStrictEquals(slotNode('slotSrc'), parentSource);
+		assertStrictEquals($c.sm(slotNode, 'slotSrc'), parentSource);
 		// But slot's subSlotSrc is still itself (new boundary)
-		assertStrictEquals(slotNode('subSlotSrc'), slotNode);
+		assertStrictEquals($c.sm(slotNode, 'subSlotSrc'), slotNode);
 		assertStrictEquals(slotNode.subSlotSrc, slotNode);
 	});
 

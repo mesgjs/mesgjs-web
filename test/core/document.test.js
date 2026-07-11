@@ -12,7 +12,7 @@ await setupRuntime({
 	features: [ 'test.deferred.component', 'test.deferred2.component'],
 });
 
-const { fwait, getInstance } = globalThis.$c;
+const { fwait, getInstance, MsjsObject } = globalThis.$c;
 const { ls, ps } = globalThis;
 
 Deno.test('MWIDocument - Basic Interface', async (t) => {
@@ -30,44 +30,44 @@ Deno.test('MWIDocument - Basic Interface', async (t) => {
 	});
 
 	await t.step('(registry) - Get component registry', () => {
-		const registry = doc('registry');
+		const registry = $c.sm(doc, 'registry');
 		assert(registry, 'Should return registry instance');
-		assertEquals(typeof registry, 'function', 'Registry should be a function (Mesgjs object)');
+		assert(registry instanceof MsjsObject, 'Registry should be a Mesgjs object');
 	});
 
-	await t.step('.registry() - Get component registry', () => {
-		const registry = doc.registry();
+	await t.step('.registry - Get component registry', () => {
+		const registry = doc.registry;
 		assert(registry, 'Should return registry instance');
-		assertEquals(typeof registry, 'function', 'Registry should be a function (Mesgjs object)');
+		assert(registry instanceof MsjsObject, 'Registry should be a Mesgjs object');
 	});
 
 	await t.step('(registry) - Same instance across calls', () => {
-		const reg1 = doc('registry');
-		const reg2 = doc('registry');
+		const reg1 = $c.sm(doc, 'registry');
+		const reg2 = $c.sm(doc, 'registry');
 		assertStrictEquals(reg1, reg2, 'Should return same registry instance');
 	});
 
-	await t.step('.registry() - Same instance across calls', () => {
-		const reg1 = doc.registry();
-		const reg2 = doc.registry();
+	await t.step('.registry - Same instance across calls', () => {
+		const reg1 = doc.registry;
+		const reg2 = doc.registry;
 		assertStrictEquals(reg1, reg2, 'Should return same registry instance');
 	});
 
 	await t.step('(root) - Get document root', () => {
-		const root = doc('root');
+		const root = $c.sm(doc, 'root');
 		assert(root, 'Should return root node');
-		assertEquals(typeof root, 'function', 'Root should be a function (Mesgjs object)');
+		assert(root instanceof MsjsObject, 'Root should be a Mesgjs object');
 	});
 
 	await t.step('.root - Get document root', () => {
 		const root = doc.root;
 		assert(root, 'Should return root node');
-		assertEquals(typeof root, 'function', 'Root should be a function (Mesgjs object)');
+		assert(root instanceof MsjsObject, 'Root should be a Mesgjs object');
 	});
 
 	await t.step('(root) - Root is m.frg fragment', () => {
-		const root = doc('root');
-		const type = root('type');
+		const root = $c.sm(doc, 'root');
+		const type = $c.sm(root, 'type');
 		assertEquals(type, 'm.frg', 'Root should be an m.frg fragment');
 	});
 
@@ -78,8 +78,8 @@ Deno.test('MWIDocument - Basic Interface', async (t) => {
 	});
 
 	await t.step('(root) - Same instance across calls', () => {
-		const root1 = doc('root');
-		const root2 = doc('root');
+		const root1 = $c.sm(doc, 'root');
+		const root2 = $c.sm(doc, 'root');
 		assertStrictEquals(root1, root2, 'Should return same root instance');
 	});
 
@@ -90,8 +90,8 @@ Deno.test('MWIDocument - Basic Interface', async (t) => {
 	});
 
 	await t.step('(root) - Root references document', () => {
-		const root = doc('root');
-		const rootDoc = root('document');
+		const root = $c.sm(doc, 'root');
+		const rootDoc = $c.sm(root, 'document');
 		assertStrictEquals(rootDoc, doc, 'Root should reference its document');
 	});
 
@@ -102,14 +102,14 @@ Deno.test('MWIDocument - Basic Interface', async (t) => {
 	});
 
 	await t.step('(nextId) - Get next component ID', () => {
-		const id1 = doc('nextId');
+		const id1 = $c.sm(doc, 'nextId');
 		assertEquals(typeof id1, 'string', 'ID should be a string');
 		assertMatch(id1, /^_MS_/, 'ID should have server prefix');
 	});
 
 	await t.step('(nextId) - Sequential IDs', () => {
-		const id1 = doc('nextId');
-		const id2 = doc('nextId');
+		const id1 = $c.sm(doc, 'nextId');
+		const id2 = $c.sm(doc, 'nextId');
 		const num1 = parseInt(id1.slice(4), 36);
 		const num2 = parseInt(id2.slice(4), 36);
 		assertEquals(num2, num1 + 1, 'IDs should increment');
@@ -148,9 +148,9 @@ Deno.test('MWIDocument - Node Creation (Synchronous)', async (t) => {
 	const doc = getInstance('MWIDocument');
 
 	await t.step('(createNode) - Create text node', () => {
-		const node = doc('createNode', ls([, 'm.t']));
+		const node = $c.sm(doc, 'createNode', ls([, 'm.t']));
 		assert(node, 'Should create node');
-		assertEquals(node('type'), 'm.t', 'Should be text node');
+		assertEquals($c.sm(node, 'type'), 'm.t', 'Should be text node');
 	});
 
 	await t.step('.createNode() - Create text node', () => {
@@ -160,9 +160,9 @@ Deno.test('MWIDocument - Node Creation (Synchronous)', async (t) => {
 	});
 
 	await t.step('(createNode) - Create fragment', () => {
-		const node = doc('createNode', ls([, 'm.frg']));
+		const node = $c.sm(doc, 'createNode', ls([, 'm.frg']));
 		assert(node, 'Should create node');
-		assertEquals(node('type'), 'm.frg', 'Should be fragment');
+		assertEquals($c.sm(node, 'type'), 'm.frg', 'Should be fragment');
 	});
 
 	await t.step('.createNode() - Create fragment', () => {
@@ -172,9 +172,9 @@ Deno.test('MWIDocument - Node Creation (Synchronous)', async (t) => {
 	});
 
 	await t.step('(createNode) - Create comment', () => {
-		const node = doc('createNode', ls([, 'm.com']));
+		const node = $c.sm(doc, 'createNode', ls([, 'm.com']));
 		assert(node, 'Should create node');
-		assertEquals(node('type'), 'm.com', 'Should be comment');
+		assertEquals($c.sm(node, 'type'), 'm.com', 'Should be comment');
 	});
 
 	await t.step('.createNode() - Create comment', () => {
@@ -184,9 +184,9 @@ Deno.test('MWIDocument - Node Creation (Synchronous)', async (t) => {
 	});
 
 	await t.step('(createNode) - Create HTML element', () => {
-		const node = doc('createNode', ls([, 'h.div']));
+		const node = $c.sm(doc, 'createNode', ls([, 'h.div']));
 		assert(node, 'Should create node');
-		assertEquals(node('type'), 'h.div', 'Should be div element');
+		assertEquals($c.sm(node, 'type'), 'h.div', 'Should be div element');
 	});
 
 	await t.step('.createNode() - Create HTML element', () => {
@@ -196,8 +196,8 @@ Deno.test('MWIDocument - Node Creation (Synchronous)', async (t) => {
 	});
 
 	await t.step('(createNode) - Nodes reference document', () => {
-		const node = doc('createNode', ls([, 'm.t']));
-		const nodeDoc = node('document');
+		const node = $c.sm(doc, 'createNode', ls([, 'm.t']));
+		const nodeDoc = $c.sm(node, 'document');
 		assertStrictEquals(nodeDoc, doc, 'Node should reference its document');
 	});
 
@@ -208,8 +208,8 @@ Deno.test('MWIDocument - Node Creation (Synchronous)', async (t) => {
 	});
 
 	await t.step('(createNode) - Distinct instances', () => {
-		const node1 = doc('createNode', ls([, 'm.t']));
-		const node2 = doc('createNode', ls([, 'm.t']));
+		const node1 = $c.sm(doc, 'createNode', ls([, 'm.t']));
+		const node2 = $c.sm(doc, 'createNode', ls([, 'm.t']));
 		assert(node1 !== node2, 'Should create distinct instances');
 	});
 
@@ -221,7 +221,7 @@ Deno.test('MWIDocument - Node Creation (Synchronous)', async (t) => {
 
 	await t.step('(createNode) - Invalid type throws', () => {
 		try {
-			doc('createNode', ls([, 'invalid.type']));
+			$c.sm(doc, 'createNode', ls([, 'invalid.type']));
 			assert(false, 'Should have thrown');
 		} catch (e) {
 			assert(e instanceof TypeError, 'Should throw TypeError');
@@ -245,9 +245,9 @@ Deno.test('MWIDocument - Node Creation (Asynchronous)', async (t) => {
 	const doc = getInstance('MWIDocument');
 
 	await t.step('(createNodeWait) - Create text node', async () => {
-		const node = await doc('createNodeWait', ls([, 'm.t']));
+		const node = await $c.sm(doc, 'createNodeWait', ls([, 'm.t']));
 		assert(node, 'Should create node');
-		assertEquals(node('type'), 'm.t', 'Should be text node');
+		assertEquals($c.sm(node, 'type'), 'm.t', 'Should be text node');
 	});
 
 	await t.step('.createNodeWait() - Create text node', async () => {
@@ -257,9 +257,9 @@ Deno.test('MWIDocument - Node Creation (Asynchronous)', async (t) => {
 	});
 
 	await t.step('(createNodeWait) - Create fragment', async () => {
-		const node = await doc('createNodeWait', ls([, 'm.frg']));
+		const node = await $c.sm(doc, 'createNodeWait', ls([, 'm.frg']));
 		assert(node, 'Should create node');
-		assertEquals(node('type'), 'm.frg', 'Should be fragment');
+		assertEquals($c.sm(node, 'type'), 'm.frg', 'Should be fragment');
 	});
 
 	await t.step('.createNodeWait() - Create fragment', async () => {
@@ -269,9 +269,9 @@ Deno.test('MWIDocument - Node Creation (Asynchronous)', async (t) => {
 	});
 
 	await t.step('(createNodeWait) - Create comment', async () => {
-		const node = await doc('createNodeWait', ls([, 'm.com']));
+		const node = await $c.sm(doc, 'createNodeWait', ls([, 'm.com']));
 		assert(node, 'Should create node');
-		assertEquals(node('type'), 'm.com', 'Should be comment');
+		assertEquals($c.sm(node, 'type'), 'm.com', 'Should be comment');
 	});
 
 	await t.step('.createNodeWait() - Create comment', async () => {
@@ -281,9 +281,9 @@ Deno.test('MWIDocument - Node Creation (Asynchronous)', async (t) => {
 	});
 
 	await t.step('(createNodeWait) - Create HTML element', async () => {
-		const node = await doc('createNodeWait', ls([, 'h.div']));
+		const node = await $c.sm(doc, 'createNodeWait', ls([, 'h.div']));
 		assert(node, 'Should create node');
-		assertEquals(node('type'), 'h.div', 'Should be div element');
+		assertEquals($c.sm(node, 'type'), 'h.div', 'Should be div element');
 	});
 
 	await t.step('.createNodeWait() - Create HTML element', async () => {
@@ -293,8 +293,8 @@ Deno.test('MWIDocument - Node Creation (Asynchronous)', async (t) => {
 	});
 
 	await t.step('(createNodeWait) - Nodes reference document', async () => {
-		const node = await doc('createNodeWait', ls([, 'm.t']));
-		const nodeDoc = node('document');
+		const node = await $c.sm(doc, 'createNodeWait', ls([, 'm.t']));
+		const nodeDoc = $c.sm(node, 'document');
 		assertStrictEquals(nodeDoc, doc, 'Node should reference its document');
 	});
 
@@ -305,8 +305,8 @@ Deno.test('MWIDocument - Node Creation (Asynchronous)', async (t) => {
 	});
 
 	await t.step('(createNodeWait) - Distinct instances', async () => {
-		const node1 = await doc('createNodeWait', ls([, 'm.t']));
-		const node2 = await doc('createNodeWait', ls([, 'm.t']));
+		const node1 = await $c.sm(doc, 'createNodeWait', ls([, 'm.t']));
+		const node2 = await $c.sm(doc, 'createNodeWait', ls([, 'm.t']));
 		assert(node1 !== node2, 'Should create distinct instances');
 	});
 
@@ -318,7 +318,7 @@ Deno.test('MWIDocument - Node Creation (Asynchronous)', async (t) => {
 
 	await t.step('(createNodeWait) - Invalid type throws', async () => {
 		await assertRejects(
-			async () => await doc('createNodeWait', ls([, 'invalid.type'])),
+			async () => await $c.sm(doc, 'createNodeWait', ls([, 'invalid.type'])),
 			TypeError,
 			'invalid.type'
 		);
@@ -338,11 +338,11 @@ Deno.test('MWIDocument - Node Creation with Slot Source', async (t) => {
 	const doc = getInstance('MWIDocument');
 
 	await t.step('(createNodeWait) - With slot source', async () => {
-		const source = await doc('createNodeWait', ls([, 'm.frg']));
-		source('setAttr', ls(['title', 'Source Title']));
+		const source = await $c.sm(doc, 'createNodeWait', ls([, 'm.frg']));
+		$c.sm(source, 'setAttr', ls(['title', 'Source Title']));
 
-		const node = await doc('createNodeWait', ls([, 'h.div', 'slotSrc', source]));
-		const slotSrc = node('slotSrc');
+		const node = await $c.sm(doc, 'createNodeWait', ls([, 'h.div', 'slotSrc', source]));
+		const slotSrc = $c.sm(node, 'slotSrc');
 		assertStrictEquals(slotSrc, source, 'Node should have slot source set');
 	});
 
@@ -351,16 +351,16 @@ Deno.test('MWIDocument - Node Creation with Slot Source', async (t) => {
 		source.setAttr('title', 'Source Title');
 
 		const node = await doc.createNodeWait('h.div', { slotSrc: source });
-		const slotSrc = node('slotSrc');
+		const slotSrc = $c.sm(node, 'slotSrc');
 		assertStrictEquals(slotSrc, source, 'Node should have slot source set');
 	});
 
 	await t.step('(createNode) - With slot source', () => {
-		const source = doc('createNode', ls([, 'm.frg']));
-		source('setAttr', ls(['title', 'Source Title']));
+		const source = $c.sm(doc, 'createNode', ls([, 'm.frg']));
+		$c.sm(source, 'setAttr', ls(['title', 'Source Title']));
 
-		const node = doc('createNode', ls([, 'h.div', 'slotSrc', source]));
-		const slotSrc = node('slotSrc');
+		const node = $c.sm(doc, 'createNode', ls([, 'h.div', 'slotSrc', source]));
+		const slotSrc = $c.sm(node, 'slotSrc');
 		assertStrictEquals(slotSrc, source, 'Node should have slot source set');
 	});
 
@@ -369,7 +369,7 @@ Deno.test('MWIDocument - Node Creation with Slot Source', async (t) => {
 		source.setAttr('title', 'Source Title');
 
 		const node = doc.createNode('h.div', { slotSrc: source });
-		const slotSrc = node('slotSrc');
+		const slotSrc = $c.sm(node, 'slotSrc');
 		assertStrictEquals(slotSrc, source, 'Node should have slot source set');
 	});
 });
@@ -379,59 +379,59 @@ Deno.test('MWIDocument - Content Creation from Specs', async (t) => {
 	const doc = getInstance('MWIDocument');
 
 	await t.step('(from) - Text string creates m.t node', () => {
-		const node = doc('from', ls(['item', 'Hello']));
+		const node = $c.sm(doc, 'from', ls(['item', 'Hello']));
 		assert(node, 'Should create node');
-		assertEquals(node('type'), 'm.t', 'Should be text node');
-		assertEquals(node('getAttr', ls([, 't'])), 'Hello', 'Should have text content');
+		assertEquals($c.sm(node, 'type'), 'm.t', 'Should be text node');
+		assertEquals($c.sm(node, 'getAttr', ls([, 't'])), 'Hello', 'Should have text content');
 	});
 
 	await t.step('(from) - NANOS spec creates configured node', () => {
 		const spec = ps('[(m.t t=Hello)]');
-		const node = doc('from', ls(['item', spec]));
+		const node = $c.sm(doc, 'from', ls(['item', spec]));
 		assert(node, 'Should create node');
-		assertEquals(node('type'), 'm.t', 'Should be text node');
-		assertEquals(node('getAttr', ls([, 't'])), 'Hello', 'Should have text attribute');
+		assertEquals($c.sm(node, 'type'), 'm.t', 'Should be text node');
+		assertEquals($c.sm(node, 'getAttr', ls([, 't'])), 'Hello', 'Should have text attribute');
 	});
 
 	await t.step('(from) - SLID string creates nodes', () => {
-		const nodes = doc('from', ls(['list', '[([m.t t=A] [m.t t=B])]']));
+		const nodes = $c.sm(doc, 'from', ls(['list', '[([m.t t=A] [m.t t=B])]']));
 		assert(Array.isArray(nodes), 'Should return array');
 		assertEquals(nodes.length, 2, 'Should create two nodes');
-		assertEquals(nodes[0]('type'), 'm.t', 'First should be text node');
-		assertEquals(nodes[1]('type'), 'm.t', 'Second should be text node');
-		assertEquals(nodes[0]('getAttr', ls([, 't'])), 'A', 'First should have text A');
-		assertEquals(nodes[1]('getAttr', ls([, 't'])), 'B', 'Second should have text B');
+		assertEquals($c.sm(nodes[0], 'type'), 'm.t', 'First should be text node');
+		assertEquals($c.sm(nodes[1], 'type'), 'm.t', 'Second should be text node');
+		assertEquals($c.sm(nodes[0], 'getAttr', ls([, 't'])), 'A', 'First should have text A');
+		assertEquals($c.sm(nodes[1], 'getAttr', ls([, 't'])), 'B', 'Second should have text B');
 	});
 
 	await t.step('(from) - NANOS list creates nodes', () => {
 		const list = ls([, ls([, 'm.t', 't', 'A']), , ls([, 'm.t', 't', 'B'])]);
-		const nodes = doc('from', ls(['list', list]));
+		const nodes = $c.sm(doc, 'from', ls(['list', list]));
 		assert(Array.isArray(nodes), 'Should return array');
 		assertEquals(nodes.length, 2, 'Should create two nodes');
-		assertEquals(nodes[0]('getAttr', ls([, 't'])), 'A', 'First should have text A');
-		assertEquals(nodes[1]('getAttr', ls([, 't'])), 'B', 'Second should have text B');
+		assertEquals($c.sm(nodes[0], 'getAttr', ls([, 't'])), 'A', 'First should have text A');
+		assertEquals($c.sm(nodes[1], 'getAttr', ls([, 't'])), 'B', 'Second should have text B');
 	});
 
 	await t.step('(from) - Mixed content', () => {
-		const nodes = doc('from', ls(['list', '[(text [h.div div-text])]']));
+		const nodes = $c.sm(doc, 'from', ls(['list', '[(text [h.div div-text])]']));
 		assert(Array.isArray(nodes), 'Should return array');
 		assertEquals(nodes.length, 2, 'Should create two nodes');
-		assertEquals(nodes[0]('type'), 'm.t', 'First should be text node');
-		assertEquals(nodes[1]('type'), 'h.div', 'Second should be div');
+		assertEquals($c.sm(nodes[0], 'type'), 'm.t', 'First should be text node');
+		assertEquals($c.sm(nodes[1], 'type'), 'h.div', 'Second should be div');
 	});
 
 	await t.step('(from) - With slot source', () => {
-		const source = doc('createNode', ls([, 'm.frg']));
-		const nodes = doc('from', ls(['list', '[([h.div])]', 'slotSrc', source]));
+		const source = $c.sm(doc, 'createNode', ls([, 'm.frg']));
+		const nodes = $c.sm(doc, 'from', ls(['list', '[([h.div])]', 'slotSrc', source]));
 		assert(Array.isArray(nodes), 'Should return array');
 		assertEquals(nodes.length, 1, 'Should create one node');
-		const slotSrc = nodes[0]('slotSrc');
+		const slotSrc = $c.sm(nodes[0], 'slotSrc');
 		assertStrictEquals(slotSrc, source, 'Node should have slot source');
 	});
 
 	await t.step('(from) - Neither item nor list throws', () => {
 		try {
-			doc('from', ls([]));
+			$c.sm(doc, 'from', ls([]));
 			assert(false, 'Should have thrown');
 		} catch (e) {
 			assert(e instanceof TypeError, 'Should throw TypeError');
@@ -445,10 +445,10 @@ Deno.test('MWIDocument - Content Creation from Specs (Async)', async (t) => {
 	const doc = getInstance('MWIDocument');
 
 	await t.step('(fromWait) - Text string creates m.t node', async () => {
-		const node = await doc('fromWait', ls(['item', 'Hello']));
+		const node = await $c.sm(doc, 'fromWait', ls(['item', 'Hello']));
 		assert(node, 'Should create node');
-		assertEquals(node('type'), 'm.t', 'Should be text node');
-		assertEquals(node('getAttr', ls([, 't'])), 'Hello', 'Should have text content');
+		assertEquals($c.sm(node, 'type'), 'm.t', 'Should be text node');
+		assertEquals($c.sm(node, 'getAttr', ls([, 't'])), 'Hello', 'Should have text content');
 	});
 
 	await t.step('.fromWait() - Text string creates m.t node', async () => {
@@ -460,10 +460,10 @@ Deno.test('MWIDocument - Content Creation from Specs (Async)', async (t) => {
 
 	await t.step('(fromWait) - NANOS spec creates configured node', async () => {
 		const spec = ps('[(m.t t=Hello)]');
-		const node = await doc('fromWait', ls(['item', spec]));
+		const node = await $c.sm(doc, 'fromWait', ls(['item', spec]));
 		assert(node, 'Should create node');
-		assertEquals(node('type'), 'm.t', 'Should be text node');
-		assertEquals(node('getAttr', ls([, 't'])), 'Hello', 'Should have text attribute');
+		assertEquals($c.sm(node, 'type'), 'm.t', 'Should be text node');
+		assertEquals($c.sm(node, 'getAttr', ls([, 't'])), 'Hello', 'Should have text attribute');
 	});
 
 	await t.step('.fromWait() - NANOS spec creates configured node', async () => {
@@ -475,13 +475,13 @@ Deno.test('MWIDocument - Content Creation from Specs (Async)', async (t) => {
 	});
 
 	await t.step('(fromWait) - SLID string creates nodes', async () => {
-		const nodes = await doc('fromWait', ls(['list', '[([m.t t=A] [m.t t=B])]']));
+		const nodes = await $c.sm(doc, 'fromWait', ls(['list', '[([m.t t=A] [m.t t=B])]']));
 		assert(Array.isArray(nodes), 'Should return array');
 		assertEquals(nodes.length, 2, 'Should create two nodes');
-		assertEquals(nodes[0]('type'), 'm.t', 'First should be text node');
-		assertEquals(nodes[1]('type'), 'm.t', 'Second should be text node');
-		assertEquals(nodes[0]('getAttr', ls([, 't'])), 'A', 'First should have text A');
-		assertEquals(nodes[1]('getAttr', ls([, 't'])), 'B', 'Second should have text B');
+		assertEquals($c.sm(nodes[0], 'type'), 'm.t', 'First should be text node');
+		assertEquals($c.sm(nodes[1], 'type'), 'm.t', 'Second should be text node');
+		assertEquals($c.sm(nodes[0], 'getAttr', ls([, 't'])), 'A', 'First should have text A');
+		assertEquals($c.sm(nodes[1], 'getAttr', ls([, 't'])), 'B', 'Second should have text B');
 	});
 
 	await t.step('.fromWait() - SLID string creates nodes', async () => {
@@ -494,11 +494,11 @@ Deno.test('MWIDocument - Content Creation from Specs (Async)', async (t) => {
 
 	await t.step('(fromWait) - NANOS list creates nodes', async () => {
 		const list = ls([, ls([, 'm.t', 't', 'A']), , ls([, 'm.t', 't', 'B'])]);
-		const nodes = await doc('fromWait', ls(['list', list]));
+		const nodes = await $c.sm(doc, 'fromWait', ls(['list', list]));
 		assert(Array.isArray(nodes), 'Should return array');
 		assertEquals(nodes.length, 2, 'Should create two nodes');
-		assertEquals(nodes[0]('getAttr', ls([, 't'])), 'A', 'First should have text A');
-		assertEquals(nodes[1]('getAttr', ls([, 't'])), 'B', 'Second should have text B');
+		assertEquals($c.sm(nodes[0], 'getAttr', ls([, 't'])), 'A', 'First should have text A');
+		assertEquals($c.sm(nodes[1], 'getAttr', ls([, 't'])), 'B', 'Second should have text B');
 	});
 
 	await t.step('.fromWait() - NANOS list creates nodes', async () => {
@@ -516,55 +516,55 @@ Deno.test('MWIDocument - Document Root Operations', async (t) => {
 
 	await t.step('(append) - Append text string', async () => {
 		const doc = getInstance('MWIDocument');
-		const result = doc('append', ls(['item', 'Hello']));
+		const result = $c.sm(doc, 'append', ls(['item', 'Hello']));
 		assertStrictEquals(result, doc, 'Should return document for chaining');
 
-		const root = doc('root');
-		const subSpec = root('getSubSpec');
+		const root = $c.sm(doc, 'root');
+		const subSpec = $c.sm(root, 'getSubSpec');
 		assertEquals(subSpec.size, 1, 'Root should have one child');
 	});
 
 	await t.step('(append) - Append single node', async () => {
 		const doc = getInstance('MWIDocument');
-		const node = doc('createNode', ls([, 'm.t']));
-		node('setAttr', ls(['t', 'Test']));
+		const node = $c.sm(doc, 'createNode', ls([, 'm.t']));
+		$c.sm(node, 'setAttr', ls(['t', 'Test']));
 
-		const result = doc('append', ls([, node]));
+		const result = $c.sm(doc, 'append', ls([, node]));
 		assertStrictEquals(result, doc, 'Should return document for chaining');
 
-		const root = doc('root');
-		const subSpec = root('getSubSpec');
+		const root = $c.sm(doc, 'root');
+		const subSpec = $c.sm(root, 'getSubSpec');
 		assertEquals(subSpec.size, 1, 'Root should have one child');
 	});
 
 	await t.step('(append) - Append multiple nodes', async () => {
 		const doc = getInstance('MWIDocument');
-		const node1 = doc('createNode', ls([, 'm.t']));
-		const node2 = doc('createNode', ls([, 'm.t']));
+		const node1 = $c.sm(doc, 'createNode', ls([, 'm.t']));
+		const node2 = $c.sm(doc, 'createNode', ls([, 'm.t']));
 
-		const result = doc('append', ls([, node1, , node2]));
+		const result = $c.sm(doc, 'append', ls([, node1, , node2]));
 		assertStrictEquals(result, doc, 'Should return document for chaining');
 
-		const root = doc('root');
-		const subSpec = root('getSubSpec');
+		const root = $c.sm(doc, 'root');
+		const subSpec = $c.sm(root, 'getSubSpec');
 		assertEquals(subSpec.size, 2, 'Root should have two children');
 	});
 
 	await t.step('(append) - Append SLID spec', async () => {
 		const doc = getInstance('MWIDocument');
-		doc('append', ls(['list', '[([m.t t=A] [m.t t=B])]']));
+		$c.sm(doc, 'append', ls(['list', '[([m.t t=A] [m.t t=B])]']));
 
-		const root = doc('root');
-		const subSpec = root('getSubSpec');
+		const root = $c.sm(doc, 'root');
+		const subSpec = $c.sm(root, 'getSubSpec');
 		assertEquals(subSpec.size, 2, 'Root should have two children');
 	});
 
 	await t.step('(append) - Root sub-spec reflects content', async () => {
 		const doc = getInstance('MWIDocument');
-		doc('append', ls(['list', '[([m.t t=First] [m.t t=Second])]']));
+		$c.sm(doc, 'append', ls(['list', '[([m.t t=First] [m.t t=Second])]']));
 
-		const root = doc('root');
-		const subSpec = root('getSubSpec');
+		const root = $c.sm(doc, 'root');
+		const subSpec = $c.sm(root, 'getSubSpec');
 		assertEquals(subSpec.size, 2, 'Should have two children');
 
 		const first = subSpec.at(0);
@@ -575,11 +575,11 @@ Deno.test('MWIDocument - Document Root Operations', async (t) => {
 
 	await t.step('(appendWait) - Append text string', async () => {
 		const doc = getInstance('MWIDocument');
-		const result = await doc('appendWait', ls(['item', 'Hello']));
+		const result = await $c.sm(doc, 'appendWait', ls(['item', 'Hello']));
 		assertStrictEquals(result, doc, 'Should return document for chaining');
 
-		const root = doc('root');
-		const subSpec = root('getSubSpec');
+		const root = $c.sm(doc, 'root');
+		const subSpec = $c.sm(root, 'getSubSpec');
 		assertEquals(subSpec.size, 1, 'Root should have one child');
 	});
 
@@ -588,17 +588,17 @@ Deno.test('MWIDocument - Document Root Operations', async (t) => {
 		const result = await doc.appendWait({ item: 'Hello' });
 		assertStrictEquals(result, doc, 'Should return document for chaining');
 
-		const root = doc('root');
-		const subSpec = root('getSubSpec');
+		const root = $c.sm(doc, 'root');
+		const subSpec = $c.sm(root, 'getSubSpec');
 		assertEquals(subSpec.size, 1, 'Root should have one child');
 	});
 
 	await t.step('(appendWait) - Append SLID spec', async () => {
 		const doc = getInstance('MWIDocument');
-		await doc('appendWait', ls(['list', '[([m.t t=A] [m.t t=B])]']));
+		await $c.sm(doc, 'appendWait', ls(['list', '[([m.t t=A] [m.t t=B])]']));
 
-		const root = doc('root');
-		const subSpec = root('getSubSpec');
+		const root = $c.sm(doc, 'root');
+		const subSpec = $c.sm(root, 'getSubSpec');
 		assertEquals(subSpec.size, 2, 'Root should have two children');
 	});
 
@@ -606,8 +606,8 @@ Deno.test('MWIDocument - Document Root Operations', async (t) => {
 		const doc = getInstance('MWIDocument');
 		await doc.appendWait({ list: '[([m.t t=A] [m.t t=B])]' });
 
-		const root = doc('root');
-		const subSpec = root('getSubSpec');
+		const root = $c.sm(doc, 'root');
+		const subSpec = $c.sm(root, 'getSubSpec');
 		assertEquals(subSpec.size, 2, 'Root should have two children');
 	});
 });
@@ -615,7 +615,7 @@ Deno.test('MWIDocument - Document Root Operations', async (t) => {
 Deno.test('MWIDocument - Deferred Component Creation', async (t) => {
 	await fwait('MWIDocument');
 	const doc = getInstance('MWIDocument');
-	const registry = doc.registry();
+	const registry = doc.registry;
 	const { fready } = globalThis.$c;
 
 	// Register a test component with only a feature promise (no interface/template)
@@ -629,7 +629,7 @@ Deno.test('MWIDocument - Deferred Component Creation', async (t) => {
 	});
 
 	await t.step('(createNode) - Creates m.defer for unloaded component', () => {
-		const node = doc('createNode', ls([, 'test.deferred']));
+		const node = $c.sm(doc, 'createNode', ls([, 'test.deferred']));
 		assert(node, 'Should create node');
 		assertEquals(node.msjsType, 'MWICoreDefer', 'Should be MWICoreDefer interface');
 	});
@@ -642,7 +642,7 @@ Deno.test('MWIDocument - Deferred Component Creation', async (t) => {
 
 	await t.step('(createNodeWait) - Waits and creates actual component after load', async () => {
 		// Start the async creation (it will wait for the feature)
-		const nodePromise = doc('createNodeWait', ls([, 'test.deferred']));
+		const nodePromise = $c.sm(doc, 'createNodeWait', ls([, 'test.deferred']));
 
 		// Simulate loading the component by adding interface and signaling ready
 		registry.register('test.deferred', ls(['if', 'MWIDocFrag']));

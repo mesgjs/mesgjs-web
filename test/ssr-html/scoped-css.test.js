@@ -22,7 +22,7 @@ Deno.test("MWICoreScpCSS SSR - Basic HTML Rendering", async (t) => {
 	await t.step("Render empty m.scpcss", () => {
 		const doc = getInstance('MWIDocument');
 		const scpNode = doc.createNode('m.scpcss');
-		const html = scpNode('getHTML');
+		const html =  $c.sm(scpNode, 'getHTML');
 		assertEquals(html, '', "Empty m.scpcss should render empty string");
 	});
 
@@ -35,7 +35,7 @@ Deno.test("MWICoreScpCSS SSR - Basic HTML Rendering", async (t) => {
 		const doc = getInstance('MWIDocument');
 		doc.createNode('test.ssr.scpcss.single');
 		const scpNode = doc.createNode('m.scpcss');
-		const html = scpNode('getHTML');
+		const html =  $c.sm(scpNode, 'getHTML');
 
 		assert(html.startsWith('<style'), "Should start with <style> tag");
 		assert(html.endsWith('</style>'), "Should end with </style> tag");
@@ -53,7 +53,7 @@ Deno.test("MWICoreScpCSS SSR - Basic HTML Rendering", async (t) => {
 		const doc = getInstance('MWIDocument');
 		doc.createNode('test.ssr.scpcss.escape');
 		const scpNode = doc.createNode('m.scpcss');
-		const html = scpNode('getHTML');
+		const html =  $c.sm(scpNode, 'getHTML');
 
 		assert(html.includes('\\3c /style>'), "Should escape </style> as \\3c /style>");
 		assert(!html.includes('</style></style>'), "Should not have premature closure");
@@ -77,7 +77,7 @@ Deno.test("MWICoreScpCSS SSR - Basic HTML Rendering", async (t) => {
 		doc.createNode('test.ssr.scpcss.multi1');
 		doc.createNode('test.ssr.scpcss.multi2');
 		const scpNode = doc.createNode('m.scpcss');
-		const html = scpNode('getHTML');
+		const html =  $c.sm(scpNode, 'getHTML');
 
 		assert(html.startsWith('<style'), "Should start with <style>");
 		assert(html.endsWith('</style>'), "Should end with </style>");
@@ -98,10 +98,10 @@ Deno.test("MWICoreScpCSS SSR - Integration with Document", async (t) => {
 		]));
 		const doc = getInstance('MWIDocument');
 		const scpNode = doc.createNode('m.scpcss');
-		doc('append', scpNode);
+		$c.sm(doc, 'append', scpNode);
 		doc.createNode('test.ssr.scpcss.doc1');
 
-		const html = doc('getHTML');
+		const html =  $c.sm(doc, 'getHTML');
 		assert(html.includes('<style'), "Document HTML should include style tag");
 		assert(html.includes('margin: 0'), "Document HTML should include CSS");
 	});
@@ -116,21 +116,21 @@ Deno.test("MWICoreScpCSS SSR - Integration with Document", async (t) => {
 
 		// Add content before
 		const text1 = doc.createNode('m.t');
-		text1('setAttr', ls([, 't', , 'Before']));
-		doc('append', text1);
+		$c.sm(text1, 'setAttr', ls([, 't', , 'Before']));
+		$c.sm(doc, 'append', text1);
 
 		// Add m.scpcss
 		const scpNode = doc.createNode('m.scpcss');
-		doc('append', scpNode);
+		$c.sm(doc, 'append', scpNode);
 
 		// Add content after
 		const text2 = doc.createNode('m.t');
-		text2('setAttr', ls([, 't', , 'After']));
-		doc('append', text2);
+		$c.sm(text2, 'setAttr', ls([, 't', , 'After']));
+		$c.sm(doc, 'append', text2);
 
 		doc.createNode('test.ssr.scpcss.pos');
 
-		const html = doc('getHTML');
+		const html =  $c.sm(doc, 'getHTML');
 		const beforeIdx = html.indexOf('Before');
 		const styleIdx = html.indexOf('<style');
 		const afterIdx = html.indexOf('After');
@@ -150,10 +150,10 @@ Deno.test("MWICoreScpCSS SSR - Integration with Document", async (t) => {
 
 		const scpNode1 = doc.createNode('m.scpcss');
 		const scpNode2 = doc.createNode('m.scpcss');
-		doc('append', scpNode1);
-		doc('append', scpNode2);
+		$c.sm(doc, 'append', scpNode1);
+		$c.sm(doc, 'append', scpNode2);
 
-		const html = doc('getHTML');
+		const html =  $c.sm(doc, 'getHTML');
 		const styleTags = html.match(/<style/g);
 		assertEquals(styleTags?.length, 2, "Should have two style tags");
 
@@ -191,7 +191,7 @@ Deno.test("MWICoreScpCSS SSR - Real-World Patterns", async (t) => {
 
 		// Add m.scpcss in head
 		const scpNode = doc.createNode('m.scpcss');
-		doc('append', scpNode);
+		$c.sm(doc, 'append', scpNode);
 
 		// Add components
 		doc.createNode('test.ssr.scpcss.header');
@@ -199,7 +199,7 @@ Deno.test("MWICoreScpCSS SSR - Real-World Patterns", async (t) => {
 		doc.createNode('test.ssr.scpcss.main');
 		doc.createNode('test.ssr.scpcss.footer');
 
-		const html = doc('getHTML');
+		const html =  $c.sm(doc, 'getHTML');
 
 		assert(html.includes('<style'), "Should include style tag");
 		assert(html.includes('background: #333'), "Should include header CSS");
@@ -220,14 +220,14 @@ Deno.test("MWICoreScpCSS SSR - Real-World Patterns", async (t) => {
 
 		const doc = getInstance('MWIDocument');
 		const scpNode = doc.createNode('m.scpcss');
-		doc('append', scpNode);
+		$c.sm(doc, 'append', scpNode);
 
 		// Use only subset
 		doc.createNode('test.ssr.scpcss.lib3');
 		doc.createNode('test.ssr.scpcss.lib7');
 		doc.createNode('test.ssr.scpcss.lib9');
 
-		const html = doc('getHTML');
+		const html =  $c.sm(doc, 'getHTML');
 
 		// Should only include used components
 		assert(html.includes('z-index: 3'), "Should include lib3 CSS");
@@ -248,7 +248,7 @@ Deno.test("MWICoreScpCSS SSR - CSS Content Correctness", async (t) => {
 		const doc = getInstance('MWIDocument');
 		doc.createNode('test.ssr.scpcss.newlines');
 		const scpNode = doc.createNode('m.scpcss');
-		const html = scpNode('getHTML');
+		const html =  $c.sm(scpNode, 'getHTML');
 
 		assert(html.includes('color: red'), "Should preserve CSS content");
 		assert(html.includes('margin: 0'), "Should preserve all rules");
@@ -263,7 +263,7 @@ Deno.test("MWICoreScpCSS SSR - CSS Content Correctness", async (t) => {
 		const doc = getInstance('MWIDocument');
 		doc.createNode('test.ssr.scpcss.selectors');
 		const scpNode = doc.createNode('m.scpcss');
-		const html = scpNode('getHTML');
+		const html =  $c.sm(scpNode, 'getHTML');
 
 		assert(html.includes('.child'), "Should include child selector");
 		assert(html.includes(':hover'), "Should include pseudo-class");
@@ -281,7 +281,7 @@ Deno.test("MWICoreScpCSS SSR - CSS Content Correctness", async (t) => {
 		const doc = getInstance('MWIDocument');
 		doc.createNode('test.ssr.scpcss.media');
 		const scpNode = doc.createNode('m.scpcss');
-		const html = scpNode('getHTML');
+		const html =  $c.sm(scpNode, 'getHTML');
 
 		assert(html.includes('@media'), "Should include media query");
 		assert(html.includes('min-width: 768px'), "Should include media condition");
@@ -298,7 +298,7 @@ Deno.test("MWICoreScpCSS SSR - CSS Content Correctness", async (t) => {
 		const doc = getInstance('MWIDocument');
 		doc.createNode('test.ssr.scpcss.keyframes');
 		const scpNode = doc.createNode('m.scpcss');
-		const html = scpNode('getHTML');
+		const html =  $c.sm(scpNode, 'getHTML');
 
 		assert(html.includes('@keyframes'), "Should include keyframes");
 		assert(html.includes('slide'), "Should include animation name");
@@ -322,7 +322,7 @@ Deno.test("MWICoreScpCSS SSR - Edge Cases", async (t) => {
 		const doc = getInstance('MWIDocument');
 		doc.createNode('test.ssr.scpcss.long');
 		const scpNode = doc.createNode('m.scpcss');
-		const html = scpNode('getHTML');
+		const html =  $c.sm(scpNode, 'getHTML');
 
 		assert(html.includes('<style'), "Should handle long CSS");
 		assert(html.includes('class0'), "Should include first class");
@@ -339,7 +339,7 @@ Deno.test("MWICoreScpCSS SSR - Edge Cases", async (t) => {
 		const doc = getInstance('MWIDocument');
 		doc.createNode('test.ssr.scpcss.special');
 		const scpNode = doc.createNode('m.scpcss');
-		const html = scpNode('getHTML');
+		const html =  $c.sm(scpNode, 'getHTML');
 
 		assert(html.includes('content:'), "Should handle special characters");
 		// The content should be preserved as-is in CSS
@@ -355,7 +355,7 @@ Deno.test("MWICoreScpCSS SSR - Edge Cases", async (t) => {
 		const doc = getInstance('MWIDocument');
 		doc.createNode('test.ssr.scpcss.multistyle');
 		const scpNode = doc.createNode('m.scpcss');
-		const html = scpNode('getHTML');
+		const html =  $c.sm(scpNode, 'getHTML');
 
 		// All </style> in content should be escaped
 		const unescapedCloseTags = html.match(/<\/style>/gi);
@@ -376,7 +376,7 @@ Deno.test("MWICoreScpCSS SSR - Output Parameter", async (t) => {
 		const scpNode = doc.createNode('m.scpcss');
 
 		const output = [];
-		const html = scpNode('getHTML', ls(['in', output]));
+		const html =  $c.sm(scpNode, 'getHTML', ls(['in', output]));
 
 		assertEquals(output.length, 1, "Should push to output array");
 		assertEquals(output[0], html, "Output array should contain same HTML");
@@ -388,7 +388,7 @@ Deno.test("MWICoreScpCSS SSR - Output Parameter", async (t) => {
 		const scpNode = doc.createNode('m.scpcss');
 
 		const output = [];
-		const html = scpNode('getHTML', ls(['in', output]));
+		const html =  $c.sm(scpNode, 'getHTML', ls(['in', output]));
 
 		assertEquals(html, '', "Should return empty string");
 		assertEquals(output.length, 0, "Should not push to output array when empty");
@@ -409,7 +409,7 @@ Deno.test("MWICoreScpCSS SSR - Edge Cases (migrated from core)", async (t) => {
 		doc.createNode('test.migrate.scpcss.whitespace');
 		const scpNode = doc.createNode('m.scpcss');
 
-		const html = scpNode('getHTML');
+		const html =  $c.sm(scpNode, 'getHTML');
 		// Whitespace-only CSS should still be included (implementation detail)
 		assert(html.length > 0, "Whitespace CSS should be included");
 	});
@@ -428,7 +428,7 @@ Deno.test("MWICoreScpCSS SSR - m.ci Virtual Attribute (migrated from core)", asy
 		const tplNode = doc.createNode('test.migrate.scpcss.ci2');
 
 		// The template's internal div should have ci attribute set from slot source
-		const html = tplNode('getHTML');
+		const html =  $c.sm(tplNode, 'getHTML');
 		assert(html.includes('ci='), "Should have ci attribute from m.slat");
 	});
 });
@@ -447,10 +447,10 @@ Deno.test("MWICoreScpCSS SSR - m.coat with m.ci Integration (migrated from core)
 		const tplNode = doc.createNode('test.migrate.scpcss.coat1');
 
 		// Get the internal div
-		const html = tplNode('getHTML');
+		const html =  $c.sm(tplNode, 'getHTML');
 
 		// Should have m.percl set to component ID
-		const compId = tplNode('getAttr', ls([, 'm.ci']));
+		const compId =  $c.sm(tplNode, 'getAttr', ls([, 'm.ci']));
 		assert(html.includes(`class="${compId}"`), "Should have component ID as class");
 	});
 
@@ -463,8 +463,8 @@ Deno.test("MWICoreScpCSS SSR - m.coat with m.ci Integration (migrated from core)
 		const doc = getInstance('MWIDocument');
 		const tplNode = doc.createNode('test.migrate.scpcss.coat2');
 
-		const compId = tplNode('getAttr', ls([, 'm.ci']));
-		const html = tplNode('getHTML');
+		const compId =  $c.sm(tplNode, 'getAttr', ls([, 'm.ci']));
+		const html =  $c.sm(tplNode, 'getHTML');
 
 		assert(html.includes(`class="${compId}"`), "Should have component ID as class");
 	});
@@ -478,8 +478,8 @@ Deno.test("MWICoreScpCSS SSR - m.coat with m.ci Integration (migrated from core)
 		const doc = getInstance('MWIDocument');
 		const tplNode = doc.createNode('test.migrate.scpcss.coat3');
 
-		const compId = tplNode('getAttr', ls([, 'm.ci']));
-		const html = tplNode('getHTML');
+		const compId =  $c.sm(tplNode, 'getAttr', ls([, 'm.ci']));
+		const html =  $c.sm(tplNode, 'getHTML');
 
 		assert(html.includes(`class="${compId}"`), "Should have component ID as class");
 		assert(html.includes(`data-comp="${compId}"`), "Should have component ID as data attribute");
@@ -500,10 +500,10 @@ Deno.test("MWICoreScpCSS SSR - m.coat with m.ci Integration (migrated from core)
 		const doc = getInstance('MWIDocument');
 		const outerNode = doc.createNode('test.migrate.scpcss.coat4outer');
 
-		const html = outerNode('getHTML');
+		const html =  $c.sm(outerNode, 'getHTML');
 
 		// The inner div should have the outer template's component ID
-		const outerCompId = outerNode('getAttr', ls([, 'm.ci']));
+		const outerCompId =  $c.sm(outerNode, 'getAttr', ls([, 'm.ci']));
 		assert(html.includes(`class="${outerCompId}"`), "Should have outer component ID as class");
 	});
 });
@@ -526,7 +526,7 @@ Deno.test("MWICoreScpCSS SSR - CSS Deduplication (migrated from core)", async (t
 		}
 
 		const scpNode = doc.createNode('m.scpcss');
-		const html = scpNode('getHTML');
+		const html =  $c.sm(scpNode, 'getHTML');
 
 		// CSS should appear only once
 		const matches = html.match(/width: 100%/g);
@@ -544,15 +544,15 @@ Deno.test("MWICoreScpCSS SSR - CSS Deduplication (migrated from core)", async (t
 
 		// Use in different parts
 		const frag1 = doc.createNode('m.frg');
-		frag1('append', doc.createNode('test.migrate.scpcss.dedup2'));
-		doc('append', frag1);
+		$c.sm(frag1, 'append', doc.createNode('test.migrate.scpcss.dedup2'));
+		$c.sm(doc, 'append', frag1);
 
 		const frag2 = doc.createNode('m.frg');
-		frag2('append', doc.createNode('test.migrate.scpcss.dedup2'));
-		doc('append', frag2);
+		$c.sm(frag2, 'append', doc.createNode('test.migrate.scpcss.dedup2'));
+		$c.sm(doc, 'append', frag2);
 
 		const scpNode = doc.createNode('m.scpcss');
-		const html = scpNode('getHTML');
+		const html =  $c.sm(scpNode, 'getHTML');
 
 		// CSS should not be duplicated
 		const matches = html.match(/height: 50px/g);
@@ -572,10 +572,10 @@ Deno.test("MWICoreScpCSS SSR - Real-World Patterns (migrated from core)", async 
 
 		const doc = getInstance('MWIDocument');
 		const cardNode = doc.createNode('test.migrate.scpcss.card');
-		cardNode('setSubSpec', ps('[( [h.div class="header" "Card Title"] )]'));
+		$c.sm(cardNode, 'setSubSpec', ps('[( [h.div class="header" "Card Title"] )]'));
 
 		const scpNode = doc.createNode('m.scpcss');
-		const html = scpNode('getHTML');
+		const html =  $c.sm(scpNode, 'getHTML');
 
 		assert(html.includes('border: 1px solid #ccc'), "Should include card border CSS");
 		assert(html.includes('padding: 1rem'), "Should include padding CSS");
@@ -583,8 +583,8 @@ Deno.test("MWICoreScpCSS SSR - Real-World Patterns (migrated from core)", async 
 		assert(html.includes('font-weight: bold'), "Should include header style");
 
 		// Verify card HTML has scoped class
-		const cardHtml = cardNode('getHTML');
-		const compId = cardNode('getAttr', ls([, 'm.ci']));
+		const cardHtml =  $c.sm(cardNode, 'getHTML');
+		const compId =  $c.sm(cardNode, 'getAttr', ls([, 'm.ci']));
 		assert(cardHtml.includes(`class="${compId}"`), "Card should have scoped class");
 	});
 
@@ -603,7 +603,7 @@ Deno.test("MWICoreScpCSS SSR - Real-World Patterns (migrated from core)", async 
 		const doc = getInstance('MWIDocument');
 		const parNode = doc.createNode('test.migrate.scpcss.parent');
 
-		const html = parNode('getHTML');
+		const html =  $c.sm(parNode, 'getHTML');
 
 		assert(html.includes('background: #f0f0f0'), "Should include parent CSS");
 		assert(html.includes('color: blue'), "Should include child CSS");

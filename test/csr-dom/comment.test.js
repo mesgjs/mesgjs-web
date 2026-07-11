@@ -19,9 +19,9 @@ const doc = getInstance('MWIDocument');
 
 Deno.test("MWICoreCom (m.com) - CSR-DOM Tests", async (t) => {
 	await t.step("(getDOM) - Simple comment", async () => {
-		const comNode = doc('createNode', ['m.com']);
-		comNode('setAttr', ['t', 'Simple comment']);
-		const domNodes = comNode('getDOM');
+		const comNode = $c.sm(doc, 'createNode', ['m.com']);
+		$c.sm(comNode, 'setAttr', ['t', 'Simple comment']);
+		const domNodes = $c.sm(comNode, 'getDOM');
 
 		// Should return a reactive NANOS with one Comment node
 		const commentNode = domNodes.at(0);
@@ -43,9 +43,9 @@ Deno.test("MWICoreCom (m.com) - CSR-DOM Tests", async (t) => {
 	});
 
 	await t.step("(getDOM) - Empty comment", async () => {
-		const comNode = doc('createNode', ['m.com']);
-		comNode('setAttr', ['t', '']);
-		const domNodes = comNode('getDOM');
+		const comNode = $c.sm(doc, 'createNode', ['m.com']);
+		$c.sm(comNode, 'setAttr', ['t', '']);
+		const domNodes = $c.sm(comNode, 'getDOM');
 
 		// Empty comment should still create a comment node
 		const commentNode = domNodes.at(0);
@@ -66,16 +66,16 @@ Deno.test("MWICoreCom (m.com) - CSR-DOM Tests", async (t) => {
 	});
 
 	await t.step("(getDOM) - Reactive comment update", async () => {
-		const comNode = doc('createNode', ['m.com']);
-		comNode('setAttr', ['t', 'Initial comment']);
-		const domNodes = comNode('getDOM');
+		const comNode = $c.sm(doc, 'createNode', ['m.com']);
+		$c.sm(comNode, 'setAttr', ['t', 'Initial comment']);
+		const domNodes = $c.sm(comNode, 'getDOM');
 
 		const commentNode = domNodes.at(0);
 		assertEquals(commentNode.nodeValue, 'Initial comment');
 		assertEquals(domNodes.size, 1);
 
 		// Update the comment text
-		comNode('setAttr', ['t', 'Updated comment']);
+		$c.sm(comNode, 'setAttr', ['t', 'Updated comment']);
 		await globalThis.reactive.wait();
 
 		// The same DOM node should be updated reactively
@@ -102,9 +102,9 @@ Deno.test("MWICoreCom (m.com) - CSR-DOM Tests", async (t) => {
 	});
 
 	await t.step("(getDOM) - Reactive empty to non-empty", async () => {
-		const comNode = doc('createNode', ['m.com']);
-		comNode('setAttr', ['t', '']);
-		const domNodes = comNode('getDOM');
+		const comNode = $c.sm(doc, 'createNode', ['m.com']);
+		$c.sm(comNode, 'setAttr', ['t', '']);
+		const domNodes = $c.sm(comNode, 'getDOM');
 
 		// Initially empty - still has a comment node
 		const commentNode = domNodes.at(0);
@@ -112,7 +112,7 @@ Deno.test("MWICoreCom (m.com) - CSR-DOM Tests", async (t) => {
 		assertEquals(domNodes.size, 1);
 
 		// Update to non-empty text
-		comNode('setAttr', ['t', 'Now has text']);
+		$c.sm(comNode, 'setAttr', ['t', 'Now has text']);
 		await globalThis.reactive.wait();
 
 		// Should still be the same comment node, just updated
@@ -137,9 +137,9 @@ Deno.test("MWICoreCom (m.com) - CSR-DOM Tests", async (t) => {
 	});
 
 	await t.step("(getDOM) - Reactive non-empty to empty", async () => {
-		const comNode = doc('createNode', ['m.com']);
-		comNode('setAttr', ['t', 'Has text']);
-		const domNodes = comNode('getDOM');
+		const comNode = $c.sm(doc, 'createNode', ['m.com']);
+		$c.sm(comNode, 'setAttr', ['t', 'Has text']);
+		const domNodes = $c.sm(comNode, 'getDOM');
 
 		// Initially has text
 		const commentNode = domNodes.at(0);
@@ -147,7 +147,7 @@ Deno.test("MWICoreCom (m.com) - CSR-DOM Tests", async (t) => {
 		assertEquals(domNodes.size, 1);
 
 		// Update to empty text
-		comNode('setAttr', ['t', '']);
+		$c.sm(comNode, 'setAttr', ['t', '']);
 		await globalThis.reactive.wait();
 
 		// Should still have the comment node, just empty

@@ -1,14 +1,14 @@
 [(
 modpath='mwi/mwi-registry'
-version='0.5.0'
+version='1.0.0'
 featreq=''
 featpro='mwi.compRegOpen mwi.compRegReady'
 modcaps=''
 )]
 
 /*
- * MWIRegistry - MWI Component registry
- * Copyright 2025 by Kappa Computer Solutions, LLC and Brian Katzung
+ * MWIRegistry - MWI Component registry (singleton)
+ * Copyright 2025-2026 by Kappa Computer Solutions, LLC and Brian Katzung
  */
 
 @e @js{
@@ -27,10 +27,111 @@ modcaps=''
 	const CLIENT_ID_PRE = '_ML_';
 	const COMP_ID_PRE = '_MO_';
 
-	const { fready, fwait, getInstance, getInterface, getModMeta, setRO, modHasCap } = globalThis.$c;
+	const { fready, fwait, getInstance, getInterface, getModMeta, MsjsObject, setRO, modHasCap } = globalThis.$c;
+
+	class MWIRegistry extends MsjsObject {
+		#ps;
+
+		constructor (key, type) {
+			super(key, type);
+			this.#ps = MsjsObject.getPS(this, key);
+		}
+
+		/**
+		 * Return a component spec (as-is); (bilingual)
+		 * @param {MsjsDispatch|string} p1 - Dispatch object (Mesgjs) or component name (JS)
+		 * @returns {object} - Component spec
+		 */
+		get (p1) {
+			const d = p1?.msjsType === '@dispatch' ? p1 : undefined, mp = d?.mp;
+			const ps = d?.p ?? this.#ps;
+			const name = mp?.at(0) ?? p1;
+
+			return ps.at(['components', name]);
+		}
+
+		/**
+		 * Wait for component to load, if necessary, and then return its spec (bilingual)
+		 * @param {MsjsDispatch|string} p1 - Dispatch object (Mesgjs) or component name (JS)
+		 * @returns {object} - Component spec
+		 */
+		async getWait (p1) {
+			const d = p1?.msjsType === '@dispatch' ? p1 : undefined;
+			const ps = d?.p ?? this.#ps;
+			const name = d?.mp.at(0) ?? p1;
+
+			if (!ps.at('isReady')) await fwait(REG_READY_FT);
+
+			const comp = ps.at(['components', name]);
+
+			if (comp && !comp.has(INTERFACE) && !comp.has(TEMPLATE)) {
+				// If the component definition was deferred, load it now
+				const feature = comp.at(FEATURE);
+
+				if (feature) await fwait(feature);
+			}
+			return comp;
+		}
+
+		get jsv () { return this; }
+
+		/**
+		 * Return the next component id (bilingual)
+		 * @param {MsjsDispatch} [p1] - The dispatch object (Mesgjs)
+		 * @returns {string} - The next component id
+		 */
+		nextId (p1) {
+			const d = p1?.msjsType === '@dispatch' ? p1 : undefined;
+			const ps = d?.p ?? this.#ps;
+			const isBrowser = ps.at('isBrowser'), instId = ps.at('instId');
+
+			ps.set('instId', instId + 1);
+			return ((isBrowser ? CLIENT_ID_PRE : SERVER_ID_PRE) + instId.toString(36));
+		}
+
+		/**
+		 * Register or update a component entry (bilingual)
+		 * (register name [param=value...])
+		 * @param {MsjsDispatch|string} p1 - Dispatch object (Mesgjs) or entry name (JS)
+		 * @param {object} [p2] - Entry descriptor (JS)
+		 */
+		register (p1, p2) {
+			const d = p1?.msjsType === '@dispatch' ? p1 : undefined;
+			const ps = d?.p ?? this.#ps, mp = d?.mp;
+			const name = mp?.at(0) ?? p1;
+			const config = mp?.at(1) ?? p2;
+			const comps = ps.at('components');
+			let entry = comps.at(name);
+
+			if (ps.at('ready') && !entry) {
+				const meta = getModMeta();
+
+				if (!meta?.at('testMode') || !meta.at('allowLate')) throw new Error(`${IF_NAME}: Late "${name}" component registration prohibited`);
+			}
+			if (!entry) {
+				const idNum = ps.at('compId'), id = COMP_ID_PRE + idNum.toString(36);
+
+				entry = new NANOS({ id });
+				ps.set('compId', idNum + 1);
+				comps.set(name, entry);
+			}
+			entry.fromEntries(config?.namedEntries() || []);
+
+			// Convert SLID-format doc-specs for templates
+			const tpl = entry.at('tpl');
+			if (typeof tpl === 'string') entry.set('tpl', NANOS.parseSLID(tpl));
+
+			return d?.rr ?? this; // Chainable
+		}
+
+		valueOf () { return this; }
+	}
+
+	const regProto = MWIRegistry.prototype;
 
 	function opInit (d) {
 		const g = globalThis, p = d.p;
+
 		p.push({
 			isBrowser: typeof g.document === 'object' && typeof g.window === 'object',
 			components: new NANOS(),
@@ -42,16 +143,6 @@ modcaps=''
 			loadServerComps(d, g.mwiServer.at('components'));
 		}
 
-		// Add JS-level interface
-		Object.setPrototypeOf(d.rr, Object.setPrototypeOf({
-			get (name) { return this('get', [ name ]); },
-			/* async */ getWait (name) { return this('getWait', [ name ]); },
-			get jsv () { return this; },
-			nextId () { return this('nextId'); },
-			register (name, entry) { return this('register', new NANOS([ name, entry ])); },
-			valueOf () { return this; },
-		}, Function.prototype));
-
 		// The registry is now open for registrations. Mark the registry ready
 		// for use as soon as all pre-load component features are ready.
 		fready(mid, REG_OPEN_FT);
@@ -60,11 +151,12 @@ modcaps=''
 		const preloadFt = (testMode ?
 		  () => {
 			// Test mode: deferred side-loading is common for JIT-transpilation, so treat everything as preload
-			return [...allFt.values()].filter((k) => k.startsWith(COMP_PRE));
+			return [...allFt.values()].filter((v) => v.startsWith(COMP_PRE));
 		  } :
 		  () => {
 			// Standard mode: use preload/defer determination from mod meta
 			const preload = [...allFt.namedEntries()].filter(([k, v]) => k.startsWith(COMP_PRE) && v.has('preload'));
+
 			return preload.map(([k]) => k);
 		  })();
 		fwait(preloadFt).then(() => {
@@ -74,88 +166,36 @@ modcaps=''
 		});
 	}
 
-	// Return component registration (synchronous - returns current state)
-	function opGet (d) {
-		const name = d.mp.at(0), p = d.p;
-		const comp = p.at(['components', name]);
-		return comp;
-	}
-
-	// Return the registration details for a specific component (async - waits for deferred load)
-	async function opGetWait (d) {
-		const name = d.mp.at(0), p = d.p;
-		if (!p.at('isReady')) await fwait(REG_READY_FT);
-		const comp = p.at(['components', name]);
-		if (comp && !comp.has(INTERFACE) && !comp.has(TEMPLATE)) {
-			// If the component definition was deferred, load it now
-			const feature = comp.at(FEATURE);
-			if (feature) await fwait(feature);
-		}
-		return comp;
-	}
-
-	// Return the next sequential instance ID
-	function opNextId (d) {
-		const p = d.p;
-		const isBrowser = p.at('isBrowser'), instId = p.at('instId');
-		p.set('instId', instId + 1);
-		return ((isBrowser ? CLIENT_ID_PRE : SERVER_ID_PRE) + instId.toString(36));
-	}
-
 	// Preload server component names to match server-assigned component IDs
 	function loadServerComps(d, comps) {
 		if (!comps) return;
+
 		const p = d.p, c = p.at('components');
 		let maxId = -1;
+
 		for (const [idNum, name] of comps.entries()) {
 			const id = COMP_ID_PRE + idNum.toString(36);
+
 			c.set(name, new NANOS({ id }));
 			maxId = idNum;
 		}
 		p.set('compId', maxId + 1);
 	}
 
-	// Register (or update) a component entry
-	// (register name [param=value ...])
-	function opRegister (d) {
-		const mp = d.mp, name = mp.at(0), p = d.p;
-		const comps = p.at('components');
-		let entry = comps.at(name);
-		if (p.at('ready') && !entry) {
-			const meta = getModMeta();
-			if (!meta?.at('testMode') || !entry.at('allowLate')) throw new Error(`${IF_NAME}: Late "${name}" component registration prohibited`);
-		}
-		if (!entry) {
-			const idNum = p.at('compId'), id = COMP_ID_PRE + idNum.toString(36);
-			entry = new NANOS({ id });
-			p.set('compId', idNum + 1);
-			comps.set(name, entry);
-		}
-		entry.fromEntries(mp.at(1)?.namedEntries() || []);
-
-		// Convert SLID-format doc-specs for templates
-		const tpl = entry.at('tpl');
-		if (typeof tpl === 'string') entry.set('tpl', NANOS.parseSLID(tpl));
-
-		return d.rr; // Chainable
-	}
-
 	// With dependencies loaded, configure *my* module interface and instantiate the singleton instance
 	getInterface(IF_NAME).set({
-		pristine: true, // Anti-tamper: no configuration before
-		lock: true,		// ... or after
-		singleton: true,
-		final: true,
+		pristine: true, lock: true, singleton: true, final: true,
 		// abstract, chain, once, private, etc.
 		handlers: {
 			'@init': opInit,
 			'@jsv': (d) => d.rr,
 			dump: (d) => console.log(d.p.toSLID({ compact: true })),
 			// dumpJSON: (d) => console.log(JSON.stringify(d.p)),
-			get: opGet,
-			getWait: opGetWait,
-			nextId: opNextId,
-			register: opRegister,
-		}
+			get: regProto.get,
+			getWait: regProto.getWait,
+			nextId: regProto.nextId,
+			register: regProto.register,
+		},
+		proto: MWIRegistry,
 	}).instance();
 @}

@@ -57,7 +57,7 @@ function makeDoc () {
 // SSR: build a document, append nodes, and return the final HTML string.
 // Uses the document-level getHTML() so placeholders are resolved.
 function ssrDocHTML (doc) {
-	return doc('getHTML');
+	return $c.sm(doc, 'getHTML');
 }
 
 // Load an HTML string into document.body so we can inspect the resulting DOM.
@@ -70,7 +70,7 @@ function loadSSRIntoBody (html) {
 // given DOM cursor node. Returns the domNodes NANOS.
 function csrSync (node, cursor) {
 	const sync = getInstance('MWIDOMSync', [cursor]);
-	return node('document')('getDOM', { sync });
+	return node.document.getDOM({ sync });
 }
 
 // ---------------------------------------------------------------------------
@@ -83,9 +83,9 @@ Deno.test('MWIAggr (m.aggr) - SSR-CSR Hydration: from mode basic sync', async (t
 	await t.step('(getDOM) - from mode: SSR-generated element reused during CSR sync', async () => {
 		// SSR: build a doc with a `from` node and a `to` node
 		const ssrDoc = makeDoc();
-		const fromNode = ssrDoc('from', { item: ps(`[(m.aggr from=default)]`) });
-		const toNode = ssrDoc('from', { item: ps(`[(m.aggr [h.span Content])]`) });
-		ssrDoc('append', ls([, fromNode, , toNode]));
+		const fromNode = $c.sm(ssrDoc, 'from', { item: ps(`[(m.aggr from=default)]`) });
+		const toNode = $c.sm(ssrDoc, 'from', { item: ps(`[(m.aggr [h.span Content])]`) });
+		$c.sm(ssrDoc, 'append', ls([, fromNode, , toNode]));
 
 		const html = ssrDocHTML(ssrDoc);
 		// The from node renders the aggregated content (a span)
@@ -99,9 +99,9 @@ Deno.test('MWIAggr (m.aggr) - SSR-CSR Hydration: from mode basic sync', async (t
 		assertEquals(ssrSpan.textContent, 'Content', 'SSR span has correct content');
 
 		// CSR: build from the SSR spec and sync
-		const subSpec = ssrDoc('root')('getSubSpec');
-		const csrDoc = makeDoc(), csrRoot = csrDoc('root');
-		csrRoot('setSubSpec', { subSpec });
+		const subSpec = ssrDoc.root.getSubSpec();
+		const csrDoc = makeDoc(), csrRoot = csrDoc.root;
+		$c.sm(csrRoot, 'setSubSpec', { subSpec });
 
 		// Now sync the `from` node starting at the SSR span
 		const domNodes = csrSync(csrRoot, ssrSpan);
@@ -120,8 +120,8 @@ Deno.test('MWIAggr (m.aggr) - SSR-CSR Hydration: from mode basic sync', async (t
 	await t.step('.getDOM() - from mode: SSR-generated element reused during CSR sync via JS', async () => {
 		// SSR
 		const ssrDoc = makeDoc();
-		const fromNode = ssrDoc('from', { item: ps(`[(m.aggr from=default)]`) });
-		const toNode = ssrDoc('from', { item: ps(`[(m.aggr [h.div JSContent])]`) });
+		const fromNode = $c.sm(ssrDoc, 'from', { item: ps(`[(m.aggr from=default)]`) });
+		const toNode = $c.sm(ssrDoc, 'from', { item: ps(`[(m.aggr [h.div JSContent])]`) });
 		ssrDoc.append(fromNode, toNode);
 
 		const html = ssrDoc.getHTML();
@@ -149,10 +149,10 @@ Deno.test('MWIAggr (m.aggr) - SSR-CSR Hydration: from mode basic sync', async (t
 	await t.step('(getDOM) - from mode: multiple aggregated elements reused during CSR sync', async () => {
 		// SSR: two `to` nodes contributing to the same buffer
 		const ssrDoc = makeDoc();
-		const fromNode = ssrDoc('from', { item: ps(`[(m.aggr from=default)]`) });
-		const toNode1 = ssrDoc('from', { item: ps(`[(m.aggr [h.li id=item1 Item1])]`) });
-		const toNode2 = ssrDoc('from', { item: ps(`[(m.aggr [h.li id=item2 Item2])]`) });
-		ssrDoc('append', ls([, fromNode, , toNode1, , toNode2]));
+		const fromNode = $c.sm(ssrDoc, 'from', { item: ps(`[(m.aggr from=default)]`) });
+		const toNode1 = $c.sm(ssrDoc, 'from', { item: ps(`[(m.aggr [h.li id=item1 Item1])]`) });
+		const toNode2 = $c.sm(ssrDoc, 'from', { item: ps(`[(m.aggr [h.li id=item2 Item2])]`) });
+		$c.sm(ssrDoc, 'append', ls([, fromNode, , toNode1, , toNode2]));
 
 		const html = ssrDocHTML(ssrDoc);
 		assert(html.includes('>Item1</li>'), 'SSR includes first item');
@@ -165,9 +165,9 @@ Deno.test('MWIAggr (m.aggr) - SSR-CSR Hydration: from mode basic sync', async (t
 		assertExists(ssrLi2, 'SSR second li exists');
 
 		// CSR: reconstruct from SSR spec and sync at document level
-		const subSpec = ssrDoc('root')('getSubSpec');
-		const csrDoc = makeDoc(), csrRoot = csrDoc('root');
-		csrRoot('setSubSpec', { subSpec });
+		const subSpec = ssrDoc.root.getSubSpec();
+		const csrDoc = makeDoc(), csrRoot = csrDoc.root;
+		$c.sm(csrRoot, 'setSubSpec', { subSpec });
 
 		const domNodes = csrSync(csrRoot, ssrLi1);
 		await reactive.wait();
@@ -188,9 +188,9 @@ Deno.test('MWIAggr (m.aggr) - SSR-CSR Hydration: named buffer sync', async (t) =
 	await t.step('(getDOM) - named buffer: SSR-generated element reused during CSR sync', async () => {
 		// SSR: named buffer
 		const ssrDoc = makeDoc();
-		const fromNode = ssrDoc('from', { item: ps(`[(m.aggr from=scripts)]`) });
-		const toNode = ssrDoc('from', { item: ps(`[(m.aggr to=scripts [h.script id=myscript type=text/javascript console.log(1)])]`) });
-		ssrDoc('append', ls([, fromNode, , toNode]));
+		const fromNode = $c.sm(ssrDoc, 'from', { item: ps(`[(m.aggr from=scripts)]`) });
+		const toNode = $c.sm(ssrDoc, 'from', { item: ps(`[(m.aggr to=scripts [h.script id=myscript type=text/javascript console.log(1)])]`) });
+		$c.sm(ssrDoc, 'append', ls([, fromNode, , toNode]));
 
 		const html = ssrDocHTML(ssrDoc);
 		assert(html.includes('<script'), 'SSR includes aggregated script');
@@ -201,9 +201,9 @@ Deno.test('MWIAggr (m.aggr) - SSR-CSR Hydration: named buffer sync', async (t) =
 		assertEquals(ssrScript.tagName, 'SCRIPT', 'is a script element');
 
 		// CSR: reconstruct from SSR spec and sync at document level
-		const subSpec = ssrDoc('root')('getSubSpec');
-		const csrDoc = makeDoc(), csrRoot = csrDoc('root');
-		csrRoot('setSubSpec', { subSpec });
+		const subSpec = ssrDoc.root.getSubSpec();
+		const csrDoc = makeDoc(), csrRoot = csrDoc.root;
+		$c.sm(csrRoot, 'setSubSpec', { subSpec });
 
 		const domNodes = csrSync(csrRoot, ssrScript);
 		await reactive.wait();
@@ -217,11 +217,11 @@ Deno.test('MWIAggr (m.aggr) - SSR-CSR Hydration: named buffer sync', async (t) =
 	await t.step('(getDOM) - multiple named buffers: each syncs independently', async () => {
 		// SSR: two named buffers — fromHead first, then fromBody, then toHead, then toBody
 		const ssrDoc = makeDoc();
-		const fromHead = ssrDoc('from', { item: ps(`[(m.aggr from=head-items)]`) });
-		const fromBody = ssrDoc('from', { item: ps(`[(m.aggr from=body-items)]`) });
-		const toHead = ssrDoc('from', { item: ps(`[(m.aggr to=head-items [h.meta id=headmeta name=desc content=test])]`) });
-		const toBody = ssrDoc('from', { item: ps(`[(m.aggr to=body-items [h.p id=bodypara Body])]`) });
-		ssrDoc('append', ls([, fromHead, , fromBody, , toHead, , toBody]));
+		const fromHead = $c.sm(ssrDoc, 'from', { item: ps(`[(m.aggr from=head-items)]`) });
+		const fromBody = $c.sm(ssrDoc, 'from', { item: ps(`[(m.aggr from=body-items)]`) });
+		const toHead = $c.sm(ssrDoc, 'from', { item: ps(`[(m.aggr to=head-items [h.meta id=headmeta name=desc content=test])]`) });
+		const toBody = $c.sm(ssrDoc, 'from', { item: ps(`[(m.aggr to=body-items [h.p id=bodypara Body])]`) });
+		$c.sm(ssrDoc, 'append', ls([, fromHead, , fromBody, , toHead, , toBody]));
 
 		const html = ssrDocHTML(ssrDoc);
 		assert(html.includes('id="headmeta"'), 'SSR includes head meta');
@@ -235,9 +235,9 @@ Deno.test('MWIAggr (m.aggr) - SSR-CSR Hydration: named buffer sync', async (t) =
 
 		// CSR: reconstruct from SSR spec and sync at document level
 		// The document renders: headmeta (from head-items), bodypara (from body-items)
-		const subSpec = ssrDoc('root')('getSubSpec');
-		const csrDoc = makeDoc(), csrRoot = csrDoc('root');
-		csrRoot('setSubSpec', { subSpec });
+		const subSpec = ssrDoc.root.getSubSpec();
+		const csrDoc = makeDoc(), csrRoot = csrDoc.root;
+		$c.sm(csrRoot, 'setSubSpec', { subSpec });
 
 		const domNodes = csrSync(csrRoot, ssrMeta);
 		await reactive.wait();
@@ -258,19 +258,19 @@ Deno.test('MWIAggr (m.aggr) - SSR-CSR Hydration: m.csr suppression', async (t) =
 	await t.step('(getDOM) - from mode with m.csr: SSR emits nothing, CSR generates element', async () => {
 		// SSR: from node with m.csr=true emits nothing
 		const ssrDoc = makeDoc();
-		const fromNode = ssrDoc('from', { item: ps(`[(m.aggr from=default m.csr=true)]`) });
-		const toNode = ssrDoc('from', { item: ps(`[(m.aggr [h.p CSROnly])]`) });
-		ssrDoc('append', ls([, fromNode, , toNode]));
+		const fromNode = $c.sm(ssrDoc, 'from', { item: ps(`[(m.aggr from=default m.csr=true)]`) });
+		const toNode = $c.sm(ssrDoc, 'from', { item: ps(`[(m.aggr [h.p CSROnly])]`) });
+		$c.sm(ssrDoc, 'append', ls([, fromNode, , toNode]));
 
 		const html = ssrDocHTML(ssrDoc);
 		assertEquals(html, '', 'SSR emits nothing when m.csr is set on from node');
 
 		// CSR: no sync needed — nothing to sync with; reconstruct from SSR spec
-		const subSpec = ssrDoc('root')('getSubSpec');
-		const csrDoc = makeDoc(), csrRoot = csrDoc('root');
-		csrRoot('setSubSpec', { subSpec });
+		const subSpec = ssrDoc.root.getSubSpec();
+		const csrDoc = makeDoc(), csrRoot = csrDoc.root;
+		$c.sm(csrRoot, 'setSubSpec', { subSpec });
 
-		const domNodes = csrDoc('getDOM');
+		const domNodes = $c.sm(csrDoc, 'getDOM');
 		await reactive.wait();
 
 		assertEquals(domNodes.size, 1, 'CSR generates one DOM node');
@@ -283,19 +283,19 @@ Deno.test('MWIAggr (m.aggr) - SSR-CSR Hydration: m.csr suppression', async (t) =
 	await t.step('(getDOM) - to mode with m.csr: SSR emits nothing, CSR still registers', async () => {
 		// SSR: to node with m.csr=true does not store content
 		const ssrDoc = makeDoc();
-		const fromNode = ssrDoc('from', { item: ps(`[(m.aggr from=default)]`) });
-		const toNode = ssrDoc('from', { item: ps(`[(m.aggr m.csr=true [h.span CSRToOnly])]`) });
-		ssrDoc('append', ls([, fromNode, , toNode]));
+		const fromNode = $c.sm(ssrDoc, 'from', { item: ps(`[(m.aggr from=default)]`) });
+		const toNode = $c.sm(ssrDoc, 'from', { item: ps(`[(m.aggr m.csr=true [h.span CSRToOnly])]`) });
+		$c.sm(ssrDoc, 'append', ls([, fromNode, , toNode]));
 
 		const html = ssrDocHTML(ssrDoc);
 		assertEquals(html, '', 'SSR emits nothing when to node has m.csr');
 
 		// CSR: to node registers normally; from node renders the content
-		const subSpec = ssrDoc('root')('getSubSpec');
-		const csrDoc = makeDoc(), csrRoot = csrDoc('root');
-		csrRoot('setSubSpec', { subSpec });
+		const subSpec = ssrDoc.root.getSubSpec();
+		const csrDoc = makeDoc(), csrRoot = csrDoc.root;
+		$c.sm(csrRoot, 'setSubSpec', { subSpec });
 
-		const domNodes = csrDoc('getDOM');
+		const domNodes = $c.sm(csrDoc, 'getDOM');
 		await reactive.wait();
 
 		assertEquals(domNodes.size, 1, 'CSR generates one DOM node from m.csr to node');
@@ -315,19 +315,19 @@ Deno.test('MWIAggr (m.aggr) - SSR-CSR Hydration: CSR-only fallback', async (t) =
 		// SSR: from node with no to nodes — empty buffer renders nothing
 		// The from node has fallback children that render in CSR when buffer is empty
 		const ssrDoc = makeDoc();
-		const fromNode = ssrDoc('from', { item: ps(`[(m.aggr from=empty-buf [h.p Loading])]`) });
-		ssrDoc('append', ls([, fromNode]));
+		const fromNode = $c.sm(ssrDoc, 'from', { item: ps(`[(m.aggr from=empty-buf [h.p Loading])]`) });
+		$c.sm(ssrDoc, 'append', ls([, fromNode]));
 
 		const html = ssrDocHTML(ssrDoc);
 		assertEquals(html, '', 'SSR emits nothing for empty buffer');
 
 		// CSR: from node renders fallback content (no sync needed)
 		// Reconstruct from SSR spec so the CSR doc matches exactly
-		const subSpec = ssrDoc('root')('getSubSpec');
-		const csrDoc = makeDoc(), csrRoot = csrDoc('root');
-		csrRoot('setSubSpec', { subSpec });
+		const subSpec = ssrDoc.root.getSubSpec();
+		const csrDoc = makeDoc(), csrRoot = csrDoc.root;
+		$c.sm(csrRoot, 'setSubSpec', { subSpec });
 
-		const domNodes = csrDoc('getDOM');
+		const domNodes = $c.sm(csrDoc, 'getDOM');
 		await reactive.wait();
 
 		assertEquals(domNodes.size, 1, 'CSR renders fallback content');
@@ -341,22 +341,22 @@ Deno.test('MWIAggr (m.aggr) - SSR-CSR Hydration: CSR-only fallback', async (t) =
 		// CSR: from node starts with fallback, then switches to registered content
 		// Build the initial doc with just the from node (with fallback children)
 		const ssrDoc = makeDoc();
-		const fromNode = ssrDoc('from', { item: ps(`[(m.aggr from=switch-buf [h.p FallbackContent])]`) });
-		ssrDoc('append', ls([, fromNode]));
+		const fromNode = $c.sm(ssrDoc, 'from', { item: ps(`[(m.aggr from=switch-buf [h.p FallbackContent])]`) });
+		$c.sm(ssrDoc, 'append', ls([, fromNode]));
 
-		const subSpec = ssrDoc('root')('getSubSpec');
-		const csrDoc = makeDoc(), csrRoot = csrDoc('root');
-		csrRoot('setSubSpec', { subSpec });
+		const subSpec = ssrDoc.root.getSubSpec();
+		const csrDoc = makeDoc(), csrRoot = csrDoc.root;
+		$c.sm(csrRoot, 'setSubSpec', { subSpec });
 
-		const domNodes = csrDoc('getDOM');
+		const domNodes = $c.sm(csrDoc, 'getDOM');
 		await reactive.wait();
 		assertEquals(domNodes.size, 1, 'CSR renders fallback initially');
 		assertEquals(domNodes.at(0).textContent, 'FallbackContent', 'fallback content shown');
 
 		// Now add a to node to the CSR doc
-		const csrToNode = csrDoc('from', { item: ps(`[(m.aggr to=switch-buf [h.span RegisteredContent])]`) });
-		csrDoc('append', ls([, csrToNode]));
-		csrDoc('getDOM');
+		const csrToNode = $c.sm(csrDoc, 'from', { item: ps(`[(m.aggr to=switch-buf [h.span RegisteredContent])]`) });
+		$c.sm(csrDoc, 'append', ls([, csrToNode]));
+		$c.sm(csrDoc, 'getDOM');
 
 		await globalThis.reactive.wait();
 		assertEquals(domNodes.size, 1, 'CSR switches to registered content');
@@ -377,9 +377,9 @@ Deno.test('MWIAggr (m.aggr) - SSR-CSR Hydration: reactive updates after hydratio
 		// Note: a bare text node as the first aggregated item cannot receive an id,
 		// so we wrap it in a span to enable proper DOM reuse during sync.
 		const ssrDoc = makeDoc();
-		const fromNode = ssrDoc('from', { item: ps(`[(m.aggr from=default)]`) });
-		const toNode = ssrDoc('from', { item: ps(`[(m.aggr [h.span id=text-span Initial])]`) });
-		ssrDoc('append', ls([, fromNode, , toNode]));
+		const fromNode = $c.sm(ssrDoc, 'from', { item: ps(`[(m.aggr from=default)]`) });
+		const toNode = $c.sm(ssrDoc, 'from', { item: ps(`[(m.aggr [h.span id=text-span Initial])]`) });
+		$c.sm(ssrDoc, 'append', ls([, fromNode, , toNode]));
 
 		const html = ssrDocHTML(ssrDoc);
 		assert(html.includes('Initial'), 'SSR includes initial text');
@@ -390,9 +390,9 @@ Deno.test('MWIAggr (m.aggr) - SSR-CSR Hydration: reactive updates after hydratio
 		assertEquals(ssrSpan.textContent, 'Initial', 'SSR span has initial content');
 
 		// CSR: reconstruct from SSR spec (includes auto-assigned ids) and sync at document level
-		const subSpec = ssrDoc('root')('getSubSpec');
-		const csrDoc = makeDoc(), csrRoot = csrDoc('root');
-		csrRoot('setSubSpec', { subSpec });
+		const subSpec = ssrDoc.root.getSubSpec();
+		const csrDoc = makeDoc(), csrRoot = csrDoc.root;
+		$c.sm(csrRoot, 'setSubSpec', { subSpec });
 
 		const domNodes = csrSync(csrRoot, ssrSpan);
 		await reactive.wait();
@@ -401,16 +401,16 @@ Deno.test('MWIAggr (m.aggr) - SSR-CSR Hydration: reactive updates after hydratio
 		assertStrictEquals(domNodes.at(0), ssrSpan, 'SSR span reused');
 
 		// Reactive update: find the span node in the CSR doc's sub-doc and update its text
-		const csrSubDoc = csrRoot('getSubDoc');
+		const csrSubDoc = $c.sm(csrRoot, 'getSubDoc');
 		// The sub-doc has: fromNode (index 0), toNode (index 1)
 		// The toNode's sub-doc has the span node
 		const csrToNode = csrSubDoc.at(1);
-		const csrToSubDoc = csrToNode('getSubDoc');
+		const csrToSubDoc = $c.sm(csrToNode, 'getSubDoc');
 		const csrSpanNode = csrToSubDoc.at(0);
 		// Update the span's text child
-		const csrSpanSubDoc = csrSpanNode('getSubDoc');
+		const csrSpanSubDoc = $c.sm(csrSpanNode, 'getSubDoc');
 		const csrTextNode = csrSpanSubDoc.at(0);
-		csrTextNode('setAttr', ['t', 'Updated']);
+		$c.sm(csrTextNode, 'setAttr', ['t', 'Updated']);
 		await globalThis.reactive.wait();
 
 		assertEquals(domNodes.at(0).textContent, 'Updated', 'text updated reactively');
@@ -422,9 +422,9 @@ Deno.test('MWIAggr (m.aggr) - SSR-CSR Hydration: reactive updates after hydratio
 	await t.step('(getDOM) - from mode: reactive update with element node reuses SSR element', async () => {
 		// SSR: a to node with a div child (explicit id provided — no auto-assign needed)
 		const ssrDoc = makeDoc();
-		const fromNode = ssrDoc('from', { item: ps(`[(m.aggr from=default)]`) });
-		const toNode = ssrDoc('from', { item: ps(`[(m.aggr [h.div id=aggr-div class=initial Content])]`) });
-		ssrDoc('append', ls([, fromNode, , toNode]));
+		const fromNode = $c.sm(ssrDoc, 'from', { item: ps(`[(m.aggr from=default)]`) });
+		const toNode = $c.sm(ssrDoc, 'from', { item: ps(`[(m.aggr [h.div id=aggr-div class=initial Content])]`) });
+		$c.sm(ssrDoc, 'append', ls([, fromNode, , toNode]));
 
 		const html = ssrDocHTML(ssrDoc);
 		document.body.innerHTML = html;
@@ -433,9 +433,9 @@ Deno.test('MWIAggr (m.aggr) - SSR-CSR Hydration: reactive updates after hydratio
 		assertEquals(ssrDiv.className, 'initial', 'initial class');
 
 		// CSR: reconstruct from SSR spec and sync at document level
-		const subSpec = ssrDoc('root')('getSubSpec');
-		const csrDoc = makeDoc(), csrRoot = csrDoc('root');
-		csrRoot('setSubSpec', { subSpec });
+		const subSpec = ssrDoc.root.getSubSpec();
+		const csrDoc = makeDoc(), csrRoot = csrDoc.root;
+		$c.sm(csrRoot, 'setSubSpec', { subSpec });
 
 		const domNodes = csrSync(csrRoot, ssrDiv);
 		await reactive.wait();
@@ -445,11 +445,11 @@ Deno.test('MWIAggr (m.aggr) - SSR-CSR Hydration: reactive updates after hydratio
 		assertEquals(domNodes.at(0).className, 'initial', 'initial class preserved');
 
 		// Reactive update: find the div node in the CSR doc's sub-doc
-		const csrSubDoc = csrRoot('getSubDoc');
+		const csrSubDoc = $c.sm(csrRoot, 'getSubDoc');
 		const csrToNode = csrSubDoc.at(1);
-		const csrToSubDoc = csrToNode('getSubDoc');
+		const csrToSubDoc = $c.sm(csrToNode, 'getSubDoc');
 		const csrDivNode = csrToSubDoc.at(0);
-		csrDivNode('setAttr', ['class', 'updated']);
+		$c.sm(csrDivNode, 'setAttr', ['class', 'updated']);
 		await globalThis.reactive.wait();
 
 		assertStrictEquals(domNodes.at(0), ssrDiv, 'same DOM node after update');
@@ -461,9 +461,9 @@ Deno.test('MWIAggr (m.aggr) - SSR-CSR Hydration: reactive updates after hydratio
 	await t.step('(getDOM) - from mode: new to node added after hydration updates DOM reactively', async () => {
 		// SSR: one to node with explicit id on first element (avoids auto-assign dependency)
 		const ssrDoc = makeDoc();
-		const fromNode = ssrDoc('from', { item: ps(`[(m.aggr from=default)]`) });
-		const toNode1 = ssrDoc('from', { item: ps(`[(m.aggr [h.li id=li1 Item1])]`) });
-		ssrDoc('append', ls([, fromNode, , toNode1]));
+		const fromNode = $c.sm(ssrDoc, 'from', { item: ps(`[(m.aggr from=default)]`) });
+		const toNode1 = $c.sm(ssrDoc, 'from', { item: ps(`[(m.aggr [h.li id=li1 Item1])]`) });
+		$c.sm(ssrDoc, 'append', ls([, fromNode, , toNode1]));
 
 		const html = ssrDocHTML(ssrDoc);
 		document.body.innerHTML = html;
@@ -471,9 +471,9 @@ Deno.test('MWIAggr (m.aggr) - SSR-CSR Hydration: reactive updates after hydratio
 		assertExists(ssrLi1, 'SSR li1 exists');
 
 		// CSR: reconstruct from SSR spec and sync at document level
-		const subSpec = ssrDoc('root')('getSubSpec');
-		const csrDoc = makeDoc(), csrRoot = csrDoc('root');
-		csrRoot('setSubSpec', { subSpec });
+		const subSpec = ssrDoc.root.getSubSpec();
+		const csrDoc = makeDoc(), csrRoot = csrDoc.root;
+		$c.sm(csrRoot, 'setSubSpec', { subSpec });
 
 		const domNodes = csrSync(csrRoot, ssrLi1);
 		await reactive.wait();
@@ -482,9 +482,9 @@ Deno.test('MWIAggr (m.aggr) - SSR-CSR Hydration: reactive updates after hydratio
 		assertStrictEquals(domNodes.at(0), ssrLi1, 'SSR li1 reused');
 
 		// Add a second to node after hydration
-		const csrToNode2 = csrDoc('from', { item: ps(`[(m.aggr [h.li id=li2 Item2])]`) });
-		csrDoc('append', ls([, csrToNode2]));
-		csrDoc('getDOM');
+		const csrToNode2 = $c.sm(csrDoc, 'from', { item: ps(`[(m.aggr [h.li id=li2 Item2])]`) });
+		$c.sm(csrDoc, 'append', ls([, csrToNode2]));
+		$c.sm(csrDoc, 'getDOM');
 
 		await globalThis.reactive.wait();
 
@@ -509,13 +509,13 @@ Deno.test('MWIAggr (m.aggr) - SSR-CSR Hydration: end-to-end document sync', asyn
 		// during the initial CSR render (when the from node defers while to nodes register).
 		// The aggregated p has an explicit id so no auto-assign is needed.
 		const ssrDoc = makeDoc();
-		const containerNode = ssrDoc('from', { item: ps(`[(h.div id=container
+		const containerNode = $c.sm(ssrDoc, 'from', { item: ps(`[(h.div id=container
 			[h.span id=before-span Before]
 			[m.aggr from=default]
 			[h.span id=after-span After]
 			[m.aggr [h.p id=aggr-p Middle]]
 		)]`) });
-		ssrDoc('append', ls([, containerNode]));
+		$c.sm(ssrDoc, 'append', ls([, containerNode]));
 
 		const html = ssrDocHTML(ssrDoc);
 		assert(html.includes('Before'), 'SSR includes before text');
@@ -540,12 +540,12 @@ Deno.test('MWIAggr (m.aggr) - SSR-CSR Hydration: end-to-end document sync', asyn
 		assertExists(ssrAfter, 'SSR after span exists');
 
 		// CSR: reconstruct from SSR spec and sync at document level
-		const subSpec = ssrDoc('root')('getSubSpec');
-		const csrDoc = makeDoc(), csrRoot = csrDoc('root');
-		csrRoot('setSubSpec', { subSpec });
+		const subSpec = ssrDoc.root.getSubSpec();
+		const csrDoc = makeDoc(), csrRoot = csrDoc.root;
+		$c.sm(csrRoot, 'setSubSpec', { subSpec });
 
 		const domNodes = csrSync(csrRoot, ssrContainer);
-		csrRoot('getDOM');
+		$c.sm(csrRoot, 'getDOM');
 		await reactive.wait();
 
 		// Document renders: container div (which contains before, middle, after)
@@ -579,7 +579,7 @@ Deno.test('MWIAggr (m.aggr) - SSR-CSR Hydration: end-to-end document sync', asyn
 		)]`);
 
 		const ssrDoc = makeDoc();
-		ssrDoc('append', { list: ssrSpec });
+		$c.sm(ssrDoc, 'append', { list: ssrSpec });
 
 		const html = ssrDocHTML(ssrDoc);
 		assert(html.includes('>Page Title</title>'), 'SSR includes page title');
@@ -595,9 +595,9 @@ Deno.test('MWIAggr (m.aggr) - SSR-CSR Hydration: end-to-end document sync', asyn
 		assertExists(ssrHomeLink, 'SSR home link exists');
 
 		// CSR: reconstruct from SSR spec (includes auto-assigned ids) and sync at document level
-		const csrSpec = ssrDoc('root')('getSubSpec');
-		const csrDoc = makeDoc(), csrRoot = csrDoc('root');
-		csrRoot('setSubSpec', { subSpec: csrSpec });
+		const csrSpec = ssrDoc.root.getSubSpec();
+		const csrDoc = makeDoc(), csrRoot = csrDoc.root;
+		$c.sm(csrRoot, 'setSubSpec', { subSpec: csrSpec });
 
 		const domNodes = csrSync(csrRoot, ssrHeader);
 		await reactive.wait();
@@ -625,10 +625,10 @@ Deno.test('MWIAggr (m.aggr) - SSR-CSR Hydration: to mode behavior', async (t) =>
 		// SSR: a div, then a to node (which renders nothing), then another div
 		// No from node, so aggregated content is never rendered in SSR
 		const ssrDoc = makeDoc();
-		const div1 = ssrDoc('from', { item: ps(`[(h.div id=div1 First)]`) });
-		const toNode = ssrDoc('from', { item: ps(`[(m.aggr [h.span Aggregated])]`) });
-		const div2 = ssrDoc('from', { item: ps(`[(h.div id=div2 Second)]`) });
-		ssrDoc('append', ls([, div1, , toNode, , div2]));
+		const div1 = $c.sm(ssrDoc, 'from', { item: ps(`[(h.div id=div1 First)]`) });
+		const toNode = $c.sm(ssrDoc, 'from', { item: ps(`[(m.aggr [h.span Aggregated])]`) });
+		const div2 = $c.sm(ssrDoc, 'from', { item: ps(`[(h.div id=div2 Second)]`) });
+		$c.sm(ssrDoc, 'append', ls([, div1, , toNode, , div2]));
 
 		const html = ssrDocHTML(ssrDoc);
 		// Only div1 and div2 should appear (to node renders nothing)
@@ -643,9 +643,9 @@ Deno.test('MWIAggr (m.aggr) - SSR-CSR Hydration: to mode behavior', async (t) =>
 		assertExists(ssrDiv2, 'SSR div2 exists');
 
 		// CSR: reconstruct from SSR spec and sync at document level
-		const subSpec = ssrDoc('root')('getSubSpec');
-		const csrDoc = makeDoc(), csrRoot = csrDoc('root');
-		csrRoot('setSubSpec', { subSpec });
+		const subSpec = ssrDoc.root.getSubSpec();
+		const csrDoc = makeDoc(), csrRoot = csrDoc.root;
+		$c.sm(csrRoot, 'setSubSpec', { subSpec });
 
 		const domNodes = csrSync(csrRoot, ssrDiv1);
 		await reactive.wait();

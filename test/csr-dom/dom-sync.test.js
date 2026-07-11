@@ -37,7 +37,7 @@ Deno.test("MWIDOMSync - Initialization", async (t) => {
 		container.appendChild(textNode);
 
 		const sync = createSync(textNode);
-		assertStrictEquals(sync('cursor'), textNode, 'cursor should be the initial node');
+		assertStrictEquals($c.sm(sync, 'cursor'), textNode, 'cursor should be the initial node');
 	});
 
 	await t.step(".cursor - Returns initial cursor node via JS", () => {
@@ -51,12 +51,12 @@ Deno.test("MWIDOMSync - Initialization", async (t) => {
 
 	await t.step("(cursor) - Returns null when initialized with null", () => {
 		const sync = createSync(null);
-		assertEquals(sync('cursor'), null, 'cursor should be null');
+		assertEquals($c.sm(sync, 'cursor'), null, 'cursor should be null');
 	});
 
 	await t.step("(cursor) - Returns undefined when initialized with undefined", () => {
 		const sync = createSync(undefined);
-		assertEquals(sync('cursor'), undefined, 'cursor should be undefined');
+		assertEquals($c.sm(sync, 'cursor'), undefined, 'cursor should be undefined');
 	});
 });
 
@@ -68,11 +68,11 @@ Deno.test("MWIDOMSync - Text Node Sync", async (t) => {
 
 		const docNode = makeDocNode('m.t', { t: 'Hello World' });
 		const sync = createSync(textNode);
-		const result = sync('sync', ['m.t', docNode]);
+		const result = $c.sm(sync, 'sync', ['m.t', docNode]);
 
 		assertStrictEquals(result, textNode, 'should return the matching text node');
 		// Cursor should advance to next sibling (null)
-		assertEquals(sync('cursor'), null, 'cursor should advance past matched node');
+		assertEquals($c.sm(sync, 'cursor'), null, 'cursor should advance past matched node');
 	});
 
 	await t.step(".sync() - Matches text node with matching content via JS", () => {
@@ -95,11 +95,11 @@ Deno.test("MWIDOMSync - Text Node Sync", async (t) => {
 
 		const docNode = makeDocNode('m.t', { t: 'Expected text' });
 		const sync = createSync(textNode);
-		const result = sync('sync', ['m.t', docNode]);
+		const result = $c.sm(sync, 'sync', ['m.t', docNode]);
 
 		assertEquals(result, undefined, 'should return undefined for non-matching text');
 		// Cursor should not advance
-		assertStrictEquals(sync('cursor'), textNode, 'cursor should not advance on mismatch');
+		assertStrictEquals($c.sm(sync, 'cursor'), textNode, 'cursor should not advance on mismatch');
 	});
 
 	await t.step("(sync) - Does not match element node for m.t tag", () => {
@@ -109,7 +109,7 @@ Deno.test("MWIDOMSync - Text Node Sync", async (t) => {
 
 		const docNode = makeDocNode('m.t', { t: 'text' });
 		const sync = createSync(elem);
-		const result = sync('sync', ['m.t', docNode]);
+		const result = $c.sm(sync, 'sync', ['m.t', docNode]);
 
 		assertEquals(result, undefined, 'should return undefined when cursor is not a text node');
 	});
@@ -125,13 +125,13 @@ Deno.test("MWIDOMSync - Text Node Sync", async (t) => {
 		const docNode2 = makeDocNode('m.t', { t: 'Second' });
 		const sync = createSync(text1);
 
-		const result1 = sync('sync', ['m.t', docNode1]);
+		const result1 = $c.sm(sync, 'sync', ['m.t', docNode1]);
 		assertStrictEquals(result1, text1, 'first sync should match text1');
-		assertStrictEquals(sync('cursor'), text2, 'cursor should advance to text2');
+		assertStrictEquals($c.sm(sync, 'cursor'), text2, 'cursor should advance to text2');
 
-		const result2 = sync('sync', ['m.t', docNode2]);
+		const result2 = $c.sm(sync, 'sync', ['m.t', docNode2]);
 		assertStrictEquals(result2, text2, 'second sync should match text2');
-		assertEquals(sync('cursor'), null, 'cursor should advance to null');
+		assertEquals($c.sm(sync, 'cursor'), null, 'cursor should advance to null');
 	});
 });
 
@@ -143,10 +143,10 @@ Deno.test("MWIDOMSync - Comment Node Sync", async (t) => {
 
 		const docNode = makeDocNode('m.com', { t: 'My comment' });
 		const sync = createSync(commentNode);
-		const result = sync('sync', ['m.com', docNode]);
+		const result = $c.sm(sync, 'sync', ['m.com', docNode]);
 
 		assertStrictEquals(result, commentNode, 'should return the matching comment node');
-		assertEquals(sync('cursor'), null, 'cursor should advance past matched node');
+		assertEquals($c.sm(sync, 'cursor'), null, 'cursor should advance past matched node');
 	});
 
 	await t.step(".sync() - Matches comment node via JS", () => {
@@ -168,10 +168,10 @@ Deno.test("MWIDOMSync - Comment Node Sync", async (t) => {
 
 		const docNode = makeDocNode('m.com', { t: 'Expected comment' });
 		const sync = createSync(commentNode);
-		const result = sync('sync', ['m.com', docNode]);
+		const result = $c.sm(sync, 'sync', ['m.com', docNode]);
 
 		assertEquals(result, undefined, 'should return undefined for non-matching comment');
-		assertStrictEquals(sync('cursor'), commentNode, 'cursor should not advance on mismatch');
+		assertStrictEquals($c.sm(sync, 'cursor'), commentNode, 'cursor should not advance on mismatch');
 	});
 
 	await t.step("(sync) - Does not match text node for m.com tag", () => {
@@ -181,7 +181,7 @@ Deno.test("MWIDOMSync - Comment Node Sync", async (t) => {
 
 		const docNode = makeDocNode('m.com', { t: 'text' });
 		const sync = createSync(textNode);
-		const result = sync('sync', ['m.com', docNode]);
+		const result = $c.sm(sync, 'sync', ['m.com', docNode]);
 
 		assertEquals(result, undefined, 'should return undefined when cursor is not a comment node');
 	});
@@ -195,10 +195,10 @@ Deno.test("MWIDOMSync - Element Node Sync", async (t) => {
 
 		const docNode = makeDocNode('h.span');
 		const sync = createSync(span);
-		const result = sync('sync', ['SPAN', docNode]);
+		const result = $c.sm(sync, 'sync', ['SPAN', docNode]);
 
 		assertStrictEquals(result, span, 'should return the matching element');
-		assertEquals(sync('cursor'), null, 'cursor should advance past matched element');
+		assertEquals($c.sm(sync, 'cursor'), null, 'cursor should advance past matched element');
 	});
 
 	await t.step(".sync() - Matches element by tag name via JS", () => {
@@ -220,10 +220,10 @@ Deno.test("MWIDOMSync - Element Node Sync", async (t) => {
 
 		const docNode = makeDocNode('h.div');
 		const sync = createSync(span);
-		const result = sync('sync', ['DIV', docNode]);
+		const result = $c.sm(sync, 'sync', ['DIV', docNode]);
 
 		assertEquals(result, undefined, 'should return undefined for tag name mismatch');
-		assertStrictEquals(sync('cursor'), span, 'cursor should not advance on mismatch');
+		assertStrictEquals($c.sm(sync, 'cursor'), span, 'cursor should not advance on mismatch');
 	});
 
 	await t.step("(sync) - Advances past text nodes before matching element", () => {
@@ -235,10 +235,10 @@ Deno.test("MWIDOMSync - Element Node Sync", async (t) => {
 
 		const docNode = makeDocNode('h.span');
 		const sync = createSync(textNode);
-		const result = sync('sync', ['SPAN', docNode]);
+		const result = $c.sm(sync, 'sync', ['SPAN', docNode]);
 
 		assertStrictEquals(result, span, 'should advance past text node and match span');
-		assertEquals(sync('cursor'), null, 'cursor should advance past matched element');
+		assertEquals($c.sm(sync, 'cursor'), null, 'cursor should advance past matched element');
 	});
 
 	await t.step("(sync) - Advances past comment nodes before matching element", () => {
@@ -250,7 +250,7 @@ Deno.test("MWIDOMSync - Element Node Sync", async (t) => {
 
 		const docNode = makeDocNode('h.div');
 		const sync = createSync(commentNode);
-		const result = sync('sync', ['DIV', docNode]);
+		const result = $c.sm(sync, 'sync', ['DIV', docNode]);
 
 		assertStrictEquals(result, divElem, 'should advance past comment node and match div');
 	});
@@ -268,7 +268,7 @@ Deno.test("MWIDOMSync - Element Node Sync", async (t) => {
 
 		const docNode = makeDocNode('h.span');
 		const sync = createSync(text1);
-		const result = sync('sync', ['SPAN', docNode]);
+		const result = $c.sm(sync, 'sync', ['SPAN', docNode]);
 
 		assertStrictEquals(result, span, 'should advance past all text/comment nodes and match span');
 	});
@@ -288,7 +288,7 @@ Deno.test("MWIDOMSync - Non-local Element Sync (getElementById)", async (t) => {
 
 		// Start sync at null (no local cursor)
 		const sync = createSync(null);
-		const result = sync('sync', ['DIV', docNode]);
+		const result = $c.sm(sync, 'sync', ['DIV', docNode]);
 
 		assertStrictEquals(result, targetElem, 'should find element by id');
 
@@ -301,7 +301,7 @@ Deno.test("MWIDOMSync - Non-local Element Sync (getElementById)", async (t) => {
 		docNode.setAttr('id', 'nonexistent-id-xyz');
 
 		const sync = createSync(null);
-		const result = sync('sync', ['DIV', docNode]);
+		const result = $c.sm(sync, 'sync', ['DIV', docNode]);
 
 		assertEquals(result, undefined, 'should return undefined when id not found');
 	});
@@ -321,7 +321,7 @@ Deno.test("MWIDOMSync - Non-local Element Sync (getElementById)", async (t) => {
 		document.getElementById = (...args) => { getByIdCalled = true; return origGetById(...args); };
 
 		const sync = createSync(localSpan);
-		const result = sync('sync', ['SPAN', docNode]);
+		const result = $c.sm(sync, 'sync', ['SPAN', docNode]);
 
 		document.getElementById = origGetById; // Restore
 
@@ -346,16 +346,16 @@ Deno.test("MWIDOMSync - Sequential Sync Operations", async (t) => {
 
 		const sync = createSync(text1);
 
-		const r1 = sync('sync', ['m.t', textDocNode1]);
+		const r1 = $c.sm(sync, 'sync', ['m.t', textDocNode1]);
 		assertStrictEquals(r1, text1, 'first sync: text node');
 
-		const r2 = sync('sync', ['SPAN', spanDocNode]);
+		const r2 = $c.sm(sync, 'sync', ['SPAN', spanDocNode]);
 		assertStrictEquals(r2, span, 'second sync: span element');
 
-		const r3 = sync('sync', ['m.t', textDocNode2]);
+		const r3 = $c.sm(sync, 'sync', ['m.t', textDocNode2]);
 		assertStrictEquals(r3, text2, 'third sync: text node');
 
-		assertEquals(sync('cursor'), null, 'cursor should be null after all nodes synced');
+		assertEquals($c.sm(sync, 'cursor'), null, 'cursor should be null after all nodes synced');
 	});
 
 	await t.step("(sync) - Cursor advances correctly through multiple elements", () => {
@@ -369,13 +369,13 @@ Deno.test("MWIDOMSync - Sequential Sync Operations", async (t) => {
 
 		const sync = createSync(div1);
 
-		sync('sync', ['DIV', makeDocNode('h.div')]);
-		assertStrictEquals(sync('cursor'), div2, 'cursor at div2 after first sync');
+		$c.sm(sync, 'sync', ['DIV', makeDocNode('h.div')]);
+		assertStrictEquals($c.sm(sync, 'cursor'), div2, 'cursor at div2 after first sync');
 
-		sync('sync', ['DIV', makeDocNode('h.div')]);
-		assertStrictEquals(sync('cursor'), div3, 'cursor at div3 after second sync');
+		$c.sm(sync, 'sync', ['DIV', makeDocNode('h.div')]);
+		assertStrictEquals($c.sm(sync, 'cursor'), div3, 'cursor at div3 after second sync');
 
-		sync('sync', ['DIV', makeDocNode('h.div')]);
-		assertEquals(sync('cursor'), null, 'cursor null after third sync');
+		$c.sm(sync, 'sync', ['DIV', makeDocNode('h.div')]);
+		assertEquals($c.sm(sync, 'cursor'), null, 'cursor null after third sync');
 	});
 });

@@ -1,6 +1,6 @@
 [(
 modpath='mwi/mwi-html-comp'
-version='0.5.0'
+version='1.0.0'
 featreq='mwi.compRegOpen MWIDocNode'
 featpro='mwi.comp.MWIHTML'
 modcaps=''
@@ -29,7 +29,7 @@ modcaps=''
 	const DOCTYPE_IF = BASE_IF + 'DocType';
 	const SCRIPT_IF = BASE_IF + 'Script';
 
-	const { fready, fwait, getInstance, getInterface } = globalThis.$c;
+	const { fready, fwait, getInstance, getInterface, MsjsObject } = globalThis.$c;
 
 	const html5Config = {
 		'h.a': ls([INTERFACE, BASE_IF]),
@@ -150,69 +150,99 @@ modcaps=''
 	// Make sure the doc-node super-interface is available before chaining from any sub-interfaces
 	await fwait(SUPER_FT);
 
-	// MWIHTML (base) interface (standard `h.` HTML tags)
+	// "Import" parent JS class, Mesgjs-style, for sub-classing
+	const MWIDocNode = getInterface(SUPER_IF).proto;
+
+	//////////////////////////////////////////////////////////////////////
+	//////////////////////////////////////////////////////////////////////
+	//////     MWIHTML (base) interface (standard `h.` HTML tags)
+	//////////////////////////////////////////////////////////////////////
+	//////////////////////////////////////////////////////////////////////
 	(() => {
-		function opGetDOM (d) {
-			const p = d.p;
+		class MWIHTML extends MWIDocNode {
+			#ps;
 
-			if (p.has('_dom')) {
-				p.at('_domAttrs').rv;
-				return p.at('_dom').rv;
+			constructor (key, type) {
+				super(key, type);
+				this.#ps = MsjsObject.getPS(this, key);
 			}
-			if (typeof document !== 'object' || typeof document.createElement !== 'function') throw new Error('Missing document.createElement API');
 
-			const schema = p.at(SCHEMA), isVoid = schema?.at(VOID);
-			const type = p.at('type').replace(/^h\./, '').toUpperCase();
-			const m = d.mp, sync = m.at('sync');
-			let existing = sync && sync('sync', [type, d.rr]);
-			const node = existing || document.createElement(type), nodes = new NANOS(node);
+			// Return generated DOM (bilingual)
+			// (getDOM sync=domSync?) OR .getDOM({ sync })
+			getDOM (p1) {
+				const d = (p1?.msjsType === '@dispatch') ? p1 : undefined;
+				const ps = d?.p ?? this.#ps;
+				const self = d?.rr ?? this;
 
-			node[NODE_SYM] = d.rr;
-
-			const _domAttrs = d.rr.setDOMAttrs(node, p.at('attrs'), schema);
-			const _dom = reactive({ eager: true, def: () => {
-				if (isVoid) return nodes;
-
-				const subSync = existing?.firstChild && getInstance('MWIDOMSync', [existing.firstChild]);
-				const children = d.rr('getSubDOM', { sync: subSync });
-
-				if (children) {
-					d.rr.domSyncChildren(node, children);
-					existing = null;
+				if (ps.has('_dom')) {
+					ps.at('_domAttrs').rv;
+					return ps.at('_dom').rv;
 				}
-				return nodes;
-			}});
+				if (typeof document !== 'object' || typeof document.createElement !== 'function') throw new Error('Missing document.createElement API');
 
-			p.push({ _dom, _domAttrs });
-			return _dom.rv;
+				const schema = ps.at(SCHEMA), isVoid = schema?.at(VOID);
+				const type = ps.at('type').replace(/^h\./, '').toUpperCase();
+				const sync = d ? d.mp.at('sync') : p1?.sync;
+				let existing = sync?.sync(type, self);
+				const node = existing || document.createElement(type), nodes = new NANOS(node);
+
+				node[NODE_SYM] = self;
+
+				const _domAttrs = MWIDocNode.setDOMAttrs(node, ps.at('attrs'), schema);
+				const _dom = reactive({ eager: true, def: () => {
+					if (isVoid) return nodes;
+
+					const subSync = existing?.firstChild ? getInstance('MWIDOMSync', [existing.firstChild]) : undefined;
+					const children = self.getSubDOM({ sync: subSync });
+
+					if (children) {
+						MWIDocNode.domSyncChildren(node, children);
+						existing = null;
+					}
+					return nodes;
+				}});
+
+				ps.push({ _dom, _domAttrs });
+				return _dom.rv;
+			}
+
+			// Render HTML (bilingual)
+			// (getHTML in=buffer) OR .getHTML({ in })
+			getHTML (p1) {
+				const d = (p1?.msjsType === '@dispatch') ? p1 : undefined;
+				const ps = d?.p ?? this.#ps;
+				const self = d?.rr ?? this;
+
+				if (self.getAttr('m.csr')) return '';
+
+				const type = ps.at('type').replace(/^h\./, '');
+				const hasIn = d ? d.mp.at('in') : p1?.in;
+				const html = hasIn ?? [];
+
+				if (html.wantId) { // Id requested for aggregate DOM sync
+					$c.sm(self, 'getAttr', 'm.id'); // Requires dispatch
+					html.wantId = false;
+				}
+
+				// Opening (or void) tag with optional (HTML) attributes
+				html.push(`<${type}${self.getAttrHTML()}>`);
+
+				if (!ps.at([SCHEMA, VOID])) {
+					// Collect inner HTML
+					for (const node of ps.at('subDoc', []).values()) {
+						node.getHTML({ in: html });
+					}
+					// Closing tag
+					html.push(`</${type}>`);
+				}
+
+				if (!hasIn) return html.join('');
+			}
+
+			get subSlotSrc () { return this.#ps.at('slotSrc'); } // HTML nodes are pass-through
 		}
 
-		// Return HTML for standard (or void) HTML tags
-		function opGetHTML (d) {
-			if (d.rr('getAttr', ['m.csr'])) return '';
-
-			const p = d.p, type = p.at('type').replace(/^h\./, '');
-			const m = d.mp, hasIn = m.has('in'), html = m.at('in', []);
-
-			if (html.wantId) { // Id requested for aggregate DOM sync
-				d.rr('getAttr', ['m.id']);
-				html.wantId = false;
-			}
-
-			// Opening (or void) tag with optional (HTML) attributes
-			html.push(`<${type}${d.rr('getAttrHTML')}>`);
-
-			if (!p.at([SCHEMA, VOID])) {
-				// Collect inner HTML
-				for (const node of p.at('subDoc', []).values()) {
-					node('getHTML', { in: html });
-				}
-				// Closing tag
-				html.push(`</${type}>`);
-			}
-
-			if (!hasIn) return html.join('');
-		}
+		const proto = MWIHTML.prototype;
 
 		getInterface(BASE_IF).set({
 			pristine: true, // Anti-tamper: no configuration before
@@ -221,113 +251,167 @@ modcaps=''
 			// abstract, final, once, private, etc.
 			chain: [ SUPER_IF ],
 			handlers: {
-				getDOM: opGetDOM,
-				getHTML: opGetHTML,
+				getDOM: proto.getDOM,
+				getHTML: proto.getHTML,
 				subSlotSrc: (d) => d.p.at('slotSrc'), // HTML nodes are pass-through
-			}
+			},
+			proto: MWIHTML,
 		});
 	})();
 
-	// MWIHTMLDocType (doctype) interface
-	// `[h.doctype]`
-	(() => {
-		function opGetHTML (d) {
-			const m = d.mp, output = m.at('in');;
-			const html = `<!DOCTYPE html>`; // Fixed type for now
+	// "Import" MWIHTML proto for sub-classing
+	const MWIHTML = getInterface(BASE_IF).proto;
 
-			if (output) output.push(html);
-			return html;
+	//////////////////////////////////////////////////////////////////////
+	//////////////////////////////////////////////////////////////////////
+	//////     MWIHTMLDocType (doctype) interface
+	//////     `[h.doctype]`
+	//////////////////////////////////////////////////////////////////////
+	//////////////////////////////////////////////////////////////////////
+	(() => {
+		class MWIHTMLDocType extends MWIHTML {
+			// Return generated DOM (bilingual)
+			// (getDOM sync=domSync?) OR .getDOM({ sync })
+			getDOM () { return new NANOS(); }
+
+			// Render HTML (bilingual)
+			// (getHTML in=buffer) OR .getHTML({ in })
+			getHTML (p1) {
+				const d = (p1?.msjsType === '@dispatch') ? p1 : undefined;
+				const output = d ? d.mp.at('in') : p1?.in;
+				const html = `<!DOCTYPE html>`; // Fixed type for now
+
+				if (output) output.push(html);
+				return html;
+			}
+
+			getSubSpec () { return new NANOS(); }
+
+			setSubSpec () { return this; }
 		}
+
+		const proto = MWIHTMLDocType.prototype;
 
 		getInterface(DOCTYPE_IF).set({
 			pristine: true, lock: true,
 			chain: [ BASE_IF ],
 			handlers: {
-				getDOM: (_d) => new NANOS(),
-				getHTML: opGetHTML,
-				getSubSpec: (_d) => new NANOS(),
+				getDOM: () => new NANOS(),
+				getHTML: proto.getHTML,
+				getSubSpec: () => new NANOS(),
 				setSubSpec: (d) => d.rr,
-			}
+			},
+			proto: MWIHTMLDocType,
 		});
 	})();
 
-	// MWIHTMLScript (script / style / title) interface
-	// `[h.script m.text=script?]`
-	// `[h.style m.text=style?]`
-	// `[h.title m.text=title?]`
+	//////////////////////////////////////////////////////////////////////
+	//////////////////////////////////////////////////////////////////////
+	//////     MWIHTMLScript (script / style / title) interface
+	//////     `[h.script m.text=script?]`
+	//////     `[h.style m.text=style?]`
+	//////     `[h.title m.text=title?]`
+	//////////////////////////////////////////////////////////////////////
+	//////////////////////////////////////////////////////////////////////
 	(() => {
-		function opGetDOM (d) {
-			const p = d.p;
+		class MWIHTMLScript extends MWIHTML {
+			#ps;
 
-			if (p.has('_dom')) {
-				p.at('_domAttrs').rv;
-				return p.at('_dom').rv;
+			constructor (key, type) {
+				super(key, type);
+				this.#ps = MsjsObject.getPS(this, key);
 			}
-			if (typeof document !== 'object' || typeof document.createElement !== 'function') throw new Error('Missing document.createElement API');
 
-			const doc = p.at('doc'), type = p.at('type').replace(/^h\./, '').toUpperCase();
-			const m = d.mp, sync = m.at('sync');
-			const existing = sync && sync('sync', [type, d.rr]);
-			const node = existing || document.createElement(type);
+			// Return generated DOM (bilingual)
+			// (getDOM sync=domSync?) OR .getDOM({ sync })
+			getDOM (p1) {
+				const d = (p1?.msjsType === '@dispatch') ? p1 : undefined;
+				const ps = d?.p ?? this.#ps;
+				const self = d?.rr ?? this;
 
-			node[NODE_SYM] = d.rr;
+				if (ps.has('_dom')) {
+					ps.at('_domAttrs').rv;
+					return ps.at('_dom').rv;
+				}
+				if (typeof document !== 'object' || typeof document.createElement !== 'function') throw new Error('Missing document.createElement API');
 
-			const nodes = new NANOS(node);
-			const _domAttrs = d.rr.setDOMAttrs(node, p.at('attrs'), p.at(SCHEMA));
-			const _dom = reactive({ eager: true, def: () => {
-				const content = d.rr('getAttr', [ 'm.text' ]) || '';
+				const type = ps.at('type').replace(/^h\./, '').toUpperCase();
+				const sync = d ? d.mp.at('sync') : p1?.sync;
+				const existing = sync?.sync(type, self);
+				const node = existing || document.createElement(type);
 
-				if (node.textContent !== content) node.textContent = content;
-				return nodes;
-			}});
+				node[NODE_SYM] = self;
 
-			p.push({ _dom, _domAttrs });
-			return _dom.rv;
+				const nodes = new NANOS(node);
+				const _domAttrs = MWIDocNode.setDOMAttrs(node, ps.at('attrs'), ps.at(SCHEMA));
+				const _dom = reactive({ eager: true, def: () => {
+					const content = self.getAttr('m.text') || '';
+
+					if (node.textContent !== content) node.textContent = content;
+					return nodes;
+				}});
+
+				ps.push({ _dom, _domAttrs });
+				return _dom.rv;
+			}
+
+			// Render HTML (bilingual)
+			// (getHTML in=buffer) OR .getHTML({ in })
+			getHTML (p1) {
+				const d = (p1?.msjsType === '@dispatch') ? p1 : undefined;
+				const ps = d?.p ?? this.#ps;
+				const self = d?.rr ?? this;
+
+				if (self.getAttr('m.csr')) return '';
+
+				const type = ps.at('type').replace(/^h\./, '');
+				const output = d ? d.mp.at('in') : p1?.in;
+				const raw = self.getAttr('m.text') || '';
+				let sanzd = '';
+
+				if (output?.wantId) {
+					$c.sm(self, 'getAttr', 'm.id'); // Requires dispatch
+					output.wantId = false;
+				}
+
+				// Match an embedded closing tag with pathological generosity for safety
+				switch (type) {
+				case 'script':
+					// escape </script> as \x3c/script> (based on JS string syntax)
+					sanzd = raw.replace(/<(?=\s*\/\s*script)/g, '\\x3c');
+					break;
+				case 'style':
+					// escape </style> as \3c /style> (based on CSS string syntax)
+					sanzd = raw.replace(/<(?=\s*\/\s*style)/g, '\\3c ');
+					break;
+				case 'title':
+					sanzd = MWIDocNode.textToHTML(raw);
+					break;
+				}
+
+				const html = `<${type}${self.getAttrHTML()}>${sanzd}</${type}>`;
+
+				if (output) output.push(html);
+				return html;
+			}
+
+			getSubSpec () { return new NANOS(); }
+
+			setSubSpec () { return this; }
 		}
 
-		function opGetHTML (d) {
-			if (d.rr('getAttr', ['m.csr'])) return '';
-
-			const p = d.p, type = p.at('type').replace(/^h\./, '');
-			const m = d.mp, output = m.at('in');;
-			const raw = d.rr('getAttr', [ 'm.text' ]) || '';
-			let sanzd = '';
-
-			if (output?.wantId) {
-				d.rr('getAttr', ['m.id']);
-				output.wantId = false;
-			}
-
-			// Match an embedded closing tag with pathological generosity for safety
-			switch (type) {
-			case 'script':
-				// escape </script> as \x3c/script> (based on JS string syntax)
-				sanzd = raw.replace(/<(?=\s*\/\s*script)/g, '\\x3c');
-				break;
-			case 'style':
-				// escape </style> as \3c /style> (based on CSS string syntax)
-				sanzd = raw.replace(/<(?=\s*\/\s*style)/g, '\\3c ');
-				break;
-			case 'title':
-				sanzd = d.rr.textToHTML(raw);
-				break;
-			}
-
-			const html = `<${type}${d.rr('getAttrHTML')}>${sanzd}</${type}>`;
-
-			if (output) output.push(html);
-			return html;
-		}
+		const proto = MWIHTMLScript.prototype;
 
 		getInterface(SCRIPT_IF).set({
 			pristine: true, lock: true,
 			chain: [ BASE_IF ],
 			handlers: {
-				getDOM: opGetDOM,
-				getHTML: opGetHTML,
-				getSubSpec: (_d) => new NANOS(),
+				getDOM: proto.getDOM,
+				getHTML: proto.getHTML,
+				getSubSpec: () => new NANOS(),
 				setSubSpec: (d) => d.rr,
-			}
+			},
+			proto: MWIHTMLScript,
 		});
 	})();
 

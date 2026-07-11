@@ -21,8 +21,8 @@ Deno.test("MWICoreCom (m.com) - Core Interface Tests", async (t) => {
 	const comNode = doc.createNode('m.com');
 
 	await t.step("(setAttr) - Set comment text attribute", () => {
-		comNode('setAttr', ls([, 't', , 'Comment text']));
-		assertEquals(comNode('getAttr', ls([, 't'])), 'Comment text');
+		$c.sm(comNode, 'setAttr', ls([, 't', , 'Comment text']));
+		assertEquals($c.sm(comNode, 'getAttr', ls([, 't'])), 'Comment text');
 	});
 
 	await t.step(".setAttr() - Set comment text attribute via JS", () => {
@@ -31,9 +31,9 @@ Deno.test("MWICoreCom (m.com) - Core Interface Tests", async (t) => {
 	});
 
 	await t.step("(delAttr) - Delete comment text attribute", () => {
-		comNode('setAttr', ls([, 't', , 'Test']));
-		comNode('delAttr', ls([, 't']));
-		assertEquals(comNode('hasAttr', ls([, 't'])), false);
+		$c.sm(comNode, 'setAttr', ls([, 't', , 'Test']));
+		$c.sm(comNode, 'delAttr', ls([, 't']));
+		assertEquals($c.sm(comNode, 'hasAttr', ls([, 't'])), false);
 	});
 
 	await t.step(".delAttr() - Delete comment text attribute via JS", () => {
@@ -43,7 +43,7 @@ Deno.test("MWICoreCom (m.com) - Core Interface Tests", async (t) => {
 	});
 
 	await t.step("(document) - Get document reference", () => {
-		const docRef = comNode('document');
+		const docRef = $c.sm(comNode, 'document');
 		assertStrictEquals(docRef, doc);
 	});
 
@@ -52,8 +52,8 @@ Deno.test("MWICoreCom (m.com) - Core Interface Tests", async (t) => {
 	});
 
 	await t.step("(getAttr) - Get comment text attribute", () => {
-		comNode('setAttr', ls([, 't', , 'Sample comment']));
-		assertEquals(comNode('getAttr', ls([, 't'])), 'Sample comment');
+		$c.sm(comNode, 'setAttr', ls([, 't', , 'Sample comment']));
+		assertEquals($c.sm(comNode, 'getAttr', ls([, 't'])), 'Sample comment');
 	});
 
 	await t.step(".getAttr() - Get comment text attribute via JS", () => {
@@ -62,8 +62,8 @@ Deno.test("MWICoreCom (m.com) - Core Interface Tests", async (t) => {
 	});
 
 	await t.step("(getSpec) - Get node specification", () => {
-		comNode('setAttr', ls([, 't', , 'Spec comment']));
-		const spec = comNode('getSpec');
+		$c.sm(comNode, 'setAttr', ls([, 't', , 'Spec comment']));
+		const spec = $c.sm(comNode, 'getSpec');
 		assertEquals(spec.at(0), 'm.com');
 		assertEquals(spec.at('t'), 'Spec comment');
 		// Test using toSLID for string representation
@@ -80,7 +80,7 @@ Deno.test("MWICoreCom (m.com) - Core Interface Tests", async (t) => {
 	});
 
 	await t.step("(getSubSpec) - Should return empty NANOS", () => {
-		const subSpec = comNode('getSubSpec');
+		const subSpec = $c.sm(comNode, 'getSubSpec');
 		assertEquals(subSpec.size, 0);
 	});
 
@@ -90,9 +90,9 @@ Deno.test("MWICoreCom (m.com) - Core Interface Tests", async (t) => {
 	});
 
 	await t.step("(hasAttr) - Check attribute existence", () => {
-		comNode('setAttr', ls([, 't', , 'Test']));
-		assertEquals(comNode('hasAttr', ls([, 't'])), true);
-		assertEquals(comNode('hasAttr', ls([, 'nonexistent'])), false);
+		$c.sm(comNode, 'setAttr', ls([, 't', , 'Test']));
+		assertEquals($c.sm(comNode, 'hasAttr', ls([, 't'])), true);
+		assertEquals($c.sm(comNode, 'hasAttr', ls([, 'nonexistent'])), false);
 	});
 
 	await t.step(".hasAttr() - Check attribute existence via JS", () => {
@@ -103,8 +103,8 @@ Deno.test("MWICoreCom (m.com) - Core Interface Tests", async (t) => {
 
 	await t.step("(setSpec) - Set node specification", () => {
 		const spec = ps('[(m.com t="Spec set comment")]');
-		comNode('setSpec', ls([, spec]));
-		assertEquals(comNode('getAttr', ls([, 't'])), 'Spec set comment');
+		$c.sm(comNode, 'setSpec', ls([, spec]));
+		assertEquals($c.sm(comNode, 'getAttr', ls([, 't'])), 'Spec set comment');
 	});
 
 	await t.step(".setSpec() - Set node specification via JS", () => {
@@ -114,9 +114,9 @@ Deno.test("MWICoreCom (m.com) - Core Interface Tests", async (t) => {
 	});
 
 	await t.step("(append) - Append content (getSubSpec still empty)", async () => {
-		comNode('setAttr', ls([, 't', , 'Base comment']));
-		comNode('append', ls([, 'ignored content']));
-		const subSpec = comNode('getSubSpec');
+		$c.sm(comNode, 'setAttr', ls([, 't', , 'Base comment']));
+		$c.sm(comNode, 'append', ls([, 'ignored content']));
+		const subSpec = $c.sm(comNode, 'getSubSpec');
 		assertEquals(subSpec.size, 0);
 	});
 
@@ -129,8 +129,8 @@ Deno.test("MWICoreCom (m.com) - Core Interface Tests", async (t) => {
 
 	await t.step("(setSubSpec) - Set sub-spec (getSubSpec still empty)", () => {
 		const subSpec = ls([, 'child1', , 'child2']);
-		comNode('setSubSpec', ls(['subSpec', subSpec]));
-		const resultSubSpec = comNode('getSubSpec');
+		$c.sm(comNode, 'setSubSpec', ls(['subSpec', subSpec]));
+		const resultSubSpec = $c.sm(comNode, 'getSubSpec');
 		assertEquals(resultSubSpec.size, 0);
 	});
 
@@ -150,7 +150,7 @@ Deno.test("MWICoreCom (m.com) - Core Interface Tests", async (t) => {
 	});
 
 	await t.step("(type) - Get node type", () => {
-		assertEquals(comNode('type'), 'm.com');
+		assertEquals($c.sm(comNode, 'type'), 'm.com');
 	});
 
 	await t.step(".type - Get node type via JS", () => {
