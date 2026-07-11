@@ -1,6 +1,6 @@
 [(
 modpath='mwi/mwi-aggr-comp'
-version='0.5.0'
+version='1.0.0'
 featreq='mwi.comp.MWICore mwi.compRegOpen MWIDocNode MWIDocument'
 featpro='mwi.comp.MWIAggr mwi.comp.MWIAggrScript'
 modcaps=''

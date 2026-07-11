@@ -1,6 +1,6 @@
 [(
 modpath='mwi/mwi-registry'
-version='0.5.0'
+version='1.0.0'
 featreq=''
 featpro='mwi.compRegOpen mwi.compRegReady'
 modcaps=''

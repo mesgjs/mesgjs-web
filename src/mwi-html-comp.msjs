@@ -1,6 +1,6 @@
 [(
 modpath='mwi/mwi-html-comp'
-version='0.5.0'
+version='1.0.0'
 featreq='mwi.compRegOpen MWIDocNode'
 featpro='mwi.comp.MWIHTML'
 modcaps=''
@@ -192,7 +192,7 @@ modcaps=''
 				const _dom = reactive({ eager: true, def: () => {
 					if (isVoid) return nodes;
 
-					const subSync = existing?.firstChild && getInstance('MWIDOMSync', [existing.firstChild]);
+					const subSync = existing?.firstChild ? getInstance('MWIDOMSync', [existing.firstChild]) : undefined;
 					const children = self.getSubDOM({ sync: subSync });
 
 					if (children) {

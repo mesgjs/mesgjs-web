@@ -1,6 +1,6 @@
 [(
 	modreq='
-		mwi/mwi-registry 0.5;
-		mwi/mwi-doc-node 0.5;
+		mwi/mwi-registry 1.0;
+		mwi/mwi-doc-node 1.0;
 	'
 )]

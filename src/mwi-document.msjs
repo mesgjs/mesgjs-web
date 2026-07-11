@@ -1,6 +1,6 @@
 [(
 modpath='mwi/mwi-document'
-version='0.5.0'
+version='1.0.0'
 featreq='mwi.comp.MWICore mwi.compRegReady MWIDocNode'
 featpro='MWIDocument'
 modcaps=''
@@ -123,7 +123,7 @@ modcaps=''
 			// Initial CSR discovers aggregate "to" nodes
 			// Second CSR fills in aggregate "from" nodes, if any
 			ps.at('initialCSR').wv = true;
-			root.getDOM(sync);
+			root.getDOM({ sync });
 			ps.at('initialCSR').wv = false;
 			return root.getDOM();
 		}

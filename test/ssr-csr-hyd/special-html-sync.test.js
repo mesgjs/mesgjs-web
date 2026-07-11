@@ -34,8 +34,8 @@ function makeDoc () {
 // SSR: build a doc from a SLID spec and return the HTML string.
 function ssrHTML (spec) {
 	const doc = makeDoc();
-	const nodes = doc('from', ls(['list', spec]));
-	doc('append', nodes);
+	const nodes = $c.sm(doc, 'from', ls(['list', spec]));
+	$c.sm(doc, 'append', nodes);
 	return $c.sm(doc, 'getHTML');
 }
 
@@ -59,8 +59,8 @@ function loadSSRIntoHead (html) {
 // Returns { doc, domNodes } so callers can inspect both.
 function csrSync (spec, cursor) {
 	const doc = makeDoc();
-	const nodes = doc('from', ls(['list', spec]));
-	doc('append', nodes);
+	const nodes = $c.sm(doc, 'from', ls(['list', spec]));
+	$c.sm(doc, 'append', nodes);
 	const sync = getInstance('MWIDOMSync', [cursor]);
 	const domNodes = $c.sm(doc, 'getDOM', { sync });
 	return { doc, domNodes };

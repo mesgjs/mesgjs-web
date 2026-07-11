@@ -1,6 +1,6 @@
 [(
 modpath='mwi/mwi-core-comp'
-version='0.5.0'
+version='1.0.0'
 featreq='mwi.comp.MWIHTML mwi.compRegOpen MWIDocNode'
 featpro='mwi.comp.MWICore'
 modcaps=''
