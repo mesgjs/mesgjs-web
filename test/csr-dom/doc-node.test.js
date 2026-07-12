@@ -7,20 +7,22 @@ import {
 import { setupRuntime, simulateBrowser } from '../harness.esm.js';
 
 const REG_READY_FT = 'mwi.compRegReady';
+const MWI_DOC_RDY_FT = 'MWIDocument';
 
 await setupRuntime();
 
-const { fwait, getInstance } = globalThis.$c;
+const { fwait, getInstance, getInterface } = globalThis.$c;
 const ls = globalThis.ls;
 const ps = globalThis.ps;
 
-// Wait for registry to be ready
-await fwait(REG_READY_FT);
+// Wait for registry and MWIDocument to be ready
+await fwait(REG_READY_FT, MWI_DOC_RDY_FT);
 
 // Set up browser-like environment for DOM testing
 await simulateBrowser();
 
 const doc = getInstance('MWIDocument');
+const MWIDocument = getInterface('MWIDocument').proto;
 
 Deno.test("MWIDocNode - CSR-DOM Basic Rendering", async (t) => {
 	await t.step("(getDOM) - Empty element (no attributes, no children)", async () => {
@@ -903,4 +905,176 @@ Deno.test("MWIDocNode - CSR-DOM m.slat Reactivity", async (t) => {
 		await globalThis.reactive.wait();
 		assertEquals(divElem.title, 'Fallback');
 	});
+});
+
+Deno.test("MWIDocNode - CSR-DOM m.coat Special Return Values (.f, .t, .u)", async (t) => {
+	await t.step("(getDOM) - m.coat=[out=<.t>] stores true, renders as boolean attribute", async () => {
+		const divNode = $c.sm(doc, 'createNode', ['h.div']);
+		$c.sm(divNode, 'setAttr', ['m.coat', ps('[(out=<.t>)]')]);
+		const domNodes = $c.sm(divNode, 'getDOM');
+
+		await globalThis.reactive.wait();
+		// true attribute value stores as boolean true on the node
+		assertEquals(divNode.getAttr('out'), true, 'Attribute should store true');
+		// In DOM, boolean attributes are present (value is empty string or attribute name)
+		const divElem = domNodes.at(0);
+		assertEquals(divElem.hasAttribute('out'), true, 'Boolean true renders as attribute in DOM');
+	});
+
+	await t.step(".getDOM() - m.coat=[out=<.t>] stores true, renders as boolean attribute via JS", async () => {
+		const divNode = doc.createNode('h.div');
+		divNode.setAttr('m.coat', ps('[(out=<.t>)]'));
+		const domNodes = divNode.getDOM();
+
+		await globalThis.reactive.wait();
+		assertEquals(divNode.getAttr('out'), true, 'Attribute should store true');
+		const divElem = domNodes.at(0);
+		assertEquals(divElem.hasAttribute('out'), true, 'Boolean true renders as attribute in DOM');
+	});
+
+	await t.step("(getDOM) - m.coat=[out=<.f>] stores false, not rendered in DOM", async () => {
+		const divNode = $c.sm(doc, 'createNode', ['h.div']);
+		$c.sm(divNode, 'setAttr', ['m.coat', ps('[(out=<.f>)]')]);
+		const domNodes = $c.sm(divNode, 'getDOM');
+
+		await globalThis.reactive.wait();
+		assertEquals(divNode.getAttr('out'), false, 'Attribute should store false');
+		const divElem = domNodes.at(0);
+		assertEquals(divElem.hasAttribute('out'), false, 'false does not render as DOM attribute');
+	});
+
+	await t.step(".getDOM() - m.coat=[out=<.u>] stores undefined, not rendered in DOM via JS", async () => {
+		const divNode = doc.createNode('h.div');
+		divNode.setAttr('m.coat', ps('[(out=<.u>)]'));
+		const domNodes = divNode.getDOM();
+
+		await globalThis.reactive.wait();
+		assertEquals(divNode.getAttr('out'), undefined, 'Attribute should store undefined');
+		const divElem = domNodes.at(0);
+		assertEquals(divElem.hasAttribute('out'), false, 'undefined does not render as DOM attribute');
+	});
+
+	await t.step("(getDOM) - m.coat=[disabled=<controller?<.t>|<.f>>] - derive boolean from slot source", async () => {
+		const srcOn = $c.sm(doc, 'createNode', ['m.frg']);
+		$c.sm(srcOn, 'setAttr', ['controller', 'on']);
+
+		const nodeOn = $c.sm(doc, 'createNode', { 0: 'h.div', slotSrc: srcOn });
+		$c.sm(nodeOn, 'setAttr', ['m.coat', ps('[(disabled=<controller?<.t>|<.f>>)]')]);
+		const domOn = $c.sm(nodeOn, 'getDOM');
+
+		await globalThis.reactive.wait();
+		assertEquals(nodeOn.getAttr('disabled'), true, 'disabled should be true when controller is set');
+		assertEquals(domOn.at(0).hasAttribute('disabled'), true, 'disabled boolean attribute present in DOM');
+
+		const srcOff = $c.sm(doc, 'createNode', ['m.frg']);
+		// controller not set
+
+		const nodeOff = $c.sm(doc, 'createNode', { 0: 'h.div', slotSrc: srcOff });
+		$c.sm(nodeOff, 'setAttr', ['m.coat', ps('[(disabled=<controller?<.t>|<.f>>)]')]);
+		const domOff = $c.sm(nodeOff, 'getDOM');
+
+		await globalThis.reactive.wait();
+		assertEquals(nodeOff.getAttr('disabled'), false, 'disabled should be false when controller is not set');
+		assertEquals(domOff.at(0).hasAttribute('disabled'), false, 'disabled attribute absent in DOM');
+	});
+});
+
+Deno.test("MWIDocNode - CSR-DOM m.coat MWIData Reactivity (<d:name>)", async (t) => {
+	// Set up MWIData reactive NANOS in global shared storage
+	const mwiData = MWIDocument.rxNANOS();
+	globalThis.$gss.set('MWIData', mwiData);
+
+	await t.step("(getDOM) - m.coat=[out=<d:key>] renders from MWIData store", async () => {
+		mwiData.set('theme', 'dark');
+		const divNode = $c.sm(doc, 'createNode', ['h.div']);
+		$c.sm(divNode, 'setAttr', ['m.coat', ps('[(data-theme=<d:theme>)]')]);
+		const domNodes = $c.sm(divNode, 'getDOM');
+
+		await globalThis.reactive.wait();
+		const divElem = domNodes.at(0);
+		assertEquals(divElem.getAttribute('data-theme'), 'dark');
+	});
+
+	await t.step(".getDOM() - m.coat=[out=<d:key>] renders from MWIData store via JS", async () => {
+		mwiData.set('locale', 'en-US');
+		const divNode = doc.createNode('h.div');
+		divNode.setAttr('m.coat', ps('[(lang=<d:locale>)]'));
+		const domNodes = divNode.getDOM();
+
+		await globalThis.reactive.wait();
+		const divElem = domNodes.at(0);
+		assertEquals(divElem.getAttribute('lang'), 'en-US');
+	});
+
+	await t.step("(getDOM) - DOM updates reactively when MWIData entry changes", async () => {
+		mwiData.set('color', 'red');
+		const divNode = $c.sm(doc, 'createNode', ['h.div']);
+		$c.sm(divNode, 'setAttr', ['m.coat', ps('[(data-color=<d:color>)]')]);
+		const domNodes = $c.sm(divNode, 'getDOM');
+
+		await globalThis.reactive.wait();
+		const divElem = domNodes.at(0);
+		assertEquals(divElem.getAttribute('data-color'), 'red');
+
+		// Change MWIData entry - DOM should reactively update
+		mwiData.set('color', 'blue');
+		await globalThis.reactive.wait();
+		assertEquals(divElem.getAttribute('data-color'), 'blue', 'DOM should update when MWIData changes');
+		assertStrictEquals(domNodes.at(0), divElem, 'Should be same element');
+	});
+
+	await t.step(".getDOM() - DOM updates reactively when MWIData entry changes via JS", async () => {
+		mwiData.set('size', 'small');
+		const divNode = doc.createNode('h.div');
+		divNode.setAttr('m.coat', ps('[(data-size=<d:size>)]'));
+		const domNodes = divNode.getDOM();
+
+		await globalThis.reactive.wait();
+		const divElem = domNodes.at(0);
+		assertEquals(divElem.getAttribute('data-size'), 'small');
+
+		// Change MWIData entry - DOM should reactively update
+		mwiData.set('size', 'large');
+		await globalThis.reactive.wait();
+		assertEquals(divElem.getAttribute('data-size'), 'large', 'DOM should update when MWIData changes');
+	});
+
+	await t.step("(getDOM) - MWIData key added reactively updates DOM from missing to value", async () => {
+		// 'new-key' not yet in mwiData
+		const divNode = $c.sm(doc, 'createNode', ['h.div']);
+		$c.sm(divNode, 'setAttr', ['m.coat', ps('[(data-val=<d:new-key||absent>)]')]);
+		const domNodes = $c.sm(divNode, 'getDOM');
+
+		await globalThis.reactive.wait();
+		const divElem = domNodes.at(0);
+		assertEquals(divElem.getAttribute('data-val'), 'absent', 'Should use fallback when key missing');
+
+		// Add the key to MWIData
+		mwiData.set('new-key', 'present');
+		await globalThis.reactive.wait();
+		assertEquals(divElem.getAttribute('data-val'), 'present', 'DOM should update when key is added to MWIData');
+	});
+
+	await t.step(".getDOM() - multiple <d:...> references in one m.coat, all reactive via JS", async () => {
+		mwiData.set('dir', 'ltr');
+		mwiData.set('lang2', 'fr');
+		const divNode = doc.createNode('h.div');
+		divNode.setAttr('m.coat', ps('[(dir=<d:dir> lang=<d:lang2>)]'));
+		const domNodes = divNode.getDOM();
+
+		await globalThis.reactive.wait();
+		const divElem = domNodes.at(0);
+		assertEquals(divElem.getAttribute('dir'), 'ltr');
+		assertEquals(divElem.getAttribute('lang'), 'fr');
+
+		// Change both MWIData entries
+		mwiData.set('dir', 'rtl');
+		mwiData.set('lang2', 'ar');
+		await globalThis.reactive.wait();
+		assertEquals(divElem.getAttribute('dir'), 'rtl', 'dir should update');
+		assertEquals(divElem.getAttribute('lang'), 'ar', 'lang should update');
+	});
+
+	// Clean up
+	globalThis.$gss.delete('MWIData');
 });

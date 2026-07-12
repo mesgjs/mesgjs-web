@@ -26,7 +26,7 @@ Deno.test("Compound SSR - Variety of HTML Tags", async (t) => {
 	});
 
 	await t.step("Div with attributes", async () => {
-		const html = renderHTML(ps('[([h.div id=test data-index=42 class=container "Content"])]'));
+		const html = renderHTML(ps('[([h.div id=test data-index=42 class=container Content])]'));
 		assert(html.includes('<div'));
 		assert(html.includes('id="test"'));
 		assert(html.includes('data-index="42"'));
@@ -210,7 +210,7 @@ Deno.test("Compound SSR - Core Components Integration", async (t) => {
 	});
 
 	await t.step("Comments (m.com) in HTML", async () => {
-		const html = renderHTML(ps('[([h.div [m.com t="This is a comment"] "Content"])]'));
+		const html = renderHTML(ps('[([h.div [m.com t="This is a comment"] Content])]'));
 		assert(html.includes('<!--This is a comment-->'));
 		assert(html.includes('Content'));
 	});
@@ -247,30 +247,30 @@ Deno.test("Compound SSR - Special Attributes", async (t) => {
 	});
 
 	await t.step("Data attributes", async () => {
-		const html = renderHTML(ps('[([h.div data-id=123 data-name=test "Content"])]'));
+		const html = renderHTML(ps('[([h.div data-id=123 data-name=test Content])]'));
 		assert(html.includes('data-id="123"'));
 		assert(html.includes('data-name="test"'));
 	});
 
 	await t.step("ARIA attributes", async () => {
-		const html = renderHTML(ps('[([h.button aria-label="Close" aria-pressed=@t "X"])]'));
+		const html = renderHTML(ps('[([h.button aria-label=Close aria-pressed=true "X"])]'));
 		assert(html.includes('aria-label="Close"'));
 		assert(html.includes(' aria-pressed'));
 	});
 
 	await t.step("Class attribute", async () => {
-		const html = renderHTML(ps('[([h.div class="btn btn-primary active" "Button"])]'));
+		const html = renderHTML(ps('[([h.div class="btn btn-primary active" Button])]'));
 		assert(html.includes('class="btn btn-primary active"'));
 	});
 
 	await t.step("Style attribute", async () => {
-		const html = renderHTML(ps('[([h.div style="color: red; margin: 10px" "Styled"])]'));
+		const html = renderHTML(ps('[([h.div style="color: red; margin: 10px" Styled])]'));
 		assert(html.includes('style="color:red;margin:10px"'));
 	});
 
 	await t.step("Multiple attributes on nested elements", async () => {
 		const spec = ps(`[([h.div id=outer class=container
-			[h.div id=inner class=box data-value=42 "Content"]
+			[h.div id=inner class=box data-value=42 Content]
 		])]`);
 		const html = renderHTML(spec);
 		assert(html.includes('id="outer"'));

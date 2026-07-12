@@ -230,19 +230,52 @@ node.setAttr('m.coat', ps('[(class="btn <type>-btn <size?large>")]'));
 - `|` (or, identically, `||`) after the first test toggles the output state
   - `<name?then|else>` - "then" if value is not undefined/false, or "else" otherwise
   - `<name??then|else>` - "then" if value is not undefined/false/"", or "else" otherwise
+- `<d:name>` - Value of `%*[MWIData name]` (reactive global shared storage), or "" — **reactive**: updates when the `MWIData` entry changes
 
 **Special Escapes:**
 - `<.aa>` → `@@` (at-at escape)
 - `<.ap>` → `@#` (at-pound escape)
+- `<.f>` → Returns JavaScript `false` (Mesgjs `@f`)
 - `<.gt>` → `>` (greater-than)
 - `<.lt>` → `<` (less-than)
 - `<.qm>` → `?` (question-mark)
-- `<.un>` → Returns undefined (Mesgjs `@u`) as the final result
+- `<.t>` → Returns JavaScript `true` (Mesgjs `@t`)
+- `<.u>` → Returns JavaScript `undefined` (Mesgjs `@u`)
+- `<.un>` → Returns `undefined` (Mesgjs `@u`) (alias for `<.u>`)
 - `<.vb>` → `|` (vertical bar)
+
+Note: The special-return escapes (`<.f>`, `<.t>`, `<.u>`, `<.un>`) return `false`/`@f`, `true`/`@t`, or `undefined`/`@u` as the attribute value *instead of a string*. The return is conditional when appearing within (potentially nested) conditional expressions (e.g. `<condition?<.t>|<.f>>` returns `true`/`@t` if the value of `condition` is truthy, or `false`/`@f` otherwise).
 
 **Shortcut:**
 - `@@` → Expands to the slot-source's component ID (before expression parsing)
 - `@#` → Expands to the slot-source's doc-node ID (before expression parsing)
+
+**`MWIData` Global Store Access (`<d:name>`):**
+- Reads from the `MWIData` sublist of Mesgjs global shared storage (`%*MWIData` / `$gss.at('MWIData')`)
+- The source (`$gss.at('MWIData')`) must be a reactive NANOS (rxNANOS); if the key is not found, returns `undefined` (renders as "")
+- Because the value is read inside `m.coat`'s reactive computation, changes to `MWIData` entries automatically re-trigger the computed attribute
+- Useful for page-level data that needs to be accessed from any component without explicit slotting
+
+**Example:**
+
+```javascript
+// Set up MWIData store (typically once per page/document)
+const MWIDocument = getInterface('MWIDocument').proto;
+const mwiData = MWIDocument.rxNANOS();
+$gss.set('MWIData', mwiData);
+mwiData.set('theme', 'dark');
+mwiData.set('locale', 'en-US');
+
+// Use <d:name> in m.coat to reactively read from MWIData
+const node = doc.createNode('h.div');
+node.setAttr('m.coat', ps('[(data-theme=<d:theme> lang=<d:locale>)]'));
+// node: data-theme="dark" lang="en-US"
+
+// Reactive update: change MWIData
+mwiData.set('theme', 'light');
+await reactive.wait();
+// node: data-theme="light" lang="en-US"
+```
 
 ### `id` - Node ID Attribute
 

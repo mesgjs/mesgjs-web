@@ -28,7 +28,7 @@ Deno.test("Compound CSR - Variety of HTML Tags", async (t) => {
 	});
 
 	await t.step("Nested divs", async () => {
-		const domNodes = renderDOM(ps('[([h.div [h.div "Nested"]])]'));
+		const domNodes = renderDOM(ps('[([h.div [h.div Nested]])]'));
 		await globalThis.reactive.wait();
 		assertEquals(domNodes.size, 1);
 		const outerDiv = domNodes.at(0);
@@ -39,7 +39,7 @@ Deno.test("Compound CSR - Variety of HTML Tags", async (t) => {
 	});
 
 	await t.step("Div with attributes", async () => {
-		const domNodes = renderDOM(ps('[([h.div id=test data-index=42 class=container "Content"])]'));
+		const domNodes = renderDOM(ps('[([h.div id=test data-index=42 class=container Content])]'));
 		await globalThis.reactive.wait();
 		const divElem = domNodes.at(0);
 		assertEquals(divElem.id, 'test');
@@ -291,7 +291,7 @@ Deno.test("Compound CSR - Core Components Integration", async (t) => {
 	});
 
 	await t.step("Comments (m.com) in HTML", async () => {
-		const domNodes = renderDOM(ps('[([h.div [m.com t="This is a comment"] "Content"])]'));
+		const domNodes = renderDOM(ps('[([h.div [m.com t="This is a comment"] Content])]'));
 		await globalThis.reactive.wait();
 		const divElem = domNodes.at(0);
 		assertEquals(divElem.childNodes.length, 2);
@@ -349,7 +349,7 @@ Deno.test("Compound CSR - Special Attributes", async (t) => {
 	});
 
 	await t.step("Data attributes", async () => {
-		const domNodes = renderDOM(ps('[([h.div data-id=123 data-name=test "Content"])]'));
+		const domNodes = renderDOM(ps('[([h.div data-id=123 data-name=test Content])]'));
 		await globalThis.reactive.wait();
 		const divElem = domNodes.at(0);
 		assertEquals(divElem.getAttribute('data-id'), '123');
@@ -357,7 +357,7 @@ Deno.test("Compound CSR - Special Attributes", async (t) => {
 	});
 
 	await t.step("ARIA attributes", async () => {
-		const domNodes = renderDOM(ps('[([h.button aria-label="Close" aria-pressed=@t "X"])]'));
+		const domNodes = renderDOM(ps('[([h.button aria-label=Close aria-pressed=true "X"])]'));
 		await globalThis.reactive.wait();
 		const buttonElem = domNodes.at(0);
 		assertEquals(buttonElem.getAttribute('aria-label'), 'Close');
@@ -365,14 +365,14 @@ Deno.test("Compound CSR - Special Attributes", async (t) => {
 	});
 
 	await t.step("Class attribute", async () => {
-		const domNodes = renderDOM(ps('[([h.div class="btn btn-primary active" "Button"])]'));
+		const domNodes = renderDOM(ps('[([h.div class="btn btn-primary active" Button])]'));
 		await globalThis.reactive.wait();
 		const divElem = domNodes.at(0);
 		assertEquals(divElem.className, 'btn btn-primary active');
 	});
 
 	await t.step("Style attribute", async () => {
-		const domNodes = renderDOM(ps('[([h.div style="color: red; margin: 10px" "Styled"])]'));
+		const domNodes = renderDOM(ps('[([h.div style="color: red; margin: 10px" Styled])]'));
 		await globalThis.reactive.wait();
 		const divElem = domNodes.at(0);
 		// Style is normalized by the browser
@@ -382,7 +382,7 @@ Deno.test("Compound CSR - Special Attributes", async (t) => {
 
 	await t.step("Multiple attributes on nested elements", async () => {
 		const spec = ps(`[([h.div id=outer class=container
-			[h.div id=inner class=box data-value=42 "Content"]
+			[h.div id=inner class=box data-value=42 Content]
 		])]`);
 		const domNodes = renderDOM(spec);
 		await globalThis.reactive.wait();
@@ -414,7 +414,7 @@ Deno.test("Compound CSR - Special Attributes", async (t) => {
 
 	await t.step("Numeric attributes in nested SLID spec", async () => {
 		const spec = ps(`[([h.div data-outer=1
-			[h.div data-inner=2 data-zero=0 data-neg=-5 "Nested"]
+			[h.div data-inner=2 data-zero=0 data-neg=-5 Nested]
 		])]`);
 		const domNodes = renderDOM(spec);
 		await globalThis.reactive.wait();

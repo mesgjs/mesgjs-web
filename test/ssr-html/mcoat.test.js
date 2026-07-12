@@ -6,11 +6,12 @@ import {
 import { setupRuntime, renderHTML } from '../harness.esm.js';
 
 const REG_READY_FT = 'mwi.compRegReady';
+const MWI_DOC_RDY_FT = 'MWIDocument'
 
 await setupRuntime();
 
-const { fwait, getInstance } = globalThis.$c;
-await fwait(REG_READY_FT);
+const { fwait, getInstance, getInterface } = globalThis.$c;
+await fwait(REG_READY_FT, MWI_DOC_RDY_FT);
 
 const ps = globalThis.ps;
 const ls = globalThis.ls;
@@ -257,3 +258,115 @@ Deno.test("m.coat - Complex Expression Chains", async (t) => {
 		assert(html.includes('out2="default'));
 	});
 });
+
+Deno.test("m.coat - Special Return Values (.f, .t, .u, .un)", async (t) => {
+	const doc = getInstance('MWIDocument');
+
+	await t.step("m.coat=[out=<.f>] - returns false (attribute stored as false, suppressed in HTML)", async () => {
+		const node = doc.createNode('h.div');
+		node.setAttr('id', 'coat-false-test');
+		node.setAttr('m.coat', ps('[(out=<.f>)]'));
+		const html = node.getHTML();
+		// false is not a string or true, so the attribute should not appear in HTML
+		assertEquals(html, '<div id="coat-false-test"></div>');
+		// Confirm the actual attribute value stored is false
+		assertEquals(node.getAttr('out'), false, 'Attribute should store false');
+	});
+
+	await t.step("m.coat=[out=<.t>] - returns true (stored as true, boolean attribute in HTML)", async () => {
+		const node = doc.createNode('h.div');
+		node.setAttr('m.coat', ps('[(out=<.t>)]'));
+		const html = node.getHTML();
+		// true is a boolean, so it renders as a boolean attribute (no value)
+		assertEquals(html, '<div out></div>');
+		// Confirm the actual attribute value stored is true
+		assertEquals(node.getAttr('out'), true, 'Attribute should store true');
+	});
+
+	await t.step("m.coat=[out=<.u>] - returns undefined (attribute suppressed)", async () => {
+		const node = doc.createNode('h.div');
+		node.setAttr('m.coat', ps('[(out=<.u>)]'));
+		const html = node.getHTML();
+		// undefined is not rendered
+		assertEquals(html, '<div></div>');
+		assertEquals(node.getAttr('out'), undefined, 'Attribute should store undefined');
+	});
+
+	await t.step("m.coat=[out=<.un>] - returns undefined via .un alias (attribute suppressed)", async () => {
+		const node = doc.createNode('h.div');
+		node.setAttr('m.coat', ps('[(out=<.un>)]'));
+		const html = node.getHTML();
+		// undefined is not rendered
+		assertEquals(html, '<div></div>');
+		assertEquals(node.getAttr('out'), undefined, 'Attribute should store undefined via .un alias');
+	});
+
+	await t.step("m.coat - multiple attributes: .t for one, .f for another, .u for another", async () => {
+		const html = renderHTML(ps('[([h.div m.coat=[enabled=<.t> disabled=<.f> custom=<.u>]])]'));
+		// 'enabled' → true → boolean attribute
+		// 'disabled' → false → no attribute
+		// 'custom' → undefined → no attribute
+		assert(html.includes('enabled'), 'boolean true renders as attribute');
+		assert(!html.includes('disabled'), 'false does not render');
+		assert(!html.includes('custom'), 'undefined does not render');
+	});
+
+	await t.step("m.coat=[disabled=<controller?<.t>|<.f>>] - derive boolean from slot source attribute", async () => {
+		// When controller is set (truthy), disabled = true (boolean attribute);
+		// when controller is not set, disabled = false (not rendered)
+		const nodeOn = doc.createNode('h.div');
+		const srcOn = doc.createNode('m.frg');
+		srcOn.setAttr('controller', 'on');
+		const nodeOnWithSrc = doc.createNode('h.div', { slotSrc: srcOn });
+		nodeOnWithSrc.setAttr('m.coat', ps('[(disabled=<controller?<.t>|<.f>>)]'));
+		assertEquals(nodeOnWithSrc.getAttr('disabled'), true, 'disabled should be true when controller is set');
+
+		const srcOff = doc.createNode('m.frg');
+		// controller is not set
+		const nodeOffWithSrc = doc.createNode('h.div', { slotSrc: srcOff });
+		nodeOffWithSrc.setAttr('m.coat', ps('[(disabled=<controller?<.t>|<.f>>)]'));
+		assertEquals(nodeOffWithSrc.getAttr('disabled'), false, 'disabled should be false when controller is not set');
+	});
+});
+
+Deno.test("m.coat - MWIData Global Store Access (<d:name>)", async (t) => {
+	// Set up MWIData reactive NANOS in global shared storage
+	const MWIDocument = getInterface('MWIDocument').proto;
+	const mwiData = MWIDocument.rxNANOS();
+	globalThis.$gss.set('MWIData', mwiData);
+
+	await t.step("m.coat=[out=<d:key>] - reads from MWIData store", async () => {
+		mwiData.set('theme', 'dark');
+		const html = renderHTML(ps('[([h.div m.coat=[data-theme=<d:theme>]])]'));
+		assertEquals(html, '<div data-theme="dark"></div>');
+	});
+
+	await t.step("m.coat=[out=<d:missing>] - missing MWIData key returns empty string", async () => {
+		// 'missing' key is not set
+		const html = renderHTML(ps('[([h.div m.coat=[out=<d:missing>]])]'));
+		assertEquals(html, '<div out=""></div>');
+	});
+
+	await t.step("m.coat=[out=<d:key|fallback>] - UNS fallback for missing MWIData key", async () => {
+		const html = renderHTML(ps('[([h.div m.coat=[out=<d:notset|fallback>]])]'));
+		assertEquals(html, '<div out="fallback"></div>');
+	});
+
+	await t.step("m.coat=[out=<d:key?set>] - SET test for existing MWIData key", async () => {
+		mwiData.set('mode', 'active');
+		const html = renderHTML(ps('[([h.div m.coat=[out=<d:mode?isSet>]])]'));
+		assertEquals(html, '<div out="isSet"></div>');
+	});
+
+	await t.step("m.coat with multiple <d:...> references", async () => {
+		mwiData.set('lang', 'en');
+		mwiData.set('dir', 'ltr');
+		const html = renderHTML(ps('[([h.div m.coat=[lang=<d:lang> dir=<d:dir>]])]'));
+		assert(html.includes('lang="en"'), 'lang attribute should be "en"');
+		assert(html.includes('dir="ltr"'), 'dir attribute should be "ltr"');
+	});
+
+	// Clean up
+	globalThis.$gss.delete('MWIData');
+});
+

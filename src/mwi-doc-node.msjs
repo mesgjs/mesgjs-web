@@ -37,6 +37,12 @@ modcaps=''
 		const MRNS = 'mrns';
 
 		const ATTR_LOW_FLUX = 3; // # of attribute changes before individual tracking
+		const SPECIAL_RETURNS = {
+			'.f': false,
+			'.t': true,
+			'.u': undefined,
+			'.un': undefined,
+		};
 
 		// m.coat (computed) attribute slotting
 		function applyCoat (self, ps, value) {
@@ -103,16 +109,21 @@ modcaps=''
 				}
 			});
 
-			let retUndef = false;
-			const getVal = (name) => {
+			let retSpecial = false;
+			const getVal = (name, copy) => {
 				switch (name) { // Handle escapes, e.g. <.lt>
 				case '.aa': return '@@'; // @@ (at-at) escape
 				case '.ap': return '@#'; // @# (at-pound) escape
 				case '.gt': return '>'; // Greater-than
 				case '.lt': return '<'; // Less-than
 				case '.qm': return '?'; // Question mark
-				case '.un': retUndef = true; return; // Return undefined
+				case '.f': case '.t': case '.u': case '.un':
+					if (copy) retSpecial = name;
+					return; // Return special value
 				case '.vb': return '|'; // Vertical bar
+				}
+				if (name[0] === 'd' && name[1] === ':') { // %*MWIData value
+					return $gss.at(['MWIData', name.slice(2)]);
 				}
 				return slotSrc?.getAttr(name);
 			};
@@ -129,8 +140,8 @@ modcaps=''
 				}
 			};
 			let token;
-			const parseExpr = () => { // Parse a (sub-)expression
-				const name = tokens.shift(), value = getVal(name);
+			const parseExpr = (parentCopy = true) => { // Parse a (sub-)expression
+				const name = tokens.shift(), value = getVal(name, parentCopy);
 				const then = tokens.shift();
 
 				if (then === '>') { // Simple interpolations
@@ -152,9 +163,9 @@ modcaps=''
 					break;
 				}
 				// deno-lint-ignore no-cond-assign
-				while (!retUndef && (token = tokens.shift())) {
+				while (!retSpecial && (token = tokens.shift())) {
 					switch (token) {
-					case '<': parseExpr(); break; // Start sub-expression
+					case '<': parseExpr(copy && parentCopy); break; // Start sub-expression
 					case '>': return; // End current expression
 					case '|': case '||': copy = !copy; break; // Toggle copy mode
 					default: if (copy) outStr(token); break; // Literal
@@ -162,11 +173,11 @@ modcaps=''
 				}
 			};
 			// deno-lint-ignore no-cond-assign
-			while (!retUndef && (token = tokens.shift())) {
+			while (!retSpecial && (token = tokens.shift())) {
 				if (token === '<') parseExpr(); // Expression
 				else outStr(token); // Literal
 			}
-			if (!retUndef) return output.join('');
+			return retSpecial ? SPECIAL_RETURNS[retSpecial] : output.join('');
 		}
 
 		// Convert a style-map into a `name:value;...` string
@@ -532,7 +543,8 @@ modcaps=''
 					if (!/^[0-9a-z:_-]*$/.test(name)) continue; // Only HTML attributes
 					if (allowAttr && !allowAttr.has(name)) continue; // Filter if specified
 					if (value === true) HTML.push(` ${name}`);
-					else if (typeof value === 'string' || typeof value === 'number') {
+					else switch (typeof value) {
+					case 'string': case 'number': case 'bigint':
 						HTML.push(` ${name}="${MWIDocNode.textToHTML(String(value), { dq: true })}"`);
 					}
 				}
@@ -869,10 +881,29 @@ modcaps=''
 						const update = (_, chg = 0) => { // Common update code
 							const curValue = node.getAttribute(name), newValue = attrs.at(name);
 
-							if (curValue !== newValue) {
-								flux[name] += chg;
-								if (newValue === undefined) node.removeAttribute(name);
-								else node.setAttribute(name, newValue);
+							// Match HTML semantics re: string/number/true/other
+							switch (typeof newValue) {
+							case 'string':
+								if (curValue !== newValue) { // Update if current value doesn't match exactly
+									flux[name] += chg;
+									node.setAttribute(name, newValue);
+								}
+								break;
+							case 'number': case 'bigint':
+								if (curValue !== String(newValue)) { // Update if current value doesn't match string value
+									flux[name] += chg;
+									node.setAttribute(name, newValue);
+								}
+								break;
+							default:
+								if (newValue === true && curValue !== '') { // Update if true and current value isn't ''
+									flux[name] += chg;
+									node.setAttribute(name, '');
+								} else if (curValue !== null) { // Remove attribute if present
+									flux[name] += chg;
+									node.removeAttribute(name);
+								}
+								break;
 							}
 						};
 

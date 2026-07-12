@@ -123,7 +123,7 @@ Deno.test("SSR-CSR Hydration - Basic element preservation", async (t) => {
 	});
 
 	await t.step("Element with attributes: SSR node reused, attributes synced", () => {
-		const spec = ps('[( [h.div id=myid class=box data-x=42 "Content"] )]');
+		const spec = ps('[( [h.div id=myid class=box data-x=42 Content] )]');
 
 		const html = ssrHTML(spec);
 		const ssrRoot = loadSSRIntoBody(html);
