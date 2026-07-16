@@ -538,11 +538,13 @@ modcaps=''
 				const ps = (p1?.msjsType === '@dispatch') ? p1.p : this.#ps;
 				const HTML = [], schema = ps.at(SCHEMA);
 				const allowAttr = schema?.at('htmlAllowAttr');  // undefined or Set/@set
+				const standard = ps.at('attrs'), force = ps.at('forceAttrs');
+				const attrs = force ? new NANOS(standard, force) : standard;
 
-				for (const [name, value] of ps.at('attrs').namedEntries()) {
+				for (const [name, value] of attrs.namedEntries()) {
 					if (!/^[0-9a-z:_-]*$/.test(name)) continue; // Only HTML attributes
 					if (allowAttr && !allowAttr.has(name)) continue; // Filter if specified
-					if (value === true) HTML.push(` ${name}`);
+					if (value === true || value === '') HTML.push(` ${name}`);
 					else switch (typeof value) {
 					case 'string': case 'number': case 'bigint':
 						HTML.push(` ${name}="${MWIDocNode.textToHTML(String(value), { dq: true })}"`);

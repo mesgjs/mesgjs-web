@@ -50,17 +50,17 @@ Deno.test("m.coat - Input Unset Cases", async (t) => {
 
 	await t.step("m.coat=[out=<in>] - unset input", async () => {
 		const html = renderHTML(ps('[([h.div m.coat=[out=<in>]])]'));
-		assertEquals(html, '<div out=""></div>');
+		assertEquals(html, '<div out></div>');
 	});
 
 	await t.step("m.coat=[out=<in?a>] - unset input, SET test", async () => {
 		const html = renderHTML(ps('[([h.div m.coat=[out=<in?a>]])]'));
-		assertEquals(html, '<div out=""></div>');
+		assertEquals(html, '<div out></div>');
 	});
 
 	await t.step("m.coat=[out=<in??a>] - unset input, SNE test", async () => {
 		const html = renderHTML(ps('[([h.div m.coat=[out=<in??a>]])]'));
-		assertEquals(html, '<div out=""></div>');
+		assertEquals(html, '<div out></div>');
 	});
 
 	await t.step("m.coat=[out=<in|a>] - unset input, UNS test", async () => {
@@ -99,7 +99,7 @@ Deno.test("m.coat - Input Empty String Cases", async (t) => {
 
 	await t.step("m.coat=[out=<in>] in='' - empty input", async () => {
 		const html = renderHTML(ps('[([src in="" [h.div m.coat=[out=<in>]]])]'));
-		assertEquals(html, '<div out=""></div>');
+		assertEquals(html, '<div out></div>');
 	});
 
 	await t.step("m.coat=[out=<in?a>] in='' - empty input, SET test", async () => {
@@ -109,12 +109,12 @@ Deno.test("m.coat - Input Empty String Cases", async (t) => {
 
 	await t.step("m.coat=[out=<in??a>] in='' - empty input, SNE test", async () => {
 		const html = renderHTML(ps('[([src in="" [h.div m.coat=[out=<in??a>]]])]'));
-		assertEquals(html, '<div out=""></div>');
+		assertEquals(html, '<div out></div>');
 	});
 
 	await t.step("m.coat=[out=<in|a>] in='' - empty input, UNS test", async () => {
 		const html = renderHTML(ps('[([src in="" [h.div m.coat=[out=<in|a>]]])]'));
-		assertEquals(html, '<div out=""></div>');
+		assertEquals(html, '<div out></div>');
 	});
 
 	await t.step("m.coat=[out=<in||a>] in='' - empty input, UOE test", async () => {
@@ -194,7 +194,7 @@ Deno.test("m.coat - Multiple Attributes", async (t) => {
 	await t.step("Multiple m.coat attributes with different expressions", async () => {
 		const html = renderHTML(ps('[([src in1=x in2="" [h.div m.coat=[out1=<in1> out2=<in2??default> out3=<in3||fallback>]]])]'));
 		assert(html.includes('out1="x"'));
-		assert(html.includes('out2=""'));
+		assert(html.includes('out2'));
 		assert(html.includes('out3="fallback"'));
 	});
 
@@ -344,7 +344,7 @@ Deno.test("m.coat - MWIData Global Store Access (<d:name>)", async (t) => {
 	await t.step("m.coat=[out=<d:missing>] - missing MWIData key returns empty string", async () => {
 		// 'missing' key is not set
 		const html = renderHTML(ps('[([h.div m.coat=[out=<d:missing>]])]'));
-		assertEquals(html, '<div out=""></div>');
+		assertEquals(html, '<div out></div>');
 	});
 
 	await t.step("m.coat=[out=<d:key|fallback>] - UNS fallback for missing MWIData key", async () => {

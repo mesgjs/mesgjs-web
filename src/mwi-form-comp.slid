@@ -1,0 +1,8 @@
+[(
+	modreq='
+		mwi/mwi-html-comp 1.0;
+		mwi/mwi-registry 1.0;
+		mwi/mwi-doc-node 1.0;
+		mwi/mwi-document 1.0;
+	'
+)]

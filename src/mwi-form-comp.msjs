@@ -1,0 +1,640 @@
+[(
+modpath='mwi/mwi-form-comp'
+version='1.0.0'
+featreq='mwi.comp.MWIHTML mwi.compRegOpen MWIDocNode MWIDocument'
+featpro='mwi.comp.MWIForm'
+modcaps=''
+)]
+
+/*
+ * mwi-form-comp - MWI Form Components
+ * Copyright 2026 by Kappa Computer Solutions, LLC and Brian Katzung
+ */
+
+@e @js{
+	if (!mid) throw new Error('MWIForm requires Mesgjs module management to be active');
+
+	const INTERFACE = 'if';
+	const SCHEMA = 'schema';
+	const VOID = 'void';
+	const NODE_SYM = Symbol.for('MWINode');
+	const MWI_DATA = 'MWIData';
+
+	const REG_IF = 'MWIRegistry';
+	const REG_OPEN_FT = 'mwi.compRegOpen';
+	const DOC_IF = 'MWIDocument';
+	const DOC_RDY_FT = DOC_IF;
+	const SUPER_IF = 'MWIDocNode';
+	const SUPER_FT = SUPER_IF;
+	const BASE_IF = 'MWIForm';
+	const READY_FT = 'mwi.comp.' + BASE_IF;
+
+	const BUTTON_IF = 'MWIFormButton';
+	const FORM_NODE_IF = 'MWIFormNode';
+
+	const { fready, fwait, getInstance, getInterface, MsjsObject } = globalThis.$c;
+
+	const formConfig = {
+		'm.button': ls([INTERFACE, BUTTON_IF]),
+		'm.input': ls([INTERFACE, FORM_NODE_IF, SCHEMA, ls([VOID, true])]),
+		'm.textarea': ls([INTERFACE, FORM_NODE_IF]),
+		'm.check': ls([INTERFACE, FORM_NODE_IF, SCHEMA, ls([VOID, true])]),
+		'm.select': ls([INTERFACE, FORM_NODE_IF]),
+	};
+
+	await fwait(SUPER_FT, DOC_RDY_FT);
+
+	const MWIDocNode = getInterface(SUPER_IF).proto;
+	const MWIDocument = getInterface(DOC_IF).proto;
+
+	// Helper to decide and cache the tag for m.button
+	function getButtonTag (ps, self) {
+		if (ps.has('_tag')) return ps.at('_tag');
+
+		const href = self.getAttr('href');
+		const tag = href ? 'A' : 'BUTTON';
+
+		ps.set('_tag', tag);
+		if (tag === 'A') {
+			const classes = ps.at('permClasses');
+
+			classes.add('a--button');
+			self.setAttr('m.percl', [...classes.values()].join(' '));
+		}
+		return tag;
+	}
+
+	const TAGS_AND_ATTRS = {
+		'm.check': { tag: 'INPUT', isVoid: true },
+		'm.input': { tag: 'INPUT', isVoid: true },
+		'm.select': { tag: 'SELECT', isVoid: false },
+		'm.textarea': { tag: 'TEXTAREA', isVoid: false },
+	};
+
+	// Helper to get tag and void status for MWIFormNode
+	function getNodeTagAndAttrs (ps, self) {
+		const type = ps.at('type');
+
+		return TAGS_AND_ATTRS[type];
+	}
+
+	// Helper to get initial value for MWIFormNode
+	function getInitialValue (self, ps) {
+		const readKey = self.getAttr('d.from') || self.getAttr('d.changeFrom') || self.getAttr('d.inputFrom');
+
+		if (readKey) {
+			const mwiData = $gss.at(MWI_DATA);
+
+			return mwiData?.at(readKey);
+		}
+		return self.getAttr('value');
+	}
+
+	// Helper to initialize changeValue and inputValue reactives
+	function initReactiveValues (self, ps) {
+		const rxs = ps.at('rxState');
+		const type = ps.at('type');
+
+		if (rxs.has('changeValue') && rxs.has('inputValue')) return;
+
+		if (type === 'm.check') {
+			const checked = self.getAttr('checked');
+			const disabled = self.getAttr('disabled');
+			const val = (checked && !disabled) ? self.getAttr('value') : null;
+
+			rxs.push({ changeValue: val, inputValue: undefined });
+		} else if (type === 'm.select' && self.getAttr('multiple')) {
+			const list = MWIDocument.rxNANOS();
+			const val = self.getAttr('value');
+
+			if (val instanceof NANOS) {
+				list.push(...val.values());
+			} else if (Array.isArray(val)) {
+				list.push(...val);
+			} else if (val != null) {
+				list.push(val);
+			}
+			rxs.push({ changeValue: list, inputValue: undefined });
+		} else {
+			const changeValue = getInitialValue(self, ps);
+			const inputValue = (type === 'm.select') ? undefined : changeValue;
+
+			rxs.push({ changeValue, inputValue });
+		}
+	}
+
+	// Helper to sync DOM properties from reactive state/attributes
+	function syncDOMValue (node, self, ps) {
+		const type = ps.at('type');
+		const readKey = self.getAttr('d.from') || self.getAttr('d.changeFrom') || self.getAttr('d.inputFrom');
+		let value;
+
+		if (readKey) {
+			const mwiData = $gss.at(MWI_DATA);
+
+			value = mwiData?.at(readKey);
+		} else {
+			value = self.getAttr('value');
+		}
+
+		if (type === 'm.check') {
+			const isRadio = self.getAttr('type') === 'radio';
+
+			if (isRadio) {
+				const radioValue = self.getAttr('value');
+				const checked = (value != null) ? (String(value) === String(radioValue)) : !!self.getAttr('checked');
+
+				if (node.checked !== checked) node.checked = checked;
+			} else {
+				if (value instanceof NANOS) {
+					const checkboxValue = self.getAttr('value');
+					const checked = value.keyOf(checkboxValue) !== undefined;
+
+					if (node.checked !== checked) node.checked = checked;
+				} else {
+					const checked = readKey ? !!value : !!self.getAttr('checked');
+
+					if (node.checked !== checked) node.checked = checked;
+				}
+			}
+		} else if (type === 'm.select') {
+			const multiple = self.getAttr('multiple');
+
+			if (multiple) {
+				const selectedValues = new Set();
+
+				if (value instanceof NANOS) {
+					for (const val of value.values()) selectedValues.add(String(val));
+				} else if (Array.isArray(value)) {
+					for (const val of value) selectedValues.add(String(val));
+				} else if (value != null) {
+					selectedValues.add(String(value));
+				}
+				for (const option of node.options) {
+					const optVal = option.value;
+					const selected = selectedValues.has(optVal);
+
+					if (option.selected !== selected) option.selected = selected;
+				}
+			} else {
+				const strVal = (value != null) ? String(value) : '';
+
+				if (node.value !== strVal) node.value = strVal;
+			}
+		} else {
+			const strVal = (value != null) ? String(value) : '';
+
+			if (node.value !== strVal) node.value = strVal;
+		}
+	}
+
+	//////////////////////////////////////////////////////////////////////
+	//////////////////////////////////////////////////////////////////////
+	//////     MWIFormButton (m.button) interface
+	//////////////////////////////////////////////////////////////////////
+	//////////////////////////////////////////////////////////////////////
+	(() => {
+		class MWIFormButton extends MWIDocNode {
+			#ps;
+
+			constructor (key, type) {
+				super(key, type);
+				this.#ps = MsjsObject.getPS(this, key);
+			}
+
+			getDOM (p1) {
+				const d = (p1?.msjsType === '@dispatch') ? p1 : undefined;
+				const ps = d?.p ?? this.#ps;
+				const self = d?.rr ?? this;
+
+				if (ps.has('_dom')) {
+					ps.at('_domAttrs').rv;
+					return ps.at('_dom').rv;
+				}
+				if (typeof document !== 'object' || typeof document.createElement !== 'function') throw new Error('Missing document.createElement API');
+
+				const tag = getButtonTag(ps, self);
+				const sync = d ? d.mp.at('sync') : p1?.sync;
+				let existing = sync?.sync(tag, self);
+				const node = existing || document.createElement(tag), nodes = new NANOS(node);
+
+				node[NODE_SYM] = self;
+
+				const rawAttrs = ps.at('attrs');
+				const useAttrs = (tag === 'A') ? {
+					namedKeys () {
+						if (!rawAttrs.at('disabled')) return rawAttrs.namedKeys();
+
+						const keys = new Set(rawAttrs.namedKeys());
+
+						keys.add('tabindex');
+						keys.add('aria-disabled');
+						return keys;
+					},
+					at (name) {
+						switch (name) {
+						case 'tabindex':
+							if (rawAttrs.at('disabled')) return '-1';
+							break;
+						case 'aria-disabled':
+							if (rawAttrs.at('disabled')) return 'true';
+							break;
+						}
+						return rawAttrs.at(name);
+					},
+				} : rawAttrs;
+
+				const _domAttrs = MWIDocNode.setDOMAttrs(node, useAttrs, ps.at(SCHEMA));
+				const _dom = reactive({ eager: true, def: () => {
+					const subSync = existing?.firstChild ? getInstance('MWIDOMSync', [existing.firstChild]) : undefined;
+					const children = self.getSubDOM({ sync: subSync });
+
+					if (children) {
+						MWIDocNode.domSyncChildren(node, children);
+						existing = null;
+					}
+					return nodes;
+				}});
+
+				ps.push({ _dom, _domAttrs });
+				return _dom.rv;
+			}
+
+			getHTML (p1) {
+				const d = (p1?.msjsType === '@dispatch') ? p1 : undefined;
+				const ps = d?.p ?? this.#ps;
+				const self = d?.rr ?? this;
+
+				if (self.getAttr('m.csr')) return '';
+
+				const tag = getButtonTag(ps, self);
+				const hasIn = d ? d.mp.at('in') : p1?.in;
+				const html = hasIn ?? [];
+
+				if (html.wantId) {
+					$c.sm(self, 'getAttr', 'm.id');
+					html.wantId = false;
+				}
+
+				const lowerTag = tag.toLowerCase();
+				html.push(`<${lowerTag}${self.getAttrHTML()}>`);
+
+				for (const node of ps.at('subDoc', []).values()) {
+					node.getHTML({ in: html });
+				}
+				html.push(`</${lowerTag}>`);
+
+				if (!hasIn) return html.join('');
+			}
+
+			getAttrHTML (p1) {
+				const d = (p1?.msjsType === '@dispatch') ? p1 : undefined;
+				const ps = d?.p ?? this.#ps;
+				const self = d?.rr ?? this;
+				const tag = getButtonTag(ps, self);
+				const rawAttrs = ps.at('attrs');
+
+				if (tag === 'A') {
+					// Check <a disabled> attribute override status
+					const disabled = rawAttrs.at('disabled');
+					const forced = ps.at('forceAttrs');
+
+					if (disabled && !forced) {
+						ps.set('forceAttrs', { tabindex: '-1', 'aria-disabled': "true" });
+					} else if (forced && !disabled) {
+						ps.set('forceAttrs', null);
+					}
+				}
+
+				return d ? d.s(d, 'redis') : super.getAttrHTML(p1);
+			}
+
+			get subSlotSrc () { return this.#ps.at('slotSrc'); }
+		}
+
+		const proto = MWIFormButton.prototype;
+
+		getInterface(BUTTON_IF).set({
+			pristine: true, lock: true,
+			chain: [ SUPER_IF ],
+			handlers: {
+				getDOM: proto.getDOM,
+				getHTML: proto.getHTML,
+				getAttrHTML: proto.getAttrHTML,
+				subSlotSrc: (d) => d.p.at('slotSrc'),
+			},
+			proto: MWIFormButton,
+		});
+	})();
+
+	//////////////////////////////////////////////////////////////////////
+	//////////////////////////////////////////////////////////////////////
+	//////     MWIFormNode (m.input, m.textarea, m.check, m.select) interface
+	//////////////////////////////////////////////////////////////////////
+	//////////////////////////////////////////////////////////////////////
+	(() => {
+		class MWIFormNode extends MWIDocNode {
+			#ps;
+
+			constructor (key, type) {
+				super(key, type);
+				this.#ps = MsjsObject.getPS(this, key);
+			}
+
+			getDOM (p1) {
+				const d = (p1?.msjsType === '@dispatch') ? p1 : undefined;
+				const ps = d?.p ?? this.#ps;
+				const self = d?.rr ?? this;
+
+				if (ps.has('_dom')) {
+					ps.at('_domAttrs').rv;
+					return ps.at('_dom').rv;
+				}
+				if (typeof document !== 'object' || typeof document.createElement !== 'function') throw new Error('Missing document.createElement API');
+
+				const { tag, isVoid } = getNodeTagAndAttrs(ps, self);
+				const sync = d ? d.mp.at('sync') : p1?.sync;
+				let existing = sync?.sync(tag, self);
+				const node = existing || document.createElement(tag), nodes = new NANOS(node);
+
+				if (tag === 'INPUT' && !self.getAttr('type')) { // <input> also requires correct type attribute
+					const compType = ps.at('type');
+
+					if (compType === 'm.check') self.setAttr('type', 'checkbox');
+				}
+				node[NODE_SYM] = self;
+
+				initReactiveValues(self, ps);
+
+				const _domAttrs = MWIDocNode.setDOMAttrs(node, ps.at('attrs'), ps.at(SCHEMA));
+				const _dom = reactive({ eager: true, def: () => {
+					syncDOMValue(node, self, ps);
+
+					if (isVoid) return nodes;
+
+					const subSync = existing?.firstChild ? getInstance('MWIDOMSync', [existing.firstChild]) : undefined;
+					const children = self.getSubDOM({ sync: subSync });
+
+					if (children) {
+						MWIDocNode.domSyncChildren(node, children);
+						existing = null;
+					}
+					return nodes;
+				}});
+
+				ps.push({ _dom, _domAttrs });
+				return _dom.rv;
+			}
+
+			getHTML (p1) {
+				const d = (p1?.msjsType === '@dispatch') ? p1 : undefined;
+				const ps = d?.p ?? this.#ps;
+				const self = d?.rr ?? this;
+
+				if (self.getAttr('m.csr')) return '';
+
+				const { tag, isVoid } = getNodeTagAndAttrs(ps, self);
+				const hasIn = d ? d.mp.at('in') : p1?.in;
+				const html = hasIn ?? [];
+
+				if (html.wantId) {
+					$c.sm(self, 'getAttr', 'm.id');
+					html.wantId = false;
+				}
+
+				const lowerTag = tag.toLowerCase();
+				const type = ps.at('type');
+				const attrs = ps.at('attrs');
+
+				if (type === 'm.check' && !attrs.has('type')) {
+					attrs.set('type', 'checkbox');
+				}
+
+				const attrHTML = self.getAttrHTML();
+
+				html.push(`<${lowerTag}${attrHTML}>`);
+
+				if (!isVoid) {
+					for (const node of ps.at('subDoc', []).values()) {
+						node.getHTML({ in: html });
+					}
+					html.push(`</${lowerTag}>`);
+				}
+
+				if (!hasIn) return html.join('');
+			}
+
+			onDOMEvent (event) {
+				const target = event.target;
+
+				switch (target.tagName) {
+				case 'INPUT':
+				{
+					switch (target.type) {
+					case 'button':
+					case 'image':
+					case 'reset':
+					case 'submit':
+						break;
+					case 'checkbox':
+					case 'radio':
+						if (event.type === 'change') this.#onCheckEvent(event);
+						break;
+					default:
+						this.#onTextEvent(event);
+						break;
+					}
+					break;
+				}
+				case 'SELECT':
+					if (event.type === 'change') this.#onSelectEvent(event);
+					break;
+				case 'TEXTAREA':
+					this.#onTextEvent(event);
+					break;
+				}
+			}
+
+			#onCheckEvent (event) {
+				const target = event.target;
+				const checked = target.checked, value = target.value;
+				const rxs = this.#ps.at('rxState'), rxsValue = checked ? value : null;
+				const dataKey = this.getAttr('d.change') || this.getAttr('d.changeFrom');
+
+				if (rxs.at('changeValue') !== rxsValue) rxs.set('changeValue', rxsValue);
+
+				if (!dataKey) return;
+
+				let mwiData = $gss.at(MWI_DATA);
+
+				if (!mwiData) {
+					mwiData = MWIDocument.rxNANOS();
+					$gss.set(MWI_DATA, mwiData);
+				}
+				if (target.type === 'radio') {
+					if (value != null && mwiData.at(dataKey) !== value) mwiData.set(dataKey, value);
+					return;
+				}
+
+				let valueList = mwiData.at(dataKey);
+
+				if (!(valueList instanceof NANOS)) {
+					valueList = MWIDocument.rxNANOS();
+					mwiData.set(dataKey, valueList);
+				}
+
+				if (checked) {
+					valueList.push(value);
+					return;
+				}
+
+				const curKey = valueList.lastKeyOf(value, { num: true });
+
+				if (curKey != null) reactive.batch(() => {
+					const last = valueList.pop();
+
+					if (valueList.next !== curKey) valueList.set(curKey, last);
+				});
+			}
+
+			#onSelectEvent (event) {
+				const ps = this.#ps, rxs = ps.at('rxState');
+				const target = event.target, multiple = target.multiple, selected = target.selectedOptions;
+				const dataKey = this.getAttr('d.change') || this.getAttr('d.changeFrom');
+				let mwiData;
+
+				if (dataKey) {
+					mwiData = $gss.at(MWI_DATA);
+					if (!mwiData) {
+						mwiData = MWIDocument.rxNANOS();
+						$gss.set(MWI_DATA, mwiData);
+					}
+				}
+
+				if (!multiple) {
+					const value = selected.length ? selected[0].value : null;
+
+					rxs.set('changeValue', value);
+					if (dataKey) mwiData.set(dataKey, value);
+					return;
+				}
+
+				const values = Array.from(selected).map((n) => n.value);
+
+				reactive.batch(() => {
+					let rxsList = rxs.at('changeValue');
+
+					if (!(rxsList instanceof NANOS)) {
+						rxsList = MWIDocument.rxNANOS();
+						rxs.set('changeValue', rxsList);
+					}
+					rxsList.fromEntries(Object.entries(values));
+					rxsList.next = values.length;
+
+					if (dataKey) {
+						let dataList = mwiData.at(dataKey);
+
+						if (!(dataList instanceof NANOS)) {
+							dataList = MWIDocument.rxNANOS();
+							mwiData.set(dataKey, dataList);
+						}
+						dataList.fromEntries(Object.entries(values));
+						dataList.next = values.length;
+					}
+				});
+			}
+
+			#onTextEvent (event) {
+				const value = event.target.value;
+				const ps = this.#ps, rxs = ps.at('rxState');
+				let rxsKey, dataKey;
+
+				switch (event.type) {
+				case 'change':
+					rxsKey = 'changeValue';
+					dataKey = this.getAttr('d.change') || this.getAttr('d.changeFrom');
+					break;
+				case 'input':
+					rxsKey = 'inputValue';
+					dataKey = this.getAttr('d.input') || this.getAttr('d.inputFrom');
+					break;
+				}
+
+				if (rxs.at(rxsKey) !== value) rxs.set(rxsKey, value);
+				if (dataKey) {
+					let mwiData = $gss.at(MWI_DATA);
+
+					if (!mwiData) {
+						mwiData = MWIDocument.rxNANOS();
+						$gss.set(MWI_DATA, mwiData);
+					}
+
+					if (mwiData.at(dataKey) !== value) mwiData.set(dataKey, value);
+				}
+			}
+
+			get changeValue () {
+				initReactiveValues(this, this.#ps);
+				return this.#ps.at(['rxState', 'changeValue']);
+			}
+
+			get inputValue () {
+				initReactiveValues(this, this.#ps);
+				return this.#ps.at(['rxState', 'inputValue']);
+			}
+
+			get subSlotSrc () { return this.#ps.at('slotSrc'); }
+		}
+
+		const proto = MWIFormNode.prototype;
+
+		getInterface(FORM_NODE_IF).set({
+			pristine: true, lock: true,
+			chain: [ SUPER_IF ],
+			handlers: {
+				getDOM: proto.getDOM,
+				getHTML: proto.getHTML,
+				changeValue: (d) => {
+					initReactiveValues(d.rr, d.p);
+					return d.p.at(['rxState', 'changeValue']);
+				},
+				inputValue: (d) => {
+					initReactiveValues(d.rr, d.p);
+					return d.p.at(['rxState', 'inputValue']);
+				},
+				subSlotSrc: (d) => d.p.at('slotSrc'),
+			},
+			proto: MWIFormNode,
+		});
+	})();
+
+	// Global event delegation setup
+	if (typeof document === 'object' && typeof document.addEventListener === 'function') {
+		const handler = (event) => {
+			const node = event.target[NODE_SYM];
+
+			if (node && typeof node.onDOMEvent === 'function') {
+				node.onDOMEvent(event);
+			}
+		};
+
+		document.addEventListener('change', handler);
+		document.addEventListener('input', handler);
+		document.addEventListener('click', (event) => {
+			const target = event.target.closest('a');
+
+			if (target?.getAttribute('disabled') != null) event.preventDefault();
+		});
+	}
+
+	// Register components
+	await fwait(REG_OPEN_FT);
+
+	const registry = getInstance(REG_IF);
+
+	for (const [name, entry] of Object.entries(formConfig)) {
+		registry.register(name, entry);
+	}
+
+	fready(mid, READY_FT);
+@}
