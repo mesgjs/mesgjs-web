@@ -66,6 +66,7 @@
 ## Open Issues
 
 - Identifying the current page - manually? automatically?
+  - App responsibility, at least for now
 
 # To-Top Button
 

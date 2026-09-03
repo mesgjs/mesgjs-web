@@ -301,6 +301,27 @@ Deno.test("MWIDocNode - HTML Escaping", async (t) => {
 		assert(html.includes('&quot;XSS&quot;'));
 		assert(html.includes('&lt;/script&gt;'));
 	});
+
+	await t.step(".getHTML() - Escape supplementary-plane character in attribute via JS", () => {
+		const divNode = doc.createNode('h.div');
+		divNode.setAttr('title', '\u{1F600}');
+		const html = divNode.getHTML();
+		assert(html.includes('title="&#128512;"'));
+	});
+
+	await t.step(".getHTML() - Escape lone/unpaired surrogate in attribute via JS", () => {
+		const divNode = doc.createNode('h.div');
+		divNode.setAttr('title', String.fromCharCode(0xD83D));
+		const html = divNode.getHTML();
+		assert(html.includes('title="&#65533;"'));
+	});
+
+	await t.step("(getHTML) - Mixed attribute value with reserved chars and supplementary-plane character", () => {
+		const divNode = $c.sm(doc, 'createNode', ls([, 'h.div']));
+		$c.sm(divNode, 'setAttr', ls([, 'title', , '<\u{1F600}>']));
+		const html =  $c.sm(divNode, 'getHTML');
+		assert(html.includes('title="&lt;&#128512;&gt;"'));
+	});
 });
 
 Deno.test("MWIDocNode - Child Content Rendering", async (t) => {

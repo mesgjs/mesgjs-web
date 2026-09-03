@@ -90,4 +90,46 @@ Deno.test("MWICoreText (m.t) - SSR-HTML Tests", async (t) => {
 		const html =  $c.sm(textNode, 'getHTML');
 		assertEquals(html, '&lt;script&gt;alert("XSS")&lt;/script&gt; &amp; &#1;&#256;');
 	});
+
+	await t.step("(getHTML) - Escape supplementary-plane character (surrogate pair)", () => {
+		const textNode = $c.sm(doc, 'createNode', ['m.t']);
+		$c.sm(textNode, 'setAttr', ['t', '\u{1F600}']);
+		const html =  $c.sm(textNode, 'getHTML');
+		assertEquals(html, '&#128512;');
+	});
+
+	await t.step(".getHTML() - Escape supplementary-plane character (surrogate pair) via JS", () => {
+		const textNode = doc.createNode('m.t');
+		textNode.setAttr('t', '\u{1F600}');
+		const html = textNode.getHTML();
+		assertEquals(html, '&#128512;');
+	});
+
+	await t.step("(getHTML) - Escape two consecutive supplementary-plane characters", () => {
+		const textNode = $c.sm(doc, 'createNode', ['m.t']);
+		$c.sm(textNode, 'setAttr', ['t', '\u{1F600}\u{1F600}']);
+		const html =  $c.sm(textNode, 'getHTML');
+		assertEquals(html, '&#128512;&#128512;');
+	});
+
+	await t.step("(getHTML) - Escape supplementary-plane character adjacent to reserved character", () => {
+		const textNode = $c.sm(doc, 'createNode', ['m.t']);
+		$c.sm(textNode, 'setAttr', ['t', 'a\u{1F600}<b']);
+		const html =  $c.sm(textNode, 'getHTML');
+		assertEquals(html, 'a&#128512;&lt;b');
+	});
+
+	await t.step("(getHTML) - Escape lone/unpaired high surrogate", () => {
+		const textNode = $c.sm(doc, 'createNode', ['m.t']);
+		$c.sm(textNode, 'setAttr', ['t', String.fromCharCode(0xD83D)]);
+		const html =  $c.sm(textNode, 'getHTML');
+		assertEquals(html, '&#65533;');
+	});
+
+	await t.step("(getHTML) - Escape lone/unpaired low surrogate", () => {
+		const textNode = $c.sm(doc, 'createNode', ['m.t']);
+		$c.sm(textNode, 'setAttr', ['t', String.fromCharCode(0xDE00)]);
+		const html =  $c.sm(textNode, 'getHTML');
+		assertEquals(html, '&#65533;');
+	});
 });

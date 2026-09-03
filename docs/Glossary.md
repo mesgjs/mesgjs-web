@@ -1,5 +1,9 @@
 # Glossary Of Terms And Concepts
 
+- **`a:` prefix**: Strictly ancestral attribute lookup prefix in `getAttr`, `m.coat`, and `m.slat`. Searches parent and ancestor nodes above the current node in the rendered doc node tree hierarchy (excluding the current node itself). See also: `A:` prefix, `d:` prefix, `m.coat`, `m.slat`.
+
+- **`A:` prefix**: Local-or-ancestral attribute lookup prefix in `getAttr`, `m.coat`, and `m.slat`. Checks the current node's own attributes first; if `undefined`, falls back to ascending ancestor nodes in the doc node tree hierarchy. See also: `a:` prefix, `d:` prefix, `m.coat`, `m.slat`.
+
 - **`@@` shortcut**: In `m.coat` expressions, `class` attributes, `m.percl`, and `id` attributes, `@@` expands to the slot source's component ID (`m.ci`) before expression parsing. Used to scope CSS classes to a specific component type. See also: `@#` shortcut, `m.coat`, `m.ci`.
 
 - **`@#` shortcut**: In `m.coat` expressions, `class` attributes, `m.percl`, and `id` attributes, `@#` expands to the slot source's mandatory element ID (`m.id`) before expression parsing. Used to build hierarchical element IDs. See also: `@@` shortcut, `m.coat`, `m.id`.
@@ -23,6 +27,8 @@
 - **Content slotting**: The mechanism by which a template's `m.slot` component selects and renders content from its slot source. Named slots pull from a matching attribute; unnamed slots pull from the slot source's natural children. See also: `m.slot`, slot source, slotting.
 
 - **CSR**: Client-side rendering. The process of rendering MWI document nodes into live browser DOM nodes via `getDOM()`. CSR output is reactive — DOM updates are performed automatically when doc-node attributes or content change. Contrast with SSR.
+
+- **`d:` prefix**: Global shared data lookup prefix in `getAttr`, `m.coat`, and `m.slat`. Queries the reactive `%*MWIData` store in Mesgjs global shared storage (`$gss`). See also: `a:` prefix, `A:` prefix, `m.coat`, `m.slat`.
 
 - **`data-mwi-defer`**: An HTML attribute rendered by `MWICoreDefer` placeholder nodes. Its value is the original (deferred) component type string, allowing identification of deferred components in the DOM.
 
@@ -54,7 +60,7 @@
 
 - **`m.ci`**: Virtual, read-only attribute on doc nodes. Returns the component ID of the node's component type (as assigned by the registry). When accessed via `m.coat` or `m.slat`, reflects the slot source's component ID. See also: component ID, `@@` shortcut.
 
-- **`m.coat`**: "Computed attributes." A special attribute that assembles string attribute values from slot source values using an expression syntax. Format: `[target=expr...]`. Expressions use `<name>`, `<name?then>`, `<name|else>`, etc. to conditionally include slot source attribute values. See also: attribute slotting, `m.slat`, `m.ci`, `m.id`.
+- **`m.coat`**: "Computed attributes." A special attribute that reactively assembles string attribute values from slot source values, ancestral lookups (`<a:name>`, `<A:name>`), or global data (`<d:name>`) using an expression syntax. Format: `[target=expr...]`. Expressions use `<name>`, `<name?then>`, `<name|else>`, etc. to conditionally include attribute values. See also: attribute slotting, `m.slat`, `a:` prefix, `A:` prefix, `d:` prefix, `m.ci`, `m.id`.
 
 - **`m.com`**: The component type for HTML comment nodes (`MWICoreCom`). Renders as `<!-- text -->` in SSR and as a DOM comment node in CSR. The `t` attribute holds the comment text.
 
@@ -70,7 +76,7 @@
 
 - **`m.scpcss`**: The component type for the scoped CSS aggregator (`MWICoreScpCSS`). Collects and renders CSS from all component types used in the document. Typically placed in the document head. See also: scoped CSS.
 
-- **`m.slat`**: "Slot attributes." A special attribute that directly copies attributes from the slot source to the current node. Format: `[target=[source? else=default?]...]`. The `source` key defaults to `target` if omitted. See also: attribute slotting, `m.coat`.
+- **`m.slat`**: "Slot attributes." A special attribute that directly copies attributes from the slot source, ancestral context (`a:`, `A:`), or global data (`d:`) to the current node. Format: `[target=[source? else=default?]...]`. The `source` key defaults to `target` if omitted. See also: attribute slotting, `m.coat`, `a:` prefix, `A:` prefix, `d:` prefix.
 
 - **`m.slot`**: The component type for content slots (`MWICoreSlot`). Selects and renders content from its slot source: named slots pull from a matching attribute; unnamed slots pull from the slot source's natural children. Falls back to the slot's own children if no source content is available. See also: content slotting, slot source, slotting boundary.
 

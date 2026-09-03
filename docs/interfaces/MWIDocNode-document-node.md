@@ -208,13 +208,15 @@ node.setAttr('m.slat', ps('[(class=[] id=[elemId else=default-id])]'));
 
 **Processing:**
 - Triggered immediately when `m.slat` is set
+- Standard attribute names are read from `slotSrc?.getAttr(name)`
+- Domain-prefixed names (`a:`, `A:`, `d:`) are resolved against `self.getAttr(name)`
 - Source attribute value copied to target
 - If source missing, uses `else` value or removes attribute
 - List-valued attributes preserved as NANOS
 
 ### `m.coat` - Computed Attributes
 
-Assembles string attributes from slot source values:
+Reactively assembles string attributes from slot source values, ancestral context, or global data:
 
 ```javascript
 // Format: [target=expr...]
@@ -222,15 +224,17 @@ node.setAttr('m.coat', ps('[(class="btn <type>-btn <size?large>")]'));
 ```
 
 **Expression Syntax:**
-- `<name>` - Value of named attribute, or ""
-- `<name|else>` - Value of named attribute if not undefined/false, or "else" otherwise
-- `<name||else>` - Value of named attribute if not undefined/false/"", or "else" otherwise
-- `<name?then>` - "then" if named attribute is not undefined/false, or "" otherwise
-- `<name??then>` - "then" if named attribute is not undefined/false/"", or "" otherwise
+- `<name>` - Value of named attribute from slot source (`slotSrc`), or ""
+- `<a:name>` - Value of attribute from nearest ancestor node (strictly ancestral, excluding `self`), or ""
+- `<A:name>` - Value of attribute from `self` if defined, or nearest ancestor node, or ""
+- `<d:name>` - Value of `%*[MWIData name]` (global shared storage), or ""
+- `<name|else>` - Value of attribute if not undefined/false, or "else" otherwise
+- `<name||else>` - Value of attribute if not undefined/false/"", or "else" otherwise
+- `<name?then>` - "then" if attribute is not undefined/false, or "" otherwise
+- `<name??then>` - "then" if attribute is not undefined/false/"", or "" otherwise
 - `|` (or, identically, `||`) after the first test toggles the output state
   - `<name?then|else>` - "then" if value is not undefined/false, or "else" otherwise
   - `<name??then|else>` - "then" if value is not undefined/false/"", or "else" otherwise
-- `<d:name>` - Value of `%*[MWIData name]` (reactive global shared storage), or "" — **reactive**: updates when the `MWIData` entry changes
 
 **Special Escapes:**
 - `<.aa>` → `@@` (at-at escape)
@@ -255,6 +259,11 @@ Note: The special-return escapes (`<.f>`, `<.t>`, `<.u>`, `<.un>`) return `false
 - The source (`$gss.at('MWIData')`) must be a reactive NANOS (rxNANOS); if the key is not found, returns `undefined` (renders as "")
 - Because the value is read inside `m.coat`'s reactive computation, changes to `MWIData` entries automatically re-trigger the computed attribute
 - Useful for page-level data that needs to be accessed from any component without explicit slotting
+
+**Ancestral Attribute Lookups (`<a:name>`, `<A:name>`):**
+- `<a:name>` performs a strictly ancestral lookup: searches parent nodes (`self.getParent().parent`) up the document tree, ignoring `self`
+- `<A:name>` performs a local-or-ancestral lookup: checks `self.getAttr(name)` first, falling back to ascending parent nodes
+- Enables nested components and scoped namespaces (such as multi-level accordion navigation with `navDet.name=<a:navDet.name>-lvl` and `name=<A:navDet.name>`) without prop drilling
 
 **Example:**
 

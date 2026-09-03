@@ -107,4 +107,11 @@ Deno.test("MWICoreCom (m.com) - SSR-HTML Tests", async (t) => {
 		const html =  $c.sm(comNode, 'getHTML');
 		assertEquals(html, '<!---->');
 	});
+
+	await t.step("(getHTML) - Comment with supplementary-plane character (surrogate pair)", () => {
+		const comNode = $c.sm(doc, 'createNode', ['m.com']);
+		$c.sm(comNode, 'setAttr', ['t', 'emoji \u{1F600} here']);
+		const html =  $c.sm(comNode, 'getHTML');
+		assertEquals(html, '<!--emoji &#128512; here-->');
+	});
 });

@@ -59,6 +59,15 @@ Deno.test("MWIHTMLTitle interface renders HTML-escaped content", async (t) => {
 	assertEquals(titleHTML, expectedHTML, 'title content rendered and escaped correctly');
 });
 
+Deno.test("MWIHTMLTitle interface renders supplementary-plane content as a single numeric reference", async (t) => {
+	const titleNode = doc.createNode('h.title');
+	const titleContent = 'Title with \u{1F600} emoji';
+	const expectedHTML = '<title>Title with &#128512; emoji</title>';
+	titleNode.setAttr('m.text', titleContent);
+	const titleHTML = titleNode.getHTML();
+	assertEquals(titleHTML, expectedHTML, 'title content renders full code point, not split surrogates');
+});
+
 
 Deno.test("MWIHTMLDocType interface renders correctly", async (t) => {
 	const doctypeNode = doc.createNode('h.doctype');

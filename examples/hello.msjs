@@ -1,0 +1,13 @@
+[(
+featreq=MWIDocument
+)]
+@c(fwait MWIDocument)(then {
+	#(nset doc=@c(get MWIDocument))
+	#doc(append list=[
+		[h.doctype]
+		[h.html [h.body
+			[h.div 'Hello, world!']
+		]]
+	])
+	@c(log #doc(getHTML))
+})

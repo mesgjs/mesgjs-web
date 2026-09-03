@@ -58,7 +58,7 @@ modcaps=''
 				const entries = [...value.namedEntries()];
 
 				for (const [target, spec] of entries) {
-					const value = computeAttr(ps, spec);
+					const value = computeAttr(ps, spec, self);
 
 					reactive.untracked(() => self.setAttr(target, value, { coat: false }));
 				}
@@ -83,8 +83,9 @@ modcaps=''
 				const entries = [...value.namedEntries()];
 
 				for (const [target, spec] of value.namedEntries()) {
-					const source = spec.at(0, target);
-					const value = slotSrc?.getAttr(source) ?? spec.at('else');
+					const name = spec.at(0, target);
+					const source = (name[1] === ':' && 'aAd'.indexOf(name[0]) >= 0) ? self : slotSrc;
+					const value = source?.getAttr(name) ?? spec.at('else');
 
 					reactive.untracked(() => self.setAttr(target, value, { coat: false }));
 				}
@@ -95,7 +96,7 @@ modcaps=''
 		}
 
 		// Return the final (string) value for a computed (e.g. m.coat) attribute
-		function computeAttr (ps, spec) {
+		function computeAttr (ps, spec, self) {
 			const slotSrc = ps.at('slotSrc');
 			// Handle first-pass shortcuts: `@@` for component id, `@#` for doc-node id
 			// Use functional replacement to only access attributes when/if referenced
@@ -122,10 +123,10 @@ modcaps=''
 					return; // Return special value
 				case '.vb': return '|'; // Vertical bar
 				}
-				if (name[0] === 'd' && name[1] === ':') { // %*MWIData value
-					return $gss.at(['MWIData', name.slice(2)]);
-				}
-				return slotSrc?.getAttr(name);
+
+				const source = (name[1] === ':' && 'aAd'.indexOf(name[0]) >= 0) ? self : slotSrc;
+
+				return source?.getAttr(name);
 			};
 			const isUns = (v) => v === undefined || v === false; // unset
 			const isUOE = (v) => v === undefined || v === "" || v === false; // unset or empty
@@ -523,6 +524,31 @@ modcaps=''
 				}
 				}
 
+				if (name[1] === ':') { // Domain-qualified names
+					const subName = name.slice(2);
+
+					switch (name[0]) {
+					case 'A': // A:name - local or ancestral value
+					{
+						// IMPORTANT: In order to work from m.coat/m.slat, we must avoid recursion here
+						// (getAttr references _mCoat.rv and _mSlat.rv below)
+						const value = attrs.at(subName);
+
+						if (value !== undefined) return value;
+						// Fall through...
+					}
+					case 'a': // a:name - ancestral value
+						for (let parent = self.getParent().parent; parent; parent = parent.getParent().parent) {
+							const value = parent.getAttr(subName);
+
+							if (value !== undefined) return value;
+						}
+						return undefined;
+					case 'd': // d:name - %*MWIData value
+						return $gss.at(['MWIData', subName]);
+					}
+				}
+
 				// Real attributes
 				if (name !== 'm.coat' && name !== 'm.slat') {
 					// Eagerly reflect any recent source changes
@@ -652,6 +678,7 @@ modcaps=''
 						reactive.untracked(() => {
 							subDoc.fromEntries(nodes.entries()); // Overwrite without clearing
 							subDoc.next = nodes.length; // In case shorter now
+							MWIDocNode.setNodesParent(nodes, self);
 							rxs.push({ live: true, docEq: true });
 						});
 					});
@@ -805,7 +832,7 @@ modcaps=''
 					applyCoat(self, ps, value);
 					break;
 				case 'm.percl': // Permanent classes
-					if (coat !== false) value = computeAttr(ps, value);
+					if (coat !== false) value = computeAttr(ps, value, self);
 					setPermClass(ps, value);
 					setClass(ps, '+');
 					break;
@@ -813,7 +840,7 @@ modcaps=''
 					applySlat(self, ps, value);
 					break;
 				case 'class': // Smart class
-					if (coat !== false) value = computeAttr(ps, value);
+					if (coat !== false) value = computeAttr(ps, value, self);
 					setClass(ps, value);
 					break;
 				case 'id':
@@ -821,7 +848,7 @@ modcaps=''
 					if (!d) { // Escalate to Mesgjs for required dispatch
 						$c.sm(self, 'setAttr', ls([, 'id', , value, 'coat', coat]));
 					} else if (typeof value === 'string' || typeof value === 'number') {
-						if (coat !== false) value = computeAttr(ps, value);
+						if (coat !== false) value = computeAttr(ps, value, self);
 						value = String(value); // Normalize to string
 
 						const attrs = ps.at('attrs'), doc = ps.at('doc');
@@ -1050,16 +1077,18 @@ modcaps=''
 				}
 
 				// deno-lint-ignore no-control-regex
-				return String(str).replace(/[\x00-\x1f&'"<>\\\x7f-\uffff]/g, (match) => {
+				return String(str).replace(/[\x00-\x1F&'"<>\\]|[\x7F-\uD7FF\uE000-\uFFFF]|[\uD800-\uDBFF][\uDC00-\uDFFF]|[\uD800-\uDFFF]/g, (match) => {
 					switch (match) {
 					case '<': return (lt ? '&lt;' : '<');
 					case '&': return (amp ? '&amp;' : '&');
 					case '>': return (gt ? '&gt;' : '>');
 					case "'": return (sq ? '&#39;' : "'");
 					case '"': return (dq ? '&quot;' : '"');
-					default:
-						// &#x length >= &# length for all UTF-16
-						return `&#${match.charCodeAt()};`;
+					default: {
+						const cp = match.codePointAt(0);
+						// Lone/unpaired surrogate -> U+FFFD; otherwise full code point
+						return (cp >= 0xD800 && cp <= 0xDFFF) ? '&#65533;' : `&#${cp};`;
+					}
 					}
 				});
 			}

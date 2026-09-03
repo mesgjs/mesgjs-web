@@ -28,6 +28,8 @@ modcaps=''
 	const TEMPLATE = 'tpl';
 	const FEATURE = 'ftr';
 
+	const COMP_ID_PRE = '_MO_'; // c(o)mponent (vs c(l)ient)
+
 	const { fready, fwait, getInstance, getInterface, MsjsObject, setRO, typeChains } = globalThis.$c;
 
 	await fwait(REG_READY_FT, NODE_READY_FT, CORE_READY_FT);
@@ -72,7 +74,7 @@ modcaps=''
 			return aLen - bLen;
 		}
 
-		compIdStr (id) { return '_MC_' + id.toString(36); }
+		compIdStr (id) { return COMP_ID_PRE + id.toString(36); }
 
 		// createNodeCommon sends attributed message; do not combine these w/ Mesgjs handlers
 		createNode (type, { slotSrc } = {}) { return $c.sm(this, 'createNode', { 0: type, slotSrc }); }

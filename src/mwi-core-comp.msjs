@@ -219,6 +219,7 @@ modcaps=''
 
 					if (!regEntry.has(INTERFACE) && !regEntry.has(TEMPLATE)) return;
 
+					const self = d?.rr ?? this;
 					const doc = ps.at('doc'), rxs = ps.at('rxState');
 
 					rxs.set('live', false); // Trigger transition when feature resolves
@@ -230,6 +231,7 @@ modcaps=''
 						reactive.unbatch(() => {
 							subDoc.fromEntries(nodes.entries());
 							subDoc.next = nodes.length;
+							MWIDocNode.setNodesParent(nodes, self);
 							rxs.push({ live: true, docEq: true });
 						});
 
@@ -608,6 +610,7 @@ modcaps=''
 						reactive.untracked(() => {
 							subDoc.fromEntries(nodes.entries());
 							subDoc.next = nodes.length;
+							MWIDocNode.setNodesParent(nodes, self);
 							rxs.push({ live: true, docEq: source === subSpec });
 						});
 					});
@@ -835,6 +838,7 @@ modcaps=''
 					const nodes = $c.sm(doc, 'from', { list: tpl, slotSrc: self });
 
 					subDoc.push(nodes);
+					MWIDocNode.setNodesParent(nodes, self);
 					// Doc-nodes derive from the template
 					// Natural children are used for unnamed slots
 					rxs.push({ live: true, docEq: false });

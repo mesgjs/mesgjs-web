@@ -1078,3 +1078,102 @@ Deno.test("MWIDocNode - CSR-DOM m.coat MWIData Reactivity (<d:name>)", async (t)
 	// Clean up
 	globalThis.$gss.delete('MWIData');
 });
+
+Deno.test("MWIDocNode - CSR-DOM m.coat Ancestral Reactivity (<a:name>, <A:name>)", async (t) => {
+	await t.step("(getDOM) - Descendant with <a:name> reactively updates DOM when ancestor attribute changes", async () => {
+		const parent = doc.createNode('h.div');
+		parent.setAttr('theme', 'dark');
+		const child = doc.createNode('h.span');
+		child.setAttr('m.coat', ps('[(data-theme=<a:theme>)]'));
+		parent.append(child);
+
+		const domNodes = parent.getDOM();
+		await globalThis.reactive.wait();
+
+		const parentElem = domNodes.at(0);
+		const spanElem = parentElem.children[0];
+		assertEquals(spanElem.getAttribute('data-theme'), 'dark');
+
+		// Mutate ancestor attribute
+		parent.setAttr('theme', 'light');
+		await globalThis.reactive.wait();
+
+		assertEquals(spanElem.getAttribute('data-theme'), 'light', 'Descendant DOM should update when ancestor attribute changes');
+	});
+
+	await t.step(".getDOM() - Descendant with <a:name> reactively updates DOM when ancestor attribute changes via JS", async () => {
+		const parent = doc.createNode('h.div');
+		parent.setAttr('mode', 'edit');
+		const child = doc.createNode('h.span');
+		child.setAttr('m.coat', ps('[(data-mode=<a:mode>)]'));
+		parent.append(child);
+
+		const domNodes = parent.getDOM();
+		await globalThis.reactive.wait();
+
+		const parentElem = domNodes.at(0);
+		const spanElem = parentElem.children[0];
+		assertEquals(spanElem.getAttribute('data-mode'), 'edit');
+
+		// Mutate ancestor attribute
+		parent.setAttr('mode', 'view');
+		await globalThis.reactive.wait();
+
+		assertEquals(spanElem.getAttribute('data-mode'), 'view', 'Descendant DOM should update when ancestor attribute changes');
+	});
+
+	await t.step("(getDOM) - <A:name> prefers local attribute, falls back to ancestor reactively", async () => {
+		const parent = doc.createNode('h.div');
+		parent.setAttr('color', 'blue');
+		const child = doc.createNode('h.span');
+		child.setAttr('color', 'red');
+		child.setAttr('m.coat', ps('[(data-color=<A:color>)]'));
+		parent.append(child);
+
+		const domNodes = parent.getDOM();
+		await globalThis.reactive.wait();
+
+		const parentElem = domNodes.at(0);
+		const spanElem = parentElem.children[0];
+		assertEquals(spanElem.getAttribute('data-color'), 'red');
+
+		// Delete local attribute -> should reactively fall back to parent's 'blue'
+		child.delAttr('color');
+		await globalThis.reactive.wait();
+
+		assertEquals(spanElem.getAttribute('data-color'), 'blue', 'Should fall back to ancestor when local attribute deleted');
+
+		// Mutate parent attribute -> should reactively update to parent's new value
+		parent.setAttr('color', 'green');
+		await globalThis.reactive.wait();
+
+		assertEquals(spanElem.getAttribute('data-color'), 'green', 'Should follow ancestor changes when local is unset');
+	});
+
+	await t.step(".getDOM() - Multi-level hierarchy reactively propagates ancestral updates to grandchild", async () => {
+		const root = doc.createNode('h.div');
+		root.setAttr('navDet.name', '_M_navDet');
+		const child = doc.createNode('h.div');
+		child.setAttr('m.coat', ps('[(navDet.name=<a:navDet.name>-lvl)]'));
+		const grandchild = doc.createNode('h.div');
+		grandchild.setAttr('m.coat', ps('[(navDet.name=<a:navDet.name>-lvl data-name=<A:navDet.name>)]'));
+
+		root.append(child);
+		child.append(grandchild);
+
+		const domNodes = root.getDOM();
+		await globalThis.reactive.wait();
+
+		const rootElem = domNodes.at(0);
+		const childElem = rootElem.children[0];
+		const grandchildElem = childElem.children[0];
+
+		assertEquals(grandchildElem.getAttribute('data-name'), '_M_navDet-lvl-lvl');
+
+		// Update root navDet.name
+		root.setAttr('navDet.name', 'siteNav');
+		await globalThis.reactive.wait();
+
+		assertEquals(grandchildElem.getAttribute('data-name'), 'siteNav-lvl-lvl', 'Grandchild should update to siteNav-lvl-lvl');
+	});
+});

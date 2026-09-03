@@ -1,0 +1,76 @@
+[(
+modpath='mwi/mwi-res-nav'
+version='1.0.0'
+featreq='mwi.compRegOpen'
+featpro='mwi.comp.MWIResNav'
+modcaps=''
+)]
+
+/*
+ * MWIResNav - MWI Responsive Navigation and related components
+ * Copyright 2026 by Kappa Computer Solutions, LLC and Brian Katzung
+ *
+ * [resNav] Responsive navigation
+ * [navLink] Nav link
+ * [subMenu] Sub menu
+ * [megaMenu] Mega menu
+ */
+
+@c(if @c(not @mid) { @c(throw 'MWIResNav requires Mesgjs module management to be active')})
+#(nset
+	REG_OPEN_FT=mwi.compRegOpen
+	REG_IF=MWIRegistry
+
+	READY_FT=mwi.comp.MWIResNav
+	NAV=resNav
+	LINK=navLink
+	SUB=subMenu
+	MEGA=megaMenu
+)
+@c(await @c(fwait #REG_OPEN_FT) {
+	#(nset registry=@c(get #REG_IF))
+
+	#registry(register #NAV [tpl=[
+		[h.div m.percl='@@'
+			[h.details [h.summary         // portrait-mode nav-rail opener
+				[h.span class=closed]
+				[h.span class=open]
+			]]
+			[h.div [m.slot name=c.left]]  // left-of-nav (e.g. branding)
+			[h.nav m.coat=[navDet.name='<name|_M_navDet>']
+				[h.div [m.slot]]          // main nav menu
+			]
+			[h.div [m.slot name=c.right]] // right-of-nav (e.g. profile menu)
+	]] scopedCSS="
+@@ {
+	display: flex;
+	position: relative;
+}
+@@ > details, @@ > div { flex-grow: 0; }
+@@ > nav {
+	flex-grow: 1;
+}
+/* portrait and max-width < --resnav-landscape-width settings */
+@@:has(> details:not([open])) > nav > div { display: none; }
+@media (orientation: landscape) or (min-width: var(--resnav-landscape-width, 800px)) {
+/* landscape overrides */
+	@@ > details { display: none; }
+}
+"])
+
+	#registry(register #SUB [tpl=[
+		[h.details m.coat=[navDet.name='<a:navDet.name>-lvl' name='<A:navDet.name>']
+			[h.summary [m.slot name=c.label]]
+			[m.slot]
+		]
+	]])
+
+	#registry(register #MEGA [tpl=[
+		[h.details m.coat=[navDet.name='<a:navDet.name>-lvl' name='<A:navDet.name>']
+			[h.summary [m.slot name=c.label]]
+			[m.slot]
+		]
+	]])
+
+	@c(fready #READY_FT)
+})

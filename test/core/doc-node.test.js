@@ -11,7 +11,7 @@ const REG_READY_FT = 'mwi.compRegReady';
 
 await setupRuntime();
 
-const { fwait, getInstance } = globalThis.$c;
+const { fwait, getInstance, getInterface } = globalThis.$c;
 await fwait(REG_READY_FT);
 
 const doc = getInstance('MWIDocument');
@@ -2090,5 +2090,162 @@ Deno.test("MWIDocNode - Content Operations", async (t) => {
 		brNode.append('text');
 		const subSpec = brNode.getSubSpec();
 		assertEquals(subSpec.size, 0);
+	});
+});
+
+Deno.test("MWIDocNode - Domain-Qualified Attribute Lookups (a:, A:, d:)", async (t) => {
+	const MWIDocument = getInterface('MWIDocument').proto;
+
+	await t.step("(getAttr) - d:key reads from $gss.at(['MWIData', key])", () => {
+		const mwiData = MWIDocument.rxNANOS();
+		globalThis.$gss.set('MWIData', mwiData);
+		mwiData.set('theme', 'dark');
+
+		const node = doc.createNode('h.div');
+		assertEquals($c.sm(node, 'getAttr', ls([, 'd:theme'])), 'dark');
+
+		globalThis.$gss.delete('MWIData');
+	});
+
+	await t.step(".getAttr() - d:key reads from $gss.at(['MWIData', key]) via JS", () => {
+		const mwiData = MWIDocument.rxNANOS();
+		globalThis.$gss.set('MWIData', mwiData);
+		mwiData.set('siteTitle', 'MesgJS');
+
+		const node = doc.createNode('h.div');
+		assertEquals(node.getAttr('d:siteTitle'), 'MesgJS');
+
+		globalThis.$gss.delete('MWIData');
+	});
+
+	await t.step("(getAttr) - a:name traverses ancestors and ignores self", () => {
+		const root = doc.createNode('h.div');
+		$c.sm(root, 'setAttr', ls([, 'navDet.name', , '_M_navDet']));
+		const child = doc.createNode('h.details');
+		$c.sm(child, 'setAttr', ls([, 'navDet.name', , '_M_navDet-lvl']));
+		$c.sm(root, 'append', ls([, child]));
+
+		// a:navDet.name on child should resolve to root's value, ignoring child's own attribute
+		assertEquals($c.sm(child, 'getAttr', ls([, 'a:navDet.name'])), '_M_navDet');
+	});
+
+	await t.step(".getAttr() - a:name traverses ancestors and ignores self via JS", () => {
+		const root = doc.createNode('h.div');
+		root.setAttr('navDet.name', '_M_navDet');
+		const child = doc.createNode('h.details');
+		child.setAttr('navDet.name', '_M_navDet-lvl');
+		root.append(child);
+
+		assertEquals(child.getAttr('a:navDet.name'), '_M_navDet');
+	});
+
+	await t.step("(getAttr) - A:name returns local value if present", () => {
+		const root = doc.createNode('h.div');
+		$c.sm(root, 'setAttr', ls([, 'color', , 'blue']));
+		const child = doc.createNode('h.div');
+		$c.sm(child, 'setAttr', ls([, 'color', , 'red']));
+		$c.sm(root, 'append', ls([, child]));
+
+		assertEquals($c.sm(child, 'getAttr', ls([, 'A:color'])), 'red');
+	});
+
+	await t.step(".getAttr() - A:name returns local value if present via JS", () => {
+		const root = doc.createNode('h.div');
+		root.setAttr('color', 'blue');
+		const child = doc.createNode('h.div');
+		child.setAttr('color', 'red');
+		root.append(child);
+
+		assertEquals(child.getAttr('A:color'), 'red');
+	});
+
+	await t.step("(getAttr) - A:name traverses ancestors if not defined locally", () => {
+		const root = doc.createNode('h.div');
+		$c.sm(root, 'setAttr', ls([, 'theme', , 'solarized']));
+		const child = doc.createNode('h.div');
+		$c.sm(root, 'append', ls([, child]));
+
+		assertEquals($c.sm(child, 'getAttr', ls([, 'A:theme'])), 'solarized');
+	});
+
+	await t.step(".getAttr() - A:name traverses ancestors if not defined locally via JS", () => {
+		const root = doc.createNode('h.div');
+		root.setAttr('theme', 'solarized');
+		const child = doc.createNode('h.div');
+		root.append(child);
+
+		assertEquals(child.getAttr('A:theme'), 'solarized');
+	});
+
+	await t.step("(getAttr) - a:name and A:name return undefined when no ancestor defines attribute", () => {
+		const root = doc.createNode('h.div');
+		const child = doc.createNode('h.div');
+		$c.sm(root, 'append', ls([, child]));
+
+		assertEquals($c.sm(child, 'getAttr', ls([, 'a:nonexistent'])), undefined);
+		assertEquals($c.sm(child, 'getAttr', ls([, 'A:nonexistent'])), undefined);
+	});
+
+	await t.step(".getAttr() - a:name and A:name return undefined when no ancestor defines attribute via JS", () => {
+		const root = doc.createNode('h.div');
+		const child = doc.createNode('h.div');
+		root.append(child);
+
+		assertEquals(child.getAttr('a:nonexistent'), undefined);
+		assertEquals(child.getAttr('A:nonexistent'), undefined);
+	});
+
+	await t.step("(getAttr) - a:name on unparented node returns undefined", () => {
+		const node = doc.createNode('h.div');
+		$c.sm(node, 'setAttr', ls([, 'test', , 'val']));
+		assertEquals($c.sm(node, 'getAttr', ls([, 'a:test'])), undefined);
+	});
+
+	await t.step(".getAttr() - a:name on unparented node returns undefined via JS", () => {
+		const node = doc.createNode('h.div');
+		node.setAttr('test', 'val');
+		assertEquals(node.getAttr('a:test'), undefined);
+	});
+
+	await t.step("(getAttr) - Multi-level ancestor resolution (grandchild -> child -> root)", () => {
+		const root = doc.createNode('h.div');
+		$c.sm(root, 'setAttr', ls([, 'rootAttr', , 'fromRoot']));
+		$c.sm(root, 'setAttr', ls([, 'overrideAttr', , 'rootVal']));
+
+		const child = doc.createNode('h.div');
+		$c.sm(child, 'setAttr', ls([, 'childAttr', , 'fromChild']));
+		$c.sm(child, 'setAttr', ls([, 'overrideAttr', , 'childVal']));
+		$c.sm(root, 'append', ls([, child]));
+
+		const grandchild = doc.createNode('h.div');
+		$c.sm(grandchild, 'setAttr', ls([, 'grandchildAttr', , 'fromGrandchild']));
+		$c.sm(child, 'append', ls([, grandchild]));
+
+		assertEquals($c.sm(grandchild, 'getAttr', ls([, 'a:rootAttr'])), 'fromRoot');
+		assertEquals($c.sm(grandchild, 'getAttr', ls([, 'a:childAttr'])), 'fromChild');
+		assertEquals($c.sm(grandchild, 'getAttr', ls([, 'a:overrideAttr'])), 'childVal');
+		assertEquals($c.sm(grandchild, 'getAttr', ls([, 'A:grandchildAttr'])), 'fromGrandchild');
+		assertEquals($c.sm(grandchild, 'getAttr', ls([, 'A:overrideAttr'])), 'childVal');
+	});
+
+	await t.step(".getAttr() - Multi-level ancestor resolution (grandchild -> child -> root) via JS", () => {
+		const root = doc.createNode('h.div');
+		root.setAttr('rootAttr', 'fromRoot');
+		root.setAttr('overrideAttr', 'rootVal');
+
+		const child = doc.createNode('h.div');
+		child.setAttr('childAttr', 'fromChild');
+		child.setAttr('overrideAttr', 'childVal');
+		root.append(child);
+
+		const grandchild = doc.createNode('h.div');
+		grandchild.setAttr('grandchildAttr', 'fromGrandchild');
+		child.append(grandchild);
+
+		assertEquals(grandchild.getAttr('a:rootAttr'), 'fromRoot');
+		assertEquals(grandchild.getAttr('a:childAttr'), 'fromChild');
+		assertEquals(grandchild.getAttr('a:overrideAttr'), 'childVal');
+		assertEquals(grandchild.getAttr('A:grandchildAttr'), 'fromGrandchild');
+		assertEquals(grandchild.getAttr('A:overrideAttr'), 'childVal');
 	});
 });

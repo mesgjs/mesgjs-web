@@ -1,7 +1,7 @@
 [(
 modpath='mwi/mwi-aggr-comp'
 version='1.0.0'
-featreq='mwi.comp.MWICore mwi.compRegOpen MWIDocNode MWIDocument'
+featreq='mwi.compRegOpen MWIDocNode MWIDocument'
 featpro='mwi.comp.MWIAggr mwi.comp.MWIAggrScript'
 modcaps=''
 )]
@@ -23,7 +23,6 @@ modcaps=''
 	const REG_OPEN_FT = 'mwi.compRegOpen';
 	const BASE_IF = 'MWIDocNode';
 	const BASE_FT = BASE_IF;
-	const CORE_READY_FT = 'mwi.comp.MWICore';
 
 	const DOC_IF = 'MWIDocument';
 	const DOC_RDY_FT = DOC_IF;
@@ -54,7 +53,7 @@ modcaps=''
 		[STYLE_TYPE]: ls([INTERFACE, SCRIPT_IF, SCHEMA, ls([AUTO_DOC, false])]), // SIC
 	};
 
-	await fwait(BASE_FT, DOC_RDY_FT, CORE_READY_FT); // For interface chaining
+	await fwait(BASE_FT, DOC_RDY_FT); // For interface chaining
 
 	// "Import" parent JS class, Mesgjs-style, for sub-classing
 	const MWIDocNode = getInterface(BASE_IF).proto;

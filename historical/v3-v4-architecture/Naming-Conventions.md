@@ -1,10 +1,11 @@
 ---
-**Status:** STANDARD
+**Status:** SUPERSEDED (v3/v4 era — see replacement)
 **History:**
 - 2025-07-29: STANDARD
-**Scope:** The official naming conventions for the MWI project, covering identifiers, files, classes, components, and attributes.
+- 2026-08-02: SUPERSEDED by v5-arch/Naming-Conventions.md
+**Scope:** The official naming conventions for the MWI project (v3/v4), covering identifiers, files, classes, components, and attributes.
 **Replaces:**
-**Replaced by:**
+**Replaced by:** [`v5-arch/Naming-Conventions.md`](../../v5-arch/Naming-Conventions.md)
 **Related:**
 ---
 # MWI Naming Conventions

@@ -40,7 +40,7 @@ function markdownToMWISpec (markdownText) {
  */
 function addTokens (parent, tokens) {
 	if (!tokens || tokens.length === 0) return;
-	
+
 	for (const token of tokens) {
 		const results = convertToken(token);
 		// Union results into parent
@@ -56,7 +56,7 @@ function addTokens (parent, tokens) {
  */
 function convertToken (token) {
 	const results = new NANOS();
-	
+
 	switch (token.type) {
 		case 'space':
 			// Return empty NANOS
@@ -78,37 +78,37 @@ function convertToken (token) {
 			results.push([spec]);
 			break;
 		}
-			
+
 		case 'paragraph': {
 			const spec = ls([, 'h.p']);
 			addTokens(spec, token.tokens);
 			results.push([spec]);
 			break;
 		}
-			
+
 		case 'strong': {
 			const spec = ls([, 'h.strong']);
 			addTokens(spec, token.tokens);
 			results.push([spec]);
 			break;
 		}
-			
+
 		case 'em': {
 			const spec = ls([, 'h.em']);
 			addTokens(spec, token.tokens);
 			results.push([spec]);
 			break;
 		}
-			
+
 		case 'br':
 			results.push([ls([, 'h.br'])]);
 			break;
-			
+
 		case 'codespan':
 			// Warning: token.text is broken (HTML-escaped) for codespan
 			results.push([ls([, 'h.code', , trimCodeSpan(token.raw)])]);
 			break;
-			
+
 		case 'code':
 			results.push([ls([, 'h.pre', ,
 				ls([, 'h.code',
@@ -117,7 +117,7 @@ function convertToken (token) {
 				])
 			])]);
 			break;
-			
+
 		case 'link': {
 			const spec = ls([, 'h.a', 'href', token.href]);
 			if (token.title) {
@@ -127,7 +127,7 @@ function convertToken (token) {
 			results.push([spec]);
 			break;
 		}
-			
+
 		case 'image':
 			results.push([ls([, 'h.img',
 				'src', token.href,
@@ -135,7 +135,7 @@ function convertToken (token) {
 				...(token.title ? ['title', token.title] : [])
 			])]);
 			break;
-			
+
 		case 'list': {
 			const listTag = token.ordered ? 'h.ol' : 'h.ul';
 			const spec = ls([, listTag]);
@@ -147,35 +147,35 @@ function convertToken (token) {
 			results.push([spec]);
 			break;
 		}
-			
+
 		case 'list_item': {
 			const spec = ls([, 'h.li']);
 			addTokens(spec, token.tokens);
 			results.push([spec]);
 			break;
 		}
-			
+
 		case 'blockquote': {
 			const spec = ls([, 'h.blockquote']);
 			addTokens(spec, token.tokens);
 			results.push([spec]);
 			break;
 		}
-			
+
 		case 'hr':
 			results.push([ls([, 'h.hr'])]);
 			break;
-			
+
 		case 'html':
 			// For MVP: Pass through HTML as-is
 			// Future: Parse and convert to MWI components
 			results.push([ls([, 'h.pre', , token.text])]);
 			break;
-			
+
 		case 'table':
 			results.push([convertTable(token)]);
 			break;
-			
+
 		default:
 			console.warn(`Unhandled token type: ${token.type}`);
 			if (token.text) {
@@ -183,7 +183,7 @@ function convertToken (token) {
 			}
 			break;
 	}
-	
+
 	return results;
 }
 
@@ -197,14 +197,14 @@ function convertTable (token) {
 	const headerCells = token.header.map(cell =>
 		ls([, 'h.th', , cell.text])
 	);
-	
+
 	const bodyRows = token.rows.map(row => {
 		const cells = row.map(cell =>
 			ls([, 'h.td', , cell.text])
 		);
 		return ls([, 'h.tr', , ...cells]);
 	});
-	
+
 	return ls([, 'h.table', ,
 		ls([, 'h.thead', ,
 			ls([, 'h.tr', , ...headerCells])
@@ -232,14 +232,14 @@ function trimCodeSpan (raw) {
 function parseFrontmatter (markdown) {
 	const frontmatterRegex = /^---\n([\s\S]*?)\n---\n([\s\S]*)$/;
 	const match = markdown.match(frontmatterRegex);
-	
+
 	if (!match) {
 		return { frontmatter: {}, content: markdown };
 	}
-	
+
 	const [, frontmatterText, content] = match;
 	const frontmatter = {};
-	
+
 	// Simple key: value parser
 	for (const line of frontmatterText.split('\n')) {
 		const [key, ...valueParts] = line.split(':');
@@ -247,7 +247,7 @@ function parseFrontmatter (markdown) {
 			frontmatter[key.trim()] = valueParts.join(':').trim();
 		}
 	}
-	
+
 	return { frontmatter, content };
 }
 

@@ -121,10 +121,10 @@ Deno.test('MWIDocument - Basic Interface', async (t) => {
 		const str10 = doc.compIdStr(10);
 		const str100 = doc.compIdStr(100);
 
-		assertEquals(str0, '_MC_0', 'ID 0 should convert correctly');
-		assertEquals(str1, '_MC_1', 'ID 1 should convert correctly');
-		assertEquals(str10, '_MC_a', 'ID 10 should convert to base-36');
-		assertEquals(str100, '_MC_2s', 'ID 100 should convert to base-36');
+		assertEquals(str0, '_MO_0', 'ID 0 should convert correctly');
+		assertEquals(str1, '_MO_1', 'ID 1 should convert correctly');
+		assertEquals(str10, '_MO_a', 'ID 10 should convert to base-36');
+		assertEquals(str100, '_MO_2s', 'ID 100 should convert to base-36');
 	});
 
 	await t.step('.compIdStr() - Consistency', () => {

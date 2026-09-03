@@ -653,4 +653,29 @@ Deno.test("MWIDocNode - Reactive parent/index", async (t) => {
 		child.nodePath();
 		assertEquals(path.at(0), 4);
 	});
+
+	await t.step("Parent linkage - Template subDoc children have template as parent", () => {
+		const registry = getInstance('MWIRegistry');
+		registry.register('test.tpl.parent', ps("[(tpl=[[h.div 'inside-tpl']])]"));
+		const tplNode = doc.createNode('test.tpl.parent');
+		const subDoc = tplNode.getSubDoc();
+		assertEquals(subDoc.size, 1);
+		assertStrictEquals(subDoc.at(0).getParent().parent, tplNode);
+		assertEquals(subDoc.at(0).getParent().index, 0);
+	});
+
+	await t.step("Parent linkage - Slotted content children have slot as parent", () => {
+		const registry = getInstance('MWIRegistry');
+		registry.register('test.tpl.slotParent', ps("[(tpl=[[h.div [m.slot]]])]"));
+		const tplNode = doc.createNode('test.tpl.slotParent');
+		tplNode.setSpec(ps("[(test.tpl.slotParent [h.span 'slotted'])]"));
+		// Force expansion
+		tplNode.getHTML();
+		const div = tplNode.getSubDoc().at(0);
+		const slot = div.getSubDoc().at(0);
+		assertStrictEquals(slot.getParent().parent, div);
+		const slottedSpan = slot.getSubDoc().at(0);
+		assertStrictEquals(slottedSpan.getParent().parent, slot);
+		assertEquals(slottedSpan.getParent().index, 0);
+	});
 });

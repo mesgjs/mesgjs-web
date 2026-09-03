@@ -370,3 +370,109 @@ Deno.test("m.coat - MWIData Global Store Access (<d:name>)", async (t) => {
 	globalThis.$gss.delete('MWIData');
 });
 
+Deno.test("m.coat - Ancestral Lookups (<a:name>, <A:name>)", async (t) => {
+	await t.step("m.coat=[out=<a:attr>] - inherits attribute strictly from ancestor", async () => {
+		const html = renderHTML(ps('[([h.div theme="dark" [h.span m.coat=[data-theme=<a:theme>]]])]'));
+		assertEquals(html, '<div theme="dark"><span data-theme="dark"></span></div>');
+	});
+
+	await t.step("m.coat=[out=<a:attr>] - ignores child's own attribute", async () => {
+		const html = renderHTML(ps('[([h.div theme="parent-val" [h.span theme="child-val" m.coat=[data-theme=<a:theme>]]])]'));
+		assertEquals(html, '<div theme="parent-val"><span theme="child-val" data-theme="parent-val"></span></div>');
+	});
+
+	await t.step("m.coat=[out=<a:attr|fallback>] - fallback when ancestor does not define attribute", async () => {
+		const html = renderHTML(ps('[([h.div [h.span m.coat=[data-theme=<a:theme|light>]]])]'));
+		assertEquals(html, '<div><span data-theme="light"></span></div>');
+	});
+
+	await t.step("m.coat=[out=<A:attr>] - uses local attribute when present", async () => {
+		const html = renderHTML(ps('[([h.div theme="parent-val" [h.span theme="child-val" m.coat=[data-theme=<A:theme>]]])]'));
+		assertEquals(html, '<div theme="parent-val"><span theme="child-val" data-theme="child-val"></span></div>');
+	});
+
+	await t.step("m.coat=[out=<A:attr>] - falls back to ancestor when local attribute unset", async () => {
+		const html = renderHTML(ps('[([h.div theme="parent-val" [h.span m.coat=[data-theme=<A:theme>]]])]'));
+		assertEquals(html, '<div theme="parent-val"><span data-theme="parent-val"></span></div>');
+	});
+
+	await t.step("m.coat=[out=<A:attr|fallback>] - falls back to fallback when neither local nor ancestor is set", async () => {
+		const html = renderHTML(ps('[([h.div [h.span m.coat=[data-theme=<A:theme|default-theme>]]])]'));
+		assertEquals(html, '<div><span data-theme="default-theme"></span></div>');
+	});
+
+	await t.step("Multi-level scoped accordion hierarchy: navDet.name with <a:navDet.name>-lvl and <A:navDet.name>", async () => {
+		// Root nav sets navDet.name="_M_navDet"
+		// Level 1 sets navDet.name="<a:navDet.name>-lvl" and name="<A:navDet.name>"
+		// Level 2 sets navDet.name="<a:navDet.name>-lvl" and name="<A:navDet.name>"
+		// Level 3 sets navDet.name="<a:navDet.name>-lvl" and name="<A:navDet.name>"
+		const spec = ps(`[(
+			[h.nav m.coat=[navDet.name=<name|_M_navDet>]
+				[h.details m.coat=[navDet.name=<a:navDet.name>-lvl name=<A:navDet.name>]
+					[h.summary "Level 1"]
+					[h.details m.coat=[navDet.name=<a:navDet.name>-lvl name=<A:navDet.name>]
+						[h.summary "Level 2"]
+						[h.details m.coat=[navDet.name=<a:navDet.name>-lvl name=<A:navDet.name>]
+							[h.summary "Level 3"]
+						]
+					]
+				]
+			]
+		)]`);
+		const html = renderHTML(spec);
+		assert(html.includes('<details name="_M_navDet-lvl">'), 'Level 1 details has _M_navDet-lvl');
+		assert(html.includes('<details name="_M_navDet-lvl-lvl">'), 'Level 2 details has _M_navDet-lvl-lvl');
+		assert(html.includes('<details name="_M_navDet-lvl-lvl-lvl">'), 'Level 3 details has _M_navDet-lvl-lvl-lvl');
+	});
+
+	await t.step("Multi-level scoped accordion hierarchy with custom root name", async () => {
+		const spec = ps(`[(
+			[m.src name="siteNav"
+				[h.nav m.coat=[navDet.name=<name|_M_navDet>]
+					[h.details m.coat=[navDet.name=<a:navDet.name>-lvl name=<A:navDet.name>]
+						[h.summary "Level 1"]
+						[h.details m.coat=[navDet.name=<a:navDet.name>-lvl name=<A:navDet.name>]
+							[h.summary "Level 2"]
+						]
+					]
+				]
+			]
+		)]`);
+		const html = renderHTML(spec);
+		assert(html.includes('<details name="siteNav-lvl">'), 'Level 1 details has siteNav-lvl');
+		assert(html.includes('<details name="siteNav-lvl-lvl">'), 'Level 2 details has siteNav-lvl-lvl');
+	});
+});
+
+Deno.test("m.slat - Domain-Qualified Lookups (a:, A:, d:)", async (t) => {
+	await t.step("m.slat with d: prefix passes MWIData to element", async () => {
+		const MWIDocument = getInterface('MWIDocument').proto;
+		const mwiData = MWIDocument.rxNANOS();
+		globalThis.$gss.set('MWIData', mwiData);
+		mwiData.set('globalTheme', 'ocean');
+
+		const html = renderHTML(ps(`[([h.div m.slat=[data-theme=[d:globalTheme]]])]`));
+		assert(html.includes('data-theme="ocean"'));
+
+		globalThis.$gss.delete('MWIData');
+	});
+
+	await t.step("m.slat with a: prefix passes ancestor attribute to element", async () => {
+		const html = renderHTML(ps(`[(
+			[h.div data.level=top
+				[h.div data.level=ignored-by-a m.slat=[data-level=[a:data.level]]]
+			]
+		)]`));
+		assert(html.includes('data-level="top"'));
+	});
+
+	await t.step("m.slat with A: prefix passes local or ancestral attribute to element", async () => {
+		const html = renderHTML(ps(`[(
+			[h.div data.level=top
+				[h.div data.level=local-variant m.slat=[data-level=[A:data.level]]]
+			]
+		)]`));
+		assert(html.includes('data-level="local-variant"'));
+	});
+});
+

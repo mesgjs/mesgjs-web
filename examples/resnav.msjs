@@ -1,0 +1,28 @@
+[(
+featreq='MWIDocument mwi.comp.MWIResNav'
+)]
+@c(fwait MWIDocument)(then {
+	#(nset doc=@c(get MWIDocument))
+	#doc(append list=[
+		[h.doctype]
+		[h.head [m.scpcss]]
+		[h.body [h.header
+			[resNav
+				[subMenu id=sm1 c.label=['Sub-menu level 1']
+					[subMenu c.label=['Sub-menu level 2']]
+				]
+			]
+		]]
+	])
+	// @c(log HTML:)
+	@c(log #doc(getHTML))
+	/*
+	@c(log SPEC:)
+	@c(log #doc(root)(getSpec)(toSLID))
+	@js{
+		const sm1 = d.t.at('doc').getDocById('sm1');
+		console.log('SM1:', sm1);
+		console.log('SM1 parent:', sm1.getParent());
+	@}
+	*/
+})

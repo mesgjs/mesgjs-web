@@ -109,7 +109,7 @@ Attribute slotting copies or computes attributes from a slot source to a target 
 **Syntax:** `m.slat=[target=[source? else=default?]...]`
 
 - `target` - Attribute name in current element
-- `source` - Attribute name in slot source (defaults to `target` if omitted)
+- `source` - Attribute name in slot source (defaults to `target` if omitted). If prefixed with `a:`, `A:`, or `d:`, resolved against `self.getAttr(...)`
 - `else` - Default value if source attribute is missing
 
 **Example:**
@@ -136,7 +136,10 @@ Renders as:
 **Syntax:** `m.coat=[target=expr...]`
 
 **Expression Syntax:**
-- `<name>` - Value of named attribute, or ""
+- `<name>` - Value of named attribute from slot source, or ""
+- `<a:name>` - Strictly ancestral lookup traversing parent nodes, or ""
+- `<A:name>` - Local or ancestral lookup (checks `self` first, then ancestors), or ""
+- `<d:name>` - Value from global shared data store (`%*MWIData`), or ""
 - `<name|else>` - Value if not undefined/false, or "else"
 - `<name||else>` - Value if not undefined/false/"", or "else"
 - `<name?then>` - "then" if not undefined/false, or ""
@@ -281,6 +284,33 @@ One powerful use of slotting is creating hierarchical ID structures in nested, r
 - `@@` expands to the component's registry ID (e.g., `my.card`)
 - This creates unique, hierarchical IDs even with multiple instances
 - IDs are predictable and can be targeted for styling or scripting
+
+### Ancestral Attribute Lookups Across Nested Hierarchies
+
+In deeply nested or multi-tier component structures, passing contextual state through every intermediate slot and container can be cumbersome. MWI provides domain-qualified prefixes for traversing the rendered document tree hierarchy directly:
+
+- **Strictly Ancestral (`<a:name>`):** Searches parent and ancestor nodes above the current element (`self.getParent().parent`), ignoring the current element's own attributes.
+- **Local or Ancestral (`<A:name>`):** Checks the current element first, falling back to ascending ancestor nodes.
+- **Global Shared Store (`<d:key>`):** Accesses `%*MWIData` from global shared storage.
+
+**Use Case: Native Accordion Navigation Hierarchy**
+
+HTML5 native `<details>` elements create exclusive accordion groups when sharing a `name` attribute. Using ancestral lookups, nested menus can calculate depth-scoped group names automatically:
+
+```javascript
+// Root container establishes group prefix
+[h.nav m.coat=[navDet.name=<name|_M_navDet>]]
+
+// Nested menu templates compute scoped level name
+[h.details m.coat=[navDet.name=<a:navDet.name>-lvl name=<A:navDet.name>]]
+```
+
+When nested:
+- Root `<nav>` sets `navDet.name="_M_navDet"`
+- Level 1 `<details>` calculates `navDet.name="_M_navDet-lvl"` and `name="_M_navDet-lvl"`
+- Level 2 `<details>` calculates `navDet.name="_M_navDet-lvl-lvl"` and `name="_M_navDet-lvl-lvl"`
+
+Opening a Level 2 sub-menu never closes the Level 1 parent accordion group, and no manual prop drilling is needed.
 
 ### Slotting Transparency
 
