@@ -11,7 +11,6 @@ modcaps=''
  * Copyright 2026 by Kappa Computer Solutions, LLC and Brian Katzung
  *
  * [resNav] Responsive navigation
- * [navLink] Nav link
  * [subMenu] Sub menu
  * [megaMenu] Mega menu
  */
@@ -23,7 +22,6 @@ modcaps=''
 
 	READY_FT=mwi.comp.MWIResNav
 	NAV=resNav
-	LINK=navLink
 	SUB=subMenu
 	MEGA=megaMenu
 )
@@ -32,43 +30,132 @@ modcaps=''
 
 	#registry(register #NAV [tpl=[
 		[h.div m.percl='@@'
-			[h.details [h.summary         // portrait-mode nav-rail opener
-				[h.span class=closed]
-				[h.span class=open]
-			]]
+			[h.details [h.summary]]         // portrait-mode nav-rail opener
 			[h.div [m.slot name=c.left]]  // left-of-nav (e.g. branding)
 			[h.nav m.coat=[navDet.name='<name|_M_navDet>']
 				[h.div [m.slot]]          // main nav menu
 			]
 			[h.div [m.slot name=c.right]] // right-of-nav (e.g. profile menu)
 	]] scopedCSS="
-@@ {
-	display: flex;
+html { container-name: root; --resnav-mode: landscape; }
+@media (orientation: portrait) and (width < 800px) { html { --resnav-mode: portrait; } }
+.@@ {
+	display: flex; gap: 10px 20px;
 	position: relative;
+	> details {
+		flex-grow: 0;
+		summary {
+			box-sizing: border-box; width: 24px; height: 24px;
+			font-family: sans-serif; font-size: 24px; line-height: 24px;
+			list-style: none; text-align: center; vertical-align: middle;
+			border: solid 1px #000; border-radius: 3px;
+			background-color: #eee; cursor: pointer;
+			&::after { content: '\2261'; }
+		}
+	}
+	> details[open] {
+		summary {
+			font-size: 16px;
+			&::after { content: '\25C0'; }
+		}
+	}
+	> div { flex-grow: 0; }
+	> nav {
+		display: inline-block; flex-grow: 1;
+		summary {
+			list-style: none;
+			&::after { /* down (to open) */
+				display: inline-block; width: 1.5rem; text-align: right;
+				height: 1rem; line-height: 1rem; vertical-align: middle;
+				content: '\25BD';
+			}
+		}
+		details[open] > summary::after { content: '\25B2'; } /* up (to close) */
+	}
 }
-@@ > details, @@ > div { flex-grow: 0; }
-@@ > nav {
-	flex-grow: 1;
-}
-/* portrait and max-width < --resnav-landscape-width settings */
-@@:has(> details:not([open])) > nav > div { display: none; }
-@media (orientation: landscape) or (min-width: var(--resnav-landscape-width, 800px)) {
-/* landscape overrides */
-	@@ > details { display: none; }
-}
+@container root style(--resnav-mode: landscape) { .@@ {
+	.nav-mode::after { content: ' landscape'; }
+	> details { display: none; }
+	nav > div {
+		display: flex; flex-wrap: wrap; gap: 10px 20px;
+	}
+	nav details {
+		&.megamenu > div { display: contents; }
+		&.submenu > div {
+			display: flex; flex-wrap: wrap; gap: 10px 20px;
+		}
+		&.submenu > div, &.megamenu > div > div { /* sub-menu trays */
+			position: absolute; top: calc(100% + 10px); left: 0; right: 0;
+			padding: 5px; border: solid 1px #000; border-radius: 3px;
+			background-color: #eee; /* TEMPORARY */
+			details div { background-color: #ddd; } /* TEMPORARY */
+		}
+	}
+}}
+@container root style(--resnav-mode: portrait) { .@@ {
+	.nav-mode::after { content: ' portrait'; }
+	&:has(> details:not([open])) > nav { display: none; } /* nav rail closed */
+	> details[open] summary {
+		position: absolute; top: 6px; left: 6px; z-index: 15;
+	}
+	> details + div { flex-grow: 1; }
+	> nav {
+		position: absolute; top: 0; left: 0; height: 100dvh;
+		box-sizing: border-box; border: solid 1px #000;
+		border-left: none; border-radius: 0 10px 10px 0;
+		padding: 35px 0 10px 5px; z-index: 10;
+		background-color: #eee; /* TEMPORARY */
+		&:has(details[open].megamenu:not(details:not([open]) *)) { right: 0; }
+		> div { /* left rail */
+			width: max-content; min-width: 100px; padding-right: 5px;
+			height: calc(100dvh - 47px); overflow-y: auto;
+			display: flex; flex-direction: column; gap: 0.5rem;
+			anchor-name: --rail;
+		}
+		details { margin-left: 1em; }
+		summary { margin-left: -1em; }
+		details[open].megamenu:not(.megamenu .megamenu) > div {
+			/* outline-to-tray-stack transition */
+			position: absolute; overflow-y: auto;
+			top: 36px; right: 5px; bottom: 10px;
+			left: anchor(--rail right);
+			border-left: 1px solid #000; padding-left: 5px;
+			details.submenu > div {
+				display: flex; flex-wrap: wrap; gap: 10px 20px;
+			}
+		}
+		details:not(.megamenu, .megamenu *) > div {
+			display: flex; flex-direction: column;
+			padding-top: 10px; gap: 10px;
+		}
+		.megamenu details.submenu > div, details.megamenu > div > div {
+			padding: 5px; box-sizing: border-box;
+			border: solid 1px #000; border-radius: 3px;
+			position: absolute; left: 5px; right: 5px;
+		}
+		.megamenu details.submenu > div, .megamenu details.megamenu > div > div {
+			left: 0; right: 0;
+			top: calc(100% + 10px); /* post-transition sub-tray position */
+		}
+	}
+}}
 "])
 
 	#registry(register #SUB [tpl=[
-		[h.details m.coat=[navDet.name='<a:navDet.name>-lvl' name='<A:navDet.name>']
+		[h.details
+			m.percl=submenu
+			m.coat=[navDet.name='<a:navDet.name>-lvl' name='<A:navDet.name>']
 			[h.summary [m.slot name=c.label]]
-			[m.slot]
+			[h.div [m.slot]]
 		]
 	]])
 
 	#registry(register #MEGA [tpl=[
-		[h.details m.coat=[navDet.name='<a:navDet.name>-lvl' name='<A:navDet.name>']
+		[h.details
+			m.percl=megamenu
+			m.coat=[navDet.name='<a:navDet.name>-lvl' name='<A:navDet.name>']
 			[h.summary [m.slot name=c.label]]
-			[m.slot]
+			[h.div [h.div [m.slot]]]
 		]
 	]])
 

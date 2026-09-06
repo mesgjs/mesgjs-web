@@ -5,24 +5,49 @@ featreq='MWIDocument mwi.comp.MWIResNav'
 	#(nset doc=@c(get MWIDocument))
 	#doc(append list=[
 		[h.doctype]
-		[h.head [m.scpcss]]
-		[h.body [h.header
-			[resNav
-				[subMenu id=sm1 c.label=['Sub-menu level 1']
-					[subMenu c.label=['Sub-menu level 2']]
+		[h.head
+			[m.scpcss]
+			[h.style m.text='
+				html { --resnav-mode: portrait; }
+				body {
+					margin: 0; padding: 0;
+					font-family: sans-serif;
+				}
+				summary { cursor: pointer; }
+			']
+		]
+		[h.body [h.p 'Before header'] [h.header
+			[resNav c.left=[[h.span class=nav-mode left]]
+				[h.a href='https://example.com' 'Example A']
+				[subMenu c.label=['Sub-menu level 1']
+					[h.a href='https://example.com' 'Example 1A']
+					[subMenu c.label=['Sub-menu level 2']
+						[h.a href='https://example.com' 'Example 2A']
+					]
+					[subMenu c.label=['Alt level 2']
+						[h.a href='https://example.com' 'Alt 2A']
+					]
+					[megaMenu c.label=['Mega menu']
+						[h.p 'Mega menu content']
+						[subMenu c.label=['Mega sub-menu']
+							[h.a href='https://example.com' 'Mega Sub 1']
+							[h.a href='https://example.com' 'Mega Sub 2']
+							[h.a href='https://example.com' 'Mega Sub 3']
+						]
+						[h.p 'Mega menu content']
+					]
+					[h.a href='https://example.com' 'Example 1B']
 				]
+				[h.a href='https://example.com' 'Example B']
+				c.right=[[h.span right]]
 			]
-		]]
+		] [h.p 'After header']
+		[h.p style='margin-top: 110vh;' 'Below the fold']]
 	])
 	// @c(log HTML:)
 	@c(log #doc(getHTML))
 	/*
 	@c(log SPEC:)
 	@c(log #doc(root)(getSpec)(toSLID))
-	@js{
-		const sm1 = d.t.at('doc').getDocById('sm1');
-		console.log('SM1:', sm1);
-		console.log('SM1 parent:', sm1.getParent());
-	@}
 	*/
 })
