@@ -86,9 +86,9 @@ html { container-name: root; --resnav-mode: landscape; }
 		}
 		&.submenu > div, &.megamenu > div > div { /* sub-menu trays */
 			position: absolute; top: calc(100% + 10px); left: 0; right: 0;
+			:is(.submenu *, .megamenu *) { left: -1px; right: -1px; }
 			padding: 5px; border: solid 1px #000; border-radius: 3px;
 			background-color: #eee; /* TEMPORARY */
-			details div { background-color: #ddd; } /* TEMPORARY */
 		}
 	}
 }}
@@ -114,12 +114,14 @@ html { container-name: root; --resnav-mode: landscape; }
 		}
 		details { margin-left: 1em; }
 		summary { margin-left: -1em; }
+		details.megamenu:not(.megamenu .megamenu) > summary::after { content: '\25B7'; }
+		details[open].megamenu:not(.megamenu .megamenu) > summary::after { content: '\25C0'; }
 		details[open].megamenu:not(.megamenu .megamenu) > div {
 			/* outline-to-tray-stack transition */
 			position: absolute; overflow-y: auto;
 			top: 36px; right: 5px; bottom: 10px;
-			left: anchor(--rail right);
-			border-left: 1px solid #000; padding-left: 5px;
+			left: calc(anchor(--rail right) + 5px);
+			border-left: 1px solid #000;
 			details.submenu > div {
 				display: flex; flex-wrap: wrap; gap: 10px 20px;
 			}
@@ -131,10 +133,10 @@ html { container-name: root; --resnav-mode: landscape; }
 		.megamenu details.submenu > div, details.megamenu > div > div {
 			padding: 5px; box-sizing: border-box;
 			border: solid 1px #000; border-radius: 3px;
-			position: absolute; left: 5px; right: 5px;
+			position: absolute; left: 10px; right: 5px;
 		}
 		.megamenu details.submenu > div, .megamenu details.megamenu > div > div {
-			left: 0; right: 0;
+			left: -1px; right: -1px;
 			top: calc(100% + 10px); /* post-transition sub-tray position */
 		}
 	}

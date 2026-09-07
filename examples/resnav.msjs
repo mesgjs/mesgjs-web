@@ -8,15 +8,23 @@ featreq='MWIDocument mwi.comp.MWIResNav'
 		[h.head
 			[m.scpcss]
 			[h.style m.text='
-				html { --resnav-mode: portrait; }
+				html[data-mode="landscape"] { --resnav-mode: landscape; }
+				html[data-mode="portrait"] { --resnav-mode: portrait; }
 				body {
-					margin: 0; padding: 0;
+					margin: 0; padding: 1px;
 					font-family: sans-serif;
 				}
 				summary { cursor: pointer; }
 			']
 		]
-		[h.body [h.p 'Before header'] [h.header
+		[h.body
+			[h.p 'Mode: '
+				[h.input type='radio' name='mode' onclick='javascript:document.documentElement.dataset.mode = "";' checked=''] ' Auto '
+				[h.input type='radio' name='mode' onclick='javascript:document.documentElement.dataset.mode = "landscape";'] ' Landscape '
+				[h.input type='radio' name='mode' onclick='javascript:document.documentElement.dataset.mode = "portrait";'] ' Portrait'
+			]
+			[h.p 'Before header']
+			[h.header
 			[resNav c.left=[[h.span class=nav-mode left]]
 				[h.a href='https://example.com' 'Example A']
 				[subMenu c.label=['Sub-menu level 1']
