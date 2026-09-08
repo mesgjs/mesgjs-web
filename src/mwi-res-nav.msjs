@@ -30,8 +30,9 @@ modcaps=''
 
 	#registry(register #NAV [tpl=[
 		[h.div m.percl='@@'
-			[h.details [h.summary]]         // portrait-mode nav-rail opener
-			[h.div [m.slot name=c.left]]  // left-of-nav (e.g. branding)
+			// portrait-mode nav-rail opener
+			[h.details [h.summary]]
+			[h.div m.percl=left [m.slot name=c.left]]  // left-of-nav (e.g. branding)
 			[h.nav m.coat=[navDet.name='<name|_M_navDet>']
 				[h.div [m.slot]]          // main nav menu
 			]
@@ -42,28 +43,11 @@ html { container-name: root; --resnav-mode: landscape; }
 .@@ {
 	display: flex; gap: 10px 20px;
 	position: relative;
-	> details {
-		flex-grow: 0;
-		summary {
-			box-sizing: border-box; width: 24px; height: 24px;
-			font-family: sans-serif; font-size: 24px; line-height: 24px;
-			list-style: none; text-align: center; vertical-align: middle;
-			border: solid 1px #000; border-radius: 3px;
-			background-color: #eee; cursor: pointer;
-			&::after { content: '\2261'; }
-		}
-	}
-	> details[open] {
-		summary {
-			font-size: 16px;
-			&::after { content: '\25C0'; }
-		}
-	}
-	> div { flex-grow: 0; }
+	> * { flex-grow: 0; }
 	> nav {
 		display: inline-block; flex-grow: 1;
 		summary {
-			list-style: none;
+			list-style: none; cursor: pointer;
 			&::after { /* down (to open) */
 				display: inline-block; width: 1.5rem; text-align: right;
 				height: 1rem; line-height: 1rem; vertical-align: middle;
@@ -74,10 +58,21 @@ html { container-name: root; --resnav-mode: landscape; }
 	}
 }
 @container root style(--resnav-mode: landscape) { .@@ {
+	z-index: 9999;
 	.nav-mode::after { content: ' landscape'; }
 	> details { display: none; }
+	nav { flex-grow: 1; }
 	nav > div {
 		display: flex; flex-wrap: wrap; gap: 10px 20px;
+		> * { z-index: 2; }
+		> details[open] {
+			z-index: auto;
+			> summary { /* click-out to summary */
+				z-index: 1;
+				&::before { position: fixed; inset: 0; content: ''; }
+			}
+			> div { z-index: 2; }
+		}
 	}
 	nav details {
 		&.megamenu > div { display: contents; }
@@ -94,16 +89,35 @@ html { container-name: root; --resnav-mode: landscape; }
 }}
 @container root style(--resnav-mode: portrait) { .@@ {
 	.nav-mode::after { content: ' portrait'; }
-	&:has(> details:not([open])) > nav { display: none; } /* nav rail closed */
-	> details[open] summary {
-		position: absolute; top: 6px; left: 6px; z-index: 15;
+	> details {
+		display: inline-block; /* for descendant z */
+		summary { list-style: none; }
+		summary::after {
+			display: inline-block;
+			box-sizing: border-box; width: 24px; height: 24px;
+			font-family: sans-serif; font-size: 24px; line-height: 24px;
+			text-align: center; vertical-align: middle;
+			border: solid 1px #000; border-radius: 3px;
+			background-color: #eee; content: '\2261';
+		}
+		&:is([open]) {
+			summary::before { /* click-out backdrop below rail */
+				position: fixed; inset: 0; content: ''; z-index: 9985;
+				background-color: rgba(0, 0, 0, 0.2); /* TEMP */
+			}
+			summary::after { /* closer above rail */
+				position: absolute; top: 6px; left: 6px; z-index: 9995;
+				font-size: 16px; content: '\25C0';
+			}
+		}
 	}
-	> details + div { flex-grow: 1; }
+	&:has(> details:not([open])) > nav { display: none; } /* nav rail closed */
+	> div.left { flex-grow: 1; }
 	> nav {
 		position: absolute; top: 0; left: 0; height: 100dvh;
 		box-sizing: border-box; border: solid 1px #000;
 		border-left: none; border-radius: 0 10px 10px 0;
-		padding: 35px 0 10px 5px; z-index: 10;
+		padding: 35px 0 10px 5px; z-index: 9990;
 		background-color: #eee; /* TEMPORARY */
 		&:has(details[open].megamenu:not(details:not([open]) *)) { right: 0; }
 		> div { /* left rail */

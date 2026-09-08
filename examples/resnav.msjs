@@ -19,9 +19,9 @@ featreq='MWIDocument mwi.comp.MWIResNav'
 		]
 		[h.body
 			[h.p 'Mode: '
-				[h.input type='radio' name='mode' onclick='javascript:document.documentElement.dataset.mode = "";' checked=''] ' Auto '
-				[h.input type='radio' name='mode' onclick='javascript:document.documentElement.dataset.mode = "landscape";'] ' Landscape '
-				[h.input type='radio' name='mode' onclick='javascript:document.documentElement.dataset.mode = "portrait";'] ' Portrait'
+				[h.label [h.input type=radio name=mode onclick='javascript:document.documentElement.dataset.mode = "";' checked=''] ' Auto ']
+				[h.label [h.input type=radio name=mode onclick='javascript:document.documentElement.dataset.mode = "landscape";'] ' Landscape ']
+				[h.label [h.input type=radio name=mode onclick='javascript:document.documentElement.dataset.mode = "portrait";'] ' Portrait']
 			]
 			[h.p 'Before header']
 			[h.header
