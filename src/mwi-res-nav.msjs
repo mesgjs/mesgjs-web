@@ -24,6 +24,7 @@ modcaps=''
 	NAV=resNav
 	SUB=subMenu
 	MEGA=megaMenu
+	BACK=backToTop
 )
 @c(await @c(fwait #REG_OPEN_FT) {
 	#(nset registry=@c(get #REG_IF))
@@ -175,5 +176,5 @@ html { container-name: root; --resnav-mode: landscape; }
 		]
 	]])
 
-	@c(fready #READY_FT)
+	@c(fready mid=@mid #READY_FT)
 })

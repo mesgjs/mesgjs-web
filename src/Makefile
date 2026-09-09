@@ -1,4 +1,5 @@
 all: js/mwi-aggr-comp.esm.js \
+	js/mwi-back-to-top.esm.js \
 	js/mwi-core-comp.esm.js \
 	js/mwi-doc-node.esm.js \
 	js/mwi-document.esm.js \

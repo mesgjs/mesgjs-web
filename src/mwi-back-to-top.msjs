@@ -1,0 +1,67 @@
+[(
+modpath='mwi/mwi-back-to-top'
+version='1.0.0'
+featreq='mwi.compRegOpen mwi.comp.MWIAggrScript'
+featpro='mwi.comp.MWIBackToTop'
+modcaps=''
+)]
+
+/*
+ * MWIBackToTop - "Smart" back-to-top button
+ * Copyright 2026 by Kappa Computer Solutions, LLC and Brian Katzung
+ *
+ * [backToTop] Displays back-to-top button on back-scroll unless at or near the top
+ */
+
+@c(if @c(not @mid) { @c(throw 'MWIBackToTop requires Mesgjs module management to be active')})
+#(nset
+	REG_OPEN_FT=mwi.compRegOpen
+	AGGR_SCRIPT_FT=mwi.comp.MWIAggrScript
+	REG_IF=MWIRegistry
+
+	READY_FT=mwi.comp.MWIBackToTop
+	BACK=backToTop
+)
+@c(await @c(fwait #REG_OPEN_FT #AGGR_SCRIPT_FT) {
+	#(nset registry=@c(get #REG_IF))
+
+	#registry(register #BACK [tpl=[
+		[h.button m.percl='@@']
+		[m.script m.coat=[m.text="
+(() => {
+	let lastY = window.scrollY;
+	const clickHandler = () => {
+		document.documentElement.classList.remove('show-to-top');
+		window.scrollTo(0, 0);
+	};
+	const showHandler = (e) => {
+		const newY = window.scrollY;
+
+		if (newY <.lt> lastY && newY >= 200) document.documentElement.classList.add('show-to-top');
+		else if (newY > lastY || newY <.lt> 200) document.documentElement.classList.remove('show-to-top');
+		lastY = newY;
+	};
+
+	addEventListener('scroll', showHandler);
+	addEventListener('resize', showHandler);
+	document.addEventListener('DOMContentLoaded', () => {
+		document.querySelector('.@@').addEventListener('click', clickHandler);
+	});
+})();
+		"]]
+	] scopedCSS="
+.@@ {
+	display: none; Z-index: 9999; padding: 0 0 2px;
+	position: fixed; bottom: 2rem; right: 2rem;
+	box-sizing: border-box; width: 30px; height: 30px;
+	background-color: rgba(255, 255, 255, 0.6);
+	font-family: sans-serif; font-size: 24px; line-height: 24px;
+	text-align: center;
+	border: solid 1px #000; border-radius: 50%;
+	&::after { content: '\21E7'; }
+}
+html.show-to-top .@@ { display: inline-block; }
+	"])
+
+	@c(fready mid=@mid #READY_FT)
+})

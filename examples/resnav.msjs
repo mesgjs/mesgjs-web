@@ -1,7 +1,12 @@
 [(
-featreq='MWIDocument mwi.comp.MWIResNav'
+featreq='MWIDocument mwi.comp.MWIAggrScript mwi.comp.MWIResNav mwi.comp.MWIBackToTop'
 )]
-@c(fwait MWIDocument)(then {
+@c(fwait
+	MWIDocument
+	mwi.comp.MWIAggrScript
+	mwi.comp.MWIBackToTop
+	mwi.comp.MWIResNav
+)(then {
 	#(nset doc=@c(get MWIDocument))
 	#doc(append list=[
 		[h.doctype]
@@ -16,6 +21,7 @@ featreq='MWIDocument mwi.comp.MWIResNav'
 				}
 				summary { cursor: pointer; }
 			']
+			[m.script from=head]
 		]
 		[h.body
 			[h.p 'Mode: '
@@ -24,8 +30,7 @@ featreq='MWIDocument mwi.comp.MWIResNav'
 				[h.label [h.input type=radio name=mode onclick='javascript:document.documentElement.dataset.mode = "portrait";'] ' Portrait']
 			]
 			[h.p 'Before header']
-			[h.header
-			[resNav c.left=[[h.span class=nav-mode left]]
+			[h.header [resNav c.left=[[h.span class=nav-mode left]]
 				[h.a href='https://example.com' 'Example A']
 				[subMenu c.label=['Sub-menu level 1']
 					[h.a href='https://example.com' 'Example 1A']
@@ -48,9 +53,12 @@ featreq='MWIDocument mwi.comp.MWIResNav'
 				]
 				[h.a href='https://example.com' 'Example B']
 				c.right=[[h.span right]]
-			]
-		] [h.p 'After header']
-		[h.p style='margin-top: 110vh;' 'Below the fold']]
+			]]
+			[h.p 'After header']
+			[h.p style='margin-top: 110dvh;' 'Below the fold']
+			[h.p style='margin-top: 90dvh;' 'End of page']
+			[backToTop]
+		]
 	])
 	// @c(log HTML:)
 	@c(log #doc(getHTML))
