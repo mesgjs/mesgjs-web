@@ -39,6 +39,10 @@ p.set('_dom', reactive({ eager: true, def: () => { ... }}));
 
 > **IMPORTANT:** In order to avoid creating huge networks of duplicate reactive calculations, make sure you always use the same reactive object for any given property.
 
+### Static Reactive Values
+
+If a value won't be changing (for example, the empty `_dom` `NANOS` for collection-site aggregation nodes), use a static (fixed-value, non-computed) reactive, e.g. `reactive({ v: nodes })`.
+
 ### `reactive.wait()` - Waiting for Updates
 
 **Purpose:** Waits for pending reactive recalculations to complete.
@@ -121,6 +125,15 @@ const _dom = reactive({ eager: true, def: () => {
 - DOM must update even when code isn't actively observing
 - User-visible changes must happen automatically
 - Boundary markers protect external content
+
+### Style and Content Aggregation Pattern
+
+Aggregation render nodes (`m.stag`, `m.script`, `m.style`, `m.aggr`) dynamically collect content or CSS values from collector / `to` nodes distributed across the document tree.
+
+**Key principles:**
+- **Two-phase mounting (`doc.initialCSR`):** Render nodes defer aggregation rule recalculations during `doc.initialCSR` so that all collector nodes across the tree have an opportunity to register their reactive presence.
+- **Collector nodes return static empty reactives:** `to` and collector nodes return `reactive({ v: new NANOS() })` to participate cleanly in reactive tracking without producing phantom DOM nodes.
+- **Deterministic ordering:** Registered collector nodes are sorted by `MWIDocument.compareNodePaths()` so that rules and stylesheets maintain consistent tree-traversal order across reactive mutations.
 
 ## Testing Patterns
 

@@ -96,6 +96,46 @@ Deno.test('MWIDocument - getAggr', async (t) => {
 		const id2 = doc.mapAggrBuffer('m.aggr:counter-test-js');
 		assertEquals(id2, 0, 'Should restart from 0 after clear via JS');
 	});
+
+	await t.step('(getAggr clear=@t) - Invokes dynamic callback on function entries during clear', () => {
+		const doc = getInstance('MWIDocument');
+		const aggr = $c.sm(doc, 'getAggr');
+		let clearCalled = false;
+		let clearOp = null;
+		let clearDoc = null;
+
+		aggr.set('dynamic:test', (op, targetDoc) => {
+			clearCalled = true;
+			clearOp = op;
+			clearDoc = targetDoc;
+		});
+
+		$c.sm(doc, 'getAggr', ls(['clear', true]));
+		assert(clearCalled, 'Dynamic callback should be invoked on clear');
+		assertEquals(clearOp, 'clear', 'Callback should receive "clear" op');
+		assertStrictEquals(clearDoc, doc, 'Callback should receive document instance');
+		assertEquals(aggr.size, 0, 'Aggr map should be empty after clear');
+	});
+
+	await t.step('.getAggr({ clear: true }) - Invokes dynamic callback on function entries during clear via JS', () => {
+		const doc = getInstance('MWIDocument');
+		const aggr = doc.getAggr();
+		let clearCalled = false;
+		let clearOp = null;
+		let clearDoc = null;
+
+		aggr.set('dynamic:test-js', (op, targetDoc) => {
+			clearCalled = true;
+			clearOp = op;
+			clearDoc = targetDoc;
+		});
+
+		doc.getAggr({ clear: true });
+		assert(clearCalled, 'Dynamic callback should be invoked on clear via JS');
+		assertEquals(clearOp, 'clear', 'Callback should receive "clear" op');
+		assertStrictEquals(clearDoc, doc, 'Callback should receive document instance');
+		assertEquals(aggr.size, 0, 'Aggr map should be empty after clear');
+	});
 });
 
 Deno.test('MWIDocument - mapAggrBuffer', async (t) => {

@@ -32,9 +32,9 @@ modcaps=''
 	#registry(register #NAV [tpl=[
 		[h.div m.percl='@@'
 			// portrait-mode nav-rail opener
-			[h.details [h.summary]]
+			[h.details [h.summary m.coat=[aria-label='<toggleLabel|Toggle main navigation>' title='<toggleLabel|Toggle main navigation>']]]
 			[h.div m.percl=left [m.slot name=c.left]]  // left-of-nav (e.g. branding)
-			[h.nav m.coat=[navDet.name='<name|_M_navDet>']
+			[h.nav m.coat=[navDet.name='<name|_M_navDet>' aria-label='<label|Main navigation>']
 				[h.div [m.slot]]          // main nav menu
 			]
 			[h.div [m.slot name=c.right]] // right-of-nav (e.g. profile menu)
@@ -92,14 +92,21 @@ html { container-name: root; --resnav-mode: landscape; }
 	.nav-mode::after { content: ' portrait'; }
 	> details {
 		display: inline-block; /* for descendant z */
-		summary { list-style: none; }
-		summary::after {
-			display: inline-block;
-			box-sizing: border-box; width: 24px; height: 24px;
-			font-family: sans-serif; font-size: 24px; line-height: 24px;
-			text-align: center; vertical-align: middle;
-			border: solid 1px #000; border-radius: 3px;
-			background-color: #eee; content: '\2261';
+		summary {
+			list-style: none; outline: none;
+			&::after {
+				display: inline-block;
+				box-sizing: border-box; width: 24px; height: 24px;
+				font-family: sans-serif; font-size: 24px; line-height: 24px;
+				text-align: center; vertical-align: middle;
+				border: solid 1px #000; border-radius: 3px;
+				background-color: #eee; content: '\2261';
+			}
+			&:focus-visible::after {
+				outline: 2px solid Highlight;
+				outline: 2px solid -webkit-focus-ring-color;
+				outline-offset: 2px;
+			}
 		}
 		&:is([open]) {
 			summary::before { /* click-out backdrop below rail */
@@ -122,7 +129,8 @@ html { container-name: root; --resnav-mode: landscape; }
 		background-color: #eee; /* TEMPORARY */
 		&:has(details[open].megamenu:not(details:not([open]) *)) { right: 0; }
 		> div { /* left rail */
-			width: max-content; min-width: 100px; padding-right: 5px;
+			width: max-content; min-width: 100px;
+			padding-top: 5px; padding-right: 5px;
 			height: calc(100dvh - 47px); overflow-y: auto;
 			display: flex; flex-direction: column; gap: 0.5rem;
 			anchor-name: --rail;

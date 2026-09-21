@@ -111,7 +111,7 @@ modcaps=''
 			});
 
 			let retSpecial = false;
-			const getVal = (name, copy) => {
+			const getVal = (name) => {
 				switch (name) { // Handle escapes, e.g. <.lt>
 				case '.aa': return '@@'; // @@ (at-at) escape
 				case '.ap': return '@#'; // @# (at-pound) escape
@@ -119,7 +119,7 @@ modcaps=''
 				case '.lt': return '<'; // Less-than
 				case '.qm': return '?'; // Question mark
 				case '.f': case '.t': case '.u': case '.un':
-					if (copy) retSpecial = name;
+					retSpecial = name;
 					return; // Return special value
 				case '.vb': return '|'; // Vertical bar
 				}
@@ -142,7 +142,7 @@ modcaps=''
 			};
 			let token;
 			const parseExpr = (parentCopy = true) => { // Parse a (sub-)expression
-				const name = tokens.shift(), value = getVal(name, parentCopy);
+				const name = tokens.shift(), value = parentCopy && getVal(name);
 				const then = tokens.shift();
 
 				if (then === '>') { // Simple interpolations
@@ -152,7 +152,7 @@ modcaps=''
 
 				let copy = false;
 
-				switch (then) {
+				if (parentCopy) switch (then) {
 				// Conditionals
 				case '?': copy = !isUns(value); break;
 				case '??': copy = !isUOE(value); break;
@@ -168,7 +168,7 @@ modcaps=''
 					switch (token) {
 					case '<': parseExpr(copy && parentCopy); break; // Start sub-expression
 					case '>': return; // End current expression
-					case '|': case '||': copy = !copy; break; // Toggle copy mode
+					case '|': case '||': if (parentCopy) copy = !copy; break; // Toggle copy mode
 					default: if (copy) outStr(token); break; // Literal
 					}
 				}

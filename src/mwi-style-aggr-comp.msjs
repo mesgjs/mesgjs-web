@@ -1,0 +1,313 @@
+[(
+modpath='mwi/mwi-style-aggr-comp'
+version='1.0.0'
+featreq='mwi.compRegOpen MWIDocNode MWIDocument mwi.comp.MWIHTML'
+featpro='mwi.comp.MWIStyleAggr'
+modcaps=''
+)]
+
+/*
+ * mwi-style-aggr-comp - MWI Style Aggregation Component
+ * Copyright 2026 by Kappa Computer Solutions, LLC and Brian Katzung
+ */
+
+@e @js{
+	if (!mid) throw new Error('MWIStyleAggr requires Mesgjs module management to be active');
+
+	const INTERFACE = 'if';
+	const SCHEMA = 'schema';
+	const AUTO_DOC = 'autoDoc';
+
+	const REG_IF = 'MWIRegistry';
+	const REG_OPEN_FT = 'mwi.compRegOpen';
+	const BASE_IF = 'MWIDocNode';
+	const BASE_FT = BASE_IF;
+
+	const DOC_IF = 'MWIDocument';
+	const DOC_RDY_FT = DOC_IF;
+
+	const HTML_FT = 'mwi.comp.MWIHTML';
+
+	const STYLE_AGGR_IF = 'MWIStyleAggr';
+	const STYLE_AGGR_TYPE = 'm.stag';
+	const STYLE_AGGR_RDY_FT = 'mwi.comp.' + STYLE_AGGR_IF;
+
+	const { fready, fwait, getInstance, getInterface, MsjsObject } = globalThis.$c;
+
+	const aggrConfig = {
+		[STYLE_AGGR_TYPE]: ls([INTERFACE, STYLE_AGGR_IF, SCHEMA, ls([AUTO_DOC, false])]),
+	};
+
+	await fwait(BASE_FT, DOC_RDY_FT, HTML_FT);
+
+	// "Import" parent JS class, Mesgjs-style, for sub-classing
+	const MWIDocNode = getInterface(BASE_IF).proto;
+	const MWIDocument = getInterface(DOC_IF).proto;
+
+	// Supported CSS aggregation attributes and their separators
+	const SUPPORTED_ATTRS = new Map([
+		['anchor-name', ', '],
+		['anchor-scope', ', '],
+		['container-name', ' '],
+		['container-type', ' '],
+		['counter-increment', ' '],
+		['counter-reset', ' '],
+		['counter-set', ' '],
+		['timeline-scope', ', '],
+		['view-timeline-name', ', '],
+	]);
+
+	// WeakMap storing document-scoped style aggregation state
+	const docStates = new WeakMap();
+
+	function getDocState (doc) {
+		let state = docStates.get(doc);
+		if (!state) {
+			state = {
+				ssrSelectors: new Map(), // selector -> Map<attribute, Set<string>>
+				csrNodes: doc.rxNANOS(), // reactive NANOS of collector nodes
+				styleNode: doc.createNode('h.style'),
+			};
+			docStates.set(doc, state);
+		}
+		return state;
+	}
+
+	// Format CSS rules string from selector -> attribute -> values map
+	function formatCSS (selectors) {
+		const rules = [];
+		for (const [selector, attrMap] of selectors.entries()) {
+			const decls = [];
+			for (const [attribute, valSet] of attrMap.entries()) {
+				if (valSet.size === 0) continue;
+				const sep = SUPPORTED_ATTRS.get(attribute) || ' ';
+				const valStr = [...valSet].join(sep);
+				decls.push(`${attribute}: ${valStr};`);
+			}
+			if (decls.length > 0) {
+				rules.push(`${selector} { ${decls.join(' ')} }`);
+			}
+		}
+		return rules.join(' ');
+	}
+
+	// Create dynamic callback for MWIDocument placeholder replacement and cleanup
+	function getAggrCallback (doc) {
+		return function aggrCallback (action, targetDoc) {
+			const effectiveDoc = targetDoc || doc;
+			const state = docStates.get(effectiveDoc);
+			if (action === 'clear') {
+				if (state) {
+					docStates.delete(effectiveDoc);
+				}
+			} else if (action === 'getHTML') {
+				if (!state) return '';
+				const css = formatCSS(state.ssrSelectors);
+				state.styleNode.setAttr('m.text', css);
+				return state.styleNode.getHTML();
+			}
+		};
+	}
+
+	// Parse subSpec positional arguments
+	function parseSubSpec (subSpec) {
+		const list = [...subSpec.values()];
+		if (list.length === 0) {
+			return { isRender: true };
+		}
+		if (list.length === 1) {
+			console.error('Invalid m.stag collector specification: missing attribute');
+			return { isInvalid: true };
+		}
+		const selector = String(list[0]);
+		const attribute = String(list[1]);
+		const values = list.slice(2).map(v => (v !== undefined && v !== null) ? String(v) : '').filter(v => v.length > 0);
+
+		if (!SUPPORTED_ATTRS.has(attribute)) {
+			console.error(`Unsupported style aggregation attribute: ${attribute}`);
+			return { isInvalid: true, attribute };
+		}
+
+		return {
+			isCollector: true,
+			selector,
+			attribute,
+			values,
+		};
+	}
+
+	// MWIStyleAggr (style-value aggregation) interface
+	// `[m.stag selector attribute value...]` - Registers style value(s) for the specified selector and attribute
+	// `[m.stag]` - Renders the aggregated <style> element
+	//
+	// SSR behavior:
+	//   - Collector mode: records rules into document state and returns empty string
+	//   - Render mode: registers dynamic callback, maps buffer placeholder, and returns `<{bufferId}>`
+	//
+	// CSR behavior:
+	//   - Collector mode: registers this node with the reactive buffer and returns empty NANOS
+	//   - Render mode: reactively aggregates styles from all registered collector nodes in node-path order,
+	//     updates managed [h.style] node, and returns its DOM (with DOM sync hydration support)
+	(() => {
+		class MWIStyleAggr extends MWIDocNode {
+			#ps;
+
+			constructor (key, type) {
+				super(key, type);
+				this.#ps = MsjsObject.getPS(this, key);
+			}
+
+			// CSR: return generated DOM (bilingual)
+			// (getDOM sync=domSync?) OR .getDOM({ sync })
+			getDOM (p1) {
+				const d = (p1?.msjsType === '@dispatch') ? p1 : undefined;
+				const ps = d?.p ?? this.#ps;
+				const self = d?.rr ?? this;
+
+				if (ps.has('_dom')) return ps.at('_dom').rv;
+				if (typeof document !== 'object' || typeof document.createElement !== 'function') throw new Error('Missing document.createElement API');
+
+				const doc = ps.at('doc');
+				const parsed = parseSubSpec(self.getSubSpec());
+
+				if (parsed.isCollector || parsed.isInvalid) {
+					// Collector mode (or invalid spec): register in reactive buffer and return empty NANOS
+					if (parsed.isCollector) {
+						const state = getDocState(doc);
+						state.csrNodes.push(self);
+					}
+
+					const nodes = new NANOS();
+					const _dom = reactive({ v: nodes });
+
+					ps.set('_dom', _dom);
+					return _dom.rv;
+				}
+
+				// Render mode: reactively assemble and manage h.style DOM node
+				const state = getDocState(doc);
+				const sync = d ? d.mp.at('sync') : p1?.sync;
+				const nodes = state.styleNode.getDOM({ sync });
+
+				const _dom = reactive({ eager: true, def: () => {
+					// Defer (re)style during initial CSR while collector nodes register
+					if (doc.initialCSR) {
+						return nodes; // Node is static (only content is dynamic)
+					}
+
+					// Collect all registered collector nodes from state.csrNodes
+					const unsorted = [...state.csrNodes.values()];
+
+					// Sort by node path for consistent tree-traversal order
+					const sorted = unsorted.sort((a, b) => {
+						const pathA = a.nodePath(), pathB = b.nodePath();
+						return MWIDocument.compareNodePaths(pathA, pathB);
+					});
+
+					// Extract selectors, attributes, values
+					const selectors = new Map();
+					for (const node of sorted) {
+						const nodeParsed = parseSubSpec(node.getSubSpec());
+						if (!nodeParsed.isCollector) continue;
+
+						let attrMap = selectors.get(nodeParsed.selector);
+						if (!attrMap) {
+							attrMap = new Map();
+							selectors.set(nodeParsed.selector, attrMap);
+						}
+						let valSet = attrMap.get(nodeParsed.attribute);
+						if (!valSet) {
+							valSet = new Set();
+							attrMap.set(nodeParsed.attribute, valSet);
+						}
+						for (const val of nodeParsed.values) {
+							valSet.add(val);
+						}
+					}
+
+					const css = formatCSS(selectors);
+					state.styleNode.setAttr('m.text', css);
+
+					return nodes;
+				}});
+
+				ps.set('_dom', _dom);
+				return _dom.rv;
+			}
+
+			// SSR: render HTML (bilingual)
+			// (getHTML in=buffer?) OR .getHTML({ in })
+			getHTML (p1) {
+				const d = (p1?.msjsType === '@dispatch') ? p1 : undefined;
+				const ps = d?.p ?? this.#ps;
+				const self = d?.rr ?? this;
+
+				if (self.getAttr('m.csr')) return '';
+
+				const doc = ps.at('doc');
+				const output = d ? d.mp.at('in') : p1?.in;
+				const parsed = parseSubSpec(self.getSubSpec());
+
+				if (parsed.isInvalid) {
+					return '';
+				}
+
+				// Ensure dynamic callback is registered for cleanup (even if never rendered)
+				const bufferKey = STYLE_AGGR_TYPE; // 'm.stag'
+				const aggrData = doc.getAggr();
+				if (!aggrData.has(bufferKey)) {
+					aggrData.set(bufferKey, getAggrCallback(doc));
+				}
+
+				if (parsed.isRender) {
+					// Render mode: map buffer placeholder, and return placeholder
+					const bufferId = doc.mapAggrBuffer(bufferKey);
+					const html = `<{${bufferId}}>`;
+
+					if (output) output.push(html);
+					return html;
+				}
+
+				// Collector mode: record rules into document SSR state
+				const state = getDocState(doc);
+				let attrMap = state.ssrSelectors.get(parsed.selector);
+				if (!attrMap) {
+					attrMap = new Map();
+					state.ssrSelectors.set(parsed.selector, attrMap);
+				}
+				let valSet = attrMap.get(parsed.attribute);
+				if (!valSet) {
+					valSet = new Set();
+					attrMap.set(parsed.attribute, valSet);
+				}
+				for (const val of parsed.values) {
+					valSet.add(val);
+				}
+
+				return '';
+			}
+
+			// Note: this node type does not support a sub-doc
+		}
+
+		const proto = MWIStyleAggr.prototype;
+
+		getInterface(STYLE_AGGR_IF).set({
+			pristine: true, lock: true,
+			chain: [ BASE_IF ],
+			handlers: {
+				getDOM: proto.getDOM,
+				getHTML: proto.getHTML,
+			},
+			proto: MWIStyleAggr,
+		});
+	})();
+
+	await fwait(REG_OPEN_FT); // For component registration
+	const registry = getInstance(REG_IF);
+	for (const [name, entry] of Object.entries(aggrConfig)) {
+		registry.register(name, entry);
+	}
+
+	fready(mid, STYLE_AGGR_RDY_FT);
+@}

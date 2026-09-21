@@ -80,6 +80,8 @@
 
 - **`m.slot`**: The component type for content slots (`MWICoreSlot`). Selects and renders content from its slot source: named slots pull from a matching attribute; unnamed slots pull from the slot source's natural children. Falls back to the slot's own children if no source content is available. See also: content slotting, slot source, slotting boundary.
 
+- **`m.stag`**: The component type for CSS style-value aggregation (`MWIStyleAggr`). Operates in collector mode (`[m.stag selector attribute value...]`) to register CSS attribute values and render mode (`[m.stag]`) to emit the aggregated `<style>` element. See also: `MWIStyleAggr`, style aggregation.
+
 - **`m.t`**: The component type for text nodes (`MWICoreText`). The `t` attribute holds the text content. In SSR, renders as HTML-escaped text. In CSR, renders as an `<output>` element (or nothing for empty text). Plain strings in doc specs are automatically converted to `m.t` nodes.
 
 - **`mwi.compRegOpen`**: Feature promise signaled by `MWIRegistry` when it is ready to accept component registrations. Component modules must `fwait` on this before registering their components.
@@ -114,6 +116,8 @@
 
 - **`MWIRegistry`**: The singleton Mesgjs interface that manages all component registrations. Assigns unique component IDs, coordinates module loading via feature promises, and synchronizes server-assigned IDs to the client. See also: component, component ID, feature promise.
 
+- **`MWIStyleAggr`**: The Mesgjs interface for CSS style-value aggregation. Component type: `m.stag`. See also: `m.stag`, style aggregation.
+
 - **Named slot**: An `m.slot` node with a `name` attribute. Renders the slot source's attribute whose name matches the slot's `name` attribute (if that attribute is list-valued). Falls back to the slot's own children if no matching attribute is found. See also: unnamed slot, content slotting.
 
 - **Permanent classes**: See `m.percl`.
@@ -135,6 +139,8 @@
 - **Slotting through**: The pattern of explicitly forwarding attributes across a slotting boundary using `m.slat` or `m.coat`. Required when content inside a slot needs access to attributes from the template node, because the slot itself creates a new slotting boundary that would otherwise block access. See also: slotting boundary, `m.slat`, `m.coat`.
 
 - **SSR**: Server-side rendering. The process of rendering MWI document nodes to an HTML string via `getHTML()`. SSR output is a static snapshot at the time of the call — it is not reactive. Contrast with CSR.
+
+- **Style aggregation**: The mechanism by which CSS attributes (such as `container-name`, `counter-reset`, `counter-increment`, `anchor-name`, `timeline-scope`) are incrementally collected from distributed components and assembled into a single consolidated `<style>` element with automatic deduplication and formatting. Implemented via `m.stag` (`MWIStyleAggr`). See also: `m.stag`, `MWIStyleAggr`.
 
 - **Sub-doc**: The live, instantiated collection of child doc nodes for a given doc node. When `subDoc.live` is `true`, the sub-doc is the authoritative source of sub-content (overriding the sub-spec). Stored as a reactive NANOS.
 

@@ -14,6 +14,8 @@
 - Doc-node creation and management
 - Root fragment management (`m.frg`)
 - Spec-to-node conversion
+- Content and style aggregation coordination
+- SSR aggregation placeholder substitution and lifecycle management
 - Reactive NANOS creation helper
 
 ## Operations
@@ -63,19 +65,37 @@
 
 ### Rendering
 
-**`(getHTML)` / `getHTML()`**
-- Returns HTML string for entire document
+**`(getHTML node?)` / `getHTML(node?)`**
+- Returns HTML string for the entire document (or specific `node` if provided)
 - Synchronous operation
-- Delegates to root fragment's `getHTML()`
+- Renders initial HTML and recursively replaces aggregation `<{id}>` placeholders
+- Supports both static buffer substitution and dynamic callback-function entries (`entry('getHTML', doc)`)
+- Preserves placeholders inside HTML comments, `<script>`, and `<style>` blocks without corrupting them
 
 **`(getDOM sync=domSync?)` / `getDOM({ sync? })`**
 - Returns reactive NANOS of DOM nodes
 - Synchronous initial render
+- Uses a two-pass mechanism during initial CSR (`initialCSR` flag) to ensure collector/`to` nodes register before render/`from` nodes evaluate
 - Delegates to root fragment's `getDOM()`
 - **`sync` parameter (optional):** [`MWIDOMSync`](MWIDOMSync-dom-sync.md) instance for SSR-CSR hydration
   - Pass a `MWIDOMSync` instance to enable sync mode during hydration
   - Typically initialized with `document.body.firstChild` or similar to start matching from existing SSR DOM
   - See [SSR-CSR Hydration](../../v5-arch/ssr-csr-hydration-v2.md) for complete hydration workflow
+
+### Aggregation & Coordination
+
+**`(getAggr clear=@f)` / `getAggr({ clear? } = {})`**
+- Returns the document's aggregation data map (`Map<bufferName, data | callback>`)
+- If `clear: true` is passed, invokes `clearAggr()` before returning the cleared map
+
+**`(mapAggrBuffer name)` / `mapAggrBuffer(name)`**
+- Assigns and returns a numeric buffer ID for the specified aggregation buffer name
+- Used by aggregation `from` / render nodes (`m.aggr`, `m.script`, `m.style`, `m.stag`) to generate placeholder tokens (`<{id}>`)
+
+**`static compareNodePaths(a, b)`**
+- Compares two doc-node path arrays for ordering
+- Returns negative if `a < b`, `0` if equal, and positive if `a > b`
+- Used to sort registered collector nodes by deterministic document tree-traversal order in CSR
 
 ### Utilities
 
@@ -208,9 +228,30 @@ const dom = doc.getDOM({ sync });
 // See MWIDOMSync and SSR-CSR Hydration docs for complete details
 ```
 
+## Content & Style Aggregation Protocol
+
+`MWIDocument` coordinates document-wide content and style aggregation via `getAggr()`, `mapAggrBuffer()`, and post-render placeholder substitution in `getHTML()`.
+
+### Placeholder Substitution
+
+1. Render / `from` nodes request a numeric buffer ID via `mapAggrBuffer(name)` and emit `<{id}>` into the SSR stream.
+2. After the root fragment renders, `getHTML()` scans for `<{id}>` tokens (skipping HTML comments, `<script>`, and `<style>` blocks).
+3. For each token, `getHTML()` looks up the registered entry in `aggrData`:
+   - **Static Buffer Map (`Map<key, renderedHTML>` or array):** Concatenates all rendered values.
+   - **Dynamic Callback Function (`function(action, doc)`):** Invokes `callback('getHTML', doc)` and recursively processes the returned HTML string.
+
+### Aggregation Lifecycle & Cleanup
+
+When document state is cleared via `getAggr({ clear: true })` or `clearAggr()`:
+- Scans `aggrData` for function entries and calls `callback('clear', doc)` to allow modules (such as `MWIStyleAggr`) to clean up document-scoped `WeakMap` state.
+- Resets buffer IDs and clears internal maps.
+
 ## Related Interfaces
 
 - [`MWIRegistry`](MWIRegistry-registry.md) - Component registry
 - [`MWIDocNode`](MWIDocNode-document-node.md) - Base node interface
 - [`MWICoreFrag`](MWICoreFrag-fragment.md) - Document root type
+- [`MWIAggr`](MWIAggr-aggregate-content.md) - Content aggregation (`m.aggr`)
+- [`MWIAggrScript`](MWIAggrScript-script-style.md) - Script and stylesheet aggregation (`m.script`, `m.style`)
+- [`MWIStyleAggr`](MWIStyleAggr-style-aggregation.md) - CSS style-value aggregation (`m.stag`)
 - [`MWIDOMSync`](MWIDOMSync-dom-sync.md) - SSR-CSR DOM synchronization

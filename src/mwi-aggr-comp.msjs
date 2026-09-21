@@ -163,7 +163,7 @@ modcaps=''
 
 					// `to` nodes don't render any DOM themselves
 					const nodes = new NANOS();
-					const _dom = reactive({ eager: true, def: () => nodes });
+					const _dom = reactive({ v: nodes });
 
 					ps.set('_dom', _dom);
 					return _dom.rv;
@@ -422,7 +422,7 @@ modcaps=''
 
 					// `to` nodes don't render any DOM themselves
 					const nodes = new NANOS();
-					const _dom = reactive({ eager: true, def: () => nodes });
+					const _dom = reactive({ v: nodes });
 
 					ps.set('_dom', _dom);
 					return _dom.rv;

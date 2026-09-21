@@ -37,8 +37,14 @@ modcaps=''
 	const reactiveBox = $c.getInstance('@reactive');
 
 	// Clear all aggregated data
-	function clearAggr (p) {
+	function clearAggr (p, doc) {
 		const data = p.at('aggrData');
+
+		for (const value of data.values()) {
+			if (typeof value === 'function') {
+				value('clear', doc);
+			}
+		}
 
 		data.clear();
 		p.at('aggrMap').clear();
@@ -92,7 +98,7 @@ modcaps=''
 			const ps = d?.p ?? this.#ps;
 			const data = ps.at('aggrData');
 
-			if (options.clear) clearAggr(ps); // Clear all aggregated data
+			if (options.clear) clearAggr(ps, d?.rr ?? this); // Clear all aggregated data
 			return data;
 		}
 
@@ -136,6 +142,7 @@ modcaps=''
 		getHTML (p1) {
 			const d = p1?.msjsType === '@dispatch' ? p1 : undefined;
 			const ps = d?.p ?? this.#ps;
+			const doc = d?.rr ?? this;
 			const node = (d ? d.mp.at(0) : p1) ?? ps.at('root');
 			const initial = node.getHTML();
 
@@ -172,9 +179,16 @@ modcaps=''
 					cursor = index + outer.length; // Cursor resumes after the placeholder
 					if (seen) continue;
 
-					const name = map.get(number), partMap = (name && data.get(name)) || [];
+					const name = map.get(number);
+					const entry = name ? data.get(name) : undefined;
 
-					for (const part of partMap.values()) process(part); // Add recursively-processed placeholder value
+					if (typeof entry === 'function') {
+						const result = entry('getHTML', doc);
+						process(result);
+					} else {
+						const partMap = entry || [];
+						for (const part of partMap.values()) process(part); // Add recursively-processed placeholder value
+					}
 				}
 
 				if (cursor < input.length) output.push(input.slice(cursor)); // Add final segment
@@ -423,7 +437,7 @@ modcaps=''
 		const p = d.p, data = p.at('aggrData');
 		const m = d.mp, clear = m.at('clear');
 
-		if (clear) clearAggr(p); // Clear all aggregated data
+		if (clear) clearAggr(p, d.rr); // Clear all aggregated data
 		return data;
 	}
 

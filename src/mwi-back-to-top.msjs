@@ -26,13 +26,14 @@ modcaps=''
 	#(nset registry=@c(get #REG_IF))
 
 	#registry(register #BACK [tpl=[
-		[h.button m.percl='@@']
+		[h.button m.percl='@@' m.coat=[title='<label|Back to top>' aria-label='<label|Back to top>']]
 		[m.script m.coat=[m.text="
 (() => {
 	let lastY = window.scrollY;
 	const clickHandler = () => {
 		document.documentElement.classList.remove('show-to-top');
 		window.scrollTo(0, 0);
+		document.body.focus();
 	};
 	const showHandler = (e) => {
 		const newY = window.scrollY;
