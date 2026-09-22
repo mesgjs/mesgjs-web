@@ -6,12 +6,13 @@ featreq='MWIDocument mwi.comp.MWIAggrScript mwi.comp.MWIResNav mwi.comp.MWIBackT
 	mwi.comp.MWIAggrScript
 	mwi.comp.MWIBackToTop
 	mwi.comp.MWIResNav
+	mwi.comp.MWIStyleAggr
 )(then {
 	#(nset doc=@c(get MWIDocument))
 	#doc(append list=[
 		[h.doctype]
 		[h.head
-			[m.scpcss]
+			[m.scpcss][m.stag]
 			[h.style m.text='
 				html[data-mode="landscape"] { --resnav-mode: landscape; }
 				html[data-mode="portrait"] { --resnav-mode: portrait; }

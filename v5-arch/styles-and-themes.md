@@ -15,7 +15,38 @@ Layout is explicitly excluded from this system. Layout tokens (gap, padding, gri
 
 ---
 
-### Token Layers
+### Token Layers and Scoping Architecture (Root vs Body)
+
+#### Root Container & Body Token Scoping Model
+
+Theme configuration uses container style queries on `:root` / `html` (`container-name: theme-cfg`). Because a container element cannot query its own container properties, `@container` queries based on root state variables apply to descendants of `html` — starting with `body`.
+
+Therefore, the styling architecture strictly enforces a clean separation between `html` and `body`:
+
+1. **`html` / `:root` Level (Configuration & State Resolution)**:
+   - **Only** style settings that *must* be at the `html` level reside here.
+   - Declares the container: `container-name: theme-cfg` (assembled via style aggregation or theme template).
+   - Declares root `color-scheme: light dark`.
+   - Resolves theme state variables (e.g., `--theme-color-mode`, `--theme-contrast-mode`, `--theme-physics-mode`) and root source color inputs.
+   - Uses **standard CSS cascade rules** (source ordering, media queries, and attribute selector specificity like `html[data-theme='...']`) to resolve active mode states.
+
+2. **`body` Level & Descendants (Token Consumption & Generative Styling)**:
+   - All style settings and design tokens that aren't strictly required to be on `html` reside on `body` instead.
+   - `@container theme-cfg style(...)` queries target `body` to define active semantic tokens, base+delta scales, surfaces, and theme traits.
+   - Descendant elements inherit these tokens through standard cascade inheritance, while scoped subtrees can establish local containers for nested overrides.
+
+```
+html / :root (Container & State Resolution via Standard Cascade)
+    │  - container-name: theme-cfg
+    │  - --theme-color-mode: light | dark (resolved via @media & html[data-theme=...])
+    │  - --theme-contrast-mode: standard | high (resolved via @media & html[data-contrast=...])
+    ↓
+@container theme-cfg style(...) -> body (Design Tokens & Generative Models)
+    │  - Primitives (--_*) & Semantic Tokens (--color-*, --radius-*, --shadow-*)
+    │  - Generative Base & Delta Progressions (--surface-*, --contrast-scale)
+    ↓
+Components & Subtrees (Inherit tokens or define local container overrides)
+```
 
 Tokens are organized in three layers:
 
@@ -30,7 +61,7 @@ Theme trait presets (correlated bundles, override semantics)
 **Primitives** are raw values that are never referenced directly by components. They are prefixed with `--_` to signal they are private:
 
 ```css
-:root {
+body {
   --_blue-6: oklch(55% 0.2 250);
   --_space-4: 1rem;
 }
@@ -39,7 +70,7 @@ Theme trait presets (correlated bundles, override semantics)
 **Semantic tokens** are named by *role*, not by value. Components reference only this layer:
 
 ```css
-:root {
+body {
   --color-interactive: var(--_blue-6);
   --radius-control: 8px;
   --duration-transition: 200ms;
@@ -99,16 +130,19 @@ A naive implementation of `data-theme-contrast='high'` might try to set `--surfa
 The fix is to decompose each delta into a **direction (sign)** — owned by `data-theme` — and a **magnitude** that `data-theme-contrast` can scale, regardless of which direction is active. See [Direction and Magnitude](#direction-and-magnitude-decomposing-the-delta) below for the full token layout. With that decomposition, `data-theme-contrast` becomes a pure multiplier and needs no knowledge of which theme direction is active:
 
 ```css
-:root {
+body {
   --contrast-scale: 1;   /* normal: no change to step magnitudes */
 }
 
-[data-theme-contrast='high'] {
-  --contrast-scale: 1.5; /* steeper steps, same direction as whatever theme is active */
+/* Or via container query from html container */
+@container theme-cfg style(--theme-contrast-mode: high) {
+  body {
+    --contrast-scale: 1.5; /* steeper steps, same direction as whatever theme is active */
+  }
 }
 ```
 
-`data-theme-contrast='normal'` need not be defined explicitly since `--contrast-scale: 1` is already the root default — it's the default state in the absence of an override.
+`data-theme-contrast='normal'` need not be defined explicitly since `--contrast-scale: 1` is already the default on `body` — it's the default state in the absence of an override.
 
 ---
 
@@ -121,7 +155,7 @@ A "surface level" is not a fixed color — it is a *position along a progression
 #### Surface Elevation Example
 
 ```css
-:root {
+body {
   /* Base surface */
   --surface-base-l: 98%;     /* lightness in oklch */
   --surface-base-c: 0.005;   /* chroma */
@@ -201,7 +235,31 @@ In CSS, this is expressed as:
 Here is how the decomposed tokens are defined and composed across the `data-theme` and `data-theme-contrast` axes:
 
 ```css
-:root {
+/* --- Root Setup (html): Container & State Resolution via Standard Cascade --- */
+html {
+  container-name: theme-cfg;
+  color-scheme: light dark;
+
+  /* Baseline mode defaults */
+  --theme-color-mode: light;
+  --theme-contrast-mode: standard;
+}
+
+@media (prefers-color-scheme: dark) {
+  html { --theme-color-mode: dark; }
+}
+
+@media (prefers-contrast: more) {
+  html { --theme-contrast-mode: high; }
+}
+
+/* Explicit User Overrides via standard cascade rules */
+html[data-theme='light']          { --theme-color-mode: light; }
+html[data-theme='dark']           { --theme-color-mode: dark; }
+html[data-contrast='high']        { --theme-contrast-mode: high; }
+
+/* --- Body Level: Generative Deltas and Derived Calculations --- */
+body {
   /* 1. Global Contrast Multiplier (Default: 1) */
   --contrast-scale: 1;
 
@@ -257,35 +315,41 @@ Here is how the decomposed tokens are defined and composed across the `data-them
   );
 }
 
-/* --- Theme Trait Axis: Contrast --- */
-[data-theme-contrast='high'] {
-  --contrast-scale: 1.5; /* Steeper steps across all deltas */
+/* --- Container Style Queries Applied to Body --- */
+
+/* Contrast Axis */
+@container theme-cfg style(--theme-contrast-mode: high) {
+  body {
+    --contrast-scale: 1.5; /* Steeper steps across all deltas */
+  }
 }
 
-/* --- Theme Trait Axis: Luminance --- */
+/* Luminance Axis: Light theme */
+@container theme-cfg style(--theme-color-mode: light) {
+  body {
+    --surface-base-l: 98%;
+    --surface-base-c: 0.005;
+    --surface-base-h: 250;
 
-/* Light theme: surfaces get darker as they elevate */
-[data-theme='light'] {
-  --surface-base-l: 98%;
-  --surface-base-c: 0.005;
-  --surface-base-h: 250;
-
-  --surface-delta-l-sign: -1;  /* darker */
-  --surface-delta-l-scale: 4%;
-  --surface-delta-c-sign: 1;   /* warmer */
-  --surface-delta-c-scale: 0.003;
+    --surface-delta-l-sign: -1;  /* darker */
+    --surface-delta-l-scale: 4%;
+    --surface-delta-c-sign: 1;   /* warmer */
+    --surface-delta-c-scale: 0.003;
+  }
 }
 
-/* Dark theme: surfaces get lighter as they elevate */
-[data-theme='dark'] {
-  --surface-base-l: 8%;
-  --surface-base-c: 0.02;
-  --surface-base-h: 250;
+/* Luminance Axis: Dark theme */
+@container theme-cfg style(--theme-color-mode: dark) {
+  body {
+    --surface-base-l: 8%;
+    --surface-base-c: 0.02;
+    --surface-base-h: 250;
 
-  --surface-delta-l-sign: 1;   /* lighter */
-  --surface-delta-l-scale: 5%;
-  --surface-delta-c-sign: -1;  /* cooler */
-  --surface-delta-c-scale: 0.002;
+    --surface-delta-l-sign: 1;   /* lighter */
+    --surface-delta-l-scale: 5%;
+    --surface-delta-c-sign: -1;  /* cooler */
+    --surface-delta-c-scale: 0.002;
+  }
 }
 ```
 

@@ -6,7 +6,7 @@ all: js/mwi-aggr-comp.esm.js \
 	js/mwi-form-comp.esm.js \
 	js/mwi-html-comp.esm.js \
 	js/mwi-registry.esm.js \
-	js/mwi-res-nav.esm.js \
+	js/mwi-res-nav-comp.esm.js \
 	js/mwi-style-aggr-comp.esm.js
 
 js/%.esm.js: %.msjs

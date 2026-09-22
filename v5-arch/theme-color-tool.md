@@ -10,7 +10,7 @@ Rather than generating exhaustive 13-step tonal ramps, the tool implements the a
 - Evaluates contrast against strict WCAG 2.1 AA (4.5:1) and AAA (7.0:1) requirements for normal/small text after gamut mapping into sRGB.
 - Implements the consolidated **two-phase `resnav` pattern** (as proven in [`src/mwi-res-nav.msjs`](src/mwi-res-nav.msjs:42)):
   1. Resolves active modes (`--theme-color-mode`, `--theme-contrast-mode`) on `html` from system media queries (`prefers-color-scheme`, `prefers-contrast`, `forced-colors`) and explicit user overrides (`data-theme`, `data-contrast`).
-  2. Applies non-overlapping, non-repeated token definitions via container style queries (`@container root style(...)`).
+  2. Applies non-overlapping, non-repeated token definitions via container style queries (`@container theme-cfg style(...)`).
 - Exports copy-and-paste-ready CSS custom properties for light, dark, high-contrast (AAA), and forced-colors themes along with metadata for full reproducibility.
 
 ---
@@ -53,8 +53,8 @@ util/color-token-generator/
    - Bi-directionally syncs Hugh's OKLCH output with the generator state.
 
 4. **[`util/color-token-generator/js/token-exporter.esm.js`](util/color-token-generator/js/token-exporter.esm.js)**:
-   - Formats Phase 1 State Resolution CSS (`html` container and custom mode variables).
-   - Formats Phase 2 token blocks using `@container root style(...)` for decoupled color modes (`light`, `dark`) and orthogonal contrast modes (`high`, `forced`).
+   - Formats Phase 1 State Resolution CSS (`html`/`:root` container and custom mode variables).
+   - Formats Phase 2 token blocks using `@container theme-cfg style(...)` for decoupled color modes (`light`, `dark`) and orthogonal contrast modes (`high`, `forced`).
    - Generates reproduction headers (CSS comments with input parameters).
    - Generates JSON state configuration blocks for saving and restoring themes.
 
@@ -153,18 +153,21 @@ The tool provides an output pane with three synchronized formats:
    ========================================================================== */
 
 /* --------------------------------------------------------------------------
-   Phase 1: State Resolution (Media Queries + Attribute Overrides)
+   Phase 1: State Resolution (Media Queries + Attribute Overrides on html)
    -------------------------------------------------------------------------- */
 html {
-  container-name: root;
+  container-name: theme-cfg;
   color-scheme: light dark;
 
   /* Baseline mode defaults */
   --theme-color-mode: light;
   --theme-contrast-mode: standard;
+
+  /* Base/primitive theme inputs */
+  --m-primary-base: oklch(55% 0.18 260);
 }
 
-/* System Preference Defaults */
+/* System Preference Defaults via Standard Cascade */
 @media (prefers-color-scheme: dark) {
   html { --theme-color-mode: dark; }
 }
@@ -177,7 +180,7 @@ html {
   html { --theme-contrast-mode: forced; }
 }
 
-/* Explicit User Overrides */
+/* Explicit User Overrides via Standard Cascade Rules (Specificity/Ordering) */
 html[data-theme='light']          { --theme-color-mode: light; }
 html[data-theme='dark']           { --theme-color-mode: dark; }
 
@@ -186,16 +189,14 @@ html[data-contrast='more'],
 html[data-contrast='high']        { --theme-contrast-mode: high; }
 
 /* --------------------------------------------------------------------------
-   Phase 2: Consolidated Non-Overlapping Token Blocks
+   Phase 2: Consolidated Non-Overlapping Token Blocks on body
+   (Since theme configuration uses container queries on :root/html, style
+   settings not required on html are applied to body instead)
    -------------------------------------------------------------------------- */
 
-:root {
-  --m-primary-base: oklch(55% 0.18 260);
-}
-
 /* Base Light Mode Tokens */
-@container root style(--theme-color-mode: light) {
-  :root, body {
+@container theme-cfg style(--theme-color-mode: light) {
+  body {
     --color-primary: oklch(40% 0.18 260);
     --color-on-primary: oklch(99% 0 0);
     --color-primary-container: oklch(90% 0.063 260);
@@ -210,8 +211,8 @@ html[data-contrast='high']        { --theme-contrast-mode: high; }
 }
 
 /* Base Dark Mode Tokens */
-@container root style(--theme-color-mode: dark) {
-  :root, body {
+@container theme-cfg style(--theme-color-mode: dark) {
+  body {
     --color-primary: oklch(80% 0.117 260);
     --color-on-primary: oklch(15% 0.090 260);
     --color-primary-container: oklch(30% 0.126 260);
@@ -226,16 +227,16 @@ html[data-contrast='high']        { --theme-contrast-mode: high; }
 }
 
 /* Orthogonal High-Contrast (WCAG AAA) Layer */
-@container root style(--theme-contrast-mode: high) {
-  :root, body {
+@container theme-cfg style(--theme-contrast-mode: high) {
+  body {
     --color-on-surface-variant: var(--color-on-surface);
     --color-outline: var(--color-on-surface);
   }
 }
 
 /* Orthogonal Windows High Contrast Mode (Forced Colors) Layer */
-@container root style(--theme-contrast-mode: forced) {
-  :root, body {
+@container theme-cfg style(--theme-contrast-mode: forced) {
+  body {
     --color-primary: Highlight;
     --color-on-primary: HighlightText;
     --color-on-surface: CanvasText;
@@ -308,7 +309,7 @@ Rather than generating combinatorial CSS selectors (e.g. `html[data-theme="dark"
 1. **Phase 1 (State Resolution)**: Resolves the active mode variables on `html` (`--theme-color-mode: light|dark` and `--theme-contrast-mode: standard|high|forced`).
    - Base defaults are driven by standard OS queries: [`@media (prefers-color-scheme)`](v5-arch/theme-color-tool.md:235), [`@media (prefers-contrast: more)`](v5-arch/theme-color-tool.md:244), and [`@media (forced-colors: active)`](v5-arch/theme-color-tool.md:245).
    - Explicit user overrides are attached via root attributes: `html[data-theme="..."]` and `html[data-contrast="..."]`.
-2. **Phase 2 (Non-Overlapping Token Application)**: Token definitions query the resolved container state via `@container root style(...)`.
+2. **Phase 2 (Non-Overlapping Token Application)**: Token definitions query the resolved container state via `@container theme-cfg style(...)`.
    - **Color Axis**: Light and Dark token sets are declared exactly once.
    - **Contrast Axis**: High-contrast (AAA) and Forced Colors layers act orthogonally over whichever color mode is active, collapsing variant tokens or injecting standard CSS system colors (`Canvas`, `CanvasText`, `Highlight`, `ButtonBorder`).
 

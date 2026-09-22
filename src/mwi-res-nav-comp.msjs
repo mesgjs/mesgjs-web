@@ -1,7 +1,7 @@
 [(
 modpath='mwi/mwi-res-nav'
 version='1.0.0'
-featreq='mwi.compRegOpen'
+featreq='mwi.compRegOpen mwi.comp.MWIStyleAggr'
 featpro='mwi.comp.MWIResNav'
 modcaps=''
 )]
@@ -19,6 +19,7 @@ modcaps=''
 #(nset
 	REG_OPEN_FT=mwi.compRegOpen
 	REG_IF=MWIRegistry
+	STYLE_AGGR_FT=mwi.comp.MWIStyleAggr
 
 	READY_FT=mwi.comp.MWIResNav
 	NAV=resNav
@@ -26,10 +27,11 @@ modcaps=''
 	MEGA=megaMenu
 	BACK=backToTop
 )
-@c(await @c(fwait #REG_OPEN_FT) {
+@c(await @c(fwait #REG_OPEN_FT #STYLE_AGGR_FT) {
 	#(nset registry=@c(get #REG_IF))
 
 	#registry(register #NAV [tpl=[
+		[m.stag :root container-name resnav-cfg]
 		[h.div m.percl='@@'
 			// portrait-mode nav-rail opener
 			[h.details [h.summary m.coat=[aria-label='<toggleLabel|Toggle main navigation>' title='<toggleLabel|Toggle main navigation>']]]
@@ -39,8 +41,8 @@ modcaps=''
 			]
 			[h.div [m.slot name=c.right]] // right-of-nav (e.g. profile menu)
 	]] scopedCSS="
-html { container-name: root; --resnav-mode: landscape; }
-@media (orientation: portrait) and (width < 800px) { html { --resnav-mode: portrait; } }
+:root { --resnav-mode: landscape; }
+@media (orientation: portrait) and (width < 800px) { :root { --resnav-mode: portrait; } }
 .@@ {
 	display: flex; gap: 10px 20px;
 	position: relative;
@@ -58,7 +60,7 @@ html { container-name: root; --resnav-mode: landscape; }
 		details[open] > summary::after { content: '\25B2'; } /* up (to close) */
 	}
 }
-@container root style(--resnav-mode: landscape) { .@@ {
+@container resnav-cfg style(--resnav-mode: landscape) { .@@ {
 	z-index: 9999;
 	.nav-mode::after { content: ' landscape'; }
 	> details { display: none; }
@@ -88,7 +90,7 @@ html { container-name: root; --resnav-mode: landscape; }
 		}
 	}
 }}
-@container root style(--resnav-mode: portrait) { .@@ {
+@container resnav-cfg style(--resnav-mode: portrait) { .@@ {
 	.nav-mode::after { content: ' portrait'; }
 	> details {
 		display: inline-block; /* for descendant z */
