@@ -45,9 +45,6 @@ html {
   /* Baseline mode defaults */
   --theme-color-mode: light;
   --theme-contrast-mode: standard;
-
-  /* Base/primitive theme inputs */
-  --m-${family}-base: ${baseFormatted};
 }
 
 /* System Preference Defaults via Standard Cascade */
@@ -91,21 +88,11 @@ ${darkTokenLines}
   }
 }
 
-/* Orthogonal High-Contrast (WCAG AAA) Layer */
-@container theme-cfg style(--theme-contrast-mode: high) {
-  body {
-    --color-on-surface-variant: var(--color-on-surface);
-    --color-outline: var(--color-on-surface);
-  }
-}
-
 /* Orthogonal Windows High Contrast Mode (Forced Colors) Layer */
 @container theme-cfg style(--theme-contrast-mode: forced) {
   body {
     --color-${family}: Highlight;
     --color-on-${family}: HighlightText;
-    --color-on-surface: CanvasText;
-    --color-outline: ButtonBorder;
   }
 }
 `;
@@ -155,9 +142,6 @@ html {
   /* Baseline mode defaults */
   --theme-color-mode: light;
   --theme-contrast-mode: standard;
-
-  /* Base/primitive theme inputs */
-  --m-neutral-base: ${baseFormatted};
 }
 
 /* System Preference Defaults via Standard Cascade */
@@ -230,6 +214,7 @@ ${darkSemLines}
 @container theme-cfg style(--theme-contrast-mode: forced) {
   body {
     --color-on-surface: CanvasText;
+    --color-on-surface-variant: CanvasText;
     --color-outline: ButtonBorder;
     --color-outline-variant: ButtonBorder;
     --color-inverse-surface: CanvasText;

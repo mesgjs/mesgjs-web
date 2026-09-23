@@ -423,15 +423,20 @@ function updateSandboxPreview (generated, isNeutral) {
 	} else {
 		document.getElementById('sample-surface-stack').style.display = 'none';
 		const tokens = generated[mode];
+		const neuTokens = generateNeutralTokens(COLOR_FAMILIES.neutral.defaultOklch);
+		const semNeu = neuTokens[mode].semantic;
+
 		const mainCol = tokens[`--color-${state.family}`].cssValue;
 		const onMainCol = tokens[`--color-on-${state.family}`].cssValue;
 		const containerCol = tokens[`--color-${state.family}-container`].cssValue;
 		const onContainerCol = tokens[`--color-on-${state.family}-container`].cssValue;
-		const outlineCol = isHc ? onMainCol : tokens['--color-outline'].cssValue;
-		const onSurfVar = isHc ? '#000000' : tokens['--color-on-surface-variant'].cssValue;
+
+		const outlineCol = isHc ? semNeu['--color-on-surface'].cssValue : semNeu['--color-outline'].cssValue;
+		const onSurfCol = semNeu['--color-on-surface'].cssValue;
+		const onSurfVar = isHc ? semNeu['--color-on-surface'].cssValue : semNeu['--color-on-surface-variant'].cssValue;
 
 		sb.style.backgroundColor = mode === 'light' ? '#ffffff' : '#181c26';
-		sb.style.color = mode === 'light' ? '#12151e' : '#f0f3f8';
+		sb.style.color = onSurfCol;
 		sb.style.borderColor = outlineCol;
 
 		sb.style.setProperty('--color-current-role', mainCol);
@@ -439,7 +444,7 @@ function updateSandboxPreview (generated, isNeutral) {
 		sb.style.setProperty('--color-current-role-container', containerCol);
 		sb.style.setProperty('--color-on-current-role-container', onContainerCol);
 		sb.style.setProperty('--color-outline', outlineCol);
-		sb.style.setProperty('--color-on-surface', mode === 'light' ? '#12151e' : '#f0f3f8');
+		sb.style.setProperty('--color-on-surface', onSurfCol);
 		sb.style.setProperty('--color-on-surface-variant', onSurfVar);
 	}
 }

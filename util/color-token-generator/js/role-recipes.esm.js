@@ -5,6 +5,7 @@
 
 import {
 	oklchToSrgb,
+	rgbToHex,
 	getRelativeLuminanceFromOklch,
 	calculateContrastRatio,
 	formatOklch,
@@ -85,8 +86,6 @@ export const CHROMATIC_RECIPES = {
 		{ tokenSuffix: '-fixed-dim', l: 0.82, cFactor: 0.45, partnerSuffix: '-on-fixed', targetRatio: 4.5, name: 'Fixed Surface Dim' },
 		{ tokenSuffix: '-on-fixed', l: 0.10, cFactor: 0.60, partnerSuffix: '-fixed', targetRatio: 4.5, name: 'Text on Fixed' },
 		{ tokenSuffix: '-on-fixed-variant', l: 0.28, cFactor: 0.50, partnerSuffix: '-fixed', targetRatio: 4.5, name: 'Variant Text on Fixed' },
-		{ tokenSuffix: '__outline', tokenOverride: '--color-outline', l: 0.50, cFactor: 0.20, name: 'Component Outline' },
-		{ tokenSuffix: '__on-surface-variant', tokenOverride: '--color-on-surface-variant', l: 0.35, cFactor: 0.20, name: 'Secondary Content' },
 	],
 	dark: [
 		{ tokenSuffix: '', l: 0.80, cFactor: 0.65, partnerSuffix: '-on', targetRatio: 4.5, name: 'Main Container/Fill' },
@@ -97,8 +96,6 @@ export const CHROMATIC_RECIPES = {
 		{ tokenSuffix: '-fixed-dim', l: 0.82, cFactor: 0.45, partnerSuffix: '-on-fixed', targetRatio: 4.5, name: 'Fixed Surface Dim' },
 		{ tokenSuffix: '-on-fixed', l: 0.10, cFactor: 0.60, partnerSuffix: '-fixed', targetRatio: 4.5, name: 'Text on Fixed' },
 		{ tokenSuffix: '-on-fixed-variant', l: 0.28, cFactor: 0.50, partnerSuffix: '-fixed', targetRatio: 4.5, name: 'Variant Text on Fixed' },
-		{ tokenSuffix: '__outline', tokenOverride: '--color-outline', l: 0.55, cFactor: 0.20, name: 'Component Outline' },
-		{ tokenSuffix: '__on-surface-variant', tokenOverride: '--color-on-surface-variant', l: 0.75, cFactor: 0.20, name: 'Secondary Content' },
 	],
 };
 
@@ -172,14 +169,17 @@ export function generateChromaticTokens (familyId, baseOklch) {
 			const h = baseOklch.h;
 
 			const srgb = oklchToSrgb(l, c, h);
+			const hexValue = rgbToHex(srgb.r, srgb.g, srgb.b).toUpperCase();
 
 			tokens[tokenName] = {
 				name: tokenName,
 				label: recipe.name,
 				oklch: { l, c, h },
-				cssValue: formatOklch(l, c, h, { percent: true }),
+				oklchValue: formatOklch(l, c, h, { percent: true }),
+				hex: hexValue,
+				cssValue: hexValue,
 				inGamut: srgb.inGamut,
-				srgbHex: srgb,
+				srgbHex: hexValue,
 				partnerToken: recipe.partnerSuffix !== undefined
 					? (recipe.partnerSuffix.startsWith('-on')
 							? `--color-on-${familyId}${recipe.partnerSuffix.slice(3)}`
@@ -271,13 +271,17 @@ export function generateNeutralTokens (baseOklch) {
 			const c = baseOklch.c * sem.cFactor;
 			const h = baseOklch.h;
 			const srgb = oklchToSrgb(l, c, h);
+			const hexValue = rgbToHex(srgb.r, srgb.g, srgb.b).toUpperCase();
 
 			result[mode].semantic[sem.tokenName] = {
 				name: sem.tokenName,
 				label: sem.name,
 				oklch: { l, c, h },
-				cssValue: formatOklch(l, c, h, { percent: true }),
+				oklchValue: formatOklch(l, c, h, { percent: true }),
+				hex: hexValue,
+				cssValue: hexValue,
 				inGamut: srgb.inGamut,
+				srgbHex: hexValue,
 			};
 		}
 	}

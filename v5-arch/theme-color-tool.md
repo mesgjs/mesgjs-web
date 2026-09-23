@@ -6,7 +6,11 @@ The **MWI Theme Color Token Tool** is a standalone, browser-based web applicatio
 
 Rather than generating exhaustive 13-step tonal ramps, the tool implements the architecture established in [`v5-arch/color-system-discussion.md`](v5-arch/color-system-discussion.md) and [`v5-arch/styles-and-themes.md`](v5-arch/styles-and-themes.md):
 - Derives only the semantic and generative tokens required by MWI components.
-- Uses perceptual color math (`oklch()` with tone-dependent chroma scaling).
+- Uses perceptual color math (`oklch()` with tone-dependent chroma scaling) for internal generation and contrast calculations.
+- Serializes resolved semantic color tokens as sRGB hex in CSS exports and UI previews.
+- Preserves generative surface parameters as OKLCH scalars/components (`--surface-base-l`, `--surface-base-c`, `--surface-base-h`, delta variables).
+- Neutral family is the sole owner of `--color-on-surface`, `--color-on-surface-variant`, `--color-outline`, `--color-outline-variant`, inverse-surface roles, and their high-contrast/forced-colors overrides.
+- Excludes interaction-state tokens (hover/pressed) from the generator; components derive interactive feedback via `color-mix()` with global state parameters; keyboard focus is styled separately.
 - Evaluates contrast against strict WCAG 2.1 AA (4.5:1) and AAA (7.0:1) requirements for normal/small text after gamut mapping into sRGB.
 - Implements the consolidated **two-phase `resnav` pattern** (as proven in [`src/mwi-res-nav.msjs`](src/mwi-res-nav.msjs:42)):
   1. Resolves active modes (`--theme-color-mode`, `--theme-contrast-mode`) on `html` from system media queries (`prefers-color-scheme`, `prefers-contrast`, `forced-colors`) and explicit user overrides (`data-theme`, `data-contrast`).
@@ -162,9 +166,6 @@ html {
   /* Baseline mode defaults */
   --theme-color-mode: light;
   --theme-contrast-mode: standard;
-
-  /* Base/primitive theme inputs */
-  --m-primary-base: oklch(55% 0.18 260);
 }
 
 /* System Preference Defaults via Standard Cascade */
@@ -197,40 +198,28 @@ html[data-contrast='high']        { --theme-contrast-mode: high; }
 /* Base Light Mode Tokens */
 @container theme-cfg style(--theme-color-mode: light) {
   body {
-    --color-primary: oklch(40% 0.18 260);
-    --color-on-primary: oklch(99% 0 0);
-    --color-primary-container: oklch(90% 0.063 260);
-    --color-on-primary-container: oklch(12% 0.117 260);
-    --color-primary-fixed: oklch(90% 0.072 260);
-    --color-primary-fixed-dim: oklch(82% 0.081 260);
-    --color-on-primary-fixed: oklch(10% 0.108 260);
-    --color-on-primary-fixed-variant: oklch(28% 0.090 260);
-    --color-outline: oklch(50% 0.036 260);
-    --color-on-surface-variant: oklch(35% 0.036 260);
+    --color-primary: #1C3EB7;
+    --color-on-primary: #FFFFFF;
+    --color-primary-container: #DEE3F8;
+    --color-on-primary-container: #001A74;
+    --color-primary-fixed: #DEE3F8;
+    --color-primary-fixed-dim: #C4CEF4;
+    --color-on-primary-fixed: #001258;
+    --color-on-primary-fixed-variant: #0028A0;
   }
 }
 
 /* Base Dark Mode Tokens */
 @container theme-cfg style(--theme-color-mode: dark) {
   body {
-    --color-primary: oklch(80% 0.117 260);
-    --color-on-primary: oklch(15% 0.090 260);
-    --color-primary-container: oklch(30% 0.126 260);
-    --color-on-primary-container: oklch(92% 0.054 260);
-    --color-primary-fixed: oklch(90% 0.072 260);
-    --color-primary-fixed-dim: oklch(82% 0.081 260);
-    --color-on-primary-fixed: oklch(10% 0.108 260);
-    --color-on-primary-fixed-variant: oklch(28% 0.090 260);
-    --color-outline: oklch(55% 0.036 260);
-    --color-on-surface-variant: oklch(75% 0.036 260);
-  }
-}
-
-/* Orthogonal High-Contrast (WCAG AAA) Layer */
-@container theme-cfg style(--theme-contrast-mode: high) {
-  body {
-    --color-on-surface-variant: var(--color-on-surface);
-    --color-outline: var(--color-on-surface);
+    --color-primary: #BCC7FF;
+    --color-on-primary: #00259B;
+    --color-primary-container: #1A3FB8;
+    --color-on-primary-container: #E4E8FF;
+    --color-primary-fixed: #DEE3F8;
+    --color-primary-fixed-dim: #C4CEF4;
+    --color-on-primary-fixed: #001258;
+    --color-on-primary-fixed-variant: #0028A0;
   }
 }
 
@@ -239,8 +228,6 @@ html[data-contrast='high']        { --theme-contrast-mode: high; }
   body {
     --color-primary: Highlight;
     --color-on-primary: HighlightText;
-    --color-on-surface: CanvasText;
-    --color-outline: ButtonBorder;
   }
 }
 ```

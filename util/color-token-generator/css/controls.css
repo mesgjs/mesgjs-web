@@ -295,22 +295,46 @@
 	cursor: pointer;
 	border: 1px solid transparent;
 	transition: all 0.15s ease;
+	outline: none;
+}
+
+.mwi-btn:focus-visible {
+	outline: 2px solid var(--state-focus-ring-color, var(--color-primary, #3454D1));
+	outline-offset: 2px;
 }
 
 .mwi-btn--filled {
 	background-color: var(--color-current-role, #3454D1);
 	color: var(--color-on-current-role, #ffffff);
 }
+.mwi-btn--filled:hover {
+	background-color: color-mix(in srgb, var(--color-current-role, #3454D1), var(--color-on-current-role, #ffffff) 8%);
+}
+.mwi-btn--filled:active {
+	background-color: color-mix(in srgb, var(--color-current-role, #3454D1), var(--color-on-current-role, #ffffff) 12%);
+}
 
 .mwi-btn--tonal {
 	background-color: var(--color-current-role-container, #e0e5ff);
 	color: var(--color-on-current-role-container, #121f66);
+}
+.mwi-btn--tonal:hover {
+	background-color: color-mix(in srgb, var(--color-current-role-container, #e0e5ff), var(--color-on-current-role-container, #121f66) 8%);
+}
+.mwi-btn--tonal:active {
+	background-color: color-mix(in srgb, var(--color-current-role-container, #e0e5ff), var(--color-on-current-role-container, #121f66) 12%);
 }
 
 .mwi-btn--outlined {
 	background-color: transparent;
 	border-color: var(--color-outline, #757b90);
 	color: var(--color-on-surface, #1e2025);
+}
+.mwi-btn--outlined:hover {
+	background-color: color-mix(in srgb, transparent, var(--color-on-surface, #1e2025) 8%);
+}
+.mwi-btn--outlined:active {
+	background-color: color-mix(in srgb, transparent, var(--color-on-surface, #1e2025) 12%);
 }
 
 .mwi-card {
