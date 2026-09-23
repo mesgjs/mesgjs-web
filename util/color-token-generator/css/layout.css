@@ -1,0 +1,130 @@
+/**
+ * layout.css - Grid and flex structural layout for MWI Color Token Generator Tool
+ */
+
+* {
+	box-sizing: border-box;
+	margin: 0;
+	padding: 0;
+}
+
+:root:has(#ui-theme-light-btn.seg-btn--active) {
+	color-scheme: light;
+}
+:root:has(#ui-theme-dark-btn.seg-btn--active) {
+	color-scheme: dark;
+}
+
+body {
+	font-family: var(--gen-font-sans);
+	background-color: var(--gen-bg-canvas);
+	color: var(--gen-text-primary);
+	line-height: 1.5;
+	min-height: 100vh;
+	display: flex;
+	flex-direction: column;
+}
+
+.gen-header {
+	background-color: var(--gen-bg-surface);
+	border-bottom: 1px solid var(--gen-border);
+	padding: 1rem 1.5rem;
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+	flex-wrap: wrap;
+	gap: 1rem;
+	position: sticky;
+	top: 0;
+	z-index: 100;
+	box-shadow: var(--gen-shadow-sm);
+}
+
+.gen-header__brand {
+	display: flex;
+	align-items: center;
+	gap: 0.75rem;
+}
+
+.gen-header__title {
+	font-size: 1.25rem;
+	font-weight: 700;
+	color: var(--gen-text-primary);
+}
+
+.gen-header__badge {
+	font-size: 0.75rem;
+	font-weight: 600;
+	padding: 0.2rem 0.5rem;
+	border-radius: var(--gen-radius-sm);
+	background: var(--gen-accent);
+	color: var(--gen-accent-text);
+	text-transform: uppercase;
+	letter-spacing: 0.05em;
+}
+
+.gen-header__actions {
+	display: flex;
+	align-items: center;
+	gap: 1rem;
+}
+
+.gen-main {
+	flex: 1;
+	display: grid;
+	grid-template-columns: 360px 1fr 420px;
+	gap: 1.5rem;
+	padding: 1.5rem;
+	max-width: 1920px;
+	margin: 0 auto;
+	width: 100%;
+}
+
+@media (max-width: 1280px) {
+	.gen-main {
+		grid-template-columns: 340px 1fr;
+	}
+	.gen-export-pane {
+		grid-column: 1 / -1;
+	}
+}
+
+@media (max-width: 900px) {
+	.gen-main {
+		grid-template-columns: 1fr;
+	}
+}
+
+.gen-panel {
+	background-color: var(--gen-bg-surface);
+	border: 1px solid var(--gen-border);
+	border-radius: var(--gen-radius-lg);
+	padding: 1.25rem;
+	display: flex;
+	flex-direction: column;
+	gap: 1.25rem;
+	box-shadow: var(--gen-shadow-sm);
+}
+
+.gen-panel__header {
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+	border-bottom: 1px solid var(--gen-border);
+	padding-bottom: 0.75rem;
+}
+
+.gen-panel__title {
+	font-size: 1.05rem;
+	font-weight: 600;
+	color: var(--gen-text-primary);
+}
+
+.gen-footer {
+	text-align: center;
+	padding: 1rem;
+	font-size: 0.85rem;
+	color: var(--gen-text-muted);
+	border-top: 1px solid var(--gen-border);
+	background-color: var(--gen-bg-surface);
+}

@@ -1,0 +1,107 @@
+/**
+ * tokens.css - Internal design tokens for MWI Color Token Generator Tool UI
+ */
+
+:root {
+	/* Generator UI Palette */
+	--gen-bg-canvas: #0f1117;
+	--gen-bg-surface: #181c26;
+	--gen-bg-surface-elevated: #222736;
+	--gen-bg-surface-input: #12151e;
+	--gen-border: #2e3549;
+	--gen-border-focus: #4e80ee;
+
+	--gen-text-primary: #f0f3f8;
+	--gen-text-secondary: #9da8be;
+	--gen-text-muted: #647087;
+
+	--gen-accent: #3b82f6;
+	--gen-accent-hover: #60a5fa;
+	--gen-accent-active: #2563eb;
+	--gen-accent-text: #ffffff;
+
+	--gen-success-bg: #064e3b;
+	--gen-success-text: #6ee7b7;
+	--gen-success-border: #059669;
+
+	--gen-warning-bg: #78350f;
+	--gen-warning-text: #fde68a;
+	--gen-warning-border: #d97706;
+
+	--gen-error-bg: #7f1d1d;
+	--gen-error-text: #fca5a5;
+	--gen-error-border: #dc2626;
+
+	--gen-radius-sm: 4px;
+	--gen-radius-md: 8px;
+	--gen-radius-lg: 12px;
+
+	--gen-font-sans: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, Cantarell, "Helvetica Neue", sans-serif;
+	--gen-font-mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace;
+
+	--gen-shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.4);
+	--gen-shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.5), 0 2px 4px -2px rgba(0, 0, 0, 0.5);
+	--gen-shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.6), 0 4px 6px -4px rgba(0, 0, 0, 0.6);
+}
+
+@media (prefers-color-scheme: light) {
+	:root:not([data-ui-theme="dark"]) {
+		--gen-bg-canvas: #f4f6f9;
+		--gen-bg-surface: #ffffff;
+		--gen-bg-surface-elevated: #e9ecf2;
+		--gen-bg-surface-input: #ffffff;
+		--gen-border: #cfd6e4;
+		--gen-border-focus: #2563eb;
+
+		--gen-text-primary: #0f172a;
+		--gen-text-secondary: #475569;
+		--gen-text-muted: #94a3b8;
+
+		--gen-accent: #2563eb;
+		--gen-accent-hover: #1d4ed8;
+		--gen-accent-active: #1e40af;
+		--gen-accent-text: #ffffff;
+
+		--gen-success-bg: #ecfdf5;
+		--gen-success-text: #065f46;
+		--gen-success-border: #a7f3d0;
+
+		--gen-warning-bg: #fffbeb;
+		--gen-warning-text: #92400e;
+		--gen-warning-border: #fde68a;
+
+		--gen-error-bg: #fef2f2;
+		--gen-error-text: #991b1b;
+		--gen-error-border: #fecaca;
+	}
+}
+
+:root[data-ui-theme="dark"] {
+	--gen-bg-canvas: #0f1117;
+	--gen-bg-surface: #181c26;
+	--gen-bg-surface-elevated: #222736;
+	--gen-bg-surface-input: #12151e;
+	--gen-border: #2e3549;
+	--gen-border-focus: #4e80ee;
+
+	--gen-text-primary: #f0f3f8;
+	--gen-text-secondary: #9da8be;
+	--gen-text-muted: #647087;
+
+	--gen-accent: #3b82f6;
+	--gen-accent-hover: #60a5fa;
+	--gen-accent-active: #2563eb;
+	--gen-accent-text: #ffffff;
+
+	--gen-success-bg: #064e3b;
+	--gen-success-text: #6ee7b7;
+	--gen-success-border: #059669;
+
+	--gen-warning-bg: #78350f;
+	--gen-warning-text: #fde68a;
+	--gen-warning-border: #d97706;
+
+	--gen-error-bg: #7f1d1d;
+	--gen-error-text: #fca5a5;
+	--gen-error-border: #dc2626;
+}

@@ -156,7 +156,7 @@ The tool provides an output pane with three synchronized formats:
    Phase 1: State Resolution (Media Queries + Attribute Overrides on html)
    -------------------------------------------------------------------------- */
 html {
-  container-name: theme-cfg;
+  /* container-name: theme-cfg; /* (aggregate) */
   color-scheme: light dark;
 
   /* Baseline mode defaults */
@@ -244,6 +244,8 @@ html[data-contrast='high']        { --theme-contrast-mode: high; }
   }
 }
 ```
+
+The `container-name` noted here must be documented for inclusion in an application's `[m.stag :root container-name ...]` configuration. Direct inclusion in the CSS could potentially conflict with the `[m.stag]` aggregate value.
 
 ### 6.2 JSON Configuration Block
 A dedicated JSON tab allows copying or loading configurations:

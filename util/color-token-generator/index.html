@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>MWI Theme Color Token Tool</title>
+	<script type="importmap">
+	{
+		"imports": {
+			"@hugh": "https://cdn.jsdelivr.net/gh/bkatzung/hugh@main/hugh.esm.js",
+			"@tinycolor": "https://cdn.jsdelivr.net/gh/bkatzung/hugh@main/tinycolor.esm.js",
+			"@xyinput": "https://cdn.jsdelivr.net/gh/bkatzung/hugh@main/xyinput.esm.js"
+		}
+	}
+	</script>
+	<link rel="stylesheet" href="css/tokens.css">
+	<link rel="stylesheet" href="css/layout.css">
+	<link rel="stylesheet" href="css/controls.css">
+	<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/bkatzung/hugh@main/xyinput.css">
+	<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/bkatzung/hugh@main/hugh.css">
+</head>
+<body>
+	<header class="gen-header" role="banner">
+		<div class="gen-header__brand">
+			<h1 class="gen-header__title">MWI Theme Color Generator</h1>
+			<span class="gen-header__badge">v1.0 OKLCH</span>
+		</div>
+		<div class="gen-header__actions">
+			<div class="seg-control" role="group" aria-label="Tool UI Theme">
+				<button type="button" class="seg-btn seg-btn--active" id="ui-theme-dark-btn">Dark UI</button>
+				<button type="button" class="seg-btn" id="ui-theme-light-btn">Light UI</button>
+			</div>
+		</div>
+	</header>
+
+	<main class="gen-main" role="main">
+		<!-- Left: Controls & Configuration Panel -->
+		<section class="gen-panel" aria-labelledby="controls-heading">
+			<div class="gen-panel__header">
+				<h2 id="controls-heading" class="gen-panel__title">Color & Family Input</h2>
+				<span id="gamut-badge" class="badge badge--ok" role="status" aria-label="Gamut Status">sRGB OK</span>
+			</div>
+
+			<div class="form-group">
+				<label for="family-select">Semantic Color Family</label>
+				<select id="family-select" class="form-control">
+					<option value="primary" selected>Primary (Core Brand)</option>
+					<option value="secondary">Secondary (Accent)</option>
+					<option value="tertiary">Tertiary (Balance)</option>
+					<option value="neutral">Neutral (Surfaces & Borders)</option>
+					<option value="success">Success</option>
+					<option value="info">Info</option>
+					<option value="warning">Warning</option>
+					<option value="error">Error</option>
+				</select>
+			</div>
+
+			<div class="form-group">
+				<label for="hex-input">Base Color (Hex / Color Picker)</label>
+				<div class="color-picker-wrap">
+					<input type="color" id="native-color-picker" class="color-swatch-picker" value="#3454D1" aria-label="Choose base color">
+					<input type="text" id="hex-input" class="form-control form-control--mono" value="#3454D1" spellcheck="false" aria-label="Hex color value">
+				</div>
+			</div>
+
+			<div class="form-group">
+				<label>Perceptual OKLCH Channels</label>
+				
+				<!-- Lightness L -->
+				<div class="slider-group">
+					<label for="slider-l">Lightness (L)</label>
+					<input type="range" id="slider-l" min="0" max="1" step="0.01" value="0.55" aria-label="Lightness slider">
+					<input type="number" id="input-l" class="form-control form-control--mono btn--sm" min="0" max="1" step="0.01" value="0.55" aria-label="Lightness numeric value">
+				</div>
+
+				<!-- Chroma C -->
+				<div class="slider-group">
+					<label for="slider-c">Chroma (C)</label>
+					<input type="range" id="slider-c" min="0" max="0.4" step="0.005" value="0.18" aria-label="Chroma slider">
+					<input type="number" id="input-c" class="form-control form-control--mono btn--sm" min="0" max="0.4" step="0.005" value="0.18" aria-label="Chroma numeric value">
+				</div>
+
+				<!-- Hue H -->
+				<div class="slider-group">
+					<label for="slider-h">Hue (H°)</label>
+					<input type="range" id="slider-h" min="0" max="360" step="1" value="260" aria-label="Hue slider">
+					<input type="number" id="input-h" class="form-control form-control--mono btn--sm" min="0" max="360" step="1" value="260" aria-label="Hue numeric value">
+				</div>
+			</div>
+
+			<div class="form-group">
+				<button type="button" id="auto-nudge-btn" class="btn btn--outline" aria-label="Auto-tune Lightness for WCAG compliance">
+					<span>✨ Auto-tune for WCAG AAA</span>
+				</button>
+			</div>
+
+			<div class="compliance-bar" aria-labelledby="compliance-heading">
+				<h3 id="compliance-heading" class="gen-panel__title" style="font-size: 0.9rem;">Contrast Compliance Overview</h3>
+				<div id="compliance-list" class="compliance-list" aria-live="polite">
+					<!-- Dynamically injected contrast items -->
+				</div>
+			</div>
+		</section>
+
+		<!-- Center: Live Token Swatches & Interactive Components -->
+		<section class="gen-panel" aria-labelledby="preview-heading">
+			<div class="gen-panel__header">
+				<h2 id="preview-heading" class="gen-panel__title">Live Token Matrix & Preview</h2>
+				<div class="seg-control" role="group" aria-label="Preview Theme Mode">
+					<button type="button" class="seg-btn seg-btn--active" id="preview-light-btn">Light</button>
+					<button type="button" class="seg-btn" id="preview-dark-btn">Dark</button>
+					<button type="button" class="seg-btn" id="preview-hc-btn">High-Contrast (AAA)</button>
+					<button type="button" class="seg-btn" id="preview-forced-btn">Forced Colors</button>
+				</div>
+			</div>
+
+			<!-- Component Sandbox Preview -->
+			<div id="preview-sandbox" class="preview-sandbox" style="background-color: var(--color-surface, #ffffff); color: var(--color-on-surface, #1e2025);">
+				<div class="preview-row">
+					<button type="button" class="mwi-btn mwi-btn--filled" id="sample-filled-btn">Filled Button</button>
+					<button type="button" class="mwi-btn mwi-btn--tonal" id="sample-tonal-btn">Tonal Container</button>
+					<button type="button" class="mwi-btn mwi-btn--outlined" id="sample-outlined-btn">Outlined Action</button>
+				</div>
+
+				<div class="mwi-card" id="sample-card">
+					<h4 style="margin-bottom: 0.25rem;">Semantic Role Preview Card</h4>
+					<p style="font-size: 0.9rem;" id="sample-body-text">
+						Demonstrating paired foreground contrast against active container backgrounds.
+					</p>
+					<p style="font-size: 0.8rem; color: var(--color-on-surface-variant, #647087);" id="sample-variant-text">
+						Secondary variant content adhering to WCAG standards.
+					</p>
+				</div>
+
+				<!-- Surface Elevation Preview (Neutral family) -->
+				<div class="mwi-surface-stack" id="sample-surface-stack" style="background: var(--surface-0, #f8f9fc);">
+					<span style="font-size: 0.8rem; font-weight: 600;">Generative Elevation Progression</span>
+					<div class="mwi-surface-layer" id="sample-surface-1" style="background: var(--surface-1, #eef1f8);">
+						<span>Surface Level 1</span>
+						<div class="mwi-surface-layer" id="sample-surface-2" style="background: var(--surface-2, #e3e8f4); margin-top: 0.5rem;">
+							<span>Surface Level 2</span>
+						</div>
+					</div>
+				</div>
+			</div>
+
+			<!-- Generated Tokens Matrix -->
+			<div>
+				<h3 style="font-size: 0.95rem; font-weight: 600; margin-bottom: 0.75rem;">Active Semantic Tokens</h3>
+				<div id="token-grid" class="token-grid">
+					<!-- Dynamically injected token cards -->
+				</div>
+			</div>
+		</section>
+
+		<!-- Right: CSS & JSON Export Pane -->
+		<section class="gen-panel gen-export-pane" aria-labelledby="export-heading">
+			<div class="gen-panel__header">
+				<h2 id="export-heading" class="gen-panel__title">Code Export & Tokens</h2>
+				<div class="seg-control" role="group" aria-label="Export Format">
+					<button type="button" class="seg-btn seg-btn--active" id="tab-css-btn">CSS</button>
+					<button type="button" class="seg-btn" id="tab-json-btn">JSON</button>
+				</div>
+			</div>
+
+			<div class="export-code-box">
+				<div class="export-code-box__header">
+					<span id="export-filename" style="font-size: 0.8rem; font-family: var(--gen-font-mono); color: var(--gen-text-muted);">theme-tokens.css</span>
+					<div style="display: flex; gap: 0.5rem;">
+						<button type="button" class="btn btn--outline btn--sm" id="download-export-btn">Download</button>
+						<button type="button" class="btn btn--primary btn--sm" id="copy-export-btn">Copy Code</button>
+					</div>
+				</div>
+				<pre class="export-code-box__content"><code id="code-output">/* Generating tokens... */</code></pre>
+			</div>
+		</section>
+	</main>
+
+	<footer class="gen-footer" role="contentinfo">
+		<span>MWI Design System &bull; High-precision OKLCH Semantic Color Engine</span>
+	</footer>
+
+	<div id="toast" class="toast" role="alert" aria-live="assertive">Code copied to clipboard!</div>
+
+	<script type="module" src="js/main.esm.js"></script>
+</body>
+</html>
