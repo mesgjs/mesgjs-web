@@ -16,6 +16,7 @@ Rather than generating exhaustive 13-step tonal ramps, the tool implements the a
   1. Resolves active modes (`--theme-color-mode`, `--theme-contrast-mode`) on `html` from system media queries (`prefers-color-scheme`, `prefers-contrast`, `forced-colors`) and explicit user overrides (`data-theme`, `data-contrast`).
   2. Applies non-overlapping, non-repeated token definitions via container style queries (`@container theme-cfg style(...)`).
 - Exports copy-and-paste-ready CSS custom properties for light, dark, high-contrast (AAA), and forced-colors themes along with metadata for full reproducibility.
+- Supports dual generation strategies: **Tonal Palette Mode** (canonical Material-style lightness steps) and **Anchored Brand Color Mode** (preserving exact brand hex colors while dynamically solving contrast partner colors and container tints).
 
 ---
 
@@ -57,8 +58,8 @@ util/color-token-generator/
    - Bi-directionally syncs Hugh's OKLCH output with the generator state.
 
 4. **[`util/color-token-generator/js/token-exporter.esm.js`](util/color-token-generator/js/token-exporter.esm.js)**:
-   - Formats Phase 1 State Resolution CSS (`html`/`:root` container and custom mode variables).
-   - Formats Phase 2 token blocks using `@container theme-cfg style(...)` for decoupled color modes (`light`, `dark`) and orthogonal contrast modes (`high`, `forced`).
+   - Formats standalone **Theme State Configuration** CSS (`html`/`:root` container and custom mode variables).
+   - Formats modular **Color Token** blocks using `@container theme-cfg style(...)` for decoupled color modes (`light`, `dark`) and orthogonal contrast modes (`high`, `forced`), without repeating root state configuration.
    - Generates reproduction headers (CSS comments with input parameters).
    - Generates JSON state configuration blocks for saving and restoring themes.
 
@@ -146,19 +147,17 @@ $$\text{Contrast Ratio} = \frac{\max(Y_1, Y_2) + 0.05}{\min(Y_1, Y_2) + 0.05}$$
 
 ## 6. Output Formats and Reproducibility
 
-The tool provides an output pane with three synchronized formats:
+To make it convenient to assemble a complete theme from multiple color families or separate stylesheets, theme output is split into modular components:
 
-### 6.1 Two-Phase Consolidated CSS Custom Properties (Light, Dark, Contrast & Forced Colors)
+### 6.1 Theme State Configuration (`theme-state-config.css`)
+This stylesheet configures the root theme container and resolves active color/contrast modes across system preferences and attribute overrides. It is color-family agnostic and loaded once per application:
+
 ```css
 /* ==========================================================================
-   MWI Theme Tokens: Primary
-   Source: oklch(55% 0.18 260) | Gamut: sRGB OK | Generator v1.0
-   Reproduce: {"family":"primary","base":"oklch(0.55 0.18 260)"}
+   MWI Theme State Configuration
+   Generator v1.0
    ========================================================================== */
 
-/* --------------------------------------------------------------------------
-   Phase 1: State Resolution (Media Queries + Attribute Overrides on html)
-   -------------------------------------------------------------------------- */
 html {
   /* container-name: theme-cfg; /* (aggregate) */
   color-scheme: light dark;
@@ -188,12 +187,20 @@ html[data-theme='dark']           { --theme-color-mode: dark; }
 html[data-contrast='standard']    { --theme-contrast-mode: standard; }
 html[data-contrast='more'],
 html[data-contrast='high']        { --theme-contrast-mode: high; }
+```
 
-/* --------------------------------------------------------------------------
-   Phase 2: Consolidated Non-Overlapping Token Blocks on body
-   (Since theme configuration uses container queries on :root/html, style
-   settings not required on html are applied to body instead)
-   -------------------------------------------------------------------------- */
+The `container-name` noted here must be documented for inclusion in an application's `[m.stag :root container-name ...]` configuration. Direct inclusion in the CSS could potentially conflict with the `[m.stag]` aggregate value.
+
+### 6.2 Color Family Token Stylesheets (e.g. `primary-tokens.css`, `neutral-tokens.css`)
+
+Each color family export contains only its container style queries and token declarations for `light`, `dark`, and accessibility modes:
+
+```css
+/* ==========================================================================
+   MWI Theme Tokens: Primary
+   Source: oklch(55% 0.18 260) | Gamut: sRGB OK | Generator v1.0
+   Reproduce: {"family":"primary","base":"oklch(0.55 0.18 260)"}
+   ========================================================================== */
 
 /* Base Light Mode Tokens */
 @container theme-cfg style(--theme-color-mode: light) {
@@ -232,9 +239,7 @@ html[data-contrast='high']        { --theme-contrast-mode: high; }
 }
 ```
 
-The `container-name` noted here must be documented for inclusion in an application's `[m.stag :root container-name ...]` configuration. Direct inclusion in the CSS could potentially conflict with the `[m.stag]` aggregate value.
-
-### 6.2 JSON Configuration Block
+### 6.3 JSON Configuration Block
 A dedicated JSON tab allows copying or loading configurations:
 ```json
 {
@@ -251,6 +256,48 @@ A dedicated JSON tab allows copying or loading configurations:
     "lightContainerVsOnContainer": 6.85,
     "darkPrimaryVsOnPrimary": 9.14,
     "darkContainerVsOnContainer": 7.31
+  }
+}
+```
+
+### 6.4 Anchored Brand Mode Output & JSON Configuration Schema
+When generating under **Anchored Brand Color Mode** ([`v5-arch/anchored-color-mode.md`](v5-arch/anchored-color-mode.md)), the CSS header and JSON schema record the strategy, exact anchor color, and tunable brand knobs:
+
+```css
+/* ==========================================================================
+   MWI Theme Tokens: Primary (Anchored Brand Mode)
+   Source: oklch(45.2% 0.18 260) | Strategy: anchored | Gamut: sRGB OK
+   Reproduce: {"family":"primary","strategy":"anchored","anchorHex":"#0052CC","tuning":{"containerChromaFactor":0.35,"containerLightness":0.90,"minContrastRatio":4.5,"darkTargetLightness":0.80}}
+   ========================================================================== */
+```
+
+JSON configuration format with `strategy: "anchored"`:
+```json
+{
+  "version": "1.0",
+  "family": "primary",
+  "strategy": "anchored",
+  "anchor": {
+    "space": "oklch",
+    "l": 0.452,
+    "c": 0.18,
+    "h": 260,
+    "hex": "#0052CC"
+  },
+  "darkAnchor": null,
+  "tuning": {
+    "containerChromaFactor": 0.35,
+    "containerLightness": 0.90,
+    "minContrastRatio": 4.5,
+    "partnerChroma": 0.0,
+    "darkTargetLightness": 0.80,
+    "autoTuneDirection": "auto"
+  },
+  "compliance": {
+    "lightMain": 5.82,
+    "lightContainer": 6.45,
+    "darkMain": 5.12,
+    "darkContainer": 4.88
   }
 }
 ```
@@ -309,3 +356,25 @@ Rather than generating combinatorial CSS selectors (e.g. `html[data-theme="dark"
   - High-Contrast Mode targets WCAG AAA ($\ge 7.0:1$), reinforces `--color-outline` contrast, and collapses low-contrast variant tokens (`--color-on-surface-variant` $\rightarrow$ `--color-on-surface`).
 - **Windows High Contrast Mode (WHCM)**:
   - Supports `@media (forced-colors: active)` by providing dedicated semantic bindings to CSS System Colors while preserving structural borders.
+
+---
+
+## 10. Dual Generation Strategy & Anchored Brand Color Engine
+
+### 10.1 Tonal Palette vs Anchored Brand Modes
+1. **Tonal Palette Mode (Default)**:
+   - Uses the input color as a seed for hue ($H$) and chroma ($C$).
+   - Quantizes lightness to canonical steps ($L = 0.40$ light main, $L = 0.80$ dark main).
+   - Ideal for clean slate themes and design system baselines.
+2. **Anchored Brand Mode**:
+   - Preserves the exact lightness ($L$), chroma ($C$), and hue ($H$) of the input color for `--color-$ROLE` in light mode.
+   - Dynamically calculates relative luminance $Y_a$ and solves for the optimal `--color-on-$ROLE` partner lightness via [`solvePartnerColor()`](util/color-token-generator/js/color-engine.esm.js:241).
+   - Dynamically derives container backgrounds and dark mode counterparts using user-tunable knobs.
+
+### 10.2 Tunable Brand Knobs & Guardrails
+- **Container Tint Intensity (`containerChromaFactor`)**: $0.10 - 0.60$ (default $0.35$) controls container vibrancy.
+- **Container Lightness (`containerLightness`)**: $0.80 - 0.96$ (default $0.90$) controls container card brightness.
+- **Dark Brand Lightness (`darkTargetLightness`)**: $0.70 - 0.88$ (default $0.80$) controls brand luminance in dark themes.
+- **Partner Text Tinting (`partnerChroma`)**: $0.00 - 0.04$ (default $0.00$) adds subtle brand hue to text.
+- **Partner Contrast Target (`minContrastRatio`)**: $4.5:1$ (AA) or $7.0:1$ (AAA).
+- **Mid-Tone Diagnostics & Auto-Tune**: Detects dead-zone anchors ($0.45 \le L \le 0.65$) unable to achieve $4.5:1$ against text and offers one-click auto-tuning via [`calculateComplianceAdjustment()`](util/color-token-generator/js/color-engine.esm.js:296).

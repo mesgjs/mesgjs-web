@@ -27,8 +27,8 @@
 		</div>
 		<div class="gen-header__actions">
 			<div class="seg-control" role="group" aria-label="Tool UI Theme">
-				<button type="button" class="seg-btn seg-btn--active" id="ui-theme-dark-btn">Dark UI</button>
 				<button type="button" class="seg-btn" id="ui-theme-light-btn">Light UI</button>
+				<button type="button" class="seg-btn" id="ui-theme-dark-btn">Dark UI</button>
 			</div>
 		</div>
 	</header>
@@ -39,6 +39,14 @@
 			<div class="gen-panel__header">
 				<h2 id="controls-heading" class="gen-panel__title">Color & Family Input</h2>
 				<span id="gamut-badge" class="badge badge--ok" role="status" aria-label="Gamut Status">sRGB OK</span>
+			</div>
+
+			<div class="form-group" id="strategy-group">
+				<label>Generation Strategy</label>
+				<div class="seg-control" role="group" aria-label="Generation Strategy" style="width: 100%;">
+					<button type="button" class="seg-btn seg-btn--active" id="strategy-tonal-btn" style="flex: 1;">Tonal Palette</button>
+					<button type="button" class="seg-btn" id="strategy-anchored-btn" style="flex: 1;">Anchored Brand</button>
+				</div>
 			</div>
 
 			<div class="form-group">
@@ -56,7 +64,7 @@
 			</div>
 
 			<div class="form-group">
-				<label for="hex-input">Base Color (Hex / Color Picker)</label>
+				<label for="hex-input" id="base-color-label">Base Color (Hex / Color Picker)</label>
 				<div class="color-picker-wrap">
 					<input type="color" id="native-color-picker" class="color-swatch-picker" value="#3454D1" aria-label="Choose base color">
 					<input type="text" id="hex-input" class="form-control form-control--mono" value="#3454D1" spellcheck="false" aria-label="Hex color value">
@@ -92,6 +100,74 @@
 				<button type="button" id="auto-nudge-btn" class="btn btn--outline" aria-label="Auto-tune Lightness for WCAG compliance">
 					<span>✨ Auto-tune for WCAG AAA</span>
 				</button>
+			</div>
+
+			<!-- Mid-Tone Diagnostic Alert Banner -->
+			<div id="diagnostic-banner" class="diagnostic-banner" style="display: none;" role="alert">
+				<div class="diagnostic-banner__message" id="diagnostic-message">
+					⚠️ Mid-tone anchor cannot achieve 4.5:1 against text.
+				</div>
+				<button type="button" id="diagnostic-autotune-btn" class="btn btn--primary btn--sm">
+					✨ Auto-tune to 4.5:1
+				</button>
+			</div>
+
+			<!-- Advanced Brand Tuning Drawer -->
+			<div id="brand-tuning-section" class="brand-tuning-drawer" style="display: none;">
+				<div class="brand-tuning-drawer__header" id="brand-tuning-toggle">
+					<h3 class="gen-panel__title" style="font-size: 0.85rem;">Advanced Brand Tuning</h3>
+					<span class="tuning-toggle-icon" id="tuning-toggle-icon">▼</span>
+				</div>
+				<div class="brand-tuning-drawer__body" id="brand-tuning-body">
+					<!-- Container Tint Intensity -->
+					<div class="slider-group">
+						<label for="slider-tint" title="Controls container vibrancy (0.10 - 0.60)">Tint Intensity</label>
+						<input type="range" id="slider-tint" min="0.10" max="0.60" step="0.05" value="0.35">
+						<input type="number" id="input-tint" class="form-control form-control--mono btn--sm" min="0.10" max="0.60" step="0.05" value="0.35">
+					</div>
+
+					<!-- Container Lightness -->
+					<div class="slider-group">
+						<label for="slider-cont-l" title="Controls container brightness (0.80 - 0.96)">Container L</label>
+						<input type="range" id="slider-cont-l" min="0.80" max="0.96" step="0.01" value="0.90">
+						<input type="number" id="input-cont-l" class="form-control form-control--mono btn--sm" min="0.80" max="0.96" step="0.01" value="0.90">
+					</div>
+
+					<!-- Dark Theme Lightness -->
+					<div class="slider-group" id="dark-l-slider-group">
+						<label for="slider-dark-l" title="Controls dark mode brand luminance (0.70 - 0.88)">Dark Mode L</label>
+						<input type="range" id="slider-dark-l" min="0.70" max="0.88" step="0.01" value="0.80">
+						<input type="number" id="input-dark-l" class="form-control form-control--mono btn--sm" min="0.70" max="0.88" step="0.01" value="0.80">
+					</div>
+
+					<!-- Explicit Dark Mode Anchor Toggle & Picker -->
+					<div class="form-group" style="margin-top: 0.15rem;">
+						<label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer; font-size: 0.82rem;">
+							<input type="checkbox" id="dark-anchor-enable-chk">
+							<span>Specify Explicit Dark Anchor Hex</span>
+						</label>
+						<div id="dark-anchor-picker-wrap" class="color-picker-wrap" style="display: none; padding: 0.35rem 0.5rem;">
+							<input type="color" id="dark-native-color-picker" class="color-swatch-picker" style="width: 32px; height: 32px;" value="#9FB5FF" aria-label="Choose explicit dark anchor">
+							<input type="text" id="dark-hex-input" class="form-control form-control--mono btn--sm" value="#9FB5FF" spellcheck="false" aria-label="Dark anchor hex value">
+						</div>
+					</div>
+
+					<!-- Partner Hue Tinting -->
+					<div class="slider-group">
+						<label for="slider-partner-c" title="Subtle brand hue in text (0.00 - 0.04)">Text Chroma</label>
+						<input type="range" id="slider-partner-c" min="0.00" max="0.04" step="0.005" value="0.00">
+						<input type="number" id="input-partner-c" class="form-control form-control--mono btn--sm" min="0.00" max="0.04" step="0.005" value="0.00">
+					</div>
+
+					<!-- Target Contrast Ratio -->
+					<div class="form-group" style="margin-top: 0.25rem;">
+						<label>Partner Contrast Target</label>
+						<div class="seg-control" role="group" aria-label="Contrast Target" style="width: 100%;">
+							<button type="button" class="seg-btn seg-btn--active" id="contrast-aa-btn" style="flex: 1;">AA (4.5:1)</button>
+							<button type="button" class="seg-btn" id="contrast-aaa-btn" style="flex: 1;">AAA (7.0:1)</button>
+						</div>
+					</div>
+				</div>
 			</div>
 
 			<div class="compliance-bar" aria-labelledby="compliance-heading">
@@ -158,7 +234,8 @@
 			<div class="gen-panel__header">
 				<h2 id="export-heading" class="gen-panel__title">Code Export & Tokens</h2>
 				<div class="seg-control" role="group" aria-label="Export Format">
-					<button type="button" class="seg-btn seg-btn--active" id="tab-css-btn">CSS</button>
+					<button type="button" class="seg-btn seg-btn--active" id="tab-css-btn">Color Tokens CSS</button>
+					<button type="button" class="seg-btn" id="tab-state-btn">State Config CSS</button>
 					<button type="button" class="seg-btn" id="tab-json-btn">JSON</button>
 				</div>
 			</div>
@@ -167,6 +244,7 @@
 				<div class="export-code-box__header">
 					<span id="export-filename" style="font-size: 0.8rem; font-family: var(--gen-font-mono); color: var(--gen-text-muted);">theme-tokens.css</span>
 					<div style="display: flex; gap: 0.5rem;">
+						<button type="button" class="btn btn--outline btn--sm" id="import-json-btn">Import JSON</button>
 						<button type="button" class="btn btn--outline btn--sm" id="download-export-btn">Download</button>
 						<button type="button" class="btn btn--primary btn--sm" id="copy-export-btn">Copy Code</button>
 					</div>
@@ -181,6 +259,30 @@
 	</footer>
 
 	<div id="toast" class="toast" role="alert" aria-live="assertive">Code copied to clipboard!</div>
+
+	<!-- JSON Import Modal -->
+	<div id="import-modal" class="modal-overlay" style="display: none;" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+		<div class="modal-card">
+			<div class="modal-header">
+				<h3 id="modal-title" class="gen-panel__title">Import Token Configuration</h3>
+				<button type="button" class="modal-close-btn" id="modal-close-btn" aria-label="Close modal">&times;</button>
+			</div>
+			<div class="modal-body">
+				<p style="font-size: 0.85rem; color: var(--gen-text-secondary); margin-bottom: 0.25rem;">
+					Paste a previously exported MWI Theme JSON configuration or select a .json file.
+				</p>
+				<div>
+					<input type="file" id="import-file-input" accept=".json,application/json" class="form-control" style="font-size: 0.8rem;">
+				</div>
+				<textarea id="import-json-textarea" class="form-control form-control--mono" rows="8" placeholder='{&#10;  "version": "1.0",&#10;  "family": "primary",&#10;  "strategy": "anchored",&#10;  ...&#10;}'></textarea>
+				<div id="import-error-msg" class="import-error" style="display: none;"></div>
+			</div>
+			<div class="modal-footer">
+				<button type="button" class="btn btn--outline" id="modal-cancel-btn">Cancel</button>
+				<button type="button" class="btn btn--primary" id="modal-apply-btn">Apply Configuration</button>
+			</div>
+		</div>
+	</div>
 
 	<script type="module" src="js/main.esm.js"></script>
 </body>

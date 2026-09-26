@@ -229,3 +229,157 @@ export function getOklchContrast (color1, color2) {
 		passesAALarge: ratio >= 3.0,
 	};
 }
+
+/**
+ * Find the optimal partner lightness for an anchor color to satisfy WCAG AA/AAA.
+ * @param {Object} anchorOklch - { l, c, h }
+ * @param {Object} [options] - { minRatio: 4.5, targetPolarity: 'auto' | 'light' | 'dark', chroma: 0.0, hue: number }
+ * @returns {Object} { partnerOklch, ratio, passesAA, passesAAA, passesTarget, polarity }
+ */
+export function solvePartnerColor (anchorOklch, options = {}) {
+	const {
+		minRatio = 4.5,
+		targetPolarity = 'auto',
+		chroma = 0.0,
+		hue = anchorOklch.h,
+	} = options;
+
+	const anchorLum = getRelativeLuminanceFromOklch(anchorOklch.l, anchorOklch.c, anchorOklch.h);
+
+	// Determine polarity
+	let polarity = targetPolarity;
+	if (polarity !== 'light' && polarity !== 'dark') {
+		polarity = anchorLum <= 0.18 ? 'light' : 'dark';
+	}
+
+	let bestL = polarity === 'light' ? 0.99 : 0.10;
+	let partnerLum = getRelativeLuminanceFromOklch(bestL, chroma, hue);
+	let ratio = calculateContrastRatio(anchorLum, partnerLum);
+
+	if (polarity === 'dark' && ratio < minRatio) {
+		// Attempt to step down lightness to reach minRatio if possible
+		let low = 0.0;
+		let high = 0.10;
+		let foundL = bestL;
+
+		for (let i = 0; i < 16; i++) {
+			const mid = (low + high) / 2;
+			const testLum = getRelativeLuminanceFromOklch(mid, chroma, hue);
+			const testRatio = calculateContrastRatio(anchorLum, testLum);
+			if (testRatio >= minRatio) {
+				foundL = mid;
+				low = mid; // Try to stay as high as possible while meeting minRatio
+			} else {
+				high = mid;
+			}
+		}
+
+		bestL = Math.max(0.01, +foundL.toFixed(3));
+		partnerLum = getRelativeLuminanceFromOklch(bestL, chroma, hue);
+		ratio = calculateContrastRatio(anchorLum, partnerLum);
+	}
+
+	return {
+		partnerOklch: {
+			l: bestL,
+			c: chroma,
+			h: hue,
+		},
+		ratio,
+		passesAA: ratio >= 4.5,
+		passesAAA: ratio >= 7.0,
+		passesTarget: ratio >= minRatio,
+		polarity,
+	};
+}
+
+/**
+ * Calculate the minimal lightness adjustment required to bring an anchor into WCAG compliance.
+ * @param {Object} anchorOklch - { l, c, h }
+ * @param {number} [targetRatio=4.5]
+ * @param {'auto' | 'darken' | 'lighten'} [direction='auto']
+ * @returns {Object} { adjustedOklch, deltaL, direction, ratio }
+ */
+export function calculateComplianceAdjustment (anchorOklch, targetRatio = 4.5, direction = 'auto') {
+	const testAdjustment = (dir) => {
+		if (dir === 'darken') {
+			// Partner is white (L=0.99, C=0)
+			const partnerLum = getRelativeLuminanceFromOklch(0.99, 0, anchorOklch.h);
+			let low = 0.0;
+			let high = anchorOklch.l;
+			let bestL = 0.0;
+
+			for (let i = 0; i < 20; i++) {
+				const mid = (low + high) / 2;
+				const testLum = getRelativeLuminanceFromOklch(mid, anchorOklch.c, anchorOklch.h);
+				const ratio = calculateContrastRatio(testLum, partnerLum);
+				if (ratio >= targetRatio) {
+					bestL = mid;
+					low = mid; // Want the lightest L that still satisfies targetRatio
+				} else {
+					high = mid;
+				}
+			}
+
+			const adjL = +bestL.toFixed(4);
+			const lum = getRelativeLuminanceFromOklch(adjL, anchorOklch.c, anchorOklch.h);
+			const ratio = calculateContrastRatio(lum, partnerLum);
+			return {
+				adjustedOklch: { l: adjL, c: anchorOklch.c, h: anchorOklch.h },
+				deltaL: +(adjL - anchorOklch.l).toFixed(4),
+				direction: 'darken',
+				ratio,
+			};
+		} else {
+			// Partner is dark (L=0.10, C=0)
+			const partnerLum = getRelativeLuminanceFromOklch(0.10, 0, anchorOklch.h);
+			let low = anchorOklch.l;
+			let high = 1.0;
+			let bestL = 1.0;
+
+			for (let i = 0; i < 20; i++) {
+				const mid = (low + high) / 2;
+				const testLum = getRelativeLuminanceFromOklch(mid, anchorOklch.c, anchorOklch.h);
+				const ratio = calculateContrastRatio(testLum, partnerLum);
+				if (ratio >= targetRatio) {
+					bestL = mid;
+					high = mid; // Want the darkest L that still satisfies targetRatio
+				} else {
+					low = mid;
+				}
+			}
+
+			const adjL = +bestL.toFixed(4);
+			const lum = getRelativeLuminanceFromOklch(adjL, anchorOklch.c, anchorOklch.h);
+			const ratio = calculateContrastRatio(lum, partnerLum);
+			return {
+				adjustedOklch: { l: adjL, c: anchorOklch.c, h: anchorOklch.h },
+				deltaL: +(adjL - anchorOklch.l).toFixed(4),
+				direction: 'lighten',
+				ratio,
+			};
+		}
+	};
+
+	if (direction === 'darken') {
+		return testAdjustment('darken');
+	}
+	if (direction === 'lighten') {
+		return testAdjustment('lighten');
+	}
+
+	// Auto: decide based on minimal delta L and luminance polarity
+	const darkenRes = testAdjustment('darken');
+	const lightenRes = testAdjustment('lighten');
+
+	const anchorLum = getRelativeLuminanceFromOklch(anchorOklch.l, anchorOklch.c, anchorOklch.h);
+	if (anchorLum <= 0.18) {
+		return Math.abs(darkenRes.deltaL) <= Math.abs(lightenRes.deltaL) + 0.10
+			? darkenRes
+			: lightenRes;
+	} else {
+		return Math.abs(lightenRes.deltaL) <= Math.abs(darkenRes.deltaL) + 0.10
+			? lightenRes
+			: darkenRes;
+	}
+}
