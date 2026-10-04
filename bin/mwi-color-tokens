@@ -1,0 +1,3 @@
+#!/bin/sh
+basedir=$(dirname "$0")
+exec deno run --allow-read "$basedir/../util/color-token-cli.esm.js" "$@"

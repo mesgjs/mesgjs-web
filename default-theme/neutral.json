@@ -1,0 +1,11 @@
+{
+  "version": "1.0",
+  "family": "neutral",
+  "strategy": "tonal",
+  "base": {
+    "space": "oklch",
+    "l": 0.55,
+    "c": 0.02,
+    "h": 260
+  }
+}
