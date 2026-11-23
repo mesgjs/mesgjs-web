@@ -1,8 +1,9 @@
+import { describe, it, beforeAll } from '@compat/test';
 import {
 	assert,
 	assertEquals,
 	assertStrictEquals,
-} from "https://deno.land/std@0.152.0/testing/asserts.ts";
+} from '@std/assert';
 
 import { setupRuntime } from '../harness.esm.js';
 
@@ -20,111 +21,119 @@ await fwait(REG_READY_FT);
 const doc = getInstance('MWIDocument');
 const registry = getInstance('MWIRegistry');
 
-Deno.test("MWICoreTpl (template handler) - Registry Auto-Assignment", async (t) => {
-	await t.step("Registry entry has 'tpl' property", async () => {
+describe("MWICoreTpl (template handler) - Registry Auto-Assignment", () => {
+	it("Registry entry has 'tpl' property", async () => {
 		registry.register('test.tpl.reg', ls(['allowLate', true, 'tpl', ps('[([m.t t="Content"])]')]));
 		const entry = await registry.get('test.tpl.reg');
 		assert(entry.has('tpl'), "Component entry should have 'tpl' property");
 	});
 
-	await t.step("Document uses MWICoreTpl as default interface for components with 'tpl' property", async () => {
+	it("Document uses MWICoreTpl as default interface for components with 'tpl' property", async () => {
 		registry.register('test.tpl.interface', ls(['allowLate', true, 'tpl', ps('[([m.t t="Content"])]')]));
 		const tplNode = await doc.createNode('test.tpl.interface');
 		assertEquals(tplNode.msjsType, 'MWICoreTpl', "Created node should have MWICoreTpl interface");
 	});
 });
 
-Deno.test("MWICoreTpl (template handler) - Basic Interface Tests", async (t) => {
-	registry.register('test.tpl.basic', ls(['allowLate', true, 'tpl', ps('[([m.t t="Template content"])]')]));
-	const tplNode = await doc.createNode('test.tpl.basic');
+describe("MWICoreTpl (template handler) - Basic Interface Tests", () => {
+	let tplNode;
 
-	await t.step("(type) - Get node type", async () => {
+	beforeAll(async () => {
+		registry.register('test.tpl.basic', ls(['allowLate', true, 'tpl', ps('[([m.t t="Template content"])]')]));
+		tplNode = await doc.createNode('test.tpl.basic');
+	});
+
+	it("(type) - Get node type", async () => {
 		assertEquals($c.sm(tplNode, 'type'), 'test.tpl.basic');
 	});
 
-	await t.step(".type - Get node type via JS", async () => {
+	it(".type - Get node type via JS", async () => {
 		assertEquals(tplNode.type, 'test.tpl.basic');
 	});
 
-	await t.step(".msjsType - Get Mesgjs type", async () => {
+	it(".msjsType - Get Mesgjs type", async () => {
 		assertEquals(tplNode.msjsType, 'MWICoreTpl');
 	});
 
-	await t.step(".jsv - Should return instance", async () => {
+	it(".jsv - Should return instance", async () => {
 		assertStrictEquals(tplNode.jsv, tplNode);
 	});
 
-	await t.step(".valueOf() - Should return instance", async () => {
+	it(".valueOf() - Should return instance", async () => {
 		assertStrictEquals(tplNode.valueOf(), tplNode);
 	});
 
-	await t.step("(document) - Get document reference", async () => {
+	it("(document) - Get document reference", async () => {
 		const docRef = $c.sm(tplNode, 'document');
 		assertStrictEquals(docRef, doc);
 	});
 
-	await t.step(".document - Get document reference via JS", async () => {
+	it(".document - Get document reference via JS", async () => {
 		assertStrictEquals(tplNode.document, doc);
 	});
 });
 
-Deno.test("MWICoreTpl (template handler) - Inherited MWIDocNode Operations", async (t) => {
-	registry.register('test.tpl.ops', ls(['allowLate', true, 'tpl', ps('[([m.t t="Content"])]')]));
-	const tplNode = await doc.createNode('test.tpl.ops');
+describe("MWICoreTpl (template handler) - Inherited MWIDocNode Operations", () => {
+	let tplNode;
 
-	await t.step("(setAttr) - Set basic attribute", async () => {
+	beforeAll(async () => {
+		registry.register('test.tpl.ops', ls(['allowLate', true, 'tpl', ps('[([m.t t="Content"])]')]));
+		tplNode = await doc.createNode('test.tpl.ops');
+	});
+
+	it("(setAttr) - Set basic attribute", async () => {
 		$c.sm(tplNode, 'setAttr', ls([, 'data-test', , 'value123']));
 		assertEquals($c.sm(tplNode, 'getAttr', ls([, 'data-test'])), 'value123');
 	});
 
-	await t.step(".setAttr() - Set basic attribute via JS", async () => {
+	it(".setAttr() - Set basic attribute via JS", async () => {
 		tplNode.setAttr('data-id', 'tpl-001');
 		assertEquals(tplNode.getAttr('data-id'), 'tpl-001');
 	});
 
-	await t.step("(getAttr) - Get attribute", async () => {
+	it("(getAttr) - Get attribute", async () => {
 		$c.sm(tplNode, 'setAttr', ls([, 'title', , 'Template Title']));
 		assertEquals($c.sm(tplNode, 'getAttr', ls([, 'title'])), 'Template Title');
 	});
 
-	await t.step(".getAttr() - Get attribute via JS", async () => {
+	it(".getAttr() - Get attribute via JS", async () => {
 		tplNode.setAttr('aria-label', 'Test Template');
 		assertEquals(tplNode.getAttr('aria-label'), 'Test Template');
 	});
 
-	await t.step("(hasAttr) - Check attribute existence", async () => {
+	it("(hasAttr) - Check attribute existence", async () => {
 		$c.sm(tplNode, 'setAttr', ls([, 'test-attr', , 'exists']));
 		assertEquals($c.sm(tplNode, 'hasAttr', ls([, 'test-attr'])), true);
 		assertEquals($c.sm(tplNode, 'hasAttr', ls([, 'nonexistent'])), false);
 	});
 
-	await t.step(".hasAttr() - Check attribute existence via JS", async () => {
+	it(".hasAttr() - Check attribute existence via JS", async () => {
 		tplNode.setAttr('another-attr', 'value');
 		assertEquals(tplNode.hasAttr('another-attr'), true);
 		assertEquals(tplNode.hasAttr('missing-attr'), false);
 	});
 
-	await t.step("(delAttr) - Delete attribute", async () => {
+	it("(delAttr) - Delete attribute", async () => {
 		$c.sm(tplNode, 'setAttr', ls([, 'temp-attr', , 'temporary']));
 		assertEquals($c.sm(tplNode, 'hasAttr', ls([, 'temp-attr'])), true);
 		$c.sm(tplNode, 'delAttr', ls([, 'temp-attr']));
 		assertEquals($c.sm(tplNode, 'hasAttr', ls([, 'temp-attr'])), false);
 	});
 
-	await t.step(".delAttr() - Delete attribute via JS", async () => {
+	it(".delAttr() - Delete attribute via JS", async () => {
 		tplNode.setAttr('temp-js-attr', 'temporary');
 		assertEquals(tplNode.hasAttr('temp-js-attr'), true);
 		tplNode.delAttr('temp-js-attr');
 		assertEquals(tplNode.hasAttr('temp-js-attr'), false);
 	});
 
-	await t.step("(hasClass) - Basic class check", async () => {
+	it("(hasClass) - Basic class check", async () => {
 		$c.sm(tplNode, 'setAttr', ls([, 'class', , 'test-class']));
 		assertEquals($c.sm(tplNode, 'hasClass', ls([, 'test-class'])), true);
 		assertEquals($c.sm(tplNode, 'hasClass', ls([, 'missing-class'])), false);
 	});
 
-	await t.step(".hasClass() - Basic class check via JS", async () => {
+	it(".hasClass() - Basic class check via JS", async () => {
 		tplNode.setAttr('class', 'js-class another-class');
 		assertEquals(tplNode.hasClass('js-class'), true);
 		assertEquals(tplNode.hasClass('another-class'), true);
@@ -132,8 +141,8 @@ Deno.test("MWICoreTpl (template handler) - Inherited MWIDocNode Operations", asy
 	});
 });
 
-Deno.test("MWICoreTpl (template handler) - Spec Management", async (t) => {
-	await t.step("(getSpec) - Get spec with no attributes", async () => {
+describe("MWICoreTpl (template handler) - Spec Management", () => {
+	it("(getSpec) - Get spec with no attributes", async () => {
 		registry.register('test.tpl.spec1', ls(['allowLate', true, 'tpl', ps('[([m.t t="Content"])]')]));
 		const tplNode = await doc.createNode('test.tpl.spec1');
 		const spec = $c.sm(tplNode, 'getSpec');
@@ -142,14 +151,14 @@ Deno.test("MWICoreTpl (template handler) - Spec Management", async (t) => {
 		assert(slidStr.includes('test.tpl.spec1'));
 	});
 
-	await t.step(".getSpec() - Get spec with no attributes via JS", async () => {
+	it(".getSpec() - Get spec with no attributes via JS", async () => {
 		registry.register('test.tpl.spec2', ls(['allowLate', true, 'tpl', ps('[([m.t t="Content"])]')]));
 		const tplNode = await doc.createNode('test.tpl.spec2');
 		const spec = tplNode.getSpec();
 		assertEquals(spec.at(0), 'test.tpl.spec2');
 	});
 
-	await t.step("(getSpec) - Get spec with attributes", async () => {
+	it("(getSpec) - Get spec with attributes", async () => {
 		registry.register('test.tpl.spec3', ls(['allowLate', true, 'tpl', ps('[([m.t t="Content"])]')]));
 		const tplNode = await doc.createNode('test.tpl.spec3');
 		$c.sm(tplNode, 'setAttr', ls([, 'id', , 'tpl-123']));
@@ -160,7 +169,7 @@ Deno.test("MWICoreTpl (template handler) - Spec Management", async (t) => {
 		assertEquals(spec.at('data-role'), 'container');
 	});
 
-	await t.step(".getSpec() - Get spec with attributes via JS", async () => {
+	it(".getSpec() - Get spec with attributes via JS", async () => {
 		registry.register('test.tpl.spec4', ls(['allowLate', true, 'tpl', ps('[([m.t t="Content"])]')]));
 		const tplNode = await doc.createNode('test.tpl.spec4');
 		tplNode.setAttr('id', 'js-tpl-456');
@@ -171,7 +180,7 @@ Deno.test("MWICoreTpl (template handler) - Spec Management", async (t) => {
 		assert(spec.at('class').includes('template-class'));
 	});
 
-	await t.step("(setSpec) - Set attributes from spec (async)", async () => {
+	it("(setSpec) - Set attributes from spec (async)", async () => {
 		registry.register('test.tpl.spec5', ls(['allowLate', true, 'tpl', ps('[([m.t t="Content"])]')]));
 		const tplNode = await doc.createNode('test.tpl.spec5');
 		const spec = ps('[(test.tpl.spec5 id=spec-tpl data-test=value)]');
@@ -180,7 +189,7 @@ Deno.test("MWICoreTpl (template handler) - Spec Management", async (t) => {
 		assertEquals($c.sm(tplNode, 'getAttr', ls([, 'data-test'])), 'value');
 	});
 
-	await t.step(".setSpec() - Set attributes from spec via JS (async)", async () => {
+	it(".setSpec() - Set attributes from spec via JS (async)", async () => {
 		registry.register('test.tpl.spec6', ls(['allowLate', true, 'tpl', ps('[([m.t t="Content"])]')]));
 		const tplNode = await doc.createNode('test.tpl.spec6');
 		const spec = ps('[(test.tpl.spec6 id=js-spec-tpl class=spec-class)]');
@@ -190,8 +199,8 @@ Deno.test("MWICoreTpl (template handler) - Spec Management", async (t) => {
 	});
 });
 
-Deno.test("MWICoreTpl (template handler) - Template Content", async (t) => {
-	await t.step("Template has registered content from tpl property", async () => {
+describe("MWICoreTpl (template handler) - Template Content", () => {
+	it("Template has registered content from tpl property", async () => {
 		registry.register('test.tpl.content1', ls(['allowLate', true, 'tpl', ps('[([m.t t="Content"])]')]));
 		const tplNode = await doc.createNode('test.tpl.content1');
 		// The template should have been initialized with content from the 'tpl' property
@@ -200,7 +209,7 @@ Deno.test("MWICoreTpl (template handler) - Template Content", async (t) => {
 		assert(tplNode, "Template node should be created");
 	});
 
-	await t.step("Template with custom tpl property", async () => {
+	it("Template with custom tpl property", async () => {
 		registry.register('test.tpl.content2', ls([
 			'allowLate', true,
 			'tpl', ps('[([m.t t="Custom template"] [m.t t="Second item"])]')
@@ -209,7 +218,7 @@ Deno.test("MWICoreTpl (template handler) - Template Content", async (t) => {
 		assert(tplNode, "Template node with custom content should be created");
 	});
 
-	await t.step("Template autoDoc is disabled in schema", async () => {
+	it("Template autoDoc is disabled in schema", async () => {
 		registry.register('test.tpl.content3', ls(['allowLate', true, 'tpl', ps('[([m.t t="Content"])]')]));
 		const tplNode = await doc.createNode('test.tpl.content3');
 		// Templates should have autoDoc disabled to prevent automatic document wrapping
@@ -218,8 +227,8 @@ Deno.test("MWICoreTpl (template handler) - Template Content", async (t) => {
 	});
 });
 
-Deno.test("MWICoreTpl (template handler) - SlotSrc Integration", async (t) => {
-	await t.step("Template acts as slotSrc for its content", async () => {
+describe("MWICoreTpl (template handler) - SlotSrc Integration", () => {
+	it("Template acts as slotSrc for its content", async () => {
 		registry.register('test.tpl.slotsrc1', ls([
 			'allowLate', true,
 			'tpl', ps('[([m.slot name=content])]')
@@ -229,7 +238,7 @@ Deno.test("MWICoreTpl (template handler) - SlotSrc Integration", async (t) => {
 		assert(tplNode, "Template with slot should be created");
 	});
 
-	await t.step("Template with slotSrc option", async () => {
+	it("Template with slotSrc option", async () => {
 		registry.register('test.tpl.slotsrc2', ls(['allowLate', true, 'tpl', ps('[([m.t t="Content"])]')]));
 		const divNode = await doc.createNode('h.div');
 		divNode.setAttr('header', ps('[([m.t t="Header from parent"])]'));
@@ -237,26 +246,26 @@ Deno.test("MWICoreTpl (template handler) - SlotSrc Integration", async (t) => {
 		assertStrictEquals(tplNode.slotSrc, divNode);
 	});
 
-	await t.step("(slotSrc) - Get slotSrc when not set", async () => {
+	it("(slotSrc) - Get slotSrc when not set", async () => {
 		registry.register('test.tpl.slotsrc3', ls(['allowLate', true, 'tpl', ps('[([m.t t="Content"])]')]));
 		const tplNode = await doc.createNode('test.tpl.slotsrc3');
 		assertEquals($c.sm(tplNode, 'slotSrc'), undefined);
 	});
 
-	await t.step(".slotSrc - Get slotSrc when not set via JS", async () => {
+	it(".slotSrc - Get slotSrc when not set via JS", async () => {
 		registry.register('test.tpl.slotsrc4', ls(['allowLate', true, 'tpl', ps('[([m.t t="Content"])]')]));
 		const tplNode = await doc.createNode('test.tpl.slotsrc4');
 		assertEquals(tplNode.slotSrc, undefined);
 	});
 
-	await t.step("(slotSrc) - Get slotSrc when set", async () => {
+	it("(slotSrc) - Get slotSrc when set", async () => {
 		registry.register('test.tpl.slotsrc5', ls(['allowLate', true, 'tpl', ps('[([m.t t="Content"])]')]));
 		const divNode = await doc.createNode('h.div');
 		const tplNode = $c.sm(doc, 'createNode', ls([, 'test.tpl.slotsrc5', 'slotSrc', divNode]));
 		assertStrictEquals($c.sm(tplNode, 'slotSrc'), divNode);
 	});
 
-	await t.step(".slotSrc - Get slotSrc when set via JS", async () => {
+	it(".slotSrc - Get slotSrc when set via JS", async () => {
 		registry.register('test.tpl.slotsrc6', ls(['allowLate', true, 'tpl', ps('[([m.t t="Content"])]')]));
 		const divNode = await doc.createNode('h.div');
 		const tplNode = await doc.createNode('test.tpl.slotsrc6', { slotSrc: divNode });
@@ -264,8 +273,8 @@ Deno.test("MWICoreTpl (template handler) - SlotSrc Integration", async (t) => {
 	});
 });
 
-Deno.test("MWICoreTpl (template handler) - Fragment Delegation", async (t) => {
-	await t.step("Template delegates rendering to internal fragment", async () => {
+describe("MWICoreTpl (template handler) - Fragment Delegation", () => {
+	it("Template delegates rendering to internal fragment", async () => {
 		registry.register('test.tpl.frag1', ls(['allowLate', true, 'tpl', ps('[([m.t t="Content"])]')]));
 		// The MWICoreTpl handler creates an internal m.frg fragment
 		// and delegates getDOM/getHTML to it
@@ -275,7 +284,7 @@ Deno.test("MWICoreTpl (template handler) - Fragment Delegation", async (t) => {
 		assertEquals(tplNode.msjsType, 'MWICoreTpl');
 	});
 
-	await t.step("Template maintains fragment across operations", async () => {
+	it("Template maintains fragment across operations", async () => {
 		registry.register('test.tpl.frag2', ls(['allowLate', true, 'tpl', ps('[([m.t t="Content"])]')]));
 		const tplNode = await doc.createNode('test.tpl.frag2');
 		// The fragment should be created during @init and reused
@@ -286,8 +295,8 @@ Deno.test("MWICoreTpl (template handler) - Fragment Delegation", async (t) => {
 	});
 });
 
-Deno.test("MWICoreTpl (template handler) - Complex Template Content", async (t) => {
-	await t.step("Template with nested structure", async () => {
+describe("MWICoreTpl (template handler) - Complex Template Content", () => {
+	it("Template with nested structure", async () => {
 		registry.register('test.tpl.complex1', ls([
 			'allowLate', true,
 			'tpl', ps('[([m.frg [m.t t="Outer"] [m.frg [m.t t="Inner"]]])]')
@@ -296,7 +305,7 @@ Deno.test("MWICoreTpl (template handler) - Complex Template Content", async (t) 
 		assert(tplNode, "Template with nested structure should be created");
 	});
 
-	await t.step("Template with multiple top-level items", async () => {
+	it("Template with multiple top-level items", async () => {
 		registry.register('test.tpl.complex2', ls([
 			'allowLate', true,
 			'tpl', ps('[([m.t t="First"] [m.t t="Second"] [m.t t="Third"])]')
@@ -305,7 +314,7 @@ Deno.test("MWICoreTpl (template handler) - Complex Template Content", async (t) 
 		assert(tplNode, "Template with multiple items should be created");
 	});
 
-	await t.step("Template with mixed content types", async () => {
+	it("Template with mixed content types", async () => {
 		registry.register('test.tpl.complex3', ls([
 			'allowLate', true,
 			'tpl', ps('[([m.t t="Text"] [m.com t="Comment"] [m.frg [m.t t="Fragment"]])]')
@@ -315,8 +324,8 @@ Deno.test("MWICoreTpl (template handler) - Complex Template Content", async (t) 
 	});
 });
 
-Deno.test("MWICoreTpl (template handler) - Attribute Inheritance", async (t) => {
-	await t.step("Template attributes don't affect internal content", async () => {
+describe("MWICoreTpl (template handler) - Attribute Inheritance", () => {
+	it("Template attributes don't affect internal content", async () => {
 		registry.register('test.tpl.inherit1', ls(['allowLate', true, 'tpl', ps('[([m.t t="Content"])]')]));
 		const tplNode = await doc.createNode('test.tpl.inherit1');
 		tplNode.setAttr('id', 'outer-id');
@@ -328,15 +337,15 @@ Deno.test("MWICoreTpl (template handler) - Attribute Inheritance", async (t) => 
 		assertEquals(tplNode.getAttr('data-test'), 'outer-data');
 	});
 
-	await t.step("Template preserves document reference", async () => {
+	it("Template preserves document reference", async () => {
 		registry.register('test.tpl.inherit2', ls(['allowLate', true, 'tpl', ps('[([m.t t="Content"])]')]));
 		const tplNode = await doc.createNode('test.tpl.inherit2');
 		assertStrictEquals(tplNode.document, doc);
 	});
 });
 
-Deno.test("MWICoreTpl (template handler) - Empty Template", async (t) => {
-	await t.step("Template with empty tpl list", async () => {
+describe("MWICoreTpl (template handler) - Empty Template", () => {
+	it("Template with empty tpl list", async () => {
 		registry.register('test.tpl.empty', ls(['allowLate', true, 'tpl', ps('[()]')]));
 		const tplNode = await doc.createNode('test.tpl.empty');
 		assert(tplNode, "Template with empty content should be created");

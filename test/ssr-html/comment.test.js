@@ -1,6 +1,7 @@
+import { describe, it } from '@compat/test';
 import {
 	assertEquals,
-} from "https://deno.land/std@0.152.0/testing/asserts.ts";
+} from '@std/assert';
 
 import { setupRuntime } from '../harness.esm.js';
 
@@ -13,22 +14,22 @@ await fwait(REG_READY_FT);
 
 const doc = getInstance('MWIDocument');
 
-Deno.test("MWICoreCom (m.com) - SSR-HTML Tests", async (t) => {
-	await t.step("(getHTML) - Simple text comment", () => {
+describe("MWICoreCom (m.com) - SSR-HTML Tests", () => {
+	it("(getHTML) - Simple text comment", () => {
 		const comNode = $c.sm(doc, 'createNode', ['m.com']);
 		$c.sm(comNode, 'setAttr', ['t', 'Simple comment']);
 		const html =  $c.sm(comNode, 'getHTML');
 		assertEquals(html, '<!--Simple comment-->');
 	});
 
-	await t.step(".getHTML() - Simple text comment via JS", () => {
+	it(".getHTML() - Simple text comment via JS", () => {
 		const comNode = doc.createNode('m.com');
 		comNode.setAttr('t', 'Another simple comment');
 		const html = comNode.getHTML();
 		assertEquals(html, '<!--Another simple comment-->');
 	});
 
-	await t.step("(getHTML) - Crazy comment with special sequences", () => {
+	it("(getHTML) - Crazy comment with special sequences", () => {
 		const comNode = $c.sm(doc, 'createNode', ['m.com']);
 		const commentContent = '-> & <!-- <!--!> crazy comment <!--> --!> --> <!-';
 		const expectedHTML = '<!---&gt; &amp; &lt;!-- <!-&#45;!> crazy comment <!-&#45;> --!&gt; --&gt; &lt;!--->';
@@ -38,77 +39,77 @@ Deno.test("MWICoreCom (m.com) - SSR-HTML Tests", async (t) => {
 		assertEquals(html, expectedHTML);
 	});
 
-	await t.step("(getHTML) - Comment starting with >", () => {
+	it("(getHTML) - Comment starting with >", () => {
 		const comNode = $c.sm(doc, 'createNode', ['m.com']);
 		$c.sm(comNode, 'setAttr', ['t', '>starts with gt']);
 		const html =  $c.sm(comNode, 'getHTML');
 		assertEquals(html, '<!--&gt;starts with gt-->');
 	});
 
-	await t.step("(getHTML) - Comment starting with ->", () => {
+	it("(getHTML) - Comment starting with ->", () => {
 		const comNode = $c.sm(doc, 'createNode', ['m.com']);
 		$c.sm(comNode, 'setAttr', ['t', '->starts with arrow']);
 		const html =  $c.sm(comNode, 'getHTML');
 		assertEquals(html, '<!---&gt;starts with arrow-->');
 	});
 
-	await t.step("(getHTML) - Comment with <!-- sequence", () => {
+	it("(getHTML) - Comment with <!-- sequence", () => {
 		const comNode = $c.sm(doc, 'createNode', ['m.com']);
 		$c.sm(comNode, 'setAttr', ['t', 'text <!-- here']);
 		const html =  $c.sm(comNode, 'getHTML');
 		assertEquals(html, '<!--text &lt;!-- here-->');
 	});
 
-	await t.step("(getHTML) - Comment with <!--> sequence", () => {
+	it("(getHTML) - Comment with <!--> sequence", () => {
 		const comNode = $c.sm(doc, 'createNode', ['m.com']);
 		$c.sm(comNode, 'setAttr', ['t', 'text <!--> here']);
 		const html =  $c.sm(comNode, 'getHTML');
 		assertEquals(html, '<!--text <!-&#45;> here-->');
 	});
 
-	await t.step("(getHTML) - Comment with <!--!> sequence", () => {
+	it("(getHTML) - Comment with <!--!> sequence", () => {
 		const comNode = $c.sm(doc, 'createNode', ['m.com']);
 		$c.sm(comNode, 'setAttr', ['t', 'text <!--!> here']);
 		const html =  $c.sm(comNode, 'getHTML');
 		assertEquals(html, '<!--text <!-&#45;!> here-->');
 	});
 
-	await t.step("(getHTML) - Comment with --> sequence", () => {
+	it("(getHTML) - Comment with --> sequence", () => {
 		const comNode = $c.sm(doc, 'createNode', ['m.com']);
 		$c.sm(comNode, 'setAttr', ['t', 'text --> here']);
 		const html =  $c.sm(comNode, 'getHTML');
 		assertEquals(html, '<!--text --&gt; here-->');
 	});
 
-	await t.step("(getHTML) - Comment with --!> sequence", () => {
+	it("(getHTML) - Comment with --!> sequence", () => {
 		const comNode = $c.sm(doc, 'createNode', ['m.com']);
 		$c.sm(comNode, 'setAttr', ['t', 'text --!> here']);
 		const html =  $c.sm(comNode, 'getHTML');
 		assertEquals(html, '<!--text --!&gt; here-->');
 	});
 
-	await t.step("(getHTML) - Comment ending with <!-", () => {
+	it("(getHTML) - Comment ending with <!-", () => {
 		const comNode = $c.sm(doc, 'createNode', ['m.com']);
 		$c.sm(comNode, 'setAttr', ['t', 'ends with <!-']);
 		const html =  $c.sm(comNode, 'getHTML');
 		assertEquals(html, '<!--ends with &lt;!--->');
 	});
 
-	await t.step("(getHTML) - Comment with & character", () => {
+	it("(getHTML) - Comment with & character", () => {
 		const comNode = $c.sm(doc, 'createNode', ['m.com']);
 		$c.sm(comNode, 'setAttr', ['t', 'text & more']);
 		const html =  $c.sm(comNode, 'getHTML');
 		assertEquals(html, '<!--text &amp; more-->');
 	});
 
-	await t.step("(getHTML) - Empty comment", () => {
+	it("(getHTML) - Empty comment", () => {
 		const comNode = $c.sm(doc, 'createNode', ['m.com']);
 		$c.sm(comNode, 'setAttr', ['t', '']);
 		const html =  $c.sm(comNode, 'getHTML');
 		assertEquals(html, '<!---->');
 	});
 
-	await t.step("(getHTML) - Comment with supplementary-plane character (surrogate pair)", () => {
+	it("(getHTML) - Comment with supplementary-plane character (surrogate pair)", () => {
 		const comNode = $c.sm(doc, 'createNode', ['m.com']);
 		$c.sm(comNode, 'setAttr', ['t', 'emoji \u{1F600} here']);
 		const html =  $c.sm(comNode, 'getHTML');

@@ -4,10 +4,11 @@
 // content appears after the end marker, and that m.csrStatic content
 // is absent from SSR output.
 
+import { describe, it } from '@compat/test';
 import {
 	assert,
 	assertEquals,
-} from "https://deno.land/std@0.152.0/testing/asserts.ts";
+} from '@std/assert';
 
 import { setupRuntime } from '../harness.esm.js';
 
@@ -25,8 +26,8 @@ const ps = globalThis.ps;
 const BEGIN_MARKER = '<script type="x" data-mwi="begin"></script>';
 const END_MARKER = '<script type="x" data-mwi="end"></script>';
 
-Deno.test("MWICoreHeadBody - SSR m.head basic structure", async (t) => {
-	await t.step("(getHTML) - m.head emits boundary markers", () => {
+describe("MWICoreHeadBody - SSR m.head basic structure", () => {
+	it("(getHTML) - m.head emits boundary markers", () => {
 		const headNode = doc.createNode('m.head');
 		const html = headNode.getHTML();
 		assert(html.startsWith('<head>'), 'opens with <head>');
@@ -35,7 +36,7 @@ Deno.test("MWICoreHeadBody - SSR m.head basic structure", async (t) => {
 		assert(html.endsWith('</head>'), 'closes with </head>');
 	});
 
-	await t.step("(getHTML) - m.head markers in correct order", () => {
+	it("(getHTML) - m.head markers in correct order", () => {
 		const headNode = doc.createNode('m.head');
 		const html = headNode.getHTML();
 		const beginIdx = html.indexOf(BEGIN_MARKER);
@@ -43,7 +44,7 @@ Deno.test("MWICoreHeadBody - SSR m.head basic structure", async (t) => {
 		assert(beginIdx < endIdx, 'begin marker precedes end marker');
 	});
 
-	await t.step("(getHTML) - m.head normal children in managed region", () => {
+	it("(getHTML) - m.head normal children in managed region", () => {
 		const headNode = doc.createNode('m.head');
 		const titleNode = doc.createNode('h.title');
 		titleNode.setAttr('m.text', 'My Page');
@@ -56,14 +57,14 @@ Deno.test("MWICoreHeadBody - SSR m.head basic structure", async (t) => {
 		assert(titleIdx < endIdx, 'title is before end marker');
 	});
 
-	await t.step("(getHTML) - m.head with HTML attributes", () => {
+	it("(getHTML) - m.head with HTML attributes", () => {
 		const headNode = doc.createNode('m.head');
 		headNode.setAttr('lang', 'en');
 		const html = headNode.getHTML();
 		assert(html.startsWith('<head lang="en">'), 'lang attribute rendered on head tag');
 	});
 
-	await t.step("(getHTML) - m.head m.ssrStatic content after end marker", () => {
+	it("(getHTML) - m.head m.ssrStatic content after end marker", () => {
 		const headNode = doc.createNode('m.head');
 		const ssrStatic = ps('[([h.script src="/gtm.js"])]');
 		headNode.setAttr('m.ssrStatic', ssrStatic);
@@ -73,7 +74,7 @@ Deno.test("MWICoreHeadBody - SSR m.head basic structure", async (t) => {
 		assert(scriptIdx > endIdx, 'm.ssrStatic content is after end marker');
 	});
 
-	await t.step("(getHTML) - m.head m.csrStatic content absent from SSR", () => {
+	it("(getHTML) - m.head m.csrStatic content absent from SSR", () => {
 		const headNode = doc.createNode('m.head');
 		const csrStatic = ps('[([h.script src="/csr-only.js"])]');
 		headNode.setAttr('m.csrStatic', csrStatic);
@@ -81,7 +82,7 @@ Deno.test("MWICoreHeadBody - SSR m.head basic structure", async (t) => {
 		assert(!html.includes('csr-only.js'), 'm.csrStatic content not in SSR output');
 	});
 
-	await t.step("(getHTML) - m.head m.ssrStatic and m.csrStatic not rendered as HTML attributes", () => {
+	it("(getHTML) - m.head m.ssrStatic and m.csrStatic not rendered as HTML attributes", () => {
 		const headNode = doc.createNode('m.head');
 		const ssrStatic = ps('[([h.script src="/gtm.js"])]');
 		const csrStatic = ps('[([h.script src="/csr.js"])]');
@@ -93,8 +94,8 @@ Deno.test("MWICoreHeadBody - SSR m.head basic structure", async (t) => {
 	});
 });
 
-Deno.test("MWICoreHeadBody - SSR m.body basic structure", async (t) => {
-	await t.step("(getHTML) - m.body emits boundary markers", () => {
+describe("MWICoreHeadBody - SSR m.body basic structure", () => {
+	it("(getHTML) - m.body emits boundary markers", () => {
 		const bodyNode = doc.createNode('m.body');
 		const html = bodyNode.getHTML();
 		assert(html.startsWith('<body>'), 'opens with <body>');
@@ -103,7 +104,7 @@ Deno.test("MWICoreHeadBody - SSR m.body basic structure", async (t) => {
 		assert(html.endsWith('</body>'), 'closes with </body>');
 	});
 
-	await t.step("(getHTML) - m.body normal children in managed region", () => {
+	it("(getHTML) - m.body normal children in managed region", () => {
 		const bodyNode = doc.createNode('m.body');
 		const divNode = doc.createNode('h.div');
 		divNode.setAttr('class', 'content');
@@ -116,14 +117,14 @@ Deno.test("MWICoreHeadBody - SSR m.body basic structure", async (t) => {
 		assert(divIdx < endIdx, 'div is before end marker');
 	});
 
-	await t.step("(getHTML) - m.body with HTML attributes", () => {
+	it("(getHTML) - m.body with HTML attributes", () => {
 		const bodyNode = doc.createNode('m.body');
 		bodyNode.setAttr('class', 'main');
 		const html = bodyNode.getHTML();
 		assert(html.startsWith('<body class="main">'), 'class attribute rendered on body tag');
 	});
 
-	await t.step("(getHTML) - m.body m.ssrStatic content after end marker", () => {
+	it("(getHTML) - m.body m.ssrStatic content after end marker", () => {
 		const bodyNode = doc.createNode('m.body');
 		const ssrStatic = ps('[([h.script src="/analytics.js"])]');
 		bodyNode.setAttr('m.ssrStatic', ssrStatic);
@@ -133,7 +134,7 @@ Deno.test("MWICoreHeadBody - SSR m.body basic structure", async (t) => {
 		assert(scriptIdx > endIdx, 'm.ssrStatic content is after end marker');
 	});
 
-	await t.step("(getHTML) - m.body m.csrStatic content absent from SSR", () => {
+	it("(getHTML) - m.body m.csrStatic content absent from SSR", () => {
 		const bodyNode = doc.createNode('m.body');
 		const csrStatic = ps('[([h.script src="/csr-body.js"])]');
 		bodyNode.setAttr('m.csrStatic', csrStatic);
@@ -142,8 +143,8 @@ Deno.test("MWICoreHeadBody - SSR m.body basic structure", async (t) => {
 	});
 });
 
-Deno.test("MWICoreHeadBody - SSR full example", async (t) => {
-	await t.step("(getHTML) - m.head with managed content and ssrStatic", () => {
+describe("MWICoreHeadBody - SSR full example", () => {
+	it("(getHTML) - m.head with managed content and ssrStatic", () => {
 		const headNode = doc.createNode('m.head');
 		const titleNode = doc.createNode('h.title');
 		titleNode.setAttr('m.text', 'My Page');

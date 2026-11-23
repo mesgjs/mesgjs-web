@@ -1,7 +1,8 @@
+import { describe, it } from '@compat/test';
 import {
 	assert,
 	assertEquals,
-} from "https://deno.land/std@0.152.0/testing/asserts.ts";
+} from '@std/assert';
 
 import { setupRuntime } from '../harness.esm.js';
 
@@ -18,15 +19,15 @@ await fwait(REG_READY_FT);
 
 const registry = getInstance('MWIRegistry');
 
-Deno.test("MWICoreScpCSS SSR - Basic HTML Rendering", async (t) => {
-	await t.step("Render empty m.scpcss", () => {
+describe("MWICoreScpCSS SSR - Basic HTML Rendering", () => {
+	it("Render empty m.scpcss", () => {
 		const doc = getInstance('MWIDocument');
 		const scpNode = doc.createNode('m.scpcss');
 		const html =  $c.sm(scpNode, 'getHTML');
 		assertEquals(html, '', "Empty m.scpcss should render empty string");
 	});
 
-	await t.step("Render single component CSS", () => {
+	it("Render single component CSS", () => {
 		registry.register('test.ssr.scpcss.single', ls([
 			'allowLate', true,
 			'if', 'MWIHTML',
@@ -44,7 +45,7 @@ Deno.test("MWICoreScpCSS SSR - Basic HTML Rendering", async (t) => {
 		assert(!html.includes('@@'), "Should not contain @@ placeholder");
 	});
 
-	await t.step("Render CSS with </style> escaping", () => {
+	it("Render CSS with </style> escaping", () => {
 		registry.register('test.ssr.scpcss.escape', ls([
 			'allowLate', true,
 			'if', 'MWIHTML',
@@ -62,7 +63,7 @@ Deno.test("MWICoreScpCSS SSR - Basic HTML Rendering", async (t) => {
 		assertEquals(closeTags?.length, 1, "Should have exactly one closing </style>");
 	});
 
-	await t.step("Render multiple component CSS", () => {
+	it("Render multiple component CSS", () => {
 		registry.register('test.ssr.scpcss.multi1', ls([
 			'allowLate', true,
 			'if', 'MWIHTML',
@@ -89,8 +90,8 @@ Deno.test("MWICoreScpCSS SSR - Basic HTML Rendering", async (t) => {
 	});
 });
 
-Deno.test("MWICoreScpCSS SSR - Integration with Document", async (t) => {
-	await t.step("m.scpcss in document root", () => {
+describe("MWICoreScpCSS SSR - Integration with Document", () => {
+	it("m.scpcss in document root", () => {
 		registry.register('test.ssr.scpcss.doc1', ls([
 			'allowLate', true,
 			'if', 'MWIHTML',
@@ -106,7 +107,7 @@ Deno.test("MWICoreScpCSS SSR - Integration with Document", async (t) => {
 		assert(html.includes('margin: 0'), "Document HTML should include CSS");
 	});
 
-	await t.step("m.scpcss position in output", () => {
+	it("m.scpcss position in output", () => {
 		registry.register('test.ssr.scpcss.pos', ls([
 			'allowLate', true,
 			'if', 'MWIHTML',
@@ -139,7 +140,7 @@ Deno.test("MWICoreScpCSS SSR - Integration with Document", async (t) => {
 		assert(styleIdx < afterIdx, "Style should come before 'After'");
 	});
 
-	await t.step("Multiple m.scpcss nodes", () => {
+	it("Multiple m.scpcss nodes", () => {
 		registry.register('test.ssr.scpcss.multiple', ls([
 			'allowLate', true,
 			'if', 'MWIHTML',
@@ -163,8 +164,8 @@ Deno.test("MWICoreScpCSS SSR - Integration with Document", async (t) => {
 	});
 });
 
-Deno.test("MWICoreScpCSS SSR - Real-World Patterns", async (t) => {
-	await t.step("Complete page with scoped styles", () => {
+describe("MWICoreScpCSS SSR - Real-World Patterns", () => {
+	it("Complete page with scoped styles", () => {
 		// Register components with scoped CSS
 		registry.register('test.ssr.scpcss.header', ls([
 			'allowLate', true,
@@ -208,7 +209,7 @@ Deno.test("MWICoreScpCSS SSR - Real-World Patterns", async (t) => {
 		assert(html.includes('text-align: center'), "Should include footer CSS");
 	});
 
-	await t.step("Component library pattern", () => {
+	it("Component library pattern", () => {
 		// Register many components
 		for (let i = 0; i < 10; i++) {
 			registry.register(`test.ssr.scpcss.lib${i}`, ls([
@@ -238,8 +239,8 @@ Deno.test("MWICoreScpCSS SSR - Real-World Patterns", async (t) => {
 	});
 });
 
-Deno.test("MWICoreScpCSS SSR - CSS Content Correctness", async (t) => {
-	await t.step("CSS with newlines preserved", () => {
+describe("MWICoreScpCSS SSR - CSS Content Correctness", () => {
+	it("CSS with newlines preserved", () => {
 		registry.register('test.ssr.scpcss.newlines', ls([
 			'allowLate', true,
 			'if', 'MWIHTML',
@@ -254,7 +255,7 @@ Deno.test("MWICoreScpCSS SSR - CSS Content Correctness", async (t) => {
 		assert(html.includes('margin: 0'), "Should preserve all rules");
 	});
 
-	await t.step("CSS with multiple selectors", () => {
+	it("CSS with multiple selectors", () => {
 		registry.register('test.ssr.scpcss.selectors', ls([
 			'allowLate', true,
 			'if', 'MWIHTML',
@@ -272,7 +273,7 @@ Deno.test("MWICoreScpCSS SSR - CSS Content Correctness", async (t) => {
 		assert(html.includes('color: green'), "Should include third rule");
 	});
 
-	await t.step("CSS with media queries", () => {
+	it("CSS with media queries", () => {
 		registry.register('test.ssr.scpcss.media', ls([
 			'allowLate', true,
 			'if', 'MWIHTML',
@@ -289,7 +290,7 @@ Deno.test("MWICoreScpCSS SSR - CSS Content Correctness", async (t) => {
 		assert(html.includes('width: 50%'), "Should include media rule");
 	});
 
-	await t.step("CSS with keyframes", () => {
+	it("CSS with keyframes", () => {
 		registry.register('test.ssr.scpcss.keyframes', ls([
 			'allowLate', true,
 			'if', 'MWIHTML',
@@ -306,8 +307,8 @@ Deno.test("MWICoreScpCSS SSR - CSS Content Correctness", async (t) => {
 	});
 });
 
-Deno.test("MWICoreScpCSS SSR - Edge Cases", async (t) => {
-	await t.step("Very long CSS content", () => {
+describe("MWICoreScpCSS SSR - Edge Cases", () => {
+	it("Very long CSS content", () => {
 		// Generate a large CSS block
 		let longCSS = '';
 		for (let i = 0; i < 100; i++) {
@@ -330,7 +331,7 @@ Deno.test("MWICoreScpCSS SSR - Edge Cases", async (t) => {
 		assert(html.length > 1000, "Should have substantial length");
 	});
 
-	await t.step("CSS with special characters in strings", () => {
+	it("CSS with special characters in strings", () => {
 		registry.register('test.ssr.scpcss.special', ls([
 			'allowLate', true,
 			'if', 'MWIHTML',
@@ -346,7 +347,7 @@ Deno.test("MWICoreScpCSS SSR - Edge Cases", async (t) => {
 		assert(html.includes('test'), "Should include content");
 	});
 
-	await t.step("Multiple </style> occurrences", () => {
+	it("Multiple </style> occurrences", () => {
 		registry.register('test.ssr.scpcss.multistyle', ls([
 			'allowLate', true,
 			'if', 'MWIHTML',
@@ -364,8 +365,8 @@ Deno.test("MWICoreScpCSS SSR - Edge Cases", async (t) => {
 	});
 });
 
-Deno.test("MWICoreScpCSS SSR - Output Parameter", async (t) => {
-	await t.step("getHTML with output array", () => {
+describe("MWICoreScpCSS SSR - Output Parameter", () => {
+	it("getHTML with output array", () => {
 		registry.register('test.ssr.scpcss.output', ls([
 			'allowLate', true,
 			'if', 'MWIHTML',
@@ -383,7 +384,7 @@ Deno.test("MWICoreScpCSS SSR - Output Parameter", async (t) => {
 		assert(html.includes('color: orange'), "Should include CSS");
 	});
 
-	await t.step("getHTML with output array - empty CSS", () => {
+	it("getHTML with output array - empty CSS", () => {
 		const doc = getInstance('MWIDocument');
 		const scpNode = doc.createNode('m.scpcss');
 
@@ -395,10 +396,10 @@ Deno.test("MWICoreScpCSS SSR - Output Parameter", async (t) => {
 	});
 });
 
-Deno.test("MWICoreScpCSS SSR - Edge Cases (migrated from core)", async (t) => {
+describe("MWICoreScpCSS SSR - Edge Cases (migrated from core)", () => {
 	// Migrated from test/core/scoped-css.test.js - unique coverage not in SSR file
 
-	await t.step("Component with whitespace-only scopedCSS", () => {
+	it("Component with whitespace-only scopedCSS", () => {
 		registry.register('test.migrate.scpcss.whitespace', ls([
 			'allowLate', true,
 			'if', 'MWIHTML',
@@ -415,10 +416,10 @@ Deno.test("MWICoreScpCSS SSR - Edge Cases (migrated from core)", async (t) => {
 	});
 });
 
-Deno.test("MWICoreScpCSS SSR - m.ci Virtual Attribute (migrated from core)", async (t) => {
+describe("MWICoreScpCSS SSR - m.ci Virtual Attribute (migrated from core)", () => {
 	// Migrated from test/core/scoped-css.test.js - unique coverage not in SSR file
 
-	await t.step("Read m.ci via m.slat from slot source", () => {
+	it("Read m.ci via m.slat from slot source", () => {
 		registry.register('test.migrate.scpcss.ci2', ls([
 			'allowLate', true,
 			'tpl', ps('[( [h.div m.slat=[ci=[m.ci]]] )]')
@@ -433,10 +434,10 @@ Deno.test("MWICoreScpCSS SSR - m.ci Virtual Attribute (migrated from core)", asy
 	});
 });
 
-Deno.test("MWICoreScpCSS SSR - m.coat with m.ci Integration (migrated from core)", async (t) => {
+describe("MWICoreScpCSS SSR - m.coat with m.ci Integration (migrated from core)", () => {
 	// Migrated from test/core/scoped-css.test.js - unique coverage not in SSR file
 
-	await t.step("Use m.ci in m.coat to set m.percl", () => {
+	it("Use m.ci in m.coat to set m.percl", () => {
 		registry.register('test.migrate.scpcss.coat1', ls([
 			'allowLate', true,
 			'tpl', ps('[( [h.div m.coat=[m.percl="<m.ci>"]] )]'),
@@ -454,7 +455,7 @@ Deno.test("MWICoreScpCSS SSR - m.coat with m.ci Integration (migrated from core)
 		assert(html.includes(`class="${compId}"`), "Should have component ID as class");
 	});
 
-	await t.step("Use m.ci in m.coat to set regular class", () => {
+	it("Use m.ci in m.coat to set regular class", () => {
 		registry.register('test.migrate.scpcss.coat2', ls([
 			'allowLate', true,
 			'tpl', ps('[( [h.div m.coat=[class="<m.ci>"]] )]')
@@ -469,7 +470,7 @@ Deno.test("MWICoreScpCSS SSR - m.coat with m.ci Integration (migrated from core)
 		assert(html.includes(`class="${compId}"`), "Should have component ID as class");
 	});
 
-	await t.step("Multiple m.coat attributes using m.ci", () => {
+	it("Multiple m.coat attributes using m.ci", () => {
 		registry.register('test.migrate.scpcss.coat3', ls([
 			'allowLate', true,
 			'tpl', ps('[( [h.div m.coat=[m.percl="<m.ci>" data-comp="<m.ci>"]] )]')
@@ -485,7 +486,7 @@ Deno.test("MWICoreScpCSS SSR - m.coat with m.ci Integration (migrated from core)
 		assert(html.includes(`data-comp="${compId}"`), "Should have component ID as data attribute");
 	});
 
-	await t.step("m.coat with m.ci in nested template context", () => {
+	it("m.coat with m.ci in nested template context", () => {
 		registry.register('test.migrate.scpcss.coat4outer', ls([
 			'allowLate', true,
 			'tpl', ps('[( [test.migrate.scpcss.coat4inner m.slat=[outerci=[m.ci]]] )]'),
@@ -508,10 +509,10 @@ Deno.test("MWICoreScpCSS SSR - m.coat with m.ci Integration (migrated from core)
 	});
 });
 
-Deno.test("MWICoreScpCSS SSR - CSS Deduplication (migrated from core)", async (t) => {
+describe("MWICoreScpCSS SSR - CSS Deduplication (migrated from core)", () => {
 	// Migrated from test/core/scoped-css.test.js - unique coverage not in SSR file
 
-	await t.step("Single component type, multiple instances", () => {
+	it("Single component type, multiple instances", () => {
 		registry.register('test.migrate.scpcss.dedup1', ls([
 			'allowLate', true,
 			'if', 'MWIHTML',
@@ -533,7 +534,7 @@ Deno.test("MWICoreScpCSS SSR - CSS Deduplication (migrated from core)", async (t
 		assertEquals(matches?.length, 1, "CSS should appear only once despite multiple instances");
 	});
 
-	await t.step("Component type reuse across document", () => {
+	it("Component type reuse across document", () => {
 		registry.register('test.migrate.scpcss.dedup2', ls([
 			'allowLate', true,
 			'if', 'MWIHTML',
@@ -560,10 +561,10 @@ Deno.test("MWICoreScpCSS SSR - CSS Deduplication (migrated from core)", async (t
 	});
 });
 
-Deno.test("MWICoreScpCSS SSR - Real-World Patterns (migrated from core)", async (t) => {
+describe("MWICoreScpCSS SSR - Real-World Patterns (migrated from core)", () => {
 	// Migrated from test/core/scoped-css.test.js - unique coverage not in SSR file
 
-	await t.step("Card component with scoped styles", () => {
+	it("Card component with scoped styles", () => {
 		registry.register('test.migrate.scpcss.card', ls([
 			'allowLate', true,
 			'tpl', ps('[( [h.div m.coat=[m.percl="<m.ci>"] [m.slot]] )]'),
@@ -588,7 +589,7 @@ Deno.test("MWICoreScpCSS SSR - Real-World Patterns (migrated from core)", async 
 		assert(cardHtml.includes(`class="${compId}"`), "Card should have scoped class");
 	});
 
-	await t.step("Nested components with scoped CSS", () => {
+	it("Nested components with scoped CSS", () => {
 		registry.register('test.migrate.scpcss.parent', ls([
 			'allowLate', true,
 			'tpl', ps('[( [m.scpcss] [h.div m.coat=[m.percl="<m.ci>"] [test.migrate.scpcss.child m.slat=[parentci=[m.ci]]]] )]'),

@@ -1,7 +1,8 @@
+import { describe, it } from '@compat/test';
 import {
 	assert,
 	assertEquals,
-} from "https://deno.land/std@0.152.0/testing/asserts.ts";
+} from '@std/assert';
 
 import { setupRuntime } from '../harness.esm.js';
 
@@ -19,8 +20,8 @@ const { ls, ps } = globalThis;
 
 await fwait('MWIDocument', 'mwi.comp.MWIStyleAggr');
 
-Deno.test('MWIStyleAggr (m.stag) - SSR-HTML Basic Aggregation & Render', async (t) => {
-	await t.step('(getHTML) - collector node returns empty string', () => {
+describe('MWIStyleAggr (m.stag) - SSR-HTML Basic Aggregation & Render', () => {
+	it('(getHTML) - collector node returns empty string', () => {
 		const doc = getInstance('MWIDocument');
 		const collector = $c.sm(doc, 'createNode', ls([, 'm.stag']));
 		$c.sm(collector, 'setSubSpec', { subSpec: ls([, ':root', , 'container-name', , 'group1']) });
@@ -28,7 +29,7 @@ Deno.test('MWIStyleAggr (m.stag) - SSR-HTML Basic Aggregation & Render', async (
 		assertEquals(html, '', 'collector node should return empty string');
 	});
 
-	await t.step('.getHTML() - collector node returns empty string via JS', () => {
+	it('.getHTML() - collector node returns empty string via JS', () => {
 		const doc = getInstance('MWIDocument');
 		const collector = doc.createNode('m.stag');
 		collector.setSubSpec({ subSpec: ls([, ':root', , 'container-name', , 'group1']) });
@@ -36,21 +37,21 @@ Deno.test('MWIStyleAggr (m.stag) - SSR-HTML Basic Aggregation & Render', async (
 		assertEquals(html, '', 'collector node should return empty string via JS');
 	});
 
-	await t.step('(getHTML) - render node returns buffer placeholder', () => {
+	it('(getHTML) - render node returns buffer placeholder', () => {
 		const doc = getInstance('MWIDocument');
 		const renderNode = $c.sm(doc, 'createNode', ls([, 'm.stag']));
 		const html = $c.sm(renderNode, 'getHTML');
 		assert(/^<\{\d+\}>$/.test(html), 'render node should return placeholder <{id}>');
 	});
 
-	await t.step('.getHTML() - render node returns buffer placeholder via JS', () => {
+	it('.getHTML() - render node returns buffer placeholder via JS', () => {
 		const doc = getInstance('MWIDocument');
 		const renderNode = doc.createNode('m.stag');
 		const html = renderNode.getHTML();
 		assert(/^<\{\d+\}>$/.test(html), 'render node should return placeholder <{id}> via JS');
 	});
 
-	await t.step('(getHTML) - end-to-end basic aggregation via doc.getHTML()', () => {
+	it('(getHTML) - end-to-end basic aggregation via doc.getHTML()', () => {
 		const doc = getInstance('MWIDocument');
 		const renderNode = $c.sm(doc, 'createNode', ls([, 'm.stag']));
 		const collector = $c.sm(doc, 'createNode', ls([, 'm.stag']));
@@ -65,7 +66,7 @@ Deno.test('MWIStyleAggr (m.stag) - SSR-HTML Basic Aggregation & Render', async (
 		assert(!html.includes('<{'), 'Should resolve all placeholders');
 	});
 
-	await t.step('.getHTML() - end-to-end basic aggregation via JS', () => {
+	it('.getHTML() - end-to-end basic aggregation via JS', () => {
 		const doc = getInstance('MWIDocument');
 		const renderNode = doc.createNode('m.stag');
 		const collector = doc.createNode('m.stag');
@@ -80,8 +81,8 @@ Deno.test('MWIStyleAggr (m.stag) - SSR-HTML Basic Aggregation & Render', async (
 	});
 });
 
-Deno.test('MWIStyleAggr (m.stag) - SSR-HTML Deduplication', async (t) => {
-	await t.step('(getHTML) - deduplicates identical values for the same selector and attribute', () => {
+describe('MWIStyleAggr (m.stag) - SSR-HTML Deduplication', () => {
+	it('(getHTML) - deduplicates identical values for the same selector and attribute', () => {
 		const doc = getInstance('MWIDocument');
 		const renderNode = doc.createNode('m.stag');
 		const c1 = doc.createNode('m.stag');
@@ -98,8 +99,8 @@ Deno.test('MWIStyleAggr (m.stag) - SSR-HTML Deduplication', async (t) => {
 	});
 });
 
-Deno.test('MWIStyleAggr (m.stag) - SSR-HTML Delimiters', async (t) => {
-	await t.step('Space-separated attributes', () => {
+describe('MWIStyleAggr (m.stag) - SSR-HTML Delimiters', () => {
+	it('Space-separated attributes', () => {
 		const doc = getInstance('MWIDocument');
 		const renderNode = doc.createNode('m.stag');
 
@@ -128,7 +129,7 @@ Deno.test('MWIStyleAggr (m.stag) - SSR-HTML Delimiters', async (t) => {
 		assert(html.includes('counter-set: cnt 10;'), 'counter-set should be space-separated');
 	});
 
-	await t.step('Comma-separated attributes', () => {
+	it('Comma-separated attributes', () => {
 		const doc = getInstance('MWIDocument');
 		const renderNode = doc.createNode('m.stag');
 
@@ -154,8 +155,8 @@ Deno.test('MWIStyleAggr (m.stag) - SSR-HTML Delimiters', async (t) => {
 	});
 });
 
-Deno.test('MWIStyleAggr (m.stag) - SSR-HTML Multiple values & selectors', async (t) => {
-	await t.step('Multiple values in a single collector node', () => {
+describe('MWIStyleAggr (m.stag) - SSR-HTML Multiple values & selectors', () => {
+	it('Multiple values in a single collector node', () => {
 		const doc = getInstance('MWIDocument');
 		const renderNode = doc.createNode('m.stag');
 		const c = doc.createNode('m.stag');
@@ -166,7 +167,7 @@ Deno.test('MWIStyleAggr (m.stag) - SSR-HTML Multiple values & selectors', async 
 		assert(html.includes('#node { counter-reset: page 1 paragraph 1; }'), 'Should combine values in single node');
 	});
 
-	await t.step('Multiple selectors and grouping properties', () => {
+	it('Multiple selectors and grouping properties', () => {
 		const doc = getInstance('MWIDocument');
 		const renderNode = doc.createNode('m.stag');
 
@@ -193,7 +194,7 @@ Deno.test('MWIStyleAggr (m.stag) - SSR-HTML Multiple values & selectors', async 
 		assert(html.includes('aside { container-name: sidebar; }'), 'Properties under aside should be correctly formatted');
 	});
 
-	await t.step('Special syntax reverse(name) in counter-reset', () => {
+	it('Special syntax reverse(name) in counter-reset', () => {
 		const doc = getInstance('MWIDocument');
 		const renderNode = doc.createNode('m.stag');
 		const c = doc.createNode('m.stag');
@@ -205,8 +206,8 @@ Deno.test('MWIStyleAggr (m.stag) - SSR-HTML Multiple values & selectors', async 
 	});
 });
 
-Deno.test('MWIStyleAggr (m.stag) - SSR-HTML Error Handling & Sanitization', async (t) => {
-	await t.step('Unsupported attribute logs error and is omitted', () => {
+describe('MWIStyleAggr (m.stag) - SSR-HTML Error Handling & Sanitization', () => {
+	it('Unsupported attribute logs error and is omitted', () => {
 		const doc = getInstance('MWIDocument');
 		const renderNode = doc.createNode('m.stag');
 		const cInvalid = doc.createNode('m.stag');
@@ -219,7 +220,7 @@ Deno.test('MWIStyleAggr (m.stag) - SSR-HTML Error Handling & Sanitization', asyn
 		assert(!html.includes('scroll-timeline-name'), 'Unsupported attribute should not be emitted');
 	});
 
-	await t.step('Sanitization of </style> closing tags in values', () => {
+	it('Sanitization of </style> closing tags in values', () => {
 		const doc = getInstance('MWIDocument');
 		const renderNode = doc.createNode('m.stag');
 		const cMalicious = doc.createNode('m.stag');
@@ -235,8 +236,8 @@ Deno.test('MWIStyleAggr (m.stag) - SSR-HTML Error Handling & Sanitization', asyn
 	});
 });
 
-Deno.test('MWIStyleAggr (m.stag) - SSR-HTML Lifecycle & Suppression', async (t) => {
-	await t.step('clearAggr cleans up style aggregation state', () => {
+describe('MWIStyleAggr (m.stag) - SSR-HTML Lifecycle & Suppression', () => {
+	it('clearAggr cleans up style aggregation state', () => {
 		const doc = getInstance('MWIDocument');
 		const renderNode = doc.createNode('m.stag');
 		const c = doc.createNode('m.stag');
@@ -250,7 +251,7 @@ Deno.test('MWIStyleAggr (m.stag) - SSR-HTML Lifecycle & Suppression', async (t) 
 		assertEquals(aggrData.size, 0, 'aggrData should be empty after clearAggr');
 	});
 
-	await t.step('m.csr on render node suppresses SSR output', () => {
+	it('m.csr on render node suppresses SSR output', () => {
 		const doc = getInstance('MWIDocument');
 		const renderNode = doc.createNode('m.stag');
 		renderNode.setAttr('m.csr', true);

@@ -1,3 +1,4 @@
+import { readTextFile } from '@compat/file';
 import { lex, parse } from "mesgjs/src/lexparse.esm.js";
 import { transpileTree } from "mesgjs/src/transpile.esm.js";
 
@@ -127,7 +128,7 @@ export async function loadMesgjsModuleSource (source, module = 'anonymous') {
 // Load a Mesgjs module from an actual .msjs file.
 // (Any internal or external SLID configuration is ignored.)
 export async function loadMesgjsModulePath (path, module = path) {
-	const source = await Deno.readTextFile(path);
+	const source = await readTextFile(path);
 	return loadMesgjsModuleSource(source, module);
 }
 

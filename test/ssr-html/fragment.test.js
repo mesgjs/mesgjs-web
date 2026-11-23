@@ -1,7 +1,8 @@
+import { describe, it } from '@compat/test';
 import {
 	assert,
 	assertEquals,
-} from "https://deno.land/std@0.152.0/testing/asserts.ts";
+} from '@std/assert';
 
 import { setupRuntime } from '../harness.esm.js';
 
@@ -16,20 +17,20 @@ const doc = getInstance('MWIDocument');
 const ls = globalThis.ls;
 const ps = globalThis.ps;
 
-Deno.test("MWICoreFrag (m.frg) - Transparent Rendering", async (t) => {
-	await t.step("(getHTML) - Empty fragment renders as empty string", () => {
+describe("MWICoreFrag (m.frg) - Transparent Rendering", () => {
+	it("(getHTML) - Empty fragment renders as empty string", () => {
 		const fragNode = $c.sm(doc, 'createNode', ls([, 'm.frg']));
 		const html =  $c.sm(fragNode, 'getHTML');
 		assertEquals(html, '');
 	});
 
-	await t.step(".getHTML() - Empty fragment renders as empty string via JS", () => {
+	it(".getHTML() - Empty fragment renders as empty string via JS", () => {
 		const fragNode = doc.createNode('m.frg');
 		const html = fragNode.getHTML();
 		assertEquals(html, '');
 	});
 
-	await t.step("(getHTML) - Fragment with single text child", () => {
+	it("(getHTML) - Fragment with single text child", () => {
 		const fragNode = $c.sm(doc, 'createNode', ls([, 'm.frg']));
 		const textNode = $c.sm(doc, 'createNode', ls([, 'm.t']));
 		$c.sm(textNode, 'setAttr', ls([, 't', , 'Hello World']));
@@ -38,7 +39,7 @@ Deno.test("MWICoreFrag (m.frg) - Transparent Rendering", async (t) => {
 		assertEquals(html, 'Hello World');
 	});
 
-	await t.step(".getHTML() - Fragment with single text child via JS", () => {
+	it(".getHTML() - Fragment with single text child via JS", () => {
 		const fragNode = doc.createNode('m.frg');
 		const textNode = doc.createNode('m.t');
 		textNode.setAttr('t', 'JS Hello World');
@@ -47,7 +48,7 @@ Deno.test("MWICoreFrag (m.frg) - Transparent Rendering", async (t) => {
 		assertEquals(html, 'JS Hello World');
 	});
 
-	await t.step("(getHTML) - Fragment with multiple text children", () => {
+	it("(getHTML) - Fragment with multiple text children", () => {
 		const fragNode = $c.sm(doc, 'createNode', ls([, 'm.frg']));
 		const text1 = $c.sm(doc, 'createNode', ls([, 'm.t']));
 		$c.sm(text1, 'setAttr', ls([, 't', , 'First']));
@@ -60,7 +61,7 @@ Deno.test("MWICoreFrag (m.frg) - Transparent Rendering", async (t) => {
 		assertEquals(html, 'FirstSecondThird');
 	});
 
-	await t.step(".getHTML() - Fragment with multiple text children via JS", () => {
+	it(".getHTML() - Fragment with multiple text children via JS", () => {
 		const fragNode = doc.createNode('m.frg');
 		const text1 = doc.createNode('m.t');
 		text1.setAttr('t', 'JS First');
@@ -73,7 +74,7 @@ Deno.test("MWICoreFrag (m.frg) - Transparent Rendering", async (t) => {
 		assertEquals(html, 'JS FirstJS SecondJS Third');
 	});
 
-	await t.step("(getHTML) - Fragment with mixed content (text and comment)", () => {
+	it("(getHTML) - Fragment with mixed content (text and comment)", () => {
 		const fragNode = $c.sm(doc, 'createNode', ls([, 'm.frg']));
 		const textNode = $c.sm(doc, 'createNode', ls([, 'm.t']));
 		$c.sm(textNode, 'setAttr', ls([, 't', , 'Text content']));
@@ -84,7 +85,7 @@ Deno.test("MWICoreFrag (m.frg) - Transparent Rendering", async (t) => {
 		assertEquals(html, 'Text content<!--Comment content-->');
 	});
 
-	await t.step(".getHTML() - Fragment with mixed content via JS", () => {
+	it(".getHTML() - Fragment with mixed content via JS", () => {
 		const fragNode = doc.createNode('m.frg');
 		const textNode = doc.createNode('m.t');
 		textNode.setAttr('t', 'JS Text');
@@ -96,8 +97,8 @@ Deno.test("MWICoreFrag (m.frg) - Transparent Rendering", async (t) => {
 	});
 });
 
-Deno.test("MWICoreFrag (m.frg) - No Wrapper Element", async (t) => {
-	await t.step("Fragment does NOT add HTML wrapper", () => {
+describe("MWICoreFrag (m.frg) - No Wrapper Element", () => {
+	it("Fragment does NOT add HTML wrapper", () => {
 		const fragNode = doc.createNode('m.frg');
 		fragNode.append('Content');
 		const html = fragNode.getHTML();
@@ -107,7 +108,7 @@ Deno.test("MWICoreFrag (m.frg) - No Wrapper Element", async (t) => {
 		assert(!html.includes('>'), 'No closing tags');
 	});
 
-	await t.step("Fragment vs. direct children rendering (should be identical)", () => {
+	it("Fragment vs. direct children rendering (should be identical)", () => {
 		// Create fragment with children
 		const fragNode = doc.createNode('m.frg');
 		const text1 = doc.createNode('m.t');
@@ -126,7 +127,7 @@ Deno.test("MWICoreFrag (m.frg) - No Wrapper Element", async (t) => {
 		assertEquals(fragHTML, directHTML);
 	});
 
-	await t.step("Fragment attributes do NOT appear in HTML output", () => {
+	it("Fragment attributes do NOT appear in HTML output", () => {
 		const fragNode = doc.createNode('m.frg');
 		fragNode.setAttr('id', 'frag-id');
 		fragNode.setAttr('class', 'frag-class');
@@ -144,7 +145,7 @@ Deno.test("MWICoreFrag (m.frg) - No Wrapper Element", async (t) => {
 		assert(!html.includes('frag-class'), 'No class value');
 	});
 
-	await t.step("Only child content renders", () => {
+	it("Only child content renders", () => {
 		const fragNode = doc.createNode('m.frg');
 		fragNode.setAttr('id', 'invisible-id');
 		fragNode.setAttr('title', 'Invisible Title');
@@ -159,8 +160,8 @@ Deno.test("MWICoreFrag (m.frg) - No Wrapper Element", async (t) => {
 	});
 });
 
-Deno.test("MWICoreFrag (m.frg) - Nested Fragments", async (t) => {
-	await t.step("Fragment containing other fragments", () => {
+describe("MWICoreFrag (m.frg) - Nested Fragments", () => {
+	it("Fragment containing other fragments", () => {
 		const outerFrag = doc.createNode('m.frg');
 		const innerFrag = doc.createNode('m.frg');
 		innerFrag.append('Inner content');
@@ -169,7 +170,7 @@ Deno.test("MWICoreFrag (m.frg) - Nested Fragments", async (t) => {
 		assertEquals(html, 'Inner content');
 	});
 
-	await t.step("Nested fragments render transparently", () => {
+	it("Nested fragments render transparently", () => {
 		const frag1 = doc.createNode('m.frg');
 		const frag2 = doc.createNode('m.frg');
 		const frag3 = doc.createNode('m.frg');
@@ -182,7 +183,7 @@ Deno.test("MWICoreFrag (m.frg) - Nested Fragments", async (t) => {
 		assertEquals(html, 'Deepest');
 	});
 
-	await t.step("Deep nesting (3+ levels)", () => {
+	it("Deep nesting (3+ levels)", () => {
 		const levels = [];
 		for (let i = 0; i < 5; i++) {
 			levels.push(doc.createNode('m.frg'));
@@ -200,7 +201,7 @@ Deno.test("MWICoreFrag (m.frg) - Nested Fragments", async (t) => {
 		assertEquals(html, 'Deep content');
 	});
 
-	await t.step("Nested fragments with mixed content", () => {
+	it("Nested fragments with mixed content", () => {
 		const outer = doc.createNode('m.frg');
 		const inner1 = doc.createNode('m.frg');
 		const inner2 = doc.createNode('m.frg');
@@ -214,8 +215,8 @@ Deno.test("MWICoreFrag (m.frg) - Nested Fragments", async (t) => {
 	});
 });
 
-Deno.test("MWICoreFrag (m.frg) - Content Aggregation in HTML", async (t) => {
-	await t.step("Fragment with text nodes", () => {
+describe("MWICoreFrag (m.frg) - Content Aggregation in HTML", () => {
+	it("Fragment with text nodes", () => {
 		const fragNode = doc.createNode('m.frg');
 		const text1 = doc.createNode('m.t');
 		text1.setAttr('t', 'One');
@@ -228,7 +229,7 @@ Deno.test("MWICoreFrag (m.frg) - Content Aggregation in HTML", async (t) => {
 		assertEquals(html, 'OneTwoThree');
 	});
 
-	await t.step("Fragment with comment nodes", () => {
+	it("Fragment with comment nodes", () => {
 		const fragNode = doc.createNode('m.frg');
 		const com1 = doc.createNode('m.com');
 		com1.setAttr('t', 'Comment 1');
@@ -239,7 +240,7 @@ Deno.test("MWICoreFrag (m.frg) - Content Aggregation in HTML", async (t) => {
 		assertEquals(html, '<!--Comment 1--><!--Comment 2-->');
 	});
 
-	await t.step("Fragment with other fragments", () => {
+	it("Fragment with other fragments", () => {
 		const outer = doc.createNode('m.frg');
 		const inner1 = doc.createNode('m.frg');
 		const inner2 = doc.createNode('m.frg');
@@ -250,7 +251,7 @@ Deno.test("MWICoreFrag (m.frg) - Content Aggregation in HTML", async (t) => {
 		assertEquals(html, 'AB');
 	});
 
-	await t.step("All children render in correct order", () => {
+	it("All children render in correct order", () => {
 		const fragNode = doc.createNode('m.frg');
 		const nodes = [];
 		const expected = [];
@@ -267,7 +268,7 @@ Deno.test("MWICoreFrag (m.frg) - Content Aggregation in HTML", async (t) => {
 		assertEquals(html, expected.join(''));
 	});
 
-	await t.step("No separators between children", () => {
+	it("No separators between children", () => {
 		const fragNode = doc.createNode('m.frg');
 		fragNode.append('A', 'B', 'C');
 		const html = fragNode.getHTML();
@@ -277,8 +278,8 @@ Deno.test("MWICoreFrag (m.frg) - Content Aggregation in HTML", async (t) => {
 	});
 });
 
-Deno.test("MWICoreFrag (m.frg) - Edge Cases", async (t) => {
-	await t.step("Fragment with only whitespace text", () => {
+describe("MWICoreFrag (m.frg) - Edge Cases", () => {
+	it("Fragment with only whitespace text", () => {
 		const fragNode = doc.createNode('m.frg');
 		const textNode = doc.createNode('m.t');
 		textNode.setAttr('t', '   ');
@@ -287,7 +288,7 @@ Deno.test("MWICoreFrag (m.frg) - Edge Cases", async (t) => {
 		assertEquals(html, '   ');
 	});
 
-	await t.step("Fragment with empty text nodes", () => {
+	it("Fragment with empty text nodes", () => {
 		const fragNode = doc.createNode('m.frg');
 		const text1 = doc.createNode('m.t');
 		text1.setAttr('t', '');
@@ -300,7 +301,7 @@ Deno.test("MWICoreFrag (m.frg) - Edge Cases", async (t) => {
 		assertEquals(html, 'Content');
 	});
 
-	await t.step("Fragment as sole child of another fragment", () => {
+	it("Fragment as sole child of another fragment", () => {
 		const parent = doc.createNode('m.frg');
 		const child = doc.createNode('m.frg');
 		child.append('Nested');
@@ -309,7 +310,7 @@ Deno.test("MWICoreFrag (m.frg) - Edge Cases", async (t) => {
 		assertEquals(html, 'Nested');
 	});
 
-	await t.step("Fragment with no children in larger structure", () => {
+	it("Fragment with no children in larger structure", () => {
 		const frag1 = doc.createNode('m.frg');
 		const emptyFrag = doc.createNode('m.frg');
 		const frag2 = doc.createNode('m.frg');
@@ -324,7 +325,7 @@ Deno.test("MWICoreFrag (m.frg) - Edge Cases", async (t) => {
 		assertEquals(html, 'BeforeAfter');
 	});
 
-	await t.step("Fragment with special HTML characters in children", () => {
+	it("Fragment with special HTML characters in children", () => {
 		const fragNode = doc.createNode('m.frg');
 		const textNode = doc.createNode('m.t');
 		textNode.setAttr('t', '<div>Test & "quotes"</div>');
@@ -334,14 +335,14 @@ Deno.test("MWICoreFrag (m.frg) - Edge Cases", async (t) => {
 		assertEquals(html, '&lt;div&gt;Test &amp; "quotes"&lt;/div&gt;');
 	});
 
-	await t.step("Fragment appending string directly (auto-converts)", () => {
+	it("Fragment appending string directly (auto-converts)", () => {
 		const fragNode = doc.createNode('m.frg');
 		fragNode.append('Direct string');
 		const html = fragNode.getHTML();
 		assertEquals(html, 'Direct string');
 	});
 
-	await t.step("Multiple fragments at same level", () => {
+	it("Multiple fragments at same level", () => {
 		const container = doc.createNode('m.frg');
 		const frag1 = doc.createNode('m.frg');
 		const frag2 = doc.createNode('m.frg');

@@ -1,8 +1,9 @@
+import { describe, it } from '@compat/test';
 import {
 	assert,
 	assertEquals,
 	assertExists,
-} from "https://deno.land/std@0.152.0/testing/asserts.ts";
+} from '@std/assert';
 
 import { setupRuntime } from '../harness.esm.js';
 
@@ -23,8 +24,8 @@ const registry = getInstance('MWIRegistry');
 //   - test/ssr-html/scoped-css.test.js (getHTML tests)
 //   - test/csr-dom/scoped-css.test.js (getDOM tests, already covered)
 
-Deno.test("MWICoreScpCSS Core - Basic Interface Behavior", async (t) => {
-	await t.step("Create m.scpcss node", () => {
+describe("MWICoreScpCSS Core - Basic Interface Behavior", () => {
+	it("Create m.scpcss node", () => {
 		const doc = getInstance('MWIDocument');
 		const scpNode = doc.createNode('m.scpcss');
 
@@ -37,8 +38,8 @@ Deno.test("MWICoreScpCSS Core - Basic Interface Behavior", async (t) => {
 	});
 });
 
-Deno.test("MWICoreScpCSS Core - m.ci Virtual Attribute", async (t) => {
-	await t.step("Read m.ci from node itself", () => {
+describe("MWICoreScpCSS Core - m.ci Virtual Attribute", () => {
+	it("Read m.ci from node itself", () => {
 		registry.register('test.core.scpcss.ci1', ls([
 			'allowLate', true,
 			'if', 'MWIHTML',
@@ -53,7 +54,7 @@ Deno.test("MWICoreScpCSS Core - m.ci Virtual Attribute", async (t) => {
 		assert(ci.startsWith('_MO_'), "Component ID should start with _MO_");
 	});
 
-	await t.step("m.ci is read-only", () => {
+	it("m.ci is read-only", () => {
 		registry.register('test.core.scpcss.ci3', ls([
 			'allowLate', true,
 			'if', 'MWIHTML'

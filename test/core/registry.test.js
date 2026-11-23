@@ -1,9 +1,10 @@
+import { describe, it } from '@compat/test';
 import {
 	assert,
 	assertEquals,
 	assertStrictEquals,
 	assertMatch,
-} from "https://deno.land/std@0.152.0/testing/asserts.ts";
+} from '@std/assert';
 
 import { setupRuntime } from '../harness.esm.js';
 
@@ -15,37 +16,36 @@ await setupRuntime();
 const { fwait, getInstance } = globalThis.$c;
 const { ls, ps } = globalThis;
 
-Deno.test('MWIRegistry - Initialization', async (t) => {
+await fwait(REG_OPEN_FT);
+
+describe('MWIRegistry - Initialization', () => {
 	// Wait for registry to be open
-	await fwait(REG_OPEN_FT);
 	const registry = getInstance('MWIRegistry');
 	assert(registry, 'MWIRegistry instance exists');
 });
 
-Deno.test('MWIRegistry - Ready signal', async (t) => {
+describe('MWIRegistry - Ready signal', () => {
 	// Wait for full registry readiness
-	await fwait(REG_READY_FT);
 	const registry = getInstance('MWIRegistry');
 	assert(registry, 'MWIRegistry instance exists after ready signal');
 });
 
-Deno.test('MWIRegistry - ID Generation', async (t) => {
-	await fwait(REG_READY_FT);
+describe('MWIRegistry - ID Generation', () => {
 	const registry = getInstance('MWIRegistry');
 
-	await t.step('(nextId) - Server ID prefix', () => {
+	it('(nextId) - Server ID prefix', () => {
 		const id1 = $c.sm(registry, 'nextId');
 		assertMatch(id1, /^_MS_/, 'ID should start with _MS_ prefix for server');
 		assertEquals(typeof id1, 'string', 'ID should be a string');
 	});
 
-	await t.step('.nextId() - Server ID prefix', () => {
+	it('.nextId() - Server ID prefix', () => {
 		const id1 = registry.nextId();
 		assertMatch(id1, /^_MS_/, 'ID should start with _MS_ prefix for server');
 		assertEquals(typeof id1, 'string', 'ID should be a string');
 	});
 
-	await t.step('(nextId) - Sequential IDs', () => {
+	it('(nextId) - Sequential IDs', () => {
 		const id1 = $c.sm(registry, 'nextId');
 		const id2 = $c.sm(registry, 'nextId');
 		const id3 = $c.sm(registry, 'nextId');
@@ -59,7 +59,7 @@ Deno.test('MWIRegistry - ID Generation', async (t) => {
 		assertEquals(num3, num2 + 1, 'IDs should increment sequentially');
 	});
 
-	await t.step('.nextId() - Sequential IDs', () => {
+	it('.nextId() - Sequential IDs', () => {
 		const id1 = registry.nextId();
 		const id2 = registry.nextId();
 		const id3 = registry.nextId();
@@ -73,7 +73,7 @@ Deno.test('MWIRegistry - ID Generation', async (t) => {
 		assertEquals(num3, num2 + 1, 'IDs should increment sequentially');
 	});
 
-	await t.step('(nextId) - Unique IDs', () => {
+	it('(nextId) - Unique IDs', () => {
 		const ids = new Set();
 		for (let i = 0; i < 100; i++) {
 			ids.add($c.sm(registry, 'nextId'));
@@ -81,7 +81,7 @@ Deno.test('MWIRegistry - ID Generation', async (t) => {
 		assertEquals(ids.size, 100, 'All generated IDs should be unique');
 	});
 
-	await t.step('.nextId() - Unique IDs', () => {
+	it('.nextId() - Unique IDs', () => {
 		const ids = new Set();
 		for (let i = 0; i < 100; i++) {
 			ids.add(registry.nextId());
@@ -90,24 +90,23 @@ Deno.test('MWIRegistry - ID Generation', async (t) => {
 	});
 });
 
-Deno.test('MWIRegistry - Component Retrieval (get)', async (t) => {
-	await fwait(REG_READY_FT);
+describe('MWIRegistry - Component Retrieval (get)', () => {
 	const registry = getInstance('MWIRegistry');
 
-	await t.step('(get) - Retrieve registered component', () => {
+	it('(get) - Retrieve registered component', () => {
 		// Core components should be registered by now
 		const textComp = $c.sm(registry, 'get', ls([, 'm.t']));
 		assert(textComp, 'Should return component entry for m.t');
 		assert(textComp.has('if'), 'Component entry should have interface');
 	});
 
-	await t.step('.get() - Retrieve registered component', () => {
+	it('.get() - Retrieve registered component', () => {
 		const textComp = registry.get('m.t');
 		assert(textComp, 'Should return component entry for m.t');
 		assert(textComp.has('if'), 'Component entry should have interface');
 	});
 
-	await t.step('(get) - Multiple component types', () => {
+	it('(get) - Multiple component types', () => {
 		const components = ['m.t', 'm.com', 'm.frg', 'h.div'];
 		for (const compName of components) {
 			const comp = $c.sm(registry, 'get', ls([, compName]));
@@ -115,7 +114,7 @@ Deno.test('MWIRegistry - Component Retrieval (get)', async (t) => {
 		}
 	});
 
-	await t.step('.get() - Multiple component types', () => {
+	it('.get() - Multiple component types', () => {
 		const components = ['m.t', 'm.com', 'm.frg', 'h.div'];
 		for (const compName of components) {
 			const comp = registry.get(compName);
@@ -123,24 +122,24 @@ Deno.test('MWIRegistry - Component Retrieval (get)', async (t) => {
 		}
 	});
 
-	await t.step('(get) - Non-existent component', () => {
+	it('(get) - Non-existent component', () => {
 		const comp = $c.sm(registry, 'get', ls([, 'nonexistent.component']));
 		assertEquals(comp, undefined, 'Should return undefined for non-existent component');
 	});
 
-	await t.step('.get() - Non-existent component', () => {
+	it('.get() - Non-existent component', () => {
 		const comp = registry.get('nonexistent.component');
 		assertEquals(comp, undefined, 'Should return undefined for non-existent component');
 	});
 
-	await t.step('(get) - Component has ID', () => {
+	it('(get) - Component has ID', () => {
 		const textComp = $c.sm(registry, 'get', ls([, 'm.t']));
 		assert(textComp.has('id'), 'Component entry should have an ID');
 		const id = textComp.at('id');
 		assertMatch(id, /^_MO_/, 'Component ID should start with _MO_ prefix');
 	});
 
-	await t.step('.get() - Component has ID', () => {
+	it('.get() - Component has ID', () => {
 		const textComp = registry.get('m.t');
 		assert(textComp.has('id'), 'Component entry should have an ID');
 		const id = textComp.at('id');
@@ -148,11 +147,11 @@ Deno.test('MWIRegistry - Component Retrieval (get)', async (t) => {
 	});
 });
 
-Deno.test('MWIRegistry - Hydration (loadServerComps)', async (t) => {
+describe('MWIRegistry - Hydration (loadServerComps)', () => {
 	// Create a new runtime instance with server component data
 	// This simulates SSR hydration on the client
 
-	await t.step('Hydration with server components', async () => {
+	it('Hydration with server components', async () => {
 		// Set up server component data before runtime initialization
 		const serverComps = ls([
 			, 'm.t',
@@ -181,7 +180,7 @@ Deno.test('MWIRegistry - Hydration (loadServerComps)', async (t) => {
 		assert(textComp.has('id'), 'Component should have an ID');
 	});
 
-	await t.step('Component IDs match server assignments', async () => {
+	it('Component IDs match server assignments', async () => {
 		const registry = getInstance('MWIRegistry');
 
 		// Get several components and verify they have sequential IDs

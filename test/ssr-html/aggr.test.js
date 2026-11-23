@@ -1,7 +1,8 @@
+import { describe, it } from '@compat/test';
 import {
 	assert,
 	assertEquals,
-} from "https://deno.land/std@0.152.0/testing/asserts.ts";
+} from '@std/assert';
 
 import { setupRuntime } from '../harness.esm.js';
 
@@ -19,15 +20,15 @@ const { ls } = globalThis;
 
 await fwait('MWIDocument', 'mwi.comp.MWIAggr');
 
-Deno.test('MWIDocument - getHTML with aggregate placeholder replacement', async (t) => {
-	await t.step('(getHTML) - No aggregation: returns plain HTML', () => {
+describe('MWIDocument - getHTML with aggregate placeholder replacement', () => {
+	it('(getHTML) - No aggregation: returns plain HTML', () => {
 		const doc = getInstance('MWIDocument');
 		$c.sm(doc, 'append', ls(['list', '[([h.div hello])]']));
 		const html =  $c.sm(doc, 'getHTML');
 		assertEquals(html, '<div>hello</div>', 'Should return plain HTML without aggregation');
 	});
 
-	await t.step('(getHTML) - Replaces placeholder with aggregated content', () => {
+	it('(getHTML) - Replaces placeholder with aggregated content', () => {
 		const doc = getInstance('MWIDocument');
 
 		// Manually set up aggregation: create a buffer and a placeholder
@@ -50,7 +51,7 @@ Deno.test('MWIDocument - getHTML with aggregate placeholder replacement', async 
 		assert(!html.includes('<{'), 'Should not contain unresolved placeholders');
 	});
 
-	await t.step('(getHTML) - Multiple placeholders replaced correctly', () => {
+	it('(getHTML) - Multiple placeholders replaced correctly', () => {
 		const doc = getInstance('MWIDocument');
 
 		// Set up two buffers
@@ -81,7 +82,7 @@ Deno.test('MWIDocument - getHTML with aggregate placeholder replacement', async 
 		assert(!html.includes('<{'), 'Should not contain unresolved placeholders');
 	});
 
-	await t.step('(getHTML) - False-positive placeholders inside comments/scripts/styles are not replaced', () => {
+	it('(getHTML) - False-positive placeholders inside comments/scripts/styles are not replaced', () => {
 		// This test verifies that <{N}> patterns inside HTML comments, script tags, and
 		// style tags are treated as literal text and NOT replaced as aggregation placeholders.
 		// The pattern tested is: false (comment) - real - false (script)
@@ -140,7 +141,7 @@ Deno.test('MWIDocument - getHTML with aggregate placeholder replacement', async 
 		assertEquals(warnings.length, 0, 'No warnings should be issued for false-positive placeholders');
 	});
 
-	await t.step('(getHTML) - Same placeholder referenced multiple times: first renders, second warns and is empty, third+ are empty', () => {
+	it('(getHTML) - Same placeholder referenced multiple times: first renders, second warns and is empty, third+ are empty', () => {
 		// When the same buffer is referenced by multiple `from` nodes:
 		// - The first reference renders the content normally
 		// - The second reference produces a console warning and renders nothing (prevents loops/DOM-to-doc mismatches)

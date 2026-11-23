@@ -1,8 +1,9 @@
+import { describe, it } from '@compat/test';
 import {
 	assert,
 	assertEquals,
 	assertStrictEquals,
-} from "https://deno.land/std@0.152.0/testing/asserts.ts";
+} from '@std/assert';
 
 import { setupRuntime } from '../harness.esm.js';
 
@@ -16,7 +17,8 @@ await fwait(REG_READY_FT);
 const doc = getInstance('MWIDocument');
 const ls = globalThis.ls;
 
-Deno.test("MWIHTML interface renders standard and void elements", async (t) => {
+describe("MWIHTML interface renders standard and void elements", () => {
+	it("renders standard and void elements", () => {
 	const divNode = $c.sm(doc, 'createNode', ls([, 'h.div']));
 	$c.sm(divNode, 'setAttr', [ 'class', 'test' ]);
 	$c.sm(divNode, 'setSubSpec', 'Content');
@@ -27,10 +29,11 @@ Deno.test("MWIHTML interface renders standard and void elements", async (t) => {
 	$c.sm(brNode, 'setAttr', ls([, 'class', , 'break']));
 	const brHTML =  $c.sm(brNode, 'getHTML');
 	assertEquals(brHTML, '<br class="break">', 'void element rendered');
+	});
 });
 
-Deno.test("MWIHTMLScript interface renders sanitized content", async (t) => {
-	await t.step("h.script sanitizes content", () => {
+describe("MWIHTMLScript interface renders sanitized content", () => {
+	it("h.script sanitizes content", () => {
 		const scriptNode = doc.createNode('h.script');
 		const scriptContent = 'if (1 < 2) { console.log("</script>"); }';
 		const expectedHTML = '<script>if (1 < 2) { console.log("\\x3c/script>"); }</script>';
@@ -39,7 +42,7 @@ Deno.test("MWIHTMLScript interface renders sanitized content", async (t) => {
 		assertEquals(scriptHTML, expectedHTML, 'script content rendered and sanitized correctly');
 	});
 
-	await t.step("h.style sanitizes content", () => {
+	it("h.style sanitizes content", () => {
 		const styleNode = doc.createNode('h.style');
 		const styleContent = '.x::after { content: "</style>"; }';
 		const expectedHTML = '<style>.x::after { content: "\\3c /style>"; }</style>';
@@ -50,33 +53,39 @@ Deno.test("MWIHTMLScript interface renders sanitized content", async (t) => {
 });
 
 
-Deno.test("MWIHTMLTitle interface renders HTML-escaped content", async (t) => {
+describe("MWIHTMLTitle interface renders HTML-escaped content", () => {
+	it("renders HTML-escaped content", () => {
 	const titleNode = doc.createNode('h.title');
 	const titleContent = 'Title with <unsafe> content';
 	const expectedHTML = '<title>Title with &lt;unsafe&gt; content</title>';
 	titleNode.setAttr('m.text', titleContent);
 	const titleHTML = titleNode.getHTML();
 	assertEquals(titleHTML, expectedHTML, 'title content rendered and escaped correctly');
+	});
 });
 
-Deno.test("MWIHTMLTitle interface renders supplementary-plane content as a single numeric reference", async (t) => {
+describe("MWIHTMLTitle interface renders supplementary-plane content as a single numeric reference", () => {
+	it("renders supplementary-plane content", () => {
 	const titleNode = doc.createNode('h.title');
 	const titleContent = 'Title with \u{1F600} emoji';
 	const expectedHTML = '<title>Title with &#128512; emoji</title>';
 	titleNode.setAttr('m.text', titleContent);
 	const titleHTML = titleNode.getHTML();
 	assertEquals(titleHTML, expectedHTML, 'title content renders full code point, not split surrogates');
+	});
 });
 
 
-Deno.test("MWIHTMLDocType interface renders correctly", async (t) => {
+describe("MWIHTMLDocType interface renders correctly", () => {
+	it("renders doctype correctly", () => {
 	const doctypeNode = doc.createNode('h.doctype');
 	const doctypeHTML = doctypeNode.getHTML();
 	assertEquals(doctypeHTML, '<!DOCTYPE html>', 'doctype rendered correctly');
+	});
 });
 
-Deno.test("MWIHTML - Numeric Attribute Values", async (t) => {
-	await t.step("(setAttr) - Numeric value via JS number", () => {
+describe("MWIHTML - Numeric Attribute Values", () => {
+	it("(setAttr) - Numeric value via JS number", () => {
 		const divNode = $c.sm(doc, 'createNode', ls([, 'h.div']));
 		$c.sm(divNode, 'setAttr', ['data-count', 42]);
 		$c.sm(divNode, 'setAttr', ['data-index', 0]);
@@ -88,7 +97,7 @@ Deno.test("MWIHTML - Numeric Attribute Values", async (t) => {
 		assert(html.includes('tabindex="-1"'), 'Should render negative number');
 	});
 
-	await t.step(".setAttr() - Numeric value via JS number", () => {
+	it(".setAttr() - Numeric value via JS number", () => {
 		const divNode = doc.createNode('h.div');
 		divNode.setAttr('data-value', 123);
 		divNode.setAttr('data-zero', 0);
@@ -100,7 +109,7 @@ Deno.test("MWIHTML - Numeric Attribute Values", async (t) => {
 		assert(html.includes('data-negative="-99"'), 'Should render negative number');
 	});
 
-	await t.step("Numeric value in SLID spec", () => {
+	it("Numeric value in SLID spec", () => {
 		const spec = globalThis.ps('[(h.div data-id=456 data-count=0 data-i-squared=-1)]');
 		const divNode = doc.from({ item: spec });
 		const html = divNode.getHTML();
@@ -110,7 +119,7 @@ Deno.test("MWIHTML - Numeric Attribute Values", async (t) => {
 		assert(html.includes('data-i-squared="-1"'), 'Should render negative number from SLID');
 	});
 
-	await t.step("Mixed string and numeric attributes", () => {
+	it("Mixed string and numeric attributes", () => {
 		const divNode = doc.createNode('h.div');
 		divNode.setAttr('data-string', 'text');
 		divNode.setAttr('data-number', 789);

@@ -1,8 +1,9 @@
+import { describe, it } from '@compat/test';
 import {
 	assert,
 	assertEquals,
 	assertStrictEquals,
-} from "https://deno.land/std@0.152.0/testing/asserts.ts";
+} from '@std/assert';
 
 import { setupRuntime } from '../harness.esm.js';
 
@@ -17,57 +18,57 @@ const doc = getInstance('MWIDocument');
 const ls = globalThis.ls;
 const ps = globalThis.ps;
 
-Deno.test("MWICoreText (m.t) - Core Interface Tests", async (t) => {
+describe("MWICoreText (m.t) - Core Interface Tests", () => {
 	const textNode = doc.createNode('m.t');
 
-	await t.step("(setAttr) - Set text attribute", () => {
+	it("(setAttr) - Set text attribute", () => {
 		const textNode = doc.createNode('m.t');
 		$c.sm(textNode, 'setAttr', ls([, 't', , 'Hello World']));
 		assertEquals($c.sm(textNode, 'getAttr', ls([, 't'])), 'Hello World');
 	});
 
-	await t.step(".setAttr() - Set text attribute via JS", () => {
+	it(".setAttr() - Set text attribute via JS", () => {
 		const textNode = doc.createNode('m.t');
 		textNode.setAttr('t', 'Updated Text');
 		assertEquals(textNode.getAttr('t'), 'Updated Text');
 	});
 
-	await t.step("(delAttr) - Delete text attribute", () => {
+	it("(delAttr) - Delete text attribute", () => {
 		const textNode = doc.createNode('m.t');
 		$c.sm(textNode, 'setAttr', ls([, 't', , 'Test']));
 		$c.sm(textNode, 'delAttr', ls([, 't']));
 		assertEquals($c.sm(textNode, 'hasAttr', ls([, 't'])), false);
 	});
 
-	await t.step(".delAttr() - Delete text attribute via JS", () => {
+	it(".delAttr() - Delete text attribute via JS", () => {
 		const textNode = doc.createNode('m.t');
 		textNode.setAttr('t', 'Test');
 		textNode.delAttr('t');
 		assertEquals(textNode.hasAttr('t'), false);
 	});
 
-	await t.step("(document) - Get document reference", () => {
+	it("(document) - Get document reference", () => {
 		const docRef = $c.sm(textNode, 'document');
 		assertStrictEquals(docRef, doc);
 	});
 
-	await t.step(".document - Get document reference via JS", () => {
+	it(".document - Get document reference via JS", () => {
 		assertStrictEquals(textNode.document, doc);
 	});
 
-	await t.step("(getAttr) - Get text attribute", () => {
+	it("(getAttr) - Get text attribute", () => {
 		const textNode = doc.createNode('m.t');
 		$c.sm(textNode, 'setAttr', ls([, 't', , 'Sample Text']));
 		assertEquals($c.sm(textNode, 'getAttr', ls([, 't'])), 'Sample Text');
 	});
 
-	await t.step(".getAttr() - Get text attribute via JS", () => {
+	it(".getAttr() - Get text attribute via JS", () => {
 		const textNode = doc.createNode('m.t');
 		textNode.setAttr('t', 'Another Sample');
 		assertEquals(textNode.getAttr('t'), 'Another Sample');
 	});
 
-	await t.step("(getSpec) - Get simplified spec (text only)", () => {
+	it("(getSpec) - Get simplified spec (text only)", () => {
 		const textNode = doc.createNode('m.t');
 		$c.sm(textNode, 'setAttr', ls([, 't', , 'Spec Test']));
 		const spec = $c.sm(textNode, 'getSpec');
@@ -75,7 +76,7 @@ Deno.test("MWICoreText (m.t) - Core Interface Tests", async (t) => {
 		assertEquals(spec, 'Spec Test');
 	});
 
-	await t.step(".getSpec() - Get simplified spec via JS (text only)", () => {
+	it(".getSpec() - Get simplified spec via JS (text only)", () => {
 		const textNode = doc.createNode('m.t');
 		textNode.setAttr('t', 'JS Spec Test');
 		const spec = textNode.getSpec();
@@ -83,7 +84,7 @@ Deno.test("MWICoreText (m.t) - Core Interface Tests", async (t) => {
 		assertEquals(spec, 'JS Spec Test');
 	});
 
-	await t.step("(getSpec) - Get full spec with additional attributes", () => {
+	it("(getSpec) - Get full spec with additional attributes", () => {
 		const textNode = doc.createNode('m.t');
 		$c.sm(textNode, 'setAttr', ls([, 't', , 'Full Spec']));
 		$c.sm(textNode, 'setAttr', ls([, 'custom', , 'attr']));
@@ -94,7 +95,7 @@ Deno.test("MWICoreText (m.t) - Core Interface Tests", async (t) => {
 		assertEquals(spec.at('custom'), 'attr');
 	});
 
-	await t.step(".getSpec() - Get full spec with additional attributes via JS", () => {
+	it(".getSpec() - Get full spec with additional attributes via JS", () => {
 		const textNode = doc.createNode('m.t');
 		const textNode2 = doc.createNode('m.t');
 		textNode2.setAttr('t', 'JS Full Spec');
@@ -106,45 +107,45 @@ Deno.test("MWICoreText (m.t) - Core Interface Tests", async (t) => {
 		assertEquals(spec.at('custom'), 'value');
 	});
 
-	await t.step("(getSubSpec) - Should return empty NANOS", () => {
+	it("(getSubSpec) - Should return empty NANOS", () => {
 		const subSpec = $c.sm(textNode, 'getSubSpec');
 		assertEquals(subSpec.size, 0);
 	});
 
-	await t.step(".getSubSpec() - Should return empty NANOS via JS", () => {
+	it(".getSubSpec() - Should return empty NANOS via JS", () => {
 		const subSpec = textNode.getSubSpec();
 		assertEquals(subSpec.size, 0);
 	});
 
-	await t.step("(hasAttr) - Check attribute existence", () => {
+	it("(hasAttr) - Check attribute existence", () => {
 		const textNode = doc.createNode('m.t');
 		$c.sm(textNode, 'setAttr', ls([, 't', , 'Test']));
 		assertEquals($c.sm(textNode, 'hasAttr', ls([, 't'])), true);
 		assertEquals($c.sm(textNode, 'hasAttr', ls([, 'nonexistent'])), false);
 	});
 
-	await t.step(".hasAttr() - Check attribute existence via JS", () => {
+	it(".hasAttr() - Check attribute existence via JS", () => {
 		const textNode = doc.createNode('m.t');
 		textNode.setAttr('t', 'Test');
 		assertEquals(textNode.hasAttr('t'), true);
 		assertEquals(textNode.hasAttr('nonexistent'), false);
 	});
 
-	await t.step("(setSpec) - Set node specification", () => {
+	it("(setSpec) - Set node specification", () => {
 		const textNode = doc.createNode('m.t');
 		const spec = ps('[(m.t t="Spec Set Test")]');
 		$c.sm(textNode, 'setSpec', ls([, spec]));
 		assertEquals($c.sm(textNode, 'getAttr', ls([, 't'])), 'Spec Set Test');
 	});
 
-	await t.step(".setSpec() - Set node specification via JS", () => {
+	it(".setSpec() - Set node specification via JS", () => {
 		const textNode = doc.createNode('m.t');
 		const spec = ps('[(m.t t="JS Spec Set Test")]');
 		textNode.setSpec(spec);
 		assertEquals(textNode.getAttr('t'), 'JS Spec Set Test');
 	});
 
-	await t.step("(append) - Append content (getSubDoc still empty)", async () => {
+	it("(append) - Append content (getSubDoc still empty)", async () => {
 		const textNode = doc.createNode('m.t');
 		$c.sm(textNode, 'setAttr', ls([, 't', , 'Base Text']));
 		$c.sm(textNode, 'append', ls([, 'ignored content']));
@@ -152,7 +153,7 @@ Deno.test("MWICoreText (m.t) - Core Interface Tests", async (t) => {
 		assertEquals(subDoc.size, 0);
 	});
 
-	await t.step(".append() - Append content via JS (getSubDoc still empty)", async () => {
+	it(".append() - Append content via JS (getSubDoc still empty)", async () => {
 		const textNode = doc.createNode('m.t');
 		textNode.setAttr('t', 'Base Text');
 		textNode.append('ignored content');
@@ -160,7 +161,7 @@ Deno.test("MWICoreText (m.t) - Core Interface Tests", async (t) => {
 		assertEquals(subDoc.size, 0);
 	});
 
-	await t.step("(setSubSpec) - Set sub-spec (getSubSpec still empty)", () => {
+	it("(setSubSpec) - Set sub-spec (getSubSpec still empty)", () => {
 		const textNode = doc.createNode('m.t');
 		const subSpec = ls([, 'child1', , 'child2']);
 		$c.sm(textNode, 'setSubSpec', ls(['subSpec', subSpec]));
@@ -168,7 +169,7 @@ Deno.test("MWICoreText (m.t) - Core Interface Tests", async (t) => {
 		assertEquals(resultSubSpec.size, 0);
 	});
 
-	await t.step(".setSubSpec() - Set sub-spec via JS (getSubSpec still empty)", () => {
+	it(".setSubSpec() - Set sub-spec via JS (getSubSpec still empty)", () => {
 		const textNode = doc.createNode('m.t');
 		const subSpec = ls([, 'child1', , 'child2']);
 		textNode.setSubSpec({ subSpec });
@@ -176,23 +177,23 @@ Deno.test("MWICoreText (m.t) - Core Interface Tests", async (t) => {
 		assertEquals(resultSubSpec.size, 0);
 	});
 
-	await t.step(".jsv - Should return instance", () => {
+	it(".jsv - Should return instance", () => {
 		assertStrictEquals(textNode.jsv, textNode);
 	});
 
-	await t.step(".valueOf() - Should return instance", () => {
+	it(".valueOf() - Should return instance", () => {
 		assertStrictEquals(textNode.valueOf(), textNode);
 	});
 
-	await t.step("(type) - Get node type", () => {
+	it("(type) - Get node type", () => {
 		assertEquals($c.sm(textNode, 'type'), 'm.t');
 	});
 
-	await t.step(".type - Get node type via JS", () => {
+	it(".type - Get node type via JS", () => {
 		assertEquals(textNode.type, 'm.t');
 	});
 
-	await t.step(".msjsType - Get Mesgjs type", () => {
+	it(".msjsType - Get Mesgjs type", () => {
 		assertEquals(textNode.msjsType, 'MWICoreText');
 	});
 });

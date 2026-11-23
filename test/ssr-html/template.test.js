@@ -1,8 +1,9 @@
+import { describe, it } from '@compat/test';
 import {
 	assert,
 	assertEquals,
 	assertStrictEquals,
-} from "https://deno.land/std@0.152.0/testing/asserts.ts";
+} from '@std/assert';
 
 import { setupRuntime } from '../harness.esm.js';
 
@@ -20,29 +21,29 @@ await fwait(REG_READY_FT);
 const doc = getInstance('MWIDocument');
 const registry = getInstance('MWIRegistry');
 
-Deno.test("MWICoreTpl (template handler) - Basic HTML Rendering", async (t) => {
-	await t.step("(getHTML) - Renders simple template content", () => {
+describe("MWICoreTpl (template handler) - Basic HTML Rendering", () => {
+	it("(getHTML) - Renders simple template content", () => {
 		registry.register('test.tpl.simple', ls(['allowLate', true, 'tpl', ps('[([m.t t="Simple template"])]')]));
 		const tplNode = $c.sm(doc, 'createNode', ls([, 'test.tpl.simple']));
 		const html =  $c.sm(tplNode, 'getHTML');
 		assertEquals(html, 'Simple template', 'template content rendered');
 	});
 
-	await t.step(".getHTML() - Renders simple template content via JS", () => {
+	it(".getHTML() - Renders simple template content via JS", () => {
 		registry.register('test.tpl.simple2', ls(['allowLate', true, 'tpl', ps('[([m.t t="Simple template 2"])]')]));
 		const tplNode = doc.createNode('test.tpl.simple2');
 		const html = tplNode.getHTML();
 		assertEquals(html, 'Simple template 2', 'template content rendered');
 	});
 
-	await t.step("(getHTML) - Renders empty template", () => {
+	it("(getHTML) - Renders empty template", () => {
 		registry.register('test.tpl.empty', ls(['allowLate', true, 'tpl', ps('[()]')]));
 		const tplNode = $c.sm(doc, 'createNode', ls([, 'test.tpl.empty']));
 		const html =  $c.sm(tplNode, 'getHTML');
 		assertEquals(html, '', 'empty template renders empty string');
 	});
 
-	await t.step(".getHTML() - Renders empty template via JS", () => {
+	it(".getHTML() - Renders empty template via JS", () => {
 		registry.register('test.tpl.empty2', ls(['allowLate', true, 'tpl', ps('[()]')]));
 		const tplNode = doc.createNode('test.tpl.empty2');
 		const html = tplNode.getHTML();
@@ -50,8 +51,8 @@ Deno.test("MWICoreTpl (template handler) - Basic HTML Rendering", async (t) => {
 	});
 });
 
-Deno.test("MWICoreTpl (template handler) - Multiple Items", async (t) => {
-	await t.step("(getHTML) - Renders multiple text items", () => {
+describe("MWICoreTpl (template handler) - Multiple Items", () => {
+	it("(getHTML) - Renders multiple text items", () => {
 		registry.register('test.tpl.multi', ls([
 			'allowLate', true,
 			'tpl', ps('[([m.t t="First"] [m.t t="Second"] [m.t t="Third"])]')
@@ -61,7 +62,7 @@ Deno.test("MWICoreTpl (template handler) - Multiple Items", async (t) => {
 		assertEquals(html, 'FirstSecondThird', 'all items rendered in sequence');
 	});
 
-	await t.step(".getHTML() - Renders multiple text items via JS", () => {
+	it(".getHTML() - Renders multiple text items via JS", () => {
 		registry.register('test.tpl.multi2', ls([
 			'allowLate', true,
 			'tpl', ps('[([m.t t="A"] [m.t t="B"] [m.t t="C"])]')
@@ -72,8 +73,8 @@ Deno.test("MWICoreTpl (template handler) - Multiple Items", async (t) => {
 	});
 });
 
-Deno.test("MWICoreTpl (template handler) - Nested Structure", async (t) => {
-	await t.step("(getHTML) - Renders nested fragments", () => {
+describe("MWICoreTpl (template handler) - Nested Structure", () => {
+	it("(getHTML) - Renders nested fragments", () => {
 		registry.register('test.tpl.nested', ls([
 			'allowLate', true,
 			'tpl', ps('[([m.frg [m.t t="Outer"] [m.frg [m.t t="Inner"]]])]')
@@ -83,7 +84,7 @@ Deno.test("MWICoreTpl (template handler) - Nested Structure", async (t) => {
 		assertEquals(html, 'OuterInner', 'nested content rendered correctly');
 	});
 
-	await t.step(".getHTML() - Renders nested fragments via JS", () => {
+	it(".getHTML() - Renders nested fragments via JS", () => {
 		registry.register('test.tpl.nested2', ls([
 			'allowLate', true,
 			'tpl', ps('[([m.frg [m.t t="Level1"] [m.frg [m.t t="Level2"]]])]')
@@ -94,8 +95,8 @@ Deno.test("MWICoreTpl (template handler) - Nested Structure", async (t) => {
 	});
 });
 
-Deno.test("MWICoreTpl (template handler) - Mixed Content Types", async (t) => {
-	await t.step("(getHTML) - Renders text, comment, and fragment", () => {
+describe("MWICoreTpl (template handler) - Mixed Content Types", () => {
+	it("(getHTML) - Renders text, comment, and fragment", () => {
 		registry.register('test.tpl.mixed', ls([
 			'allowLate', true,
 			'tpl', ps('[([m.t t="Text"] [m.com t="Comment"] [m.frg [m.t t="Fragment"]])]')
@@ -105,7 +106,7 @@ Deno.test("MWICoreTpl (template handler) - Mixed Content Types", async (t) => {
 		assertEquals(html, 'Text<!--Comment-->Fragment', 'mixed content rendered correctly');
 	});
 
-	await t.step(".getHTML() - Renders text, comment, and fragment via JS", () => {
+	it(".getHTML() - Renders text, comment, and fragment via JS", () => {
 		registry.register('test.tpl.mixed2', ls([
 			'allowLate', true,
 			'tpl', ps('[([m.t t="A"] [m.com t="B"] [m.frg [m.t t="C"]])]')
@@ -116,8 +117,8 @@ Deno.test("MWICoreTpl (template handler) - Mixed Content Types", async (t) => {
 	});
 });
 
-Deno.test("MWICoreTpl (template handler) - Slot Integration (Template as SlotSrc)", async (t) => {
-	await t.step("(getHTML) - Template with named slot renders empty when template has no matching attribute", () => {
+describe("MWICoreTpl (template handler) - Slot Integration (Template as SlotSrc)", () => {
+	it("(getHTML) - Template with named slot renders empty when template has no matching attribute", () => {
 		registry.register('test.tpl.slot', ls([
 			'allowLate', true,
 			'tpl', ps('[([m.slot name=content])]')
@@ -127,7 +128,7 @@ Deno.test("MWICoreTpl (template handler) - Slot Integration (Template as SlotSrc
 		assertEquals(html, '', 'named slot without matching template attribute renders empty');
 	});
 
-	await t.step(".getHTML() - Template with named slot renders empty when template has no matching attribute via JS", () => {
+	it(".getHTML() - Template with named slot renders empty when template has no matching attribute via JS", () => {
 		registry.register('test.tpl.slot2', ls([
 			'allowLate', true,
 			'tpl', ps('[([m.slot name=data])]')
@@ -137,7 +138,7 @@ Deno.test("MWICoreTpl (template handler) - Slot Integration (Template as SlotSrc
 		assertEquals(html, '', 'named slot without matching template attribute renders empty');
 	});
 
-	await t.step("(getHTML) - Template with default slot content", () => {
+	it("(getHTML) - Template with default slot content", () => {
 		registry.register('test.tpl.slot.default', ls([
 			'allowLate', true,
 			'tpl', ps('[([m.slot [m.t t="Default content"]])]')
@@ -147,7 +148,7 @@ Deno.test("MWICoreTpl (template handler) - Slot Integration (Template as SlotSrc
 		assertEquals(html, 'Default content', 'default slot content rendered');
 	});
 
-	await t.step(".getHTML() - Template with default slot content via JS", () => {
+	it(".getHTML() - Template with default slot content via JS", () => {
 		registry.register('test.tpl.slot.default2', ls([
 			'allowLate', true,
 			'tpl', ps('[([m.slot [m.t t="Fallback"]])]')
@@ -157,7 +158,7 @@ Deno.test("MWICoreTpl (template handler) - Slot Integration (Template as SlotSrc
 		assertEquals(html, 'Fallback', 'default slot content rendered');
 	});
 
-	await t.step("(getHTML) - Template acts as slotSrc for its content - named slots filled from template attributes", () => {
+	it("(getHTML) - Template acts as slotSrc for its content - named slots filled from template attributes", () => {
 		registry.register('test.tpl.slot.named', ls([
 			'allowLate', true,
 			'tpl', ps('[([m.slot name=header] [m.t t="Body"] [m.slot name=footer])]')
@@ -171,7 +172,7 @@ Deno.test("MWICoreTpl (template handler) - Slot Integration (Template as SlotSrc
 		assertEquals(html, 'Header contentBodyFooter content', 'named slots filled from template attributes');
 	});
 
-	await t.step(".getHTML() - Template acts as slotSrc for its content - named slots filled from template attributes via JS", () => {
+	it(".getHTML() - Template acts as slotSrc for its content - named slots filled from template attributes via JS", () => {
 		registry.register('test.tpl.slot.named2', ls([
 			'allowLate', true,
 			'tpl', ps('[([m.slot name=top] [m.t t="Middle"] [m.slot name=bottom])]')
@@ -184,7 +185,7 @@ Deno.test("MWICoreTpl (template handler) - Slot Integration (Template as SlotSrc
 		assertEquals(html, 'Top contentMiddleBottom content', 'named slots filled from template attributes');
 	});
 
-	await t.step("(getHTML) - Template with default slot and natural children", () => {
+	it("(getHTML) - Template with default slot and natural children", () => {
 		registry.register('test.tpl.slot.children', ls([
 			'allowLate', true,
 			'tpl', ps('[([m.slot [m.t t="Default"]])]')
@@ -197,7 +198,7 @@ Deno.test("MWICoreTpl (template handler) - Slot Integration (Template as SlotSrc
 		assertEquals(html, 'Natural child content', 'default slot filled from template natural children');
 	});
 
-	await t.step(".getHTML() - Template with default slot and natural children via JS", () => {
+	it(".getHTML() - Template with default slot and natural children via JS", () => {
 		registry.register('test.tpl.slot.children2', ls([
 			'allowLate', true,
 			'tpl', ps('[([m.slot [m.t t="Fallback"]])]')
@@ -210,8 +211,8 @@ Deno.test("MWICoreTpl (template handler) - Slot Integration (Template as SlotSrc
 	});
 });
 
-Deno.test("MWICoreTpl (template handler) - HTML Elements", async (t) => {
-	await t.step("(getHTML) - Template with HTML div", () => {
+describe("MWICoreTpl (template handler) - HTML Elements", () => {
+	it("(getHTML) - Template with HTML div", () => {
 		registry.register('test.tpl.html', ls([
 			'allowLate', true,
 			'tpl', ps('[([h.div [m.t t="Template with HTML"]])]')
@@ -221,7 +222,7 @@ Deno.test("MWICoreTpl (template handler) - HTML Elements", async (t) => {
 		assertEquals(html, '<div>Template with HTML</div>', 'HTML element rendered correctly');
 	});
 
-	await t.step(".getHTML() - Template with HTML div via JS", () => {
+	it(".getHTML() - Template with HTML div via JS", () => {
 		registry.register('test.tpl.html2', ls([
 			'allowLate', true,
 			'tpl', ps('[([h.span [m.t t="Span content"]])]')
@@ -231,7 +232,7 @@ Deno.test("MWICoreTpl (template handler) - HTML Elements", async (t) => {
 		assertEquals(html, '<span>Span content</span>', 'HTML element rendered correctly');
 	});
 
-	await t.step("(getHTML) - Template with complex HTML structure", () => {
+	it("(getHTML) - Template with complex HTML structure", () => {
 		registry.register('test.tpl.complex', ls([
 			'allowLate', true,
 			'tpl', ps('[([h.div class=container [h.h1 [m.t t="Title"]] [h.p [m.t t="Content"]]])]')
@@ -241,7 +242,7 @@ Deno.test("MWICoreTpl (template handler) - HTML Elements", async (t) => {
 		assertEquals(html, '<div class="container"><h1>Title</h1><p>Content</p></div>', 'complex HTML rendered correctly');
 	});
 
-	await t.step(".getHTML() - Template with complex HTML structure via JS", () => {
+	it(".getHTML() - Template with complex HTML structure via JS", () => {
 		registry.register('test.tpl.complex2', ls([
 			'allowLate', true,
 			'tpl', ps('[([h.section [h.h2 [m.t t="Heading"]] [h.div [m.t t="Text"]]])]')
@@ -252,8 +253,8 @@ Deno.test("MWICoreTpl (template handler) - HTML Elements", async (t) => {
 	});
 });
 
-Deno.test("MWICoreTpl (template handler) - Template Attributes Don't Render", async (t) => {
-	await t.step("(getHTML) - Template attributes used for slotting don't appear in output", () => {
+describe("MWICoreTpl (template handler) - Template Attributes Don't Render", () => {
+	it("(getHTML) - Template attributes used for slotting don't appear in output", () => {
 		registry.register('test.tpl.noattr', ls([
 			'allowLate', true,
 			'tpl', ps('[([m.slot name=header] [m.t t="Body"] [m.slot name=footer])]')
@@ -270,7 +271,7 @@ Deno.test("MWICoreTpl (template handler) - Template Attributes Don't Render", as
 		assert(!html.includes('tpl-class'), 'template class not in output');
 	});
 
-	await t.step(".getHTML() - Template attributes used for slotting don't appear in output via JS", () => {
+	it(".getHTML() - Template attributes used for slotting don't appear in output via JS", () => {
 		registry.register('test.tpl.noattr2', ls([
 			'allowLate', true,
 			'tpl', ps('[([m.slot name=a] [m.t t="B"] [m.slot name=c])]')
@@ -287,8 +288,8 @@ Deno.test("MWICoreTpl (template handler) - Template Attributes Don't Render", as
 	});
 });
 
-Deno.test("MWICoreTpl (template handler) - Attribute Slotting with m.slat", async (t) => {
-	await t.step("(getHTML) - Template can use m.slat to remap attributes for its content", () => {
+describe("MWICoreTpl (template handler) - Attribute Slotting with m.slat", () => {
+	it("(getHTML) - Template can use m.slat to remap attributes for its content", () => {
 		// Register a template with a slot that expects 'title' attribute
 		registry.register('test.tpl.slat', ls([
 			'allowLate', true,
@@ -308,7 +309,7 @@ Deno.test("MWICoreTpl (template handler) - Attribute Slotting with m.slat", asyn
 		assertEquals(html, 'Custom Title', 'attribute slotting works correctly');
 	});
 
-	await t.step(".getHTML() - Template can use m.slat to remap attributes for its content via JS", () => {
+	it(".getHTML() - Template can use m.slat to remap attributes for its content via JS", () => {
 		registry.register('test.tpl.slat2', ls([
 			'allowLate', true,
 			'tpl', ps('[([m.slot name=content])]')
@@ -327,8 +328,8 @@ Deno.test("MWICoreTpl (template handler) - Attribute Slotting with m.slat", asyn
 	});
 });
 
-Deno.test("MWICoreTpl (template handler) - Special Characters in Template", async (t) => {
-	await t.step("(getHTML) - Template with HTML entities", () => {
+describe("MWICoreTpl (template handler) - Special Characters in Template", () => {
+	it("(getHTML) - Template with HTML entities", () => {
 		registry.register('test.tpl.entities', ls([
 			'allowLate', true,
 			'tpl', ps('[([m.t t="<>&\\"\'"])]')
@@ -338,7 +339,7 @@ Deno.test("MWICoreTpl (template handler) - Special Characters in Template", asyn
 		assertEquals(html, '&lt;&gt;&amp;"\'', 'HTML entities escaped correctly');
 	});
 
-	await t.step(".getHTML() - Template with HTML entities via JS", () => {
+	it(".getHTML() - Template with HTML entities via JS", () => {
 		registry.register('test.tpl.entities2', ls([
 			'allowLate', true,
 			'tpl', ps('[([m.t t="Test & <test>"])]')
@@ -349,8 +350,8 @@ Deno.test("MWICoreTpl (template handler) - Special Characters in Template", asyn
 	});
 });
 
-Deno.test("MWICoreTpl (template handler) - Template with External SlotSrc", async (t) => {
-	await t.step("(getHTML) - Template's slotSrc property is for the template itself, not its content", () => {
+describe("MWICoreTpl (template handler) - Template with External SlotSrc", () => {
+	it("(getHTML) - Template's slotSrc property is for the template itself, not its content", () => {
 		// Create an external node to act as slotSrc for the template
 		const externalNode = $c.sm(doc, 'createNode', ls([, 'h.div']));
 		$c.sm(externalNode, 'setAttr', ls([, 'external-attr', , ps('[([m.t t="External"])]')]));
@@ -371,7 +372,7 @@ Deno.test("MWICoreTpl (template handler) - Template with External SlotSrc", asyn
 		assertEquals(html, 'Template Content', 'template content slots from template, not external slotSrc');
 	});
 
-	await t.step(".getHTML() - Template's slotSrc property is for the template itself, not its content via JS", () => {
+	it(".getHTML() - Template's slotSrc property is for the template itself, not its content via JS", () => {
 		const externalNode = doc.createNode('h.div');
 		externalNode.setAttr('external-attr', ps('[([m.t t="External"])]'));
 

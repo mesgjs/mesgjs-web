@@ -1,7 +1,8 @@
+import { describe, it } from '@compat/test';
 import {
 	assert,
 	assertEquals,
-} from "https://deno.land/std@0.152.0/testing/asserts.ts";
+} from '@std/assert';
 
 import { setupRuntime } from '../harness.esm.js';
 
@@ -27,8 +28,8 @@ const doc = getInstance('MWIDocument');
 // assigned an id automatically (if it doesn't have one already)
 // as a DOM sync aid.
 
-Deno.test('MWIAggr (m.aggr) - SSR-HTML to mode (default buffer)', async (t) => {
-	await t.step('(getHTML) - to mode returns empty string', () => {
+describe('MWIAggr (m.aggr) - SSR-HTML to mode (default buffer)', () => {
+	it('(getHTML) - to mode returns empty string', () => {
 		const testDoc = getInstance('MWIDocument');
 		const aggrNode = $c.sm(testDoc, 'createNode', ls([, 'm.aggr']));
 		$c.sm(aggrNode, 'setSubSpec', { subSpec: ps('[([m.t t=Content])]') });
@@ -36,7 +37,7 @@ Deno.test('MWIAggr (m.aggr) - SSR-HTML to mode (default buffer)', async (t) => {
 		assertEquals(html, '', 'to mode should return empty string');
 	});
 
-	await t.step('.getHTML() - to mode returns empty string via JS', () => {
+	it('.getHTML() - to mode returns empty string via JS', () => {
 		const testDoc = getInstance('MWIDocument');
 		const aggrNode = testDoc.createNode('m.aggr');
 		aggrNode.setSubSpec({ subSpec: ps('[([m.t t=Content])]') });
@@ -44,7 +45,7 @@ Deno.test('MWIAggr (m.aggr) - SSR-HTML to mode (default buffer)', async (t) => {
 		assertEquals(html, '', 'to mode should return empty string via JS');
 	});
 
-	await t.step('(getHTML) - to mode stores content in aggregation map', () => {
+	it('(getHTML) - to mode stores content in aggregation map', () => {
 		const testDoc = getInstance('MWIDocument');
 
 		const aggrNode = $c.sm(testDoc, 'createNode', ls([, 'm.aggr']));
@@ -61,7 +62,7 @@ Deno.test('MWIAggr (m.aggr) - SSR-HTML to mode (default buffer)', async (t) => {
 		assertEquals(values[0], 'Stored', 'Should store rendered text content');
 	});
 
-	await t.step('(getHTML) - to mode with explicit buffer name', () => {
+	it('(getHTML) - to mode with explicit buffer name', () => {
 		const testDoc = getInstance('MWIDocument');
 
 		const aggrNode = $c.sm(testDoc, 'createNode', ls([, 'm.aggr']));
@@ -78,7 +79,7 @@ Deno.test('MWIAggr (m.aggr) - SSR-HTML to mode (default buffer)', async (t) => {
 		assertEquals(values[0], 'MyContent', 'Should store content in named buffer');
 	});
 
-	await t.step('.getHTML() - to mode with explicit buffer name via JS', () => {
+	it('.getHTML() - to mode with explicit buffer name via JS', () => {
 		const testDoc = getInstance('MWIDocument');
 
 		const aggrNode = testDoc.createNode('m.aggr');
@@ -92,7 +93,7 @@ Deno.test('MWIAggr (m.aggr) - SSR-HTML to mode (default buffer)', async (t) => {
 		assert(buffer.size > 0, 'Buffer should have content via JS');
 	});
 
-	await t.step('(getHTML) - Multiple to nodes accumulate in same buffer', () => {
+	it('(getHTML) - Multiple to nodes accumulate in same buffer', () => {
 		const testDoc = getInstance('MWIDocument');
 
 		const node1 = $c.sm(testDoc, 'createNode', ls([, 'm.aggr']));
@@ -112,7 +113,7 @@ Deno.test('MWIAggr (m.aggr) - SSR-HTML to mode (default buffer)', async (t) => {
 		assert(values.includes('Second'), 'Should include second content');
 	});
 
-	await t.step('(getHTML) - to mode with HTML children', () => {
+	it('(getHTML) - to mode with HTML children', () => {
 		const testDoc = getInstance('MWIDocument');
 		const aggrNode = $c.sm(testDoc, 'createNode', ls([, 'm.aggr']));
 		$c.sm(aggrNode, 'setSubSpec', { subSpec: ps('[([h.span class=item Item])]') });
@@ -126,8 +127,8 @@ Deno.test('MWIAggr (m.aggr) - SSR-HTML to mode (default buffer)', async (t) => {
 	});
 });
 
-Deno.test('MWIAggr (m.aggr) - SSR-HTML from mode', async (t) => {
-	await t.step('(getHTML) - from mode returns placeholder', () => {
+describe('MWIAggr (m.aggr) - SSR-HTML from mode', () => {
+	it('(getHTML) - from mode returns placeholder', () => {
 		const testDoc = getInstance('MWIDocument');
 		const fromNode = $c.sm(testDoc, 'createNode', ls([, 'm.aggr']));
 		$c.sm(fromNode, 'setAttr', ['from', 'default']);
@@ -139,7 +140,7 @@ Deno.test('MWIAggr (m.aggr) - SSR-HTML from mode', async (t) => {
 		assert(/^<\{\d+\}>$/.test(html), 'Placeholder should be <{number}>');
 	});
 
-	await t.step('.getHTML() - from mode returns placeholder via JS', () => {
+	it('.getHTML() - from mode returns placeholder via JS', () => {
 		const testDoc = getInstance('MWIDocument');
 		const fromNode = testDoc.createNode('m.aggr');
 		fromNode.setAttr('from', 'default');
@@ -148,7 +149,7 @@ Deno.test('MWIAggr (m.aggr) - SSR-HTML from mode', async (t) => {
 		assert(/^<\{\d+\}>$/.test(html), 'Placeholder should be <{number}> via JS');
 	});
 
-	await t.step('(getHTML) - from mode allocates buffer ID via mapAggrBuffer', () => {
+	it('(getHTML) - from mode allocates buffer ID via mapAggrBuffer', () => {
 		const testDoc = getInstance('MWIDocument');
 		const fromNode = $c.sm(testDoc, 'createNode', ls([, 'm.aggr']));
 		$c.sm(fromNode, 'setAttr', ['from', 'myBuf']);
@@ -164,7 +165,7 @@ Deno.test('MWIAggr (m.aggr) - SSR-HTML from mode', async (t) => {
 		assertEquals(bufferName, 'm.aggr:myBuf', 'Buffer ID should map to correct key');
 	});
 
-	await t.step('(getHTML) - from mode with same buffer name returns same placeholder', () => {
+	it('(getHTML) - from mode with same buffer name returns same placeholder', () => {
 		const testDoc = getInstance('MWIDocument');
 		const fromNode1 = $c.sm(testDoc, 'createNode', ls([, 'm.aggr']));
 		$c.sm(fromNode1, 'setAttr', ['from', 'shared']);
@@ -177,7 +178,7 @@ Deno.test('MWIAggr (m.aggr) - SSR-HTML from mode', async (t) => {
 		assertEquals(html1, html2, 'Same buffer name should produce same placeholder');
 	});
 
-	await t.step('(getHTML) - from mode with different buffer names returns different placeholders', () => {
+	it('(getHTML) - from mode with different buffer names returns different placeholders', () => {
 		const testDoc = getInstance('MWIDocument');
 		const fromNode1 = $c.sm(testDoc, 'createNode', ls([, 'm.aggr']));
 		$c.sm(fromNode1, 'setAttr', ['from', 'bufA']);
@@ -191,8 +192,8 @@ Deno.test('MWIAggr (m.aggr) - SSR-HTML from mode', async (t) => {
 	});
 });
 
-Deno.test('MWIAggr (m.aggr) - SSR-HTML m.csr suppression', async (t) => {
-	await t.step('(getHTML) - m.csr=true suppresses all output', () => {
+describe('MWIAggr (m.aggr) - SSR-HTML m.csr suppression', () => {
+	it('(getHTML) - m.csr=true suppresses all output', () => {
 		const testDoc = getInstance('MWIDocument');
 
 		// Test `from` mode with m.csr
@@ -203,7 +204,7 @@ Deno.test('MWIAggr (m.aggr) - SSR-HTML m.csr suppression', async (t) => {
 		assertEquals(html, '', 'from mode with m.csr should return empty string');
 	});
 
-	await t.step('.getHTML() - m.csr=true suppresses all output via JS', () => {
+	it('.getHTML() - m.csr=true suppresses all output via JS', () => {
 		const testDoc = getInstance('MWIDocument');
 
 		const fromNode = testDoc.createNode('m.aggr');
@@ -213,7 +214,7 @@ Deno.test('MWIAggr (m.aggr) - SSR-HTML m.csr suppression', async (t) => {
 		assertEquals(html, '', 'from mode with m.csr should return empty string via JS');
 	});
 
-	await t.step('(getHTML) - m.csr=true suppresses to mode output', () => {
+	it('(getHTML) - m.csr=true suppresses to mode output', () => {
 		const testDoc = getInstance('MWIDocument');
 		const toNode = $c.sm(testDoc, 'createNode', ls([, 'm.aggr']));
 		$c.sm(toNode, 'setAttr', ['m.csr', true]);
@@ -228,8 +229,8 @@ Deno.test('MWIAggr (m.aggr) - SSR-HTML m.csr suppression', async (t) => {
 	});
 });
 
-Deno.test('MWIAggr (m.aggr) - SSR-HTML end-to-end via MWIDocument.getHTML', async (t) => {
-	await t.step('(getHTML) - to/from round-trip via document', () => {
+describe('MWIAggr (m.aggr) - SSR-HTML end-to-end via MWIDocument.getHTML', () => {
+	it('(getHTML) - to/from round-trip via document', () => {
 		const testDoc = getInstance('MWIDocument');
 
 		// Build a document with a `from` node first, then a `to` node
@@ -247,7 +248,7 @@ Deno.test('MWIAggr (m.aggr) - SSR-HTML end-to-end via MWIDocument.getHTML', asyn
 		assert(!html.includes('<{'), 'Should not contain unresolved placeholders');
 	});
 
-	await t.step('.getHTML() - to/from round-trip via document via JS', () => {
+	it('.getHTML() - to/from round-trip via document via JS', () => {
 		const testDoc = getInstance('MWIDocument');
 		const fromNode = testDoc.createNode('m.aggr');
 		fromNode.setAttr('from', 'default');
@@ -262,7 +263,7 @@ Deno.test('MWIAggr (m.aggr) - SSR-HTML end-to-end via MWIDocument.getHTML', asyn
 		assert(!html.includes('<{'), 'Should not contain unresolved placeholders via JS');
 	});
 
-	await t.step('(getHTML) - Multiple to nodes aggregated to single from', () => {
+	it('(getHTML) - Multiple to nodes aggregated to single from', () => {
 		const testDoc = getInstance('MWIDocument');
 		const fromNode = $c.sm(testDoc, 'createNode', ls([, 'm.aggr']));
 		$c.sm(fromNode, 'setAttr', ['from', 'default']);
@@ -281,7 +282,7 @@ Deno.test('MWIAggr (m.aggr) - SSR-HTML end-to-end via MWIDocument.getHTML', asyn
 		assert(!html.includes('<{'), 'Should not contain unresolved placeholders');
 	});
 
-	await t.step('(getHTML) - Named buffer aggregation', () => {
+	it('(getHTML) - Named buffer aggregation', () => {
 		const testDoc = getInstance('MWIDocument');
 		const fromNode = $c.sm(testDoc, 'createNode', ls([, 'm.aggr']));
 		$c.sm(fromNode, 'setAttr', ['from', 'scripts']);
@@ -297,7 +298,7 @@ Deno.test('MWIAggr (m.aggr) - SSR-HTML end-to-end via MWIDocument.getHTML', asyn
 		assert(!html.includes('<{'), 'Should not contain unresolved placeholders');
 	});
 
-	await t.step('(getHTML) - Empty buffer renders nothing', () => {
+	it('(getHTML) - Empty buffer renders nothing', () => {
 		const testDoc = getInstance('MWIDocument');
 
 		// Only a `from` node, no `to` nodes
@@ -309,7 +310,7 @@ Deno.test('MWIAggr (m.aggr) - SSR-HTML end-to-end via MWIDocument.getHTML', asyn
 		assertEquals(html, '', 'Empty buffer should render nothing');
 	});
 
-	await t.step('(getHTML) - Surrounding content preserved', () => {
+	it('(getHTML) - Surrounding content preserved', () => {
 		const testDoc = getInstance('MWIDocument');
 		const beforeNode = $c.sm(testDoc, 'createNode', ls([, 'm.t']));
 		$c.sm(beforeNode, 'setAttr', ['t', 'Before']);
@@ -339,7 +340,7 @@ Deno.test('MWIAggr (m.aggr) - SSR-HTML end-to-end via MWIDocument.getHTML', asyn
 		assert(middleIdx < afterIdx, 'Middle should come before After');
 	});
 
-	await t.step('(getHTML) - from-within-to: nested from inside to subSpec resolves correctly', () => {
+	it('(getHTML) - from-within-to: nested from inside to subSpec resolves correctly', () => {
 		// This tests the key scenario where a `to`-mode node's subSpec contains a `from`-mode
 		// node, causing a <{N}> placeholder to be embedded inside aggregated buffer content.
 		// The SSR string-surgery in opGetHTML must recursively resolve placeholders that were
@@ -399,7 +400,7 @@ Deno.test('MWIAggr (m.aggr) - SSR-HTML end-to-end via MWIDocument.getHTML', asyn
 		assert(homeIdx < headerCloseIdx, 'Home link should be inside header');
 	});
 
-	await t.step('.getHTML() - from-within-to: nested from inside to subSpec resolves correctly via JS', () => {
+	it('.getHTML() - from-within-to: nested from inside to subSpec resolves correctly via JS', () => {
 		const testDoc = getInstance('MWIDocument');
 
 		testDoc.append({ list: ps(`[(

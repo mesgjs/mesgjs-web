@@ -1,8 +1,9 @@
+import { describe, it } from '@compat/test';
 import {
 	assert,
 	assertEquals,
 	assertStrictEquals,
-} from "https://deno.land/std@0.152.0/testing/asserts.ts";
+} from '@std/assert';
 
 import { setupRuntime } from '../harness.esm.js';
 
@@ -24,8 +25,8 @@ const doc = getInstance('MWIDocument');
 const ls = globalThis.ls;
 const ps = globalThis.ps;
 
-Deno.test("MWI Form Components - Core Interface Tests", async (t) => {
-	await t.step("m.button - core attributes and spec", () => {
+describe("MWI Form Components - Core Interface Tests", () => {
+	it("m.button - core attributes and spec", () => {
 		const btnNode = doc.createNode('m.button');
 		btnNode.setAttr('type', 'submit');
 		btnNode.setAttr('disabled', true);
@@ -40,7 +41,7 @@ Deno.test("MWI Form Components - Core Interface Tests", async (t) => {
 		assertEquals(spec.at('disabled'), true);
 	});
 
-	await t.step("m.input - core attributes and spec", () => {
+	it("m.input - core attributes and spec", () => {
 		const inputNode = doc.createNode('m.input');
 		inputNode.setAttr('value', 'initial');
 		inputNode.setAttr('placeholder', 'Enter text');
@@ -55,7 +56,7 @@ Deno.test("MWI Form Components - Core Interface Tests", async (t) => {
 		assertEquals(spec.at('placeholder'), 'Enter text');
 	});
 
-	await t.step("m.textarea - core attributes and spec", () => {
+	it("m.textarea - core attributes and spec", () => {
 		const textareaNode = doc.createNode('m.textarea');
 		textareaNode.setAttr('rows', 5);
 
@@ -67,7 +68,7 @@ Deno.test("MWI Form Components - Core Interface Tests", async (t) => {
 		assertEquals(spec.at('rows'), 5);
 	});
 
-	await t.step("m.check - core attributes and spec", () => {
+	it("m.check - core attributes and spec", () => {
 		const checkNode = doc.createNode('m.check');
 		checkNode.setAttr('type', 'checkbox');
 		checkNode.setAttr('checked', true);
@@ -82,7 +83,7 @@ Deno.test("MWI Form Components - Core Interface Tests", async (t) => {
 		assertEquals(spec.at('checked'), true);
 	});
 
-	await t.step("m.select - core attributes and spec", () => {
+	it("m.select - core attributes and spec", () => {
 		const selectNode = doc.createNode('m.select');
 		selectNode.setAttr('multiple', true);
 
@@ -94,7 +95,7 @@ Deno.test("MWI Form Components - Core Interface Tests", async (t) => {
 		assertEquals(spec.at('multiple'), true);
 	});
 
-	await t.step("m.input - changeValue and inputValue initial values", () => {
+	it("m.input - changeValue and inputValue initial values", () => {
 		const inputNode = doc.createNode('m.input');
 		inputNode.setAttr('value', 'hello');
 

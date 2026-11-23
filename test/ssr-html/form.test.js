@@ -1,7 +1,8 @@
+import { describe, it } from '@compat/test';
 import {
 	assertEquals,
 	assert,
-} from "https://deno.land/std@0.152.0/testing/asserts.ts";
+} from '@std/assert';
 
 import { setupRuntime } from '../harness.esm.js';
 
@@ -21,8 +22,8 @@ await fwait(REG_READY_FT, 'mwi.comp.MWIForm');
 
 const doc = getInstance('MWIDocument');
 
-Deno.test("MWI Form Components - SSR-HTML Tests", async (t) => {
-	await t.step("m.button - button vs link HTML", () => {
+describe("MWI Form Components - SSR-HTML Tests", () => {
+	it("m.button - button vs link HTML", () => {
 		// Created without href -> renders as <button>
 		const btnNode = doc.createNode('m.button');
 		btnNode.setAttr('type', 'submit');
@@ -38,7 +39,7 @@ Deno.test("MWI Form Components - SSR-HTML Tests", async (t) => {
 		assertEquals(linkHTML, '<a href="/home" class="a--button">Home</a>');
 	});
 
-	await t.step("m.button - disabled link HTML", () => {
+	it("m.button - disabled link HTML", () => {
 		const linkNode = doc.createNode('m.button');
 		linkNode.setAttr('href', '/home');
 		linkNode.setAttr('disabled', true);
@@ -49,7 +50,7 @@ Deno.test("MWI Form Components - SSR-HTML Tests", async (t) => {
 		assertEquals(linkHTML.includes('aria-disabled="true"'), true);
 	});
 
-	await t.step("m.input - HTML", () => {
+	it("m.input - HTML", () => {
 		const inputNode = doc.createNode('m.input');
 		inputNode.setAttr('type', 'email');
 		inputNode.setAttr('value', 'test@example.com');
@@ -57,7 +58,7 @@ Deno.test("MWI Form Components - SSR-HTML Tests", async (t) => {
 		assertEquals(html, '<input type="email" value="test@example.com">');
 	});
 
-	await t.step("m.textarea - HTML", () => {
+	it("m.textarea - HTML", () => {
 		const textareaNode = doc.createNode('m.textarea');
 		textareaNode.setAttr('rows', 5);
 		textareaNode.append('Hello World');
@@ -65,7 +66,7 @@ Deno.test("MWI Form Components - SSR-HTML Tests", async (t) => {
 		assertEquals(html, '<textarea rows="5">Hello World</textarea>');
 	});
 
-	await t.step("m.check - checkbox HTML", () => {
+	it("m.check - checkbox HTML", () => {
 		const checkNode = doc.createNode('m.check');
 		checkNode.setAttr('value', 'admin');
 		checkNode.setAttr('checked', true);
@@ -75,7 +76,7 @@ Deno.test("MWI Form Components - SSR-HTML Tests", async (t) => {
 		assertEquals(html.includes('checked'), true);
 	});
 
-	await t.step("m.check - radio HTML", () => {
+	it("m.check - radio HTML", () => {
 		const checkNode = doc.createNode('m.check');
 		checkNode.setAttr('type', 'radio');
 		checkNode.setAttr('value', 'male');
@@ -84,7 +85,7 @@ Deno.test("MWI Form Components - SSR-HTML Tests", async (t) => {
 		assertEquals(html, '<input type="radio" value="male" checked>');
 	});
 
-	await t.step("m.select - HTML with options", () => {
+	it("m.select - HTML with options", () => {
 		const selectNode = doc.createNode('m.select');
 
 		const opt1 = doc.createNode('h.option');

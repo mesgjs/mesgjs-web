@@ -1,8 +1,9 @@
+import { describe, it } from '@compat/test';
 import {
 	assert,
 	assertEquals,
 	assertStrictEquals,
-} from "https://deno.land/std@0.152.0/testing/asserts.ts";
+} from '@std/assert';
 
 import { setupRuntime } from '../harness.esm.js';
 
@@ -20,34 +21,34 @@ const { ls } = globalThis;
 
 await fwait('MWIDocument', 'mwi.comp.MWIAggr');
 
-Deno.test('MWIDocument - getAggr', async (t) => {
-	await t.step('(getAggr) - Returns a Map', () => {
+describe('MWIDocument - getAggr', () => {
+	it('(getAggr) - Returns a Map', () => {
 		const doc = getInstance('MWIDocument');
 		const aggr = $c.sm(doc, 'getAggr');
 		assert(aggr instanceof Map, 'Should return a Map');
 	});
 
-	await t.step('.getAggr() - Returns a Map via JS', () => {
+	it('.getAggr() - Returns a Map via JS', () => {
 		const doc = getInstance('MWIDocument');
 		const aggr = doc.getAggr();
 		assert(aggr instanceof Map, 'Should return a Map via JS');
 	});
 
-	await t.step('(getAggr) - Returns same Map on repeated calls', () => {
+	it('(getAggr) - Returns same Map on repeated calls', () => {
 		const doc = getInstance('MWIDocument');
 		const aggr1 = $c.sm(doc, 'getAggr');
 		const aggr2 = $c.sm(doc, 'getAggr');
 		assertStrictEquals(aggr1, aggr2, 'Should return same Map instance');
 	});
 
-	await t.step('.getAggr() - Returns same Map on repeated calls via JS', () => {
+	it('.getAggr() - Returns same Map on repeated calls via JS', () => {
 		const doc = getInstance('MWIDocument');
 		const aggr1 = doc.getAggr();
 		const aggr2 = doc.getAggr();
 		assertStrictEquals(aggr1, aggr2, 'Should return same Map instance via JS');
 	});
 
-	await t.step('(getAggr clear=@t) - Clears aggregated data', () => {
+	it('(getAggr clear=@t) - Clears aggregated data', () => {
 		const doc = getInstance('MWIDocument');
 		// Populate the aggr map with something
 		const aggrBefore = $c.sm(doc, 'getAggr');
@@ -58,7 +59,7 @@ Deno.test('MWIDocument - getAggr', async (t) => {
 		assertEquals(aggrAfter.size, 0, 'Should be empty after clear');
 	});
 
-	await t.step('.getAggr({ clear: true }) - Clears aggregated data via JS', () => {
+	it('.getAggr({ clear: true }) - Clears aggregated data via JS', () => {
 		const doc = getInstance('MWIDocument');
 		// Populate the aggr map
 		const aggrBefore = doc.getAggr();
@@ -69,7 +70,7 @@ Deno.test('MWIDocument - getAggr', async (t) => {
 		assertEquals(aggrAfter.size, 0, 'Should be empty after clear via JS');
 	});
 
-	await t.step('(getAggr clear=@t) - Resets buffer id counter', () => {
+	it('(getAggr clear=@t) - Resets buffer id counter', () => {
 		const doc = getInstance('MWIDocument');
 		// Allocate a buffer id
 		const id1 = $c.sm(doc, 'mapAggrBuffer', ls([, 'm.aggr:counter-test']));
@@ -83,7 +84,7 @@ Deno.test('MWIDocument - getAggr', async (t) => {
 		assertEquals(id2, 0, 'Should restart from 0 after clear');
 	});
 
-	await t.step('.getAggr({ clear: true }) - Resets buffer id counter via JS', () => {
+	it('.getAggr({ clear: true }) - Resets buffer id counter via JS', () => {
 		const doc = getInstance('MWIDocument');
 		// Allocate a buffer id
 		const id1 = doc.mapAggrBuffer('m.aggr:counter-test-js');
@@ -97,7 +98,7 @@ Deno.test('MWIDocument - getAggr', async (t) => {
 		assertEquals(id2, 0, 'Should restart from 0 after clear via JS');
 	});
 
-	await t.step('(getAggr clear=@t) - Invokes dynamic callback on function entries during clear', () => {
+	it('(getAggr clear=@t) - Invokes dynamic callback on function entries during clear', () => {
 		const doc = getInstance('MWIDocument');
 		const aggr = $c.sm(doc, 'getAggr');
 		let clearCalled = false;
@@ -117,7 +118,7 @@ Deno.test('MWIDocument - getAggr', async (t) => {
 		assertEquals(aggr.size, 0, 'Aggr map should be empty after clear');
 	});
 
-	await t.step('.getAggr({ clear: true }) - Invokes dynamic callback on function entries during clear via JS', () => {
+	it('.getAggr({ clear: true }) - Invokes dynamic callback on function entries during clear via JS', () => {
 		const doc = getInstance('MWIDocument');
 		const aggr = doc.getAggr();
 		let clearCalled = false;
@@ -138,8 +139,8 @@ Deno.test('MWIDocument - getAggr', async (t) => {
 	});
 });
 
-Deno.test('MWIDocument - mapAggrBuffer', async (t) => {
-	await t.step('(mapAggrBuffer) - Assigns sequential IDs to buffer names', () => {
+describe('MWIDocument - mapAggrBuffer', () => {
+	it('(mapAggrBuffer) - Assigns sequential IDs to buffer names', () => {
 		const doc = getInstance('MWIDocument');
 
 		const id0 = $c.sm(doc, 'mapAggrBuffer', ls([, 'm.aggr:first']));
@@ -151,7 +152,7 @@ Deno.test('MWIDocument - mapAggrBuffer', async (t) => {
 		assertEquals(id2, 2, 'Third buffer should get id 2');
 	});
 
-	await t.step('.mapAggrBuffer() - Assigns sequential IDs via JS', () => {
+	it('.mapAggrBuffer() - Assigns sequential IDs via JS', () => {
 		const doc = getInstance('MWIDocument');
 
 		const id0 = doc.mapAggrBuffer('m.aggr:first');
@@ -161,7 +162,7 @@ Deno.test('MWIDocument - mapAggrBuffer', async (t) => {
 		assertEquals(id1, 1, 'Second buffer should get id 1 via JS');
 	});
 
-	await t.step('(mapAggrBuffer) - Returns same ID for same name', () => {
+	it('(mapAggrBuffer) - Returns same ID for same name', () => {
 		const doc = getInstance('MWIDocument');
 
 		const id1 = $c.sm(doc, 'mapAggrBuffer', ls([, 'm.aggr:stable']));
@@ -170,7 +171,7 @@ Deno.test('MWIDocument - mapAggrBuffer', async (t) => {
 		assertEquals(id1, id2, 'Same name should return same ID');
 	});
 
-	await t.step('.mapAggrBuffer() - Returns same ID for same name via JS', () => {
+	it('.mapAggrBuffer() - Returns same ID for same name via JS', () => {
 		const doc = getInstance('MWIDocument');
 
 		const id1 = doc.mapAggrBuffer('m.aggr:stable');
@@ -179,7 +180,7 @@ Deno.test('MWIDocument - mapAggrBuffer', async (t) => {
 		assertEquals(id1, id2, 'Same name should return same ID via JS');
 	});
 
-	await t.step('(mapAggrBuffer) - Reverse lookup: ID to name', () => {
+	it('(mapAggrBuffer) - Reverse lookup: ID to name', () => {
 		const doc = getInstance('MWIDocument');
 
 		const name = 'm.aggr:reverse-test';
@@ -189,7 +190,7 @@ Deno.test('MWIDocument - mapAggrBuffer', async (t) => {
 		assertEquals(lookedUp, name, 'Should return name for given ID');
 	});
 
-	await t.step('.mapAggrBuffer() - Reverse lookup: ID to name via JS', () => {
+	it('.mapAggrBuffer() - Reverse lookup: ID to name via JS', () => {
 		const doc = getInstance('MWIDocument');
 
 		const name = 'm.aggr:reverse-test';
@@ -199,14 +200,14 @@ Deno.test('MWIDocument - mapAggrBuffer', async (t) => {
 		assertEquals(lookedUp, name, 'Should return name for given ID via JS');
 	});
 
-	await t.step('(mapAggrBuffer) - Unknown ID returns undefined', () => {
+	it('(mapAggrBuffer) - Unknown ID returns undefined', () => {
 		const doc = getInstance('MWIDocument');
 
 		const result = $c.sm(doc, 'mapAggrBuffer', ls([, 999]));
 		assertEquals(result, undefined, 'Unknown ID should return undefined');
 	});
 
-	await t.step('.mapAggrBuffer() - Unknown ID returns undefined via JS', () => {
+	it('.mapAggrBuffer() - Unknown ID returns undefined via JS', () => {
 		const doc = getInstance('MWIDocument');
 
 		const result = doc.mapAggrBuffer(999);

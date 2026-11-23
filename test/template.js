@@ -1,8 +1,9 @@
+import { describe, it } from '@compat/test';
 import {
 	assert,
 	assertEquals,
 	assertStrictEquals,
-} from "https://deno.land/std@0.152.0/testing/asserts.ts";
+} from '@std/assert';
 
 import { setupRuntime } from './harness.esm.js';
 
@@ -36,8 +37,10 @@ await setupRuntime({
 const { fwait, getInterface, getInstance } = globalThis.$c;
 await fwait(REG_READY_FT);
 
-Deno.test("MWIRegistry", async (t) => {
-	const registry = getInstance('MWIRegistry');
-	assert(registry);
-	// registry('dump');
+describe("MWIRegistry", () => {
+	it("registers successfully", () => {
+		const registry = getInstance('MWIRegistry');
+		assert(registry);
+		// registry('dump');
+	});
 });

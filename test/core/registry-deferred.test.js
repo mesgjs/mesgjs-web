@@ -1,7 +1,8 @@
+import { describe, it } from '@compat/test';
 import {
 	assert,
 	assertEquals,
-} from "https://deno.land/std@0.152.0/testing/asserts.ts";
+} from '@std/assert';
 
 import { setupRuntime } from '../harness.esm.js';
 
@@ -61,18 +62,18 @@ await setupRuntime({
 		}
 	}
 });
+await fwait(REG_READY_FT);
 
-Deno.test('MWIRegistry - Deferred Module Loading', async (t) => {
+describe('MWIRegistry - Deferred Module Loading', () => {
 	// Wait until ("pre-load") registrations have completed
-	await fwait(REG_READY_FT);
 	const registry = getInstance(REG_IF);
 
-	await t.step('Module not loaded before access', () => {
+	it('Module not loaded before access', () => {
 		assertEquals(deferLoaded, false, 'Module should not be loaded before access');
 		assertEquals(fcheck(DEFER_FT), false, 'Feature check should return false before access');
 	});
 
-	await t.step('.getWait() triggers module load and merges interface', async () => {
+	it('.getWait() triggers module load and merges interface', async () => {
 		// Request the registry entry - this should trigger deferred load
 		const entry = await registry.getWait(DEFER_TYPE);
 

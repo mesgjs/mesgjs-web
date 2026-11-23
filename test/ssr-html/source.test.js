@@ -1,8 +1,9 @@
+import { describe, it } from '@compat/test';
 import {
 	assert,
 	assertEquals,
 	assertStrictEquals,
-} from "https://deno.land/std@0.152.0/testing/asserts.ts";
+} from '@std/assert';
 
 import { setupRuntime } from '../harness.esm.js';
 
@@ -20,8 +21,8 @@ await fwait(REG_READY_FT);
 const doc = getInstance('MWIDocument');
 const registry = getInstance('MWIRegistry');
 
-Deno.test("MWICoreSource SSR - m.ci Pass-Through in Rendering", async (t) => {
-	await t.step("@@ in m.src child uses m.src's slotSrc m.ci", async () => {
+describe("MWICoreSource SSR - m.ci Pass-Through in Rendering", () => {
+	it("@@ in m.src child uses m.src's slotSrc m.ci", async () => {
 		registry.register('test.tpl.srccipass', ls([
 			'allowLate', true,
 			'tpl', ps('[( [m.src [h.div m.coat=[data-ci="@@"]]] )]')
@@ -38,7 +39,7 @@ Deno.test("MWICoreSource SSR - m.ci Pass-Through in Rendering", async (t) => {
 		assert(html.includes(`data-ci="${tplCI}"`));
 	});
 
-	await t.step("@@ in nested m.src resolves to outermost slotSrc m.ci", async () => {
+	it("@@ in nested m.src resolves to outermost slotSrc m.ci", async () => {
 		registry.register('test.tpl.nestedsrcci', ls([
 			'allowLate', true,
 			'tpl', ps('[( [m.src [m.src [h.div m.coat=[data-ci="@@"]]]] )]')
@@ -54,7 +55,7 @@ Deno.test("MWICoreSource SSR - m.ci Pass-Through in Rendering", async (t) => {
 		assert(html.includes(`data-ci="${tplCI}"`));
 	});
 
-	await t.step("@@ in m.src without slotSrc uses m.src's own CI", () => {
+	it("@@ in m.src without slotSrc uses m.src's own CI", () => {
 		const srcNode = doc.createNode('m.src');
 		srcNode.setSubSpec(ps('[( [h.div m.coat=[data-ci="@@"]] )]'));
 
@@ -69,7 +70,7 @@ Deno.test("MWICoreSource SSR - m.ci Pass-Through in Rendering", async (t) => {
 		assert(html.includes(`data-ci="${expectedCI}"`));
 	});
 
-	await t.step("@@ in m.src with HTML element slotSrc", () => {
+	it("@@ in m.src with HTML element slotSrc", () => {
 		const parentNode = doc.createNode('h.div');
 		const parentCI =  $c.sm(parentNode, 'getAttr', ['m.ci']);
 
@@ -83,8 +84,8 @@ Deno.test("MWICoreSource SSR - m.ci Pass-Through in Rendering", async (t) => {
 	});
 });
 
-Deno.test("MWICoreSource SSR - Slotting Boundary Behavior", async (t) => {
-	await t.step("m.src creates boundary - children can't see template attributes directly", async () => {
+describe("MWICoreSource SSR - Slotting Boundary Behavior", () => {
+	it("m.src creates boundary - children can't see template attributes directly", async () => {
 		registry.register('test.tpl.srcboundary', ls([
 			'allowLate', true,
 			'tpl', ps('[( [m.src myattr="src-value" [h.div m.coat=[data-from="<myattr>"]]] )]')
@@ -101,7 +102,7 @@ Deno.test("MWICoreSource SSR - Slotting Boundary Behavior", async (t) => {
 		assert(!html.includes('template-value'));
 	});
 
-	await t.step("m.src can access its slotSrc attributes", async () => {
+	it("m.src can access its slotSrc attributes", async () => {
 		registry.register('test.tpl.srcaccess', ls([
 			'allowLate', true,
 			'tpl', ps('[( [m.src m.coat=[data-from="<myattr>"] [h.div]] )]')
@@ -118,7 +119,7 @@ Deno.test("MWICoreSource SSR - Slotting Boundary Behavior", async (t) => {
 		assert(!html.includes('data-from')); // No wrapper to render attribute on
 	});
 
-	await t.step("Slotting through m.src requires explicit slot-through", async () => {
+	it("Slotting through m.src requires explicit slot-through", async () => {
 		registry.register('test.tpl.slotthrough', ls([
 			'allowLate', true,
 			'tpl', ps('[( [m.src m.slat=[srcattr=[tplattr]] [h.div m.coat=[data-val="<srcattr>"]]] )]')
@@ -135,8 +136,8 @@ Deno.test("MWICoreSource SSR - Slotting Boundary Behavior", async (t) => {
 	});
 });
 
-Deno.test("MWICoreSource SSR - Comparison with m.frg", async (t) => {
-	await t.step("m.src passes through slotSrc m.ci, m.frg also passes through", async () => {
+describe("MWICoreSource SSR - Comparison with m.frg", () => {
+	it("m.src passes through slotSrc m.ci, m.frg also passes through", async () => {
 		registry.register('test.tpl.srcvsfrag', ls([
 			'allowLate', true,
 			'tpl', ps('[( [m.src [h.div m.coat=[data-src="@@"]]] [m.frg [h.div m.coat=[data-frg="@@"]]] )]')
@@ -154,7 +155,7 @@ Deno.test("MWICoreSource SSR - Comparison with m.frg", async (t) => {
 		assert(html.includes(`data-frg="${tplCI}"`));
 	});
 
-	await t.step("m.src creates boundary, m.frg does not", async () => {
+	it("m.src creates boundary, m.frg does not", async () => {
 		registry.register('test.tpl.boundaries', ls([
 			'allowLate', true,
 			'tpl', ps('[( [m.src myattr="src" [h.div m.coat=[data-src="<myattr>"]]] [m.frg myattr="frg" [h.div m.coat=[data-frg="<myattr>"]]] )]')
@@ -175,8 +176,8 @@ Deno.test("MWICoreSource SSR - Comparison with m.frg", async (t) => {
 	});
 });
 
-Deno.test("MWICoreSource SSR - Complex m.ci Scenarios", async (t) => {
-	await t.step("Multiple levels of m.src all pass through same m.ci", async () => {
+describe("MWICoreSource SSR - Complex m.ci Scenarios", () => {
+	it("Multiple levels of m.src all pass through same m.ci", async () => {
 		registry.register('test.tpl.multilevel', ls([
 			'allowLate', true,
 			'tpl', ps('[( [m.src [m.src [m.src [h.div m.coat=[data-ci="@@"]]]]] )]')
@@ -191,7 +192,7 @@ Deno.test("MWICoreSource SSR - Complex m.ci Scenarios", async (t) => {
 		assert(html.includes(`data-ci="${tplCI}"`));
 	});
 
-	await t.step("m.src in slot passes through slot's m.ci", () => {
+	it("m.src in slot passes through slot's m.ci", () => {
 		const slotNode = doc.createNode('m.slot');
 		slotNode.setSubSpec(ps('[( [m.src [h.div m.coat=[data-ci="@@"]]] )]'));
 
@@ -202,7 +203,7 @@ Deno.test("MWICoreSource SSR - Complex m.ci Scenarios", async (t) => {
 		assert(html.includes(`data-ci="${slotCI}"`));
 	});
 
-	await t.step("@@ with prefix/suffix in m.src child", async () => {
+	it("@@ with prefix/suffix in m.src child", async () => {
 		registry.register('test.tpl.ciprefix', ls([
 			'allowLate', true,
 			'tpl', ps('[( [m.src [h.div m.coat=[data-ci="prefix-@@-suffix"]]] )]')
@@ -217,7 +218,7 @@ Deno.test("MWICoreSource SSR - Complex m.ci Scenarios", async (t) => {
 		assert(html.includes(`data-ci="prefix-${tplCI}-suffix"`));
 	});
 
-	await t.step("Multiple @@ references in same attribute", async () => {
+	it("Multiple @@ references in same attribute", async () => {
 		registry.register('test.tpl.multici', ls([
 			'allowLate', true,
 			'tpl', ps('[( [m.src [h.div m.coat=[data-ci="@@-@@"]]] )]')

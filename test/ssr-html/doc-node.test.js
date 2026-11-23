@@ -1,7 +1,8 @@
+import { describe, it } from '@compat/test';
 import {
 	assert,
 	assertEquals,
-} from "https://deno.land/std@0.152.0/testing/asserts.ts";
+} from '@std/assert';
 
 import { setupRuntime } from '../harness.esm.js';
 
@@ -16,20 +17,20 @@ const doc = getInstance('MWIDocument');
 const ls = globalThis.ls;
 const ps = globalThis.ps;
 
-Deno.test("MWIDocNode - Basic HTML Rendering", async (t) => {
-	await t.step("(getHTML) - Empty element (no attributes, no children)", () => {
+describe("MWIDocNode - Basic HTML Rendering", () => {
+	it("(getHTML) - Empty element (no attributes, no children)", () => {
 		const divNode = $c.sm(doc, 'createNode', ls([, 'h.div']));
 		const html =  $c.sm(divNode, 'getHTML');
 		assertEquals(html, '<div></div>');
 	});
 
-	await t.step(".getHTML() - Empty element via JS", () => {
+	it(".getHTML() - Empty element via JS", () => {
 		const divNode = doc.createNode('h.div');
 		const html = divNode.getHTML();
 		assertEquals(html, '<div></div>');
 	});
 
-	await t.step("(getHTML) - Element with attributes only", () => {
+	it("(getHTML) - Element with attributes only", () => {
 		const divNode = $c.sm(doc, 'createNode', ls([, 'h.div']));
 		$c.sm(divNode, 'setAttr', ls([, 'id', , 'test-id']));
 		$c.sm(divNode, 'setAttr', ls([, 'class', , 'test-class']));
@@ -40,7 +41,7 @@ Deno.test("MWIDocNode - Basic HTML Rendering", async (t) => {
 		assert(html.includes('</div>'));
 	});
 
-	await t.step(".getHTML() - Element with attributes only via JS", () => {
+	it(".getHTML() - Element with attributes only via JS", () => {
 		const divNode = doc.createNode('h.div');
 		divNode.setAttr('id', 'js-test-id');
 		divNode.setAttr('title', 'Test Title');
@@ -51,7 +52,7 @@ Deno.test("MWIDocNode - Basic HTML Rendering", async (t) => {
 		assert(html.includes('</div>'));
 	});
 
-	await t.step("(getHTML) - Element with children only", () => {
+	it("(getHTML) - Element with children only", () => {
 		const divNode = $c.sm(doc, 'createNode', ls([, 'h.div']));
 		const textNode = $c.sm(doc, 'createNode', ls([, 'm.t']));
 		$c.sm(textNode, 'setAttr', ls([, 't', , 'Child text']));
@@ -60,7 +61,7 @@ Deno.test("MWIDocNode - Basic HTML Rendering", async (t) => {
 		assertEquals(html, '<div>Child text</div>');
 	});
 
-	await t.step(".getHTML() - Element with children only via JS", () => {
+	it(".getHTML() - Element with children only via JS", () => {
 		const divNode = doc.createNode('h.div');
 		const textNode = doc.createNode('m.t');
 		textNode.setAttr('t', 'JS Child text');
@@ -69,7 +70,7 @@ Deno.test("MWIDocNode - Basic HTML Rendering", async (t) => {
 		assertEquals(html, '<div>JS Child text</div>');
 	});
 
-	await t.step("(getHTML) - Element with both attributes and children", () => {
+	it("(getHTML) - Element with both attributes and children", () => {
 		const divNode = $c.sm(doc, 'createNode', ls([, 'h.div']));
 		$c.sm(divNode, 'setAttr', ls([, 'id', , 'container']));
 		$c.sm(divNode, 'setAttr', ls([, 'class', , 'wrapper']));
@@ -83,7 +84,7 @@ Deno.test("MWIDocNode - Basic HTML Rendering", async (t) => {
 		assert(html.includes('>Content</div>'));
 	});
 
-	await t.step(".getHTML() - Element with both attributes and children via JS", () => {
+	it(".getHTML() - Element with both attributes and children via JS", () => {
 		const divNode = doc.createNode('h.div');
 		divNode.setAttr('id', 'js-container');
 		divNode.setAttr('data-test', 'value');
@@ -95,22 +96,22 @@ Deno.test("MWIDocNode - Basic HTML Rendering", async (t) => {
 		assert(html.includes('>JS Content</div>'));
 	});
 
-	await t.step("(getHTML) - Void element (h.br)", () => {
+	it("(getHTML) - Void element (h.br)", () => {
 		const brNode = $c.sm(doc, 'createNode', ls([, 'h.br']));
 		const html =  $c.sm(brNode, 'getHTML');
 		// Void elements render without closing tag
 		assertEquals(html, '<br>');
 	});
 
-	await t.step(".getHTML() - Void element (h.br) via JS", () => {
+	it(".getHTML() - Void element (h.br) via JS", () => {
 		const brNode = doc.createNode('h.br');
 		const html = brNode.getHTML();
 		assertEquals(html, '<br>');
 	});
 });
 
-Deno.test("MWIDocNode - Attribute Rendering", async (t) => {
-	await t.step("(getHTML) - Standard HTML attributes", () => {
+describe("MWIDocNode - Attribute Rendering", () => {
+	it("(getHTML) - Standard HTML attributes", () => {
 		const divNode = $c.sm(doc, 'createNode', ls([, 'h.div']));
 		$c.sm(divNode, 'setAttr', ls([, 'id', , 'my-id']));
 		$c.sm(divNode, 'setAttr', ls([, 'class', , 'my-class']));
@@ -123,7 +124,7 @@ Deno.test("MWIDocNode - Attribute Rendering", async (t) => {
 		assert(html.includes('data-value="test"'));
 	});
 
-	await t.step(".getHTML() - Standard HTML attributes via JS", () => {
+	it(".getHTML() - Standard HTML attributes via JS", () => {
 		const divNode = doc.createNode('h.div');
 		divNode.setAttr('id', 'js-id');
 		divNode.setAttr('aria-label', 'Label');
@@ -134,7 +135,7 @@ Deno.test("MWIDocNode - Attribute Rendering", async (t) => {
 		assert(html.includes('data-test="value"'));
 	});
 
-	await t.step("(getHTML) - Boolean attributes", () => {
+	it("(getHTML) - Boolean attributes", () => {
 		const divNode = $c.sm(doc, 'createNode', ls([, 'h.div']));
 		$c.sm(divNode, 'setAttr', ls([, 'disabled', , true]));
 		$c.sm(divNode, 'setAttr', ls([, 'hidden', , true]));
@@ -146,7 +147,7 @@ Deno.test("MWIDocNode - Attribute Rendering", async (t) => {
 		assert(!html.includes('hidden="'));
 	});
 
-	await t.step(".getHTML() - Boolean attributes via JS", () => {
+	it(".getHTML() - Boolean attributes via JS", () => {
 		const divNode = doc.createNode('h.div');
 		divNode.setAttr('disabled', true);
 		divNode.setAttr('readonly', true);
@@ -157,21 +158,21 @@ Deno.test("MWIDocNode - Attribute Rendering", async (t) => {
 		assert(!html.includes('readonly="'));
 	});
 
-	await t.step("(getHTML) - String attributes are quoted", () => {
+	it("(getHTML) - String attributes are quoted", () => {
 		const divNode = $c.sm(doc, 'createNode', ls([, 'h.div']));
 		$c.sm(divNode, 'setAttr', ls([, 'title', , 'Test Value']));
 		const html =  $c.sm(divNode, 'getHTML');
 		assert(html.includes('title="Test Value"'));
 	});
 
-	await t.step(".getHTML() - String attributes are quoted via JS", () => {
+	it(".getHTML() - String attributes are quoted via JS", () => {
 		const divNode = doc.createNode('h.div');
 		divNode.setAttr('data-info', 'Information');
 		const html = divNode.getHTML();
 		assert(html.includes('data-info="Information"'));
 	});
 
-	await t.step("(getHTML) - Non-HTML attributes do not render (m.id)", () => {
+	it("(getHTML) - Non-HTML attributes do not render (m.id)", () => {
 		const divNode = $c.sm(doc, 'createNode', ls([, 'h.div']));
 		$c.sm(divNode, 'setAttr', ls([, 'id', , 'real-id']));
 		// Access m.id to ensure it's set
@@ -181,7 +182,7 @@ Deno.test("MWIDocNode - Attribute Rendering", async (t) => {
 		assert(!html.includes('m.id'));
 	});
 
-	await t.step(".getHTML() - Non-HTML attributes do not render (m.percl)", () => {
+	it(".getHTML() - Non-HTML attributes do not render (m.percl)", () => {
 		const divNode = doc.createNode('h.div');
 		divNode.setAttr('m.percl', 'perm-class');
 		const html = divNode.getHTML();
@@ -190,21 +191,21 @@ Deno.test("MWIDocNode - Attribute Rendering", async (t) => {
 		assert(html.includes('class="perm-class"'));
 	});
 
-	await t.step("(getHTML) - Non-HTML attributes do not render (m.slat)", () => {
+	it("(getHTML) - Non-HTML attributes do not render (m.slat)", () => {
 		const divNode = $c.sm(doc, 'createNode', ls([, 'h.div']));
 		$c.sm(divNode, 'setAttr', ls([, 'm.slat', , ps('[(title=[])]')]));
 		const html =  $c.sm(divNode, 'getHTML');
 		assert(!html.includes('m.slat'));
 	});
 
-	await t.step(".getHTML() - Non-HTML attributes do not render (m.coat)", () => {
+	it(".getHTML() - Non-HTML attributes do not render (m.coat)", () => {
 		const divNode = doc.createNode('h.div');
 		divNode.setAttr('m.coat', ps('[(title=<name>)]'));
 		const html = divNode.getHTML();
 		assert(!html.includes('m.coat'));
 	});
 
-	await t.step("(getHTML) - Uppercase attributes do not render", () => {
+	it("(getHTML) - Uppercase attributes do not render", () => {
 		const divNode = $c.sm(doc, 'createNode', ls([, 'h.div']));
 		$c.sm(divNode, 'setAttr', ls([, 'ID', , 'uppercase-id']));
 		$c.sm(divNode, 'setAttr', ls([, 'id', , 'lowercase-id']));
@@ -213,7 +214,7 @@ Deno.test("MWIDocNode - Attribute Rendering", async (t) => {
 		assert(html.includes('id="lowercase-id"'));
 	});
 
-	await t.step(".getHTML() - Dot-prefixed attributes do not render", () => {
+	it(".getHTML() - Dot-prefixed attributes do not render", () => {
 		const divNode = doc.createNode('h.div');
 		divNode.setAttr('.private', 'value');
 		divNode.setAttr('id', 'public-id');
@@ -222,7 +223,7 @@ Deno.test("MWIDocNode - Attribute Rendering", async (t) => {
 		assert(html.includes('id="public-id"'));
 	});
 
-	await t.step("(getHTML) - List-valued attributes do not render", () => {
+	it("(getHTML) - List-valued attributes do not render", () => {
 		const divNode = $c.sm(doc, 'createNode', ls([, 'h.div']));
 		const listVal = ps('[(item1 item2 item3)]');
 		$c.sm(divNode, 'setAttr', ls([, 'c.items', , listVal]));
@@ -232,7 +233,7 @@ Deno.test("MWIDocNode - Attribute Rendering", async (t) => {
 		assert(html.includes('id="test-id"'));
 	});
 
-	await t.step(".getHTML() - List-valued attributes do not render via JS", () => {
+	it(".getHTML() - List-valued attributes do not render via JS", () => {
 		const divNode = doc.createNode('h.div');
 		const listVal = ps('[(alpha beta gamma)]');
 		divNode.setAttr('c.data', listVal);
@@ -243,57 +244,57 @@ Deno.test("MWIDocNode - Attribute Rendering", async (t) => {
 	});
 });
 
-Deno.test("MWIDocNode - HTML Escaping", async (t) => {
-	await t.step("(getHTML) - Escape < in attribute value", () => {
+describe("MWIDocNode - HTML Escaping", () => {
+	it("(getHTML) - Escape < in attribute value", () => {
 		const divNode = $c.sm(doc, 'createNode', ls([, 'h.div']));
 		$c.sm(divNode, 'setAttr', ls([, 'title', , 'Value with < character']));
 		const html =  $c.sm(divNode, 'getHTML');
 		assert(html.includes('title="Value with &lt; character"'));
 	});
 
-	await t.step(".getHTML() - Escape > in attribute value via JS", () => {
+	it(".getHTML() - Escape > in attribute value via JS", () => {
 		const divNode = doc.createNode('h.div');
 		divNode.setAttr('title', 'Value with > character');
 		const html = divNode.getHTML();
 		assert(html.includes('title="Value with &gt; character"'));
 	});
 
-	await t.step("(getHTML) - Escape & in attribute value", () => {
+	it("(getHTML) - Escape & in attribute value", () => {
 		const divNode = $c.sm(doc, 'createNode', ls([, 'h.div']));
 		$c.sm(divNode, 'setAttr', ls([, 'title', , 'Value with & character']));
 		const html =  $c.sm(divNode, 'getHTML');
 		assert(html.includes('title="Value with &amp; character"'));
 	});
 
-	await t.step(".getHTML() - Escape \" in attribute value via JS", () => {
+	it(".getHTML() - Escape \" in attribute value via JS", () => {
 		const divNode = doc.createNode('h.div');
 		divNode.setAttr('title', 'Value with " quotes');
 		const html = divNode.getHTML();
 		assert(html.includes('title="Value with &quot; quotes"'));
 	});
 
-	await t.step("(getHTML) - Escape all special characters in attribute", () => {
+	it("(getHTML) - Escape all special characters in attribute", () => {
 		const divNode = $c.sm(doc, 'createNode', ls([, 'h.div']));
 		$c.sm(divNode, 'setAttr', ls([, 'title', , '<tag> & "quotes"']));
 		const html =  $c.sm(divNode, 'getHTML');
 		assert(html.includes('title="&lt;tag&gt; &amp; &quot;quotes&quot;"'));
 	});
 
-	await t.step(".getHTML() - Escape Unicode characters in attribute via JS", () => {
+	it(".getHTML() - Escape Unicode characters in attribute via JS", () => {
 		const divNode = doc.createNode('h.div');
 		divNode.setAttr('title', 'Text\u0100here');
 		const html = divNode.getHTML();
 		assert(html.includes('&#256;'));
 	});
 
-	await t.step("(getHTML) - Escape control characters in attribute", () => {
+	it("(getHTML) - Escape control characters in attribute", () => {
 		const divNode = $c.sm(doc, 'createNode', ls([, 'h.div']));
 		$c.sm(divNode, 'setAttr', ls([, 'title', , 'Text\x01here']));
 		const html =  $c.sm(divNode, 'getHTML');
 		assert(html.includes('&#1;'));
 	});
 
-	await t.step(".getHTML() - Complex escaping in attribute via JS", () => {
+	it(".getHTML() - Complex escaping in attribute via JS", () => {
 		const divNode = doc.createNode('h.div');
 		divNode.setAttr('title', '<script>alert("XSS")</script>');
 		const html = divNode.getHTML();
@@ -302,21 +303,21 @@ Deno.test("MWIDocNode - HTML Escaping", async (t) => {
 		assert(html.includes('&lt;/script&gt;'));
 	});
 
-	await t.step(".getHTML() - Escape supplementary-plane character in attribute via JS", () => {
+	it(".getHTML() - Escape supplementary-plane character in attribute via JS", () => {
 		const divNode = doc.createNode('h.div');
 		divNode.setAttr('title', '\u{1F600}');
 		const html = divNode.getHTML();
 		assert(html.includes('title="&#128512;"'));
 	});
 
-	await t.step(".getHTML() - Escape lone/unpaired surrogate in attribute via JS", () => {
+	it(".getHTML() - Escape lone/unpaired surrogate in attribute via JS", () => {
 		const divNode = doc.createNode('h.div');
 		divNode.setAttr('title', String.fromCharCode(0xD83D));
 		const html = divNode.getHTML();
 		assert(html.includes('title="&#65533;"'));
 	});
 
-	await t.step("(getHTML) - Mixed attribute value with reserved chars and supplementary-plane character", () => {
+	it("(getHTML) - Mixed attribute value with reserved chars and supplementary-plane character", () => {
 		const divNode = $c.sm(doc, 'createNode', ls([, 'h.div']));
 		$c.sm(divNode, 'setAttr', ls([, 'title', , '<\u{1F600}>']));
 		const html =  $c.sm(divNode, 'getHTML');
@@ -324,8 +325,8 @@ Deno.test("MWIDocNode - HTML Escaping", async (t) => {
 	});
 });
 
-Deno.test("MWIDocNode - Child Content Rendering", async (t) => {
-	await t.step("(getHTML) - Single text child", () => {
+describe("MWIDocNode - Child Content Rendering", () => {
+	it("(getHTML) - Single text child", () => {
 		const divNode = $c.sm(doc, 'createNode', ls([, 'h.div']));
 		const textNode = $c.sm(doc, 'createNode', ls([, 'm.t']));
 		$c.sm(textNode, 'setAttr', ls([, 't', , 'Single child']));
@@ -334,14 +335,14 @@ Deno.test("MWIDocNode - Child Content Rendering", async (t) => {
 		assertEquals(html, '<div>Single child</div>');
 	});
 
-	await t.step(".getHTML() - Single text child via JS", () => {
+	it(".getHTML() - Single text child via JS", () => {
 		const divNode = doc.createNode('h.div');
 		divNode.setSubSpec('JS single child');
 		const html = divNode.getHTML();
 		assertEquals(html, '<div>JS single child</div>');
 	});
 
-	await t.step("(getHTML) - Multiple text children", () => {
+	it("(getHTML) - Multiple text children", () => {
 		const divNode = $c.sm(doc, 'createNode', ls([, 'h.div']));
 		const text1 = $c.sm(doc, 'createNode', ls([, 'm.t']));
 		$c.sm(text1, 'setAttr', ls([, 't', , 'First']));
@@ -354,14 +355,14 @@ Deno.test("MWIDocNode - Child Content Rendering", async (t) => {
 		assertEquals(html, '<div>FirstSecondThird</div>');
 	});
 
-	await t.step(".getHTML() - Multiple text children via JS", () => {
+	it(".getHTML() - Multiple text children via JS", () => {
 		const divNode = doc.createNode('h.div');
 		divNode.append('First', 'Second', 'Third');
 		const html = divNode.getHTML();
 		assertEquals(html, '<div>FirstSecondThird</div>');
 	});
 
-	await t.step("(getHTML) - Mixed content (text and element children)", () => {
+	it("(getHTML) - Mixed content (text and element children)", () => {
 		const divNode = $c.sm(doc, 'createNode', ls([, 'h.div']));
 		const textNode = $c.sm(doc, 'createNode', ls([, 'm.t']));
 		$c.sm(textNode, 'setAttr', ls([, 't', , 'Text']));
@@ -372,7 +373,7 @@ Deno.test("MWIDocNode - Child Content Rendering", async (t) => {
 		assertEquals(html, '<div>Text<span>Span</span></div>');
 	});
 
-	await t.step(".getHTML() - Mixed content via JS", () => {
+	it(".getHTML() - Mixed content via JS", () => {
 		const divNode = doc.createNode('h.div');
 		const spanNode = doc.createNode('h.span');
 		spanNode.setSubSpec('Span content');
@@ -381,7 +382,7 @@ Deno.test("MWIDocNode - Child Content Rendering", async (t) => {
 		assertEquals(html, '<div>Before<span>Span content</span>After</div>');
 	});
 
-	await t.step("(getHTML) - Nested elements", () => {
+	it("(getHTML) - Nested elements", () => {
 		const outerDiv = $c.sm(doc, 'createNode', ls([, 'h.div']));
 		const innerDiv = $c.sm(doc, 'createNode', ls([, 'h.div']));
 		const textNode = $c.sm(doc, 'createNode', ls([, 'm.t']));
@@ -392,7 +393,7 @@ Deno.test("MWIDocNode - Child Content Rendering", async (t) => {
 		assertEquals(html, '<div><div>Nested</div></div>');
 	});
 
-	await t.step(".getHTML() - Nested elements via JS", () => {
+	it(".getHTML() - Nested elements via JS", () => {
 		const outerDiv = doc.createNode('h.div');
 		const innerDiv = doc.createNode('h.div');
 		innerDiv.setSubSpec('Inner content');
@@ -401,7 +402,7 @@ Deno.test("MWIDocNode - Child Content Rendering", async (t) => {
 		assertEquals(html, '<div><div>Inner content</div></div>');
 	});
 
-	await t.step("(getHTML) - Void element has no children in output", () => {
+	it("(getHTML) - Void element has no children in output", () => {
 		const brNode = $c.sm(doc, 'createNode', ls([, 'h.br']));
 		// Try to append (should be ignored)
 		$c.sm(brNode, 'setSubSpec', ls([, 'text']));
@@ -410,7 +411,7 @@ Deno.test("MWIDocNode - Child Content Rendering", async (t) => {
 		assert(!html.includes('text'));
 	});
 
-	await t.step(".getHTML() - Void element has no children in output via JS", () => {
+	it(".getHTML() - Void element has no children in output via JS", () => {
 		const brNode = doc.createNode('h.br');
 		brNode.append('ignored text');
 		const html = brNode.getHTML();
@@ -419,8 +420,8 @@ Deno.test("MWIDocNode - Child Content Rendering", async (t) => {
 	});
 });
 
-Deno.test("MWIDocNode - Edge Cases", async (t) => {
-	await t.step("(getHTML) - Element with only whitespace text children", () => {
+describe("MWIDocNode - Edge Cases", () => {
+	it("(getHTML) - Element with only whitespace text children", () => {
 		const divNode = $c.sm(doc, 'createNode', ls([, 'h.div']));
 		const textNode = $c.sm(doc, 'createNode', ls([, 'm.t']));
 		$c.sm(textNode, 'setAttr', ls([, 't', , '   ']));
@@ -429,14 +430,14 @@ Deno.test("MWIDocNode - Edge Cases", async (t) => {
 		assertEquals(html, '<div>   </div>');
 	});
 
-	await t.step(".getHTML() - Element with only whitespace text children via JS", () => {
+	it(".getHTML() - Element with only whitespace text children via JS", () => {
 		const divNode = doc.createNode('h.div');
 		divNode.setSubSpec('   ');
 		const html = divNode.getHTML();
 		assertEquals(html, '<div>   </div>');
 	});
 
-	await t.step("(getHTML) - Element with empty text nodes", () => {
+	it("(getHTML) - Element with empty text nodes", () => {
 		const divNode = $c.sm(doc, 'createNode', ls([, 'h.div']));
 		const text1 = $c.sm(doc, 'createNode', ls([, 'm.t']));
 		$c.sm(text1, 'setAttr', ls([, 't', , '']));
@@ -449,14 +450,14 @@ Deno.test("MWIDocNode - Edge Cases", async (t) => {
 		assertEquals(html, '<div>Content</div>');
 	});
 
-	await t.step(".getHTML() - Element with empty text nodes via JS", () => {
+	it(".getHTML() - Element with empty text nodes via JS", () => {
 		const divNode = doc.createNode('h.div');
 		divNode.append('', 'Content', '');
 		const html = divNode.getHTML();
 		assertEquals(html, '<div>Content</div>');
 	});
 
-	await t.step("(getHTML) - Deeply nested structure", () => {
+	it("(getHTML) - Deeply nested structure", () => {
 		const level1 = $c.sm(doc, 'createNode', ls([, 'h.div']));
 		const level2 = $c.sm(doc, 'createNode', ls([, 'h.div']));
 		const level3 = $c.sm(doc, 'createNode', ls([, 'h.div']));
@@ -471,7 +472,7 @@ Deno.test("MWIDocNode - Edge Cases", async (t) => {
 		assertEquals(html, '<div><div><div><div>Deep</div></div></div></div>');
 	});
 
-	await t.step(".getHTML() - Deeply nested structure via JS", () => {
+	it(".getHTML() - Deeply nested structure via JS", () => {
 		const level1 = doc.createNode('h.div');
 		const level2 = doc.createNode('h.div');
 		const level3 = doc.createNode('h.div');
@@ -482,7 +483,7 @@ Deno.test("MWIDocNode - Edge Cases", async (t) => {
 		assertEquals(html, '<div><div><div>Deep content</div></div></div>');
 	});
 
-	await t.step("(getHTML) - Void element with attempted children (should ignore)", () => {
+	it("(getHTML) - Void element with attempted children (should ignore)", () => {
 		const brNode = $c.sm(doc, 'createNode', ls([, 'h.br']));
 		const textNode = $c.sm(doc, 'createNode', ls([, 'm.t']));
 		$c.sm(textNode, 'setAttr', ls([, 't', , 'Should not appear']));
@@ -492,7 +493,7 @@ Deno.test("MWIDocNode - Edge Cases", async (t) => {
 		assert(!html.includes('Should not appear'));
 	});
 
-	await t.step(".getHTML() - Void element with attempted children via JS", () => {
+	it(".getHTML() - Void element with attempted children via JS", () => {
 		const brNode = doc.createNode('h.br');
 		brNode.append('Should not appear');
 		const html = brNode.getHTML();
@@ -500,7 +501,7 @@ Deno.test("MWIDocNode - Edge Cases", async (t) => {
 		assert(!html.includes('Should not appear'));
 	});
 
-	await t.step("(getHTML) - List-valued attributes preserved but not rendered", () => {
+	it("(getHTML) - List-valued attributes preserved but not rendered", () => {
 		const divNode = $c.sm(doc, 'createNode', ls([, 'h.div']));
 		const listVal = ps('[(item1 item2 item3)]');
 		$c.sm(divNode, 'setAttr', ls([, 'c.items', , listVal]));
@@ -513,7 +514,7 @@ Deno.test("MWIDocNode - Edge Cases", async (t) => {
 		assert(html.includes('Content'));
 	});
 
-	await t.step(".getHTML() - List-valued attributes preserved but not rendered via JS", () => {
+	it(".getHTML() - List-valued attributes preserved but not rendered via JS", () => {
 		const divNode = doc.createNode('h.div');
 		const listVal = ps('[(alpha beta gamma)]');
 		divNode.setAttr('c.data', listVal);
@@ -525,22 +526,22 @@ Deno.test("MWIDocNode - Edge Cases", async (t) => {
 	});
 });
 
-Deno.test("MWIDocNode - Slotting Without Slot Source", async (t) => {
-	await t.step("(getHTML) - m.slat with no slot source uses else default", () => {
+describe("MWIDocNode - Slotting Without Slot Source", () => {
+	it("(getHTML) - m.slat with no slot source uses else default", () => {
 		const divNode = $c.sm(doc, 'createNode', ls([, 'h.div']));
 		$c.sm(divNode, 'setAttr', ls([, 'm.slat', , ps('[(title=[missing else=DefaultValue])]')]));
 		const html =  $c.sm(divNode, 'getHTML');
 		assert(html.includes('title="DefaultValue"'));
 	});
 
-	await t.step(".getHTML() - m.slat with no slot source uses else default via JS", () => {
+	it(".getHTML() - m.slat with no slot source uses else default via JS", () => {
 		const divNode = doc.createNode('h.div');
 		divNode.setAttr('m.slat', ps('[(title=[missing else="JS DefaultValue"])]'));
 		const html = divNode.getHTML();
 		assert(html.includes('title="JS DefaultValue"'));
 	});
 
-	await t.step("(getHTML) - Multiple m.slat targets with no slot source", () => {
+	it("(getHTML) - Multiple m.slat targets with no slot source", () => {
 		const divNode = $c.sm(doc, 'createNode', ls([, 'h.div']));
 		$c.sm(divNode, 'setAttr', ls([, 'm.slat', , ps('[(title=[src1 else=Default1] data-info=[src2 else=Default2])]')]));
 		const html =  $c.sm(divNode, 'getHTML');
@@ -548,7 +549,7 @@ Deno.test("MWIDocNode - Slotting Without Slot Source", async (t) => {
 		assert(html.includes('data-info="Default2"'));
 	});
 
-	await t.step(".getHTML() - Multiple m.slat targets with no slot source via JS", () => {
+	it(".getHTML() - Multiple m.slat targets with no slot source via JS", () => {
 		const divNode = doc.createNode('h.div');
 		divNode.setAttr('m.slat', ps('[(title=[src1 else="JS Default1"] data-info=[src2 else="JS Default2"])]'));
 		const html = divNode.getHTML();
@@ -557,8 +558,8 @@ Deno.test("MWIDocNode - Slotting Without Slot Source", async (t) => {
 	});
 });
 
-Deno.test("MWIDocNode - Computed Attributes: m.percl with @@", async (t) => {
-	await t.step("(getHTML) - m.percl with @@ expands to m.ci from template", () => {
+describe("MWIDocNode - Computed Attributes: m.percl with @@", () => {
+	it("(getHTML) - m.percl with @@ expands to m.ci from template", () => {
 		const registry = getInstance('MWIRegistry');
 		registry.register('test.ssr.percl.aa1', ls([
 			'allowLate', true,
@@ -574,7 +575,7 @@ Deno.test("MWIDocNode - Computed Attributes: m.percl with @@", async (t) => {
 		assert(html.includes(`class="${compId}"`), 'Should have component ID as class');
 	});
 
-	await t.step(".getHTML() - m.percl with @@ expands to m.ci from template via JS", () => {
+	it(".getHTML() - m.percl with @@ expands to m.ci from template via JS", () => {
 		const registry = getInstance('MWIRegistry');
 		registry.register('test.ssr.percl.aa2', ls([
 			'allowLate', true,
@@ -587,7 +588,7 @@ Deno.test("MWIDocNode - Computed Attributes: m.percl with @@", async (t) => {
 		assert(html.includes(`class="${compId}"`), 'Should have component ID as class');
 	});
 
-	await t.step("(getHTML) - m.percl with @@ prefix", () => {
+	it("(getHTML) - m.percl with @@ prefix", () => {
 		const registry = getInstance('MWIRegistry');
 		registry.register('test.ssr.percl.aa3', ls([
 			'allowLate', true,
@@ -600,7 +601,7 @@ Deno.test("MWIDocNode - Computed Attributes: m.percl with @@", async (t) => {
 		assert(html.includes(`class="${compId}__custom"`), 'Should have component ID with suffix');
 	});
 
-	await t.step(".getHTML() - m.percl with @@ suffix via JS", () => {
+	it(".getHTML() - m.percl with @@ suffix via JS", () => {
 		const registry = getInstance('MWIRegistry');
 		registry.register('test.ssr.percl.aa4', ls([
 			'allowLate', true,
@@ -615,8 +616,8 @@ Deno.test("MWIDocNode - Computed Attributes: m.percl with @@", async (t) => {
 
 });
 
-Deno.test("MWIDocNode - Computed Attributes: class with @@", async (t) => {
-	await t.step("(getHTML) - class with @@ expands to m.ci from template", () => {
+describe("MWIDocNode - Computed Attributes: class with @@", () => {
+	it("(getHTML) - class with @@ expands to m.ci from template", () => {
 		const registry = getInstance('MWIRegistry');
 		registry.register('test.ssr.class.aa1', ls([
 			'allowLate', true,
@@ -629,7 +630,7 @@ Deno.test("MWIDocNode - Computed Attributes: class with @@", async (t) => {
 		assert(html.includes(`class="${compId}"`), 'Should have component ID as class');
 	});
 
-	await t.step(".getHTML() - class with @@ expands to m.ci from template via JS", () => {
+	it(".getHTML() - class with @@ expands to m.ci from template via JS", () => {
 		const registry = getInstance('MWIRegistry');
 		registry.register('test.ssr.class.aa2', ls([
 			'allowLate', true,
@@ -642,7 +643,7 @@ Deno.test("MWIDocNode - Computed Attributes: class with @@", async (t) => {
 		assert(html.includes(`class="${compId}"`), 'Should have component ID as class');
 	});
 
-	await t.step("(getHTML) - class with @@ and additional classes", () => {
+	it("(getHTML) - class with @@ and additional classes", () => {
 		const registry = getInstance('MWIRegistry');
 		registry.register('test.ssr.class.aa3', ls([
 			'allowLate', true,
@@ -656,7 +657,7 @@ Deno.test("MWIDocNode - Computed Attributes: class with @@", async (t) => {
 		assert(html.includes('extra-class'), 'Should include extra class');
 	});
 
-	await t.step(".getHTML() - class with @@ and additional classes via JS", () => {
+	it(".getHTML() - class with @@ and additional classes via JS", () => {
 		const registry = getInstance('MWIRegistry');
 		registry.register('test.ssr.class.aa4', ls([
 			'allowLate', true,
@@ -671,8 +672,8 @@ Deno.test("MWIDocNode - Computed Attributes: class with @@", async (t) => {
 	});
 });
 
-Deno.test("MWIDocNode - Computed Attributes: id with @#", async (t) => {
-	await t.step("(getHTML) - id with @# expands to m.id", () => {
+describe("MWIDocNode - Computed Attributes: id with @#", () => {
+	it("(getHTML) - id with @# expands to m.id", () => {
 		const fragNode = doc.createNode('m.frg');
 		fragNode.setAttr('id', 'parent-id');
 
@@ -683,7 +684,7 @@ Deno.test("MWIDocNode - Computed Attributes: id with @#", async (t) => {
 		assert(html.includes('id="parent-id"'), 'Should have parent id');
 	});
 
-	await t.step(".getHTML() - id with @# expands to m.id via JS", () => {
+	it(".getHTML() - id with @# expands to m.id via JS", () => {
 		const fragNode = doc.createNode('m.frg');
 		fragNode.setAttr('id', 'js-parent-id');
 
@@ -694,7 +695,7 @@ Deno.test("MWIDocNode - Computed Attributes: id with @#", async (t) => {
 		assert(html.includes('id="js-parent-id"'), 'Should have parent id');
 	});
 
-	await t.step("(getHTML) - id with @# for hierarchical id pattern", () => {
+	it("(getHTML) - id with @# for hierarchical id pattern", () => {
 		const fragNode = doc.createNode('m.frg');
 		fragNode.setAttr('id', 'parent-id');
 
@@ -705,7 +706,7 @@ Deno.test("MWIDocNode - Computed Attributes: id with @#", async (t) => {
 		assert(html.includes('id="parent-id-child-id"'), 'Should have hierarchical id');
 	});
 
-	await t.step(".getHTML() - id with @# for hierarchical id pattern via JS", () => {
+	it(".getHTML() - id with @# for hierarchical id pattern via JS", () => {
 		const fragNode = doc.createNode('m.frg');
 		fragNode.setAttr('id', 'js-parent');
 
@@ -716,7 +717,7 @@ Deno.test("MWIDocNode - Computed Attributes: id with @#", async (t) => {
 		assert(html.includes('id="js-parent-sub-id"'), 'Should have hierarchical id');
 	});
 
-	await t.step("(getHTML) - id with <.ap> escape for literal @#", () => {
+	it("(getHTML) - id with <.ap> escape for literal @#", () => {
 		const divNode = doc.createNode('h.div');
 		divNode.setAttr('id', '<.ap>');
 		const html = divNode.getHTML();
@@ -724,7 +725,7 @@ Deno.test("MWIDocNode - Computed Attributes: id with @#", async (t) => {
 		assert(html.includes('id="@#"'), 'Should have literal @# as id');
 	});
 
-	await t.step(".getHTML() - id with <.ap> escape for literal @# via JS", () => {
+	it(".getHTML() - id with <.ap> escape for literal @# via JS", () => {
 		const divNode = doc.createNode('h.div');
 		divNode.setAttr('id', '<.ap>');
 		const html = divNode.getHTML();
@@ -732,7 +733,7 @@ Deno.test("MWIDocNode - Computed Attributes: id with @#", async (t) => {
 		assert(html.includes('id="@#"'), 'Should have literal @# as id');
 	});
 
-	await t.step("(getHTML) - id with coat:false disables computation", () => {
+	it("(getHTML) - id with coat:false disables computation", () => {
 		const fragNode = doc.createNode('m.frg');
 		fragNode.setAttr('id', 'parent-id');
 
@@ -743,7 +744,7 @@ Deno.test("MWIDocNode - Computed Attributes: id with @#", async (t) => {
 		assert(html.includes('id="@#"'), 'Should not compute when coat:false');
 	});
 
-	await t.step(".getHTML() - id with coat:false disables computation via JS", () => {
+	it(".getHTML() - id with coat:false disables computation via JS", () => {
 		const fragNode = doc.createNode('m.frg');
 		fragNode.setAttr('id', 'js-parent-id');
 
@@ -754,7 +755,7 @@ Deno.test("MWIDocNode - Computed Attributes: id with @#", async (t) => {
 		assert(html.includes('id="@#"'), 'Should not compute when coat:false');
 	});
 
-	await t.step(".getHTML() - id with coat:false disables computation via JS", () => {
+	it(".getHTML() - id with coat:false disables computation via JS", () => {
 		const fragNode = doc.createNode('m.frg');
 		fragNode.setAttr('id', 'js-parent-id');
 
@@ -766,8 +767,8 @@ Deno.test("MWIDocNode - Computed Attributes: id with @#", async (t) => {
 	});
 });
 
-Deno.test("MWIDocNode - Computed Attributes: m.coat with escapes", async (t) => {
-	await t.step("(getHTML) - m.coat with <.aa> escape for literal @@", () => {
+describe("MWIDocNode - Computed Attributes: m.coat with escapes", () => {
+	it("(getHTML) - m.coat with <.aa> escape for literal @@", () => {
 		const divNode = doc.createNode('h.div');
 		divNode.setAttr('m.coat', ps('[(data-test="<.aa>")]'));
 		const html = divNode.getHTML();
@@ -775,7 +776,7 @@ Deno.test("MWIDocNode - Computed Attributes: m.coat with escapes", async (t) => 
 		assert(html.includes('data-test="@@"'), 'Should have literal @@ in attribute');
 	});
 
-	await t.step(".getHTML() - m.coat with <.aa> escape for literal @@ via JS", () => {
+	it(".getHTML() - m.coat with <.aa> escape for literal @@ via JS", () => {
 		const divNode = doc.createNode('h.div');
 		divNode.setAttr('m.coat', ps('[(data-test="<.aa>")]'));
 		const html = divNode.getHTML();
@@ -783,7 +784,7 @@ Deno.test("MWIDocNode - Computed Attributes: m.coat with escapes", async (t) => 
 		assert(html.includes('data-test="@@"'), 'Should have literal @@ in attribute');
 	});
 
-	await t.step("(getHTML) - m.coat with <.ap> escape for literal @#", () => {
+	it("(getHTML) - m.coat with <.ap> escape for literal @#", () => {
 		const divNode = doc.createNode('h.div');
 		divNode.setAttr('m.coat', ps('[(data-test="<.ap>")]'));
 		const html = divNode.getHTML();
@@ -791,7 +792,7 @@ Deno.test("MWIDocNode - Computed Attributes: m.coat with escapes", async (t) => 
 		assert(html.includes('data-test="@#"'), 'Should have literal @# in attribute');
 	});
 
-	await t.step(".getHTML() - m.coat with <.ap> escape for literal @# via JS", () => {
+	it(".getHTML() - m.coat with <.ap> escape for literal @# via JS", () => {
 		const divNode = doc.createNode('h.div');
 		divNode.setAttr('m.coat', ps('[(data-test="<.ap>")]'));
 		const html = divNode.getHTML();

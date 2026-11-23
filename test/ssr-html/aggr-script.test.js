@@ -1,7 +1,8 @@
+import { describe, it } from '@compat/test';
 import {
 	assert,
 	assertEquals,
-} from "https://deno.land/std@0.152.0/testing/asserts.ts";
+} from '@std/assert';
 
 import { setupRuntime } from '../harness.esm.js';
 
@@ -25,8 +26,8 @@ await fwait('MWIDocument', 'mwi.comp.MWIAggrScript');
 // assigned an id automatically (if it doesn't have one already)
 // as a DOM sync aid.
 
-Deno.test('MWIAggrScript (m.script) - SSR-HTML to mode (default buffer)', async (t) => {
-	await t.step('(getHTML) - to mode with inline script stores <script> tag', () => {
+describe('MWIAggrScript (m.script) - SSR-HTML to mode (default buffer)', () => {
+	it('(getHTML) - to mode with inline script stores <script> tag', () => {
 		const testDoc = getInstance('MWIDocument');
 		const scriptNode = $c.sm(testDoc, 'createNode', ls([, 'm.script']));
 		$c.sm(scriptNode, 'setAttr', ['m.text', 'console.log("test");']);
@@ -42,7 +43,7 @@ Deno.test('MWIAggrScript (m.script) - SSR-HTML to mode (default buffer)', async 
 		assert(values[0].includes('</script>'), 'Should include closing tag');
 	});
 
-	await t.step('.getHTML() - to mode with inline script stores <script> tag via JS', () => {
+	it('.getHTML() - to mode with inline script stores <script> tag via JS', () => {
 		const testDoc = getInstance('MWIDocument');
 		const scriptNode = testDoc.createNode('m.script');
 		scriptNode.setAttr('m.text', 'alert("js");');
@@ -57,7 +58,7 @@ Deno.test('MWIAggrScript (m.script) - SSR-HTML to mode (default buffer)', async 
 		assert(values[0].includes('alert'), 'Should include script content via JS');
 	});
 
-	await t.step('(getHTML) - to mode with external script stores <script src>', () => {
+	it('(getHTML) - to mode with external script stores <script src>', () => {
 		const testDoc = getInstance('MWIDocument');
 		const scriptNode = $c.sm(testDoc, 'createNode', ls([, 'm.script']));
 		$c.sm(scriptNode, 'setAttr', ['src', '/app.js']);
@@ -73,7 +74,7 @@ Deno.test('MWIAggrScript (m.script) - SSR-HTML to mode (default buffer)', async 
 		assert(values[0].includes('</script>'), 'Should include closing tag');
 	});
 
-	await t.step('.getHTML() - to mode with external script stores <script src> via JS', () => {
+	it('.getHTML() - to mode with external script stores <script src> via JS', () => {
 		const testDoc = getInstance('MWIDocument');
 		const scriptNode = testDoc.createNode('m.script');
 		scriptNode.setAttr('src', '/app-js.js');
@@ -87,7 +88,7 @@ Deno.test('MWIAggrScript (m.script) - SSR-HTML to mode (default buffer)', async 
 		assert(values[0].includes('src="/app-js.js"'), 'Should include src attribute via JS');
 	});
 
-	await t.step('(getHTML) - to mode with explicit buffer name', () => {
+	it('(getHTML) - to mode with explicit buffer name', () => {
 		const testDoc = getInstance('MWIDocument');
 		const scriptNode = $c.sm(testDoc, 'createNode', ls([, 'm.script']));
 		$c.sm(scriptNode, 'setAttr', ['to', 'footer']);
@@ -102,7 +103,7 @@ Deno.test('MWIAggrScript (m.script) - SSR-HTML to mode (default buffer)', async 
 		assert(buffer.size > 0, 'Buffer should have content');
 	});
 
-	await t.step('.getHTML() - to mode with explicit buffer name via JS', () => {
+	it('.getHTML() - to mode with explicit buffer name via JS', () => {
 		const testDoc = getInstance('MWIDocument');
 		const scriptNode = testDoc.createNode('m.script');
 		scriptNode.setAttr('to', 'jsFooter');
@@ -114,7 +115,7 @@ Deno.test('MWIAggrScript (m.script) - SSR-HTML to mode (default buffer)', async 
 		assert(buffer instanceof Map, 'Should create buffer for named key via JS');
 	});
 
-	await t.step('(getHTML) - Inline script content escapes closing tag', () => {
+	it('(getHTML) - Inline script content escapes closing tag', () => {
 		const testDoc = getInstance('MWIDocument');
 		const scriptNode = $c.sm(testDoc, 'createNode', ls([, 'm.script']));
 		$c.sm(scriptNode, 'setAttr', ['m.text', 'var x = "</ script >";']);
@@ -132,7 +133,7 @@ Deno.test('MWIAggrScript (m.script) - SSR-HTML to mode (default buffer)', async 
 		assert(!content.includes('</script>'), 'Content should not contain unescaped closing tag');
 	});
 
-	await t.step('(getHTML) - Duplicate scripts are deduplicated', () => {
+	it('(getHTML) - Duplicate scripts are deduplicated', () => {
 		const testDoc = getInstance('MWIDocument');
 
 		const script1 = $c.sm(testDoc, 'createNode', ls([, 'm.script']));
@@ -148,7 +149,7 @@ Deno.test('MWIAggrScript (m.script) - SSR-HTML to mode (default buffer)', async 
 		assertEquals(buffer.size, 1, 'Duplicate scripts should be deduplicated');
 	});
 
-	await t.step('.getHTML() - Duplicate scripts are deduplicated via JS', () => {
+	it('.getHTML() - Duplicate scripts are deduplicated via JS', () => {
 		const testDoc = getInstance('MWIDocument');
 
 		const script1 = testDoc.createNode('m.script');
@@ -165,8 +166,8 @@ Deno.test('MWIAggrScript (m.script) - SSR-HTML to mode (default buffer)', async 
 	});
 });
 
-Deno.test('MWIAggrScript (m.script) - SSR-HTML from mode', async (t) => {
-	await t.step('(getHTML) - from mode returns placeholder', () => {
+describe('MWIAggrScript (m.script) - SSR-HTML from mode', () => {
+	it('(getHTML) - from mode returns placeholder', () => {
 		const testDoc = getInstance('MWIDocument');
 		const fromNode = $c.sm(testDoc, 'createNode', ls([, 'm.script']));
 		$c.sm(fromNode, 'setAttr', ['from', 'head']);
@@ -177,7 +178,7 @@ Deno.test('MWIAggrScript (m.script) - SSR-HTML from mode', async (t) => {
 		assert(/^<\{\d+\}>$/.test(html), 'Placeholder should be <{number}>');
 	});
 
-	await t.step('.getHTML() - from mode returns placeholder via JS', () => {
+	it('.getHTML() - from mode returns placeholder via JS', () => {
 		const testDoc = getInstance('MWIDocument');
 		const fromNode = testDoc.createNode('m.script');
 		 fromNode.setAttr('from', 'head');
@@ -186,7 +187,7 @@ Deno.test('MWIAggrScript (m.script) - SSR-HTML from mode', async (t) => {
 		assert(/^<\{\d+\}>$/.test(html), 'Placeholder should be <{number}> via JS');
 	});
 
-	await t.step('(getHTML) - from mode allocates buffer ID via mapAggrBuffer', () => {
+	it('(getHTML) - from mode allocates buffer ID via mapAggrBuffer', () => {
 		const testDoc = getInstance('MWIDocument');
 		const fromNode = $c.sm(testDoc, 'createNode', ls([, 'm.script']));
 		$c.sm(fromNode, 'setAttr', ['from', 'footer']);
@@ -200,7 +201,7 @@ Deno.test('MWIAggrScript (m.script) - SSR-HTML from mode', async (t) => {
 		assertEquals(bufferName, 'm.script:footer', 'Buffer ID should map to correct key');
 	});
 
-	await t.step('(getHTML) - from mode with same buffer name returns same placeholder', () => {
+	it('(getHTML) - from mode with same buffer name returns same placeholder', () => {
 		const testDoc = getInstance('MWIDocument');
 
 		const fromNode1 = $c.sm(testDoc, 'createNode', ls([, 'm.script']));
@@ -214,7 +215,7 @@ Deno.test('MWIAggrScript (m.script) - SSR-HTML from mode', async (t) => {
 		assertEquals(html1, html2, 'Same buffer name should produce same placeholder');
 	});
 
-	await t.step('(getHTML) - from mode with different buffer names returns different placeholders', () => {
+	it('(getHTML) - from mode with different buffer names returns different placeholders', () => {
 		const testDoc = getInstance('MWIDocument');
 
 		const fromNode1 = $c.sm(testDoc, 'createNode', ls([, 'm.script']));
@@ -229,8 +230,8 @@ Deno.test('MWIAggrScript (m.script) - SSR-HTML from mode', async (t) => {
 	});
 });
 
-Deno.test('MWIAggrScript (m.script) - SSR-HTML m.csr suppression', async (t) => {
-	await t.step('(getHTML) - m.csr=true suppresses from output', () => {
+describe('MWIAggrScript (m.script) - SSR-HTML m.csr suppression', () => {
+	it('(getHTML) - m.csr=true suppresses from output', () => {
 		const testDoc = getInstance('MWIDocument');
 		const fromNode = $c.sm(testDoc, 'createNode', ls([, 'm.script']));
 		$c.sm(fromNode, 'setAttr', ['from', 'head']);
@@ -240,7 +241,7 @@ Deno.test('MWIAggrScript (m.script) - SSR-HTML m.csr suppression', async (t) => 
 		assertEquals(html, '', 'from mode with m.csr should return empty string');
 	});
 
-	await t.step('.getHTML() - m.csr=true suppresses from output via JS', () => {
+	it('.getHTML() - m.csr=true suppresses from output via JS', () => {
 		const testDoc = getInstance('MWIDocument');
 		const fromNode = testDoc.createNode('m.script');
 		fromNode.setAttr('from', 'head');
@@ -250,7 +251,7 @@ Deno.test('MWIAggrScript (m.script) - SSR-HTML m.csr suppression', async (t) => 
 		assertEquals(html, '', 'from mode with m.csr should return empty string via JS');
 	});
 
-	await t.step('(getHTML) - m.csr=true suppresses to mode output', () => {
+	it('(getHTML) - m.csr=true suppresses to mode output', () => {
 		const testDoc = getInstance('MWIDocument');
 		const toNode = $c.sm(testDoc, 'createNode', ls([, 'm.script']));
 		$c.sm(toNode, 'setAttr', ['m.csr', true]);
@@ -265,8 +266,8 @@ Deno.test('MWIAggrScript (m.script) - SSR-HTML m.csr suppression', async (t) => 
 	});
 });
 
-Deno.test('MWIAggrScript (m.script) - SSR-HTML end-to-end', async (t) => {
-	await t.step('(getHTML) - to/from round-trip via document', () => {
+describe('MWIAggrScript (m.script) - SSR-HTML end-to-end', () => {
+	it('(getHTML) - to/from round-trip via document', () => {
 		const testDoc = getInstance('MWIDocument');
 
 		const fromNode = $c.sm(testDoc, 'createNode', ls([, 'm.script']));
@@ -284,7 +285,7 @@ Deno.test('MWIAggrScript (m.script) - SSR-HTML end-to-end', async (t) => {
 		assert(!html.includes('<{'), 'Should not contain unresolved placeholders');
 	});
 
-	await t.step('.getHTML() - to/from round-trip via document via JS', () => {
+	it('.getHTML() - to/from round-trip via document via JS', () => {
 		const testDoc = getInstance('MWIDocument');
 
 		const fromNode = testDoc.createNode('m.script');
@@ -301,7 +302,7 @@ Deno.test('MWIAggrScript (m.script) - SSR-HTML end-to-end', async (t) => {
 		assert(!html.includes('<{'), 'Should not contain unresolved placeholders via JS');
 	});
 
-	await t.step('(getHTML) - Multiple scripts aggregated with deduplication', () => {
+	it('(getHTML) - Multiple scripts aggregated with deduplication', () => {
 		const testDoc = getInstance('MWIDocument');
 
 		const fromNode = $c.sm(testDoc, 'createNode', ls([, 'm.script']));
@@ -327,7 +328,7 @@ Deno.test('MWIAggrScript (m.script) - SSR-HTML end-to-end', async (t) => {
 		assertEquals(scriptCount, 2, 'Should deduplicate duplicate script');
 	});
 
-	await t.step('(getHTML) - Empty buffer renders nothing', () => {
+	it('(getHTML) - Empty buffer renders nothing', () => {
 		const testDoc = getInstance('MWIDocument');
 
 		const fromNode = $c.sm(testDoc, 'createNode', ls([, 'm.script']));
@@ -339,8 +340,8 @@ Deno.test('MWIAggrScript (m.script) - SSR-HTML end-to-end', async (t) => {
 	});
 });
 
-Deno.test('MWIAggrStyle (m.style) - SSR-HTML to/from modes', async (t) => {
-	await t.step('(getHTML) - to mode with inline style stores <style> tag', () => {
+describe('MWIAggrStyle (m.style) - SSR-HTML to/from modes', () => {
+	it('(getHTML) - to mode with inline style stores <style> tag', () => {
 		const testDoc = getInstance('MWIDocument');
 		const styleNode = $c.sm(testDoc, 'createNode', ls([, 'm.style']));
 		$c.sm(styleNode, 'setAttr', ['m.text', 'body { margin: 0; }']);
@@ -356,7 +357,7 @@ Deno.test('MWIAggrStyle (m.style) - SSR-HTML to/from modes', async (t) => {
 		assert(values[0].includes('</style>'), 'Should include closing tag');
 	});
 
-	await t.step('.getHTML() - to mode with inline style stores <style> tag via JS', () => {
+	it('.getHTML() - to mode with inline style stores <style> tag via JS', () => {
 		const testDoc = getInstance('MWIDocument');
 		const styleNode = testDoc.createNode('m.style');
 		styleNode.setAttr('m.text', 'p { color: red; }');
@@ -371,7 +372,7 @@ Deno.test('MWIAggrStyle (m.style) - SSR-HTML to/from modes', async (t) => {
 		assert(values[0].includes('p { color: red; }'), 'Should include style content via JS');
 	});
 
-	await t.step('(getHTML) - to mode with external stylesheet stores <link> tag', () => {
+	it('(getHTML) - to mode with external stylesheet stores <link> tag', () => {
 		const testDoc = getInstance('MWIDocument');
 		const styleNode = $c.sm(testDoc, 'createNode', ls([, 'm.style']));
 		$c.sm(styleNode, 'setAttr', ['href', '/theme.css']);
@@ -387,7 +388,7 @@ Deno.test('MWIAggrStyle (m.style) - SSR-HTML to/from modes', async (t) => {
 		assert(values[0].includes('href="/theme.css"'), 'Should include href attribute');
 	});
 
-	await t.step('.getHTML() - to mode with external stylesheet stores <link> tag via JS', () => {
+	it('.getHTML() - to mode with external stylesheet stores <link> tag via JS', () => {
 		const testDoc = getInstance('MWIDocument');
 		const styleNode = testDoc.createNode('m.style');
 		styleNode.setAttr('href', '/theme-js.css');
@@ -402,7 +403,7 @@ Deno.test('MWIAggrStyle (m.style) - SSR-HTML to/from modes', async (t) => {
 		assert(values[0].includes('href="/theme-js.css"'), 'Should include href attribute via JS');
 	});
 
-	await t.step('(getHTML) - Inline style content escapes closing tag', () => {
+	it('(getHTML) - Inline style content escapes closing tag', () => {
 		const testDoc = getInstance('MWIDocument');
 		const styleNode = $c.sm(testDoc, 'createNode', ls([, 'm.style']));
 		$c.sm(styleNode, 'setAttr', ['m.text', '.x { content: "</ style >"; }']);
@@ -420,7 +421,7 @@ Deno.test('MWIAggrStyle (m.style) - SSR-HTML to/from modes', async (t) => {
 		assert(!content.includes('</style>'), 'Content should not contain unescaped closing tag');
 	});
 
-	await t.step('(getHTML) - from mode returns placeholder', () => {
+	it('(getHTML) - from mode returns placeholder', () => {
 		const testDoc = getInstance('MWIDocument');
 		const fromNode = $c.sm(testDoc, 'createNode', ls([, 'm.style']));
 		$c.sm(fromNode, 'setAttr', ['from', 'head']);
@@ -429,7 +430,7 @@ Deno.test('MWIAggrStyle (m.style) - SSR-HTML to/from modes', async (t) => {
 		assert(/^<\{\d+\}>$/.test(html), 'Placeholder should be <{number}>');
 	});
 
-	await t.step('.getHTML() - from mode returns placeholder via JS', () => {
+	it('.getHTML() - from mode returns placeholder via JS', () => {
 		const testDoc = getInstance('MWIDocument');
 		const fromNode = testDoc.createNode('m.style');
 		fromNode.setAttr('from', 'head');
@@ -438,7 +439,7 @@ Deno.test('MWIAggrStyle (m.style) - SSR-HTML to/from modes', async (t) => {
 		assert(/^<\{\d+\}>$/.test(html), 'Placeholder should be <{number}> via JS');
 	});
 
-	await t.step('(getHTML) - to/from round-trip via document', () => {
+	it('(getHTML) - to/from round-trip via document', () => {
 		const testDoc = getInstance('MWIDocument');
 
 		const fromNode = $c.sm(testDoc, 'createNode', ls([, 'm.style']));
@@ -455,7 +456,7 @@ Deno.test('MWIAggrStyle (m.style) - SSR-HTML to/from modes', async (t) => {
 		assert(!html.includes('<{'), 'Should not contain unresolved placeholders');
 	});
 
-	await t.step('.getHTML() - to/from round-trip via document via JS', () => {
+	it('.getHTML() - to/from round-trip via document via JS', () => {
 		const testDoc = getInstance('MWIDocument');
 
 		const fromNode = testDoc.createNode('m.style');
@@ -472,7 +473,7 @@ Deno.test('MWIAggrStyle (m.style) - SSR-HTML to/from modes', async (t) => {
 		assert(!html.includes('<{'), 'Should not contain unresolved placeholders via JS');
 	});
 
-	await t.step('(getHTML) - Duplicate stylesheets are deduplicated', () => {
+	it('(getHTML) - Duplicate stylesheets are deduplicated', () => {
 		const testDoc = getInstance('MWIDocument');
 
 		const fromNode = $c.sm(testDoc, 'createNode', ls([, 'm.style']));
@@ -499,12 +500,12 @@ Deno.test('MWIAggrStyle (m.style) - SSR-HTML to/from modes', async (t) => {
 	});
 });
 
-Deno.test('MWIAggrScript (m.script) - SSR-HTML deduplication key logic', async (t) => {
+describe('MWIAggrScript (m.script) - SSR-HTML deduplication key logic', () => {
 	// Migrated from test/core/aggr-script.test.js
 	// These tests verify the specific deduplication key used (buffer.has(key))
 	// rather than just the buffer size or rendered output.
 
-	await t.step('(getDedupeKey) - Inline script uses m.text as key', () => {
+	it('(getDedupeKey) - Inline script uses m.text as key', () => {
 		const testDoc = getInstance('MWIDocument');
 		const scriptNode = $c.sm(testDoc, 'createNode', ls([, 'm.script']));
 		$c.sm(scriptNode, 'setAttr', ['m.text', 'console.log("test");']);
@@ -517,7 +518,7 @@ Deno.test('MWIAggrScript (m.script) - SSR-HTML deduplication key logic', async (
 		assert(buffer.has('console.log("test");'), 'Should use m.text as key');
 	});
 
-	await t.step('.getHTML() - Inline script uses m.text as key via JS', () => {
+	it('.getHTML() - Inline script uses m.text as key via JS', () => {
 		const testDoc = getInstance('MWIDocument');
 		const scriptNode = testDoc.createNode('m.script');
 		scriptNode.setAttr('m.text', 'console.log("js");');
@@ -529,7 +530,7 @@ Deno.test('MWIAggrScript (m.script) - SSR-HTML deduplication key logic', async (
 		assert(buffer.has('console.log("js");'), 'Should use m.text as key via JS');
 	});
 
-	await t.step('(getDedupeKey) - External script uses src as key', () => {
+	it('(getDedupeKey) - External script uses src as key', () => {
 		const testDoc = getInstance('MWIDocument');
 		const scriptNode = $c.sm(testDoc, 'createNode', ls([, 'm.script']));
 		$c.sm(scriptNode, 'setAttr', ['src', '/test-key.js']);
@@ -542,7 +543,7 @@ Deno.test('MWIAggrScript (m.script) - SSR-HTML deduplication key logic', async (
 		assert(buffer.has('/test-key.js'), 'Should use src as key');
 	});
 
-	await t.step('.getHTML() - External script uses src as key via JS', () => {
+	it('.getHTML() - External script uses src as key via JS', () => {
 		const testDoc = getInstance('MWIDocument');
 		const scriptNode = testDoc.createNode('m.script');
 		scriptNode.setAttr('src', '/test-key-js.js');
@@ -554,7 +555,7 @@ Deno.test('MWIAggrScript (m.script) - SSR-HTML deduplication key logic', async (
 		assert(buffer.has('/test-key-js.js'), 'Should use src as key via JS');
 	});
 
-	await t.step('(getDedupeKey) - Duplicate inline scripts are deduplicated by key', () => {
+	it('(getDedupeKey) - Duplicate inline scripts are deduplicated by key', () => {
 		const testDoc = getInstance('MWIDocument');
 		const script1 = $c.sm(testDoc, 'createNode', ls([, 'm.script']));
 		$c.sm(script1, 'setAttr', ['m.text', 'shared();']);
@@ -569,7 +570,7 @@ Deno.test('MWIAggrScript (m.script) - SSR-HTML deduplication key logic', async (
 		assertEquals(buffer.size, 1, 'Duplicate scripts should be deduplicated');
 	});
 
-	await t.step('.getHTML() - Duplicate external scripts are deduplicated by key via JS', () => {
+	it('.getHTML() - Duplicate external scripts are deduplicated by key via JS', () => {
 		const testDoc = getInstance('MWIDocument');
 		const script1 = testDoc.createNode('m.script');
 		script1.setAttr('src', '/shared-key.js');
@@ -584,7 +585,7 @@ Deno.test('MWIAggrScript (m.script) - SSR-HTML deduplication key logic', async (
 		assertEquals(buffer.size, 1, 'Duplicate external scripts should be deduplicated via JS');
 	});
 
-	await t.step('(getDedupeKey) - Invalid node (no src or m.text) is skipped', () => {
+	it('(getDedupeKey) - Invalid node (no src or m.text) is skipped', () => {
 		const testDoc = getInstance('MWIDocument');
 		const scriptNode = $c.sm(testDoc, 'createNode', ls([, 'm.script']));
 		// No src or m.text set
@@ -595,7 +596,7 @@ Deno.test('MWIAggrScript (m.script) - SSR-HTML deduplication key logic', async (
 		assert(!buffer || buffer.size === 0, 'Invalid script should not be stored');
 	});
 
-	await t.step('.getHTML() - Invalid node (no src or m.text) is skipped via JS', () => {
+	it('.getHTML() - Invalid node (no src or m.text) is skipped via JS', () => {
 		const testDoc = getInstance('MWIDocument');
 		const scriptNode = testDoc.createNode('m.script');
 		scriptNode.getHTML();
@@ -606,12 +607,12 @@ Deno.test('MWIAggrScript (m.script) - SSR-HTML deduplication key logic', async (
 	});
 });
 
-Deno.test('MWIAggrStyle (m.style) - SSR-HTML deduplication key logic', async (t) => {
+describe('MWIAggrStyle (m.style) - SSR-HTML deduplication key logic', () => {
 	// Migrated from test/core/aggr-script.test.js
 	// These tests verify the specific deduplication key used (buffer.has(key))
 	// rather than just the buffer size or rendered output.
 
-	await t.step('(getDedupeKey) - Inline style uses m.text as key', () => {
+	it('(getDedupeKey) - Inline style uses m.text as key', () => {
 		const testDoc = getInstance('MWIDocument');
 		const styleNode = $c.sm(testDoc, 'createNode', ls([, 'm.style']));
 		$c.sm(styleNode, 'setAttr', ['m.text', 'body { color: red; }']);
@@ -624,7 +625,7 @@ Deno.test('MWIAggrStyle (m.style) - SSR-HTML deduplication key logic', async (t)
 		assert(buffer.has('body { color: red; }'), 'Should use m.text as key');
 	});
 
-	await t.step('.getHTML() - Inline style uses m.text as key via JS', () => {
+	it('.getHTML() - Inline style uses m.text as key via JS', () => {
 		const testDoc = getInstance('MWIDocument');
 		const styleNode = testDoc.createNode('m.style');
 		styleNode.setAttr('m.text', 'p { margin: 0; }');
@@ -636,7 +637,7 @@ Deno.test('MWIAggrStyle (m.style) - SSR-HTML deduplication key logic', async (t)
 		assert(buffer.has('p { margin: 0; }'), 'Should use m.text as key via JS');
 	});
 
-	await t.step('(getDedupeKey) - External stylesheet uses href as key', () => {
+	it('(getDedupeKey) - External stylesheet uses href as key', () => {
 		const testDoc = getInstance('MWIDocument');
 		const styleNode = $c.sm(testDoc, 'createNode', ls([, 'm.style']));
 		$c.sm(styleNode, 'setAttr', ['href', '/test-key.css']);
@@ -649,7 +650,7 @@ Deno.test('MWIAggrStyle (m.style) - SSR-HTML deduplication key logic', async (t)
 		assert(buffer.has('/test-key.css'), 'Should use href as key');
 	});
 
-	await t.step('.getHTML() - External stylesheet uses href as key via JS', () => {
+	it('.getHTML() - External stylesheet uses href as key via JS', () => {
 		const testDoc = getInstance('MWIDocument');
 		const styleNode = testDoc.createNode('m.style');
 		styleNode.setAttr('href', '/test-key-js.css');
@@ -661,7 +662,7 @@ Deno.test('MWIAggrStyle (m.style) - SSR-HTML deduplication key logic', async (t)
 		assert(buffer.has('/test-key-js.css'), 'Should use href as key via JS');
 	});
 
-	await t.step('(getDedupeKey) - Duplicate inline styles are deduplicated by key', () => {
+	it('(getDedupeKey) - Duplicate inline styles are deduplicated by key', () => {
 		const testDoc = getInstance('MWIDocument');
 		const style1 = $c.sm(testDoc, 'createNode', ls([, 'm.style']));
 		$c.sm(style1, 'setAttr', ['m.text', '.shared { }']);
@@ -676,7 +677,7 @@ Deno.test('MWIAggrStyle (m.style) - SSR-HTML deduplication key logic', async (t)
 		assertEquals(buffer.size, 1, 'Duplicate styles should be deduplicated');
 	});
 
-	await t.step('.getHTML() - Duplicate external stylesheets are deduplicated by key via JS', () => {
+	it('.getHTML() - Duplicate external stylesheets are deduplicated by key via JS', () => {
 		const testDoc = getInstance('MWIDocument');
 		const style1 = testDoc.createNode('m.style');
 		style1.setAttr('href', '/shared-key.css');
@@ -691,7 +692,7 @@ Deno.test('MWIAggrStyle (m.style) - SSR-HTML deduplication key logic', async (t)
 		assertEquals(buffer.size, 1, 'Duplicate external stylesheets should be deduplicated via JS');
 	});
 
-	await t.step('(getDedupeKey) - Invalid node (no href or m.text) is skipped', () => {
+	it('(getDedupeKey) - Invalid node (no href or m.text) is skipped', () => {
 		const testDoc = getInstance('MWIDocument');
 		const styleNode = $c.sm(testDoc, 'createNode', ls([, 'm.style']));
 		$c.sm(styleNode, 'getHTML');
@@ -701,7 +702,7 @@ Deno.test('MWIAggrStyle (m.style) - SSR-HTML deduplication key logic', async (t)
 		assert(!buffer || buffer.size === 0, 'Invalid style should not be stored');
 	});
 
-	await t.step('.getHTML() - Invalid node (no href or m.text) is skipped via JS', () => {
+	it('.getHTML() - Invalid node (no href or m.text) is skipped via JS', () => {
 		const testDoc = getInstance('MWIDocument');
 		const styleNode = testDoc.createNode('m.style');
 		styleNode.getHTML();

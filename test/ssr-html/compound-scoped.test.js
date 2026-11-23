@@ -1,7 +1,8 @@
+import { describe, it } from '@compat/test';
 import {
 	assert,
 	assertEquals,
-} from "https://deno.land/std@0.152.0/testing/asserts.ts";
+} from '@std/assert';
 
 import { setupRuntime } from '../harness.esm.js';
 
@@ -18,8 +19,8 @@ await fwait(REG_READY_FT);
 
 const registry = getInstance('MWIRegistry');
 
-Deno.test("MWICoreScpCSS SSR Compound - Complete Page with Scoped CSS", async (t) => {
-	await t.step("Card component with scoped styles and m.coat/m.percl", async () => {
+describe("MWICoreScpCSS SSR Compound - Complete Page with Scoped CSS", () => {
+	it("Card component with scoped styles and m.coat/m.percl", async () => {
 		registry.register('test.ssr.compound.card', ls([
 			'allowLate', true,
 			'scopedCSS', '.@@ { border: 1px solid #ccc; padding: 1rem; } .@@ .header { font-weight: bold; }',
@@ -53,7 +54,7 @@ Deno.test("MWICoreScpCSS SSR Compound - Complete Page with Scoped CSS", async (t
 		assert(html.includes('Card content'), "Should include body content");
 	});
 
-	await t.step("m.scpcss renders before components triggering it", () => {
+	it("m.scpcss renders before components triggering it", () => {
 		registry.register('test.ssr.compound.order', ls([
 			'allowLate', true,
 			'if', 'MWIHTML',
@@ -88,8 +89,8 @@ Deno.test("MWICoreScpCSS SSR Compound - Complete Page with Scoped CSS", async (t
 	});
 });
 
-Deno.test("MWICoreScpCSS SSR Compound - Nested Components with Scoped CSS", async (t) => {
-	await t.step("Parent and child components with scoped CSS", () => {
+describe("MWICoreScpCSS SSR Compound - Nested Components with Scoped CSS", () => {
+	it("Parent and child components with scoped CSS", () => {
 		registry.register('test.ssr.compound.parent', ls([
 			'allowLate', true,
 			'scopedCSS', '.@@ { background: #f0f0f0; }',
@@ -122,7 +123,7 @@ Deno.test("MWICoreScpCSS SSR Compound - Nested Components with Scoped CSS", asyn
 		assert(uniqueIds.size >= 2, "Should have at least 2 unique component IDs");
 	});
 
-	await t.step("Template with scoped CSS and slotting", () => {
+	it("Template with scoped CSS and slotting", () => {
 		registry.register('test.ssr.compound.tplslot', ls([
 			'allowLate', true,
 			'scopedCSS', '.@@ { padding: 2rem; }',
@@ -151,8 +152,8 @@ Deno.test("MWICoreScpCSS SSR Compound - Nested Components with Scoped CSS", asyn
 	});
 });
 
-Deno.test("MWICoreScpCSS SSR Compound - Component Library Pattern", async (t) => {
-	await t.step("Multiple components with scoped CSS in realistic page", () => {
+describe("MWICoreScpCSS SSR Compound - Component Library Pattern", () => {
+	it("Multiple components with scoped CSS in realistic page", () => {
 		// Register component library
 		registry.register('test.ssr.compound.button', ls([
 			'allowLate', true,
@@ -213,8 +214,8 @@ Deno.test("MWICoreScpCSS SSR Compound - Component Library Pattern", async (t) =>
 	});
 });
 
-Deno.test("MWICoreScpCSS SSR Compound - CSS Deduplication in Complex Structures", async (t) => {
-	await t.step("Same component type used multiple times", () => {
+describe("MWICoreScpCSS SSR Compound - CSS Deduplication in Complex Structures", () => {
+	it("Same component type used multiple times", () => {
 		registry.register('test.ssr.compound.item', ls([
 			'allowLate', true,
 			'scopedCSS', '.@@ { margin: 0.5rem; }',
@@ -246,8 +247,8 @@ Deno.test("MWICoreScpCSS SSR Compound - CSS Deduplication in Complex Structures"
 	});
 });
 
-Deno.test("MWICoreScpCSS SSR Compound - Edge Cases", async (t) => {
-	await t.step("m.scpcss with no components in document", () => {
+describe("MWICoreScpCSS SSR Compound - Edge Cases", () => {
+	it("m.scpcss with no components in document", () => {
 		const doc = getInstance('MWIDocument');
 		const scpNode = doc.createNode('m.scpcss');
 		$c.sm(doc, 'append', scpNode);
@@ -263,7 +264,7 @@ Deno.test("MWICoreScpCSS SSR Compound - Edge Cases", async (t) => {
 		assert(html.includes('Just text'), "Should still have content");
 	});
 
-	await t.step("Multiple m.scpcss nodes in different locations", () => {
+	it("Multiple m.scpcss nodes in different locations", () => {
 		registry.register('test.ssr.compound.multi', ls([
 			'allowLate', true,
 			'if', 'MWIHTML',
@@ -293,7 +294,7 @@ Deno.test("MWICoreScpCSS SSR Compound - Edge Cases", async (t) => {
 		assertEquals(cssMatches?.length, 2, "CSS should appear in both style tags");
 	});
 
-	await t.step("CSS with </style> in complex document", () => {
+	it("CSS with </style> in complex document", () => {
 		registry.register('test.ssr.compound.escape', ls([
 			'allowLate', true,
 			'if', 'MWIHTML',

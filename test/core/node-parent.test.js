@@ -1,8 +1,9 @@
+import { describe, it } from '@compat/test';
 import {
 	assert,
 	assertEquals,
 	assertStrictEquals,
-} from "https://deno.land/std@0.152.0/testing/asserts.ts";
+} from '@std/assert';
 
 import { setupRuntime } from '../harness.esm.js';
 
@@ -23,22 +24,22 @@ const ps = globalThis.ps;
 // getParent / setParent
 // ─────────────────────────────────────────────────────────────────────────────
 
-Deno.test("MWIDocNode - getParent / setParent", async (t) => {
-	await t.step("(getParent) - New node has null parent and undefined index", () => {
+describe("MWIDocNode - getParent / setParent", () => {
+	it("(getParent) - New node has null parent and undefined index", () => {
 		const node = doc.createNode('h.div');
 		const pi = $c.sm(node, 'getParent');
 		assertEquals(pi.at('parent'), null);
 		assertEquals(pi.at('index'), undefined);
 	});
 
-	await t.step(".getParent() - New node has null parent and undefined index via JS", () => {
+	it(".getParent() - New node has null parent and undefined index via JS", () => {
 		const node = doc.createNode('h.div');
 		const pi = node.getParent();
 		assertEquals(pi.parent, null);
 		assertEquals(pi.index, undefined);
 	});
 
-	await t.step("(setParent) - Set parent and index", () => {
+	it("(setParent) - Set parent and index", () => {
 		const parent = doc.createNode('h.div');
 		const child = doc.createNode('m.t');
 		$c.sm(child, 'setParent', ls([, parent, , 0]));
@@ -47,7 +48,7 @@ Deno.test("MWIDocNode - getParent / setParent", async (t) => {
 		assertEquals(pi.at('index'), 0);
 	});
 
-	await t.step(".setParent() - Set parent and index via JS", () => {
+	it(".setParent() - Set parent and index via JS", () => {
 		const parent = doc.createNode('h.div');
 		const child = doc.createNode('m.t');
 		child.setParent(parent, 2);
@@ -56,7 +57,7 @@ Deno.test("MWIDocNode - getParent / setParent", async (t) => {
 		assertEquals(pi.index, 2);
 	});
 
-	await t.step("(setParent) - Non-MWIDocNode parent is ignored", () => {
+	it("(setParent) - Non-MWIDocNode parent is ignored", () => {
 		const child = doc.createNode('h.div');
 		// Pass a plain object as parent — should be ignored
 		$c.sm(child, 'setParent', ls([, {}, , 0]));
@@ -65,7 +66,7 @@ Deno.test("MWIDocNode - getParent / setParent", async (t) => {
 		assertEquals(pi.at('index'), undefined);
 	});
 
-	await t.step(".setParent() - Non-MWIDocNode parent is ignored via JS", () => {
+	it(".setParent() - Non-MWIDocNode parent is ignored via JS", () => {
 		const child = doc.createNode('h.div');
 		child.setParent({}, 0);
 		const pi = child.getParent();
@@ -73,7 +74,7 @@ Deno.test("MWIDocNode - getParent / setParent", async (t) => {
 		assertEquals(pi.index, undefined);
 	});
 
-	await t.step("(setParent) - Negative index is stored as undefined", () => {
+	it("(setParent) - Negative index is stored as undefined", () => {
 		const parent = doc.createNode('h.div');
 		const child = doc.createNode('m.t');
 		$c.sm(child, 'setParent', ls([, parent, , -1]));
@@ -82,7 +83,7 @@ Deno.test("MWIDocNode - getParent / setParent", async (t) => {
 		assertEquals(pi.at('index'), undefined);
 	});
 
-	await t.step(".setParent() - Negative index is stored as undefined via JS", () => {
+	it(".setParent() - Negative index is stored as undefined via JS", () => {
 		const parent = doc.createNode('h.div');
 		const child = doc.createNode('m.t');
 		child.setParent(parent, -1);
@@ -91,7 +92,7 @@ Deno.test("MWIDocNode - getParent / setParent", async (t) => {
 		assertEquals(pi.index, undefined);
 	});
 
-	await t.step("(setParent) - Non-integer index is stored as undefined", () => {
+	it("(setParent) - Non-integer index is stored as undefined", () => {
 		const parent = doc.createNode('h.div');
 		const child = doc.createNode('m.t');
 		$c.sm(child, 'setParent', ls([, parent, , 'bad']));
@@ -100,7 +101,7 @@ Deno.test("MWIDocNode - getParent / setParent", async (t) => {
 		assertEquals(pi.at('index'), undefined);
 	});
 
-	await t.step(".setParent() - Non-integer index is stored as undefined via JS", () => {
+	it(".setParent() - Non-integer index is stored as undefined via JS", () => {
 		const parent = doc.createNode('h.div');
 		const child = doc.createNode('m.t');
 		child.setParent(parent, 1.5);
@@ -109,21 +110,21 @@ Deno.test("MWIDocNode - getParent / setParent", async (t) => {
 		assertEquals(pi.index, undefined);
 	});
 
-	await t.step("(setParent) - Index 0 is valid", () => {
+	it("(setParent) - Index 0 is valid", () => {
 		const parent = doc.createNode('h.div');
 		const child = doc.createNode('m.t');
 		$c.sm(child, 'setParent', ls([, parent, , 0]));
 		assertEquals($c.sm(child, 'getParent').at('index'), 0);
 	});
 
-	await t.step(".setParent() - Index 0 is valid via JS", () => {
+	it(".setParent() - Index 0 is valid via JS", () => {
 		const parent = doc.createNode('h.div');
 		const child = doc.createNode('m.t');
 		child.setParent(parent, 0);
 		assertEquals(child.getParent().index, 0);
 	});
 
-	await t.step("(setParent) - Parent can be updated", () => {
+	it("(setParent) - Parent can be updated", () => {
 		const parent1 = doc.createNode('h.div');
 		const parent2 = doc.createNode('h.section');
 		const child = doc.createNode('m.t');
@@ -134,7 +135,7 @@ Deno.test("MWIDocNode - getParent / setParent", async (t) => {
 		assertEquals($c.sm(child, 'getParent').at('index'), 3);
 	});
 
-	await t.step(".setParent() - Parent can be updated via JS", () => {
+	it(".setParent() - Parent can be updated via JS", () => {
 		const parent1 = doc.createNode('h.div');
 		const parent2 = doc.createNode('h.section');
 		const child = doc.createNode('m.t');
@@ -150,8 +151,8 @@ Deno.test("MWIDocNode - getParent / setParent", async (t) => {
 // Parent/index set automatically by append
 // ─────────────────────────────────────────────────────────────────────────────
 
-Deno.test("MWIDocNode - Parent/index set by append", async (t) => {
-	await t.step("(append) - Single child gets parent and index 0", () => {
+describe("MWIDocNode - Parent/index set by append", () => {
+	it("(append) - Single child gets parent and index 0", () => {
 		const parent = doc.createNode('h.div');
 		const child = doc.createNode('m.t');
 		child.setAttr('t', 'hello');
@@ -161,7 +162,7 @@ Deno.test("MWIDocNode - Parent/index set by append", async (t) => {
 		assertEquals(pi.at('index'), 0);
 	});
 
-	await t.step(".append() - Single child gets parent and index 0 via JS", () => {
+	it(".append() - Single child gets parent and index 0 via JS", () => {
 		const parent = doc.createNode('h.div');
 		const child = doc.createNode('m.t');
 		child.setAttr('t', 'hello');
@@ -171,7 +172,7 @@ Deno.test("MWIDocNode - Parent/index set by append", async (t) => {
 		assertEquals(pi.index, 0);
 	});
 
-	await t.step("(append) - Multiple children get sequential indexes", () => {
+	it("(append) - Multiple children get sequential indexes", () => {
 		const parent = doc.createNode('h.div');
 		const c0 = doc.createNode('m.t');
 		const c1 = doc.createNode('m.t');
@@ -185,7 +186,7 @@ Deno.test("MWIDocNode - Parent/index set by append", async (t) => {
 		assertEquals($c.sm(c2, 'getParent').at('index'), 2);
 	});
 
-	await t.step(".append() - Multiple children get sequential indexes via JS", () => {
+	it(".append() - Multiple children get sequential indexes via JS", () => {
 		const parent = doc.createNode('h.div');
 		const c0 = doc.createNode('m.t');
 		const c1 = doc.createNode('m.t');
@@ -199,7 +200,7 @@ Deno.test("MWIDocNode - Parent/index set by append", async (t) => {
 		assertEquals(c2.getParent().index, 2);
 	});
 
-	await t.step("(append) - Second append continues index from current subDoc size", () => {
+	it("(append) - Second append continues index from current subDoc size", () => {
 		const parent = doc.createNode('h.div');
 		const c0 = doc.createNode('m.t');
 		const c1 = doc.createNode('m.t');
@@ -211,7 +212,7 @@ Deno.test("MWIDocNode - Parent/index set by append", async (t) => {
 		assertEquals($c.sm(c1, 'getParent').at('index'), 1);
 	});
 
-	await t.step(".append() - Second append continues index from current subDoc size via JS", () => {
+	it(".append() - Second append continues index from current subDoc size via JS", () => {
 		const parent = doc.createNode('h.div');
 		const c0 = doc.createNode('m.t');
 		const c1 = doc.createNode('m.t');
@@ -223,7 +224,7 @@ Deno.test("MWIDocNode - Parent/index set by append", async (t) => {
 		assertEquals(c1.getParent().index, 1);
 	});
 
-	await t.step("(append) - All appended children share the same parent", () => {
+	it("(append) - All appended children share the same parent", () => {
 		const parent = doc.createNode('h.div');
 		const c0 = doc.createNode('m.t');
 		const c1 = doc.createNode('m.t');
@@ -234,7 +235,7 @@ Deno.test("MWIDocNode - Parent/index set by append", async (t) => {
 		assertStrictEquals($c.sm(c1, 'getParent').at('parent'), parent);
 	});
 
-	await t.step(".append() - All appended children share the same parent via JS", () => {
+	it(".append() - All appended children share the same parent via JS", () => {
 		const parent = doc.createNode('h.div');
 		const c0 = doc.createNode('m.t');
 		const c1 = doc.createNode('m.t');
@@ -250,8 +251,8 @@ Deno.test("MWIDocNode - Parent/index set by append", async (t) => {
 // Parent/index set automatically by setSubSpec
 // ─────────────────────────────────────────────────────────────────────────────
 
-Deno.test("MWIDocNode - Parent/index set by setSubSpec", async (t) => {
-	await t.step("(setSubSpec) - Children from spec get parent and sequential indexes", () => {
+describe("MWIDocNode - Parent/index set by setSubSpec", () => {
+	it("(setSubSpec) - Children from spec get parent and sequential indexes", () => {
 		const parent = doc.createNode('h.div');
 		const subList = ps('[([m.t t=A] [m.t t=B] [m.t t=C])]');
 		$c.sm(parent, 'setSubSpec', ls(['subSpec', subList]));
@@ -264,7 +265,7 @@ Deno.test("MWIDocNode - Parent/index set by setSubSpec", async (t) => {
 		}
 	});
 
-	await t.step(".setSubSpec() - Children from spec get parent and sequential indexes via JS", () => {
+	it(".setSubSpec() - Children from spec get parent and sequential indexes via JS", () => {
 		const parent = doc.createNode('h.div');
 		const subList = ps('[([m.t t=X] [m.t t=Y])]');
 		parent.setSubSpec({ subSpec: subList });
@@ -277,7 +278,7 @@ Deno.test("MWIDocNode - Parent/index set by setSubSpec", async (t) => {
 		}
 	});
 
-	await t.step("(setSubSpec) - Replacing spec resets children's parent/index", () => {
+	it("(setSubSpec) - Replacing spec resets children's parent/index", () => {
 		const parent = doc.createNode('h.div');
 		const subList1 = ps('[([m.t t=First])]');
 		$c.sm(parent, 'setSubSpec', ls(['subSpec', subList1]));
@@ -296,7 +297,7 @@ Deno.test("MWIDocNode - Parent/index set by setSubSpec", async (t) => {
 		assertEquals($c.sm(subDoc2.at(1), 'getParent').at('index'), 1);
 	});
 
-	await t.step(".setSubSpec() - Replacing spec resets children's parent/index via JS", () => {
+	it(".setSubSpec() - Replacing spec resets children's parent/index via JS", () => {
 		const parent = doc.createNode('h.div');
 		parent.setSubSpec({ subSpec: ps('[([m.t t=A])]') });
 		parent.setSubSpec({ subSpec: ps('[([m.t t=B] [m.t t=C])]') });
@@ -313,20 +314,20 @@ Deno.test("MWIDocNode - Parent/index set by setSubSpec", async (t) => {
 // nodePath
 // ─────────────────────────────────────────────────────────────────────────────
 
-Deno.test("MWIDocNode - nodePath", async (t) => {
-	await t.step("(nodePath) - Unparented node returns empty path", () => {
+describe("MWIDocNode - nodePath", () => {
+	it("(nodePath) - Unparented node returns empty path", () => {
 		const node = doc.createNode('h.div');
 		const path = $c.sm(node, 'nodePath');
 		assertEquals(path.size, 0);
 	});
 
-	await t.step(".nodePath() - Unparented node returns empty path via JS", () => {
+	it(".nodePath() - Unparented node returns empty path via JS", () => {
 		const node = doc.createNode('h.div');
 		const path = node.nodePath();
 		assertEquals(path.size, 0);
 	});
 
-	await t.step("(nodePath) - Node with parent but no valid index returns empty path", () => {
+	it("(nodePath) - Node with parent but no valid index returns empty path", () => {
 		const parent = doc.createNode('h.div');
 		const child = doc.createNode('m.t');
 		// Set parent but with invalid index
@@ -335,7 +336,7 @@ Deno.test("MWIDocNode - nodePath", async (t) => {
 		assertEquals(path.size, 0);
 	});
 
-	await t.step(".nodePath() - Node with parent but no valid index returns empty path via JS", () => {
+	it(".nodePath() - Node with parent but no valid index returns empty path via JS", () => {
 		const parent = doc.createNode('h.div');
 		const child = doc.createNode('m.t');
 		child.setParent(parent, -5);
@@ -343,7 +344,7 @@ Deno.test("MWIDocNode - nodePath", async (t) => {
 		assertEquals(path.size, 0);
 	});
 
-	await t.step("(nodePath) - Single-level: child at index 0 returns [0]", () => {
+	it("(nodePath) - Single-level: child at index 0 returns [0]", () => {
 		const parent = doc.createNode('h.div');
 		const child = doc.createNode('m.t');
 		child.setAttr('t', 'hello');
@@ -353,7 +354,7 @@ Deno.test("MWIDocNode - nodePath", async (t) => {
 		assertEquals(path.at(0), 0);
 	});
 
-	await t.step(".nodePath() - Single-level: child at index 0 returns [0] via JS", () => {
+	it(".nodePath() - Single-level: child at index 0 returns [0] via JS", () => {
 		const parent = doc.createNode('h.div');
 		const child = doc.createNode('m.t');
 		child.setAttr('t', 'hello');
@@ -363,7 +364,7 @@ Deno.test("MWIDocNode - nodePath", async (t) => {
 		assertEquals(path.at(0), 0);
 	});
 
-	await t.step("(nodePath) - Single-level: child at index 2 returns [2]", () => {
+	it("(nodePath) - Single-level: child at index 2 returns [2]", () => {
 		const parent = doc.createNode('h.div');
 		const c0 = doc.createNode('m.t');
 		const c1 = doc.createNode('m.t');
@@ -377,7 +378,7 @@ Deno.test("MWIDocNode - nodePath", async (t) => {
 		assertEquals(path.at(0), 2);
 	});
 
-	await t.step(".nodePath() - Single-level: child at index 2 returns [2] via JS", () => {
+	it(".nodePath() - Single-level: child at index 2 returns [2] via JS", () => {
 		const parent = doc.createNode('h.div');
 		const c0 = doc.createNode('m.t');
 		const c1 = doc.createNode('m.t');
@@ -391,7 +392,7 @@ Deno.test("MWIDocNode - nodePath", async (t) => {
 		assertEquals(path.at(0), 2);
 	});
 
-	await t.step("(nodePath) - Two-level: grandchild returns [parentIdx, childIdx]", () => {
+	it("(nodePath) - Two-level: grandchild returns [parentIdx, childIdx]", () => {
 		const grandparent = doc.createNode('h.div');
 		const parent = doc.createNode('h.section');
 		const child = doc.createNode('m.t');
@@ -405,7 +406,7 @@ Deno.test("MWIDocNode - nodePath", async (t) => {
 		assertEquals(path.at(1), 0); // child's index in parent
 	});
 
-	await t.step(".nodePath() - Two-level: grandchild returns [parentIdx, childIdx] via JS", () => {
+	it(".nodePath() - Two-level: grandchild returns [parentIdx, childIdx] via JS", () => {
 		const grandparent = doc.createNode('h.div');
 		const parent = doc.createNode('h.section');
 		const child = doc.createNode('m.t');
@@ -418,7 +419,7 @@ Deno.test("MWIDocNode - nodePath", async (t) => {
 		assertEquals(path.at(1), 0);
 	});
 
-	await t.step("(nodePath) - Two-level: non-zero indexes at both levels", () => {
+	it("(nodePath) - Two-level: non-zero indexes at both levels", () => {
 		const grandparent = doc.createNode('h.div');
 		const p0 = doc.createNode('h.section');
 		const p1 = doc.createNode('h.section');
@@ -437,7 +438,7 @@ Deno.test("MWIDocNode - nodePath", async (t) => {
 		assertEquals(path.at(1), 2); // c2's index in p1
 	});
 
-	await t.step(".nodePath() - Two-level: non-zero indexes at both levels via JS", () => {
+	it(".nodePath() - Two-level: non-zero indexes at both levels via JS", () => {
 		const grandparent = doc.createNode('h.div');
 		const p0 = doc.createNode('h.section');
 		const p1 = doc.createNode('h.section');
@@ -455,7 +456,7 @@ Deno.test("MWIDocNode - nodePath", async (t) => {
 		assertEquals(path.at(1), 2);
 	});
 
-	await t.step("(nodePath) - Three-level: path length equals depth from unparented ancestor", () => {
+	it("(nodePath) - Three-level: path length equals depth from unparented ancestor", () => {
 		// root (no parent) -> mid (index 0 in root) -> leaf (index 0 in mid)
 		// root.nodePath() = [] (no parent)
 		// mid.nodePath() = [0] (mid is at index 0 in root, root has no parent so root.nodePath()=[])
@@ -474,7 +475,7 @@ Deno.test("MWIDocNode - nodePath", async (t) => {
 		assertEquals($c.sm(leaf, 'nodePath').at(1), 0);
 	});
 
-	await t.step(".nodePath() - Three-level: path length equals depth from unparented ancestor via JS", () => {
+	it(".nodePath() - Three-level: path length equals depth from unparented ancestor via JS", () => {
 		const root = doc.createNode('h.div');
 		const mid = doc.createNode('h.section');
 		const leaf = doc.createNode('m.t');
@@ -489,7 +490,7 @@ Deno.test("MWIDocNode - nodePath", async (t) => {
 		assertEquals(leaf.nodePath().at(1), 0);
 	});
 
-	await t.step("(nodePath) - Sibling nodes have different paths", () => {
+	it("(nodePath) - Sibling nodes have different paths", () => {
 		const parent = doc.createNode('h.div');
 		const c0 = doc.createNode('m.t');
 		const c1 = doc.createNode('m.t');
@@ -504,7 +505,7 @@ Deno.test("MWIDocNode - nodePath", async (t) => {
 		assertEquals(path1.at(0), 1);
 	});
 
-	await t.step(".nodePath() - Sibling nodes have different paths via JS", () => {
+	it(".nodePath() - Sibling nodes have different paths via JS", () => {
 		const parent = doc.createNode('h.div');
 		const c0 = doc.createNode('m.t');
 		const c1 = doc.createNode('m.t');
@@ -524,8 +525,8 @@ Deno.test("MWIDocNode - nodePath", async (t) => {
 // setNodesParent helper (via JS prototype)
 // ─────────────────────────────────────────────────────────────────────────────
 
-Deno.test("MWIDocNode - setNodesParent helper", async (t) => {
-	await t.step(".setNodesParent() - Sets parent and sequential indexes starting at offset 0", () => {
+describe("MWIDocNode - setNodesParent helper", () => {
+	it(".setNodesParent() - Sets parent and sequential indexes starting at offset 0", () => {
 		const parent = doc.createNode('h.div');
 		const c0 = doc.createNode('m.t');
 		const c1 = doc.createNode('m.t');
@@ -543,7 +544,7 @@ Deno.test("MWIDocNode - setNodesParent helper", async (t) => {
 		assertEquals(c2.getParent().index, 2);
 	});
 
-	await t.step(".setNodesParent() - Offset shifts starting index", () => {
+	it(".setNodesParent() - Offset shifts starting index", () => {
 		const parent = doc.createNode('h.div');
 		const c0 = doc.createNode('m.t');
 		const c1 = doc.createNode('m.t');
@@ -554,13 +555,13 @@ Deno.test("MWIDocNode - setNodesParent helper", async (t) => {
 		assertEquals(c1.getParent().index, 6);
 	});
 
-	await t.step(".setNodesParent() - Empty array is a no-op", () => {
+	it(".setNodesParent() - Empty array is a no-op", () => {
 		const parent = doc.createNode('h.div');
 		// Should not throw
 		MWIDocNode.setNodesParent([], parent, 0);
 	});
 
-	await t.step(".setNodesParent() - Default offset is 0", () => {
+	it(".setNodesParent() - Default offset is 0", () => {
 		const parent = doc.createNode('h.div');
 		const c0 = doc.createNode('m.t');
 		c0.setAttr('t', 'test');
@@ -573,34 +574,34 @@ Deno.test("MWIDocNode - setNodesParent helper", async (t) => {
 // Reactive behavior of parent/index
 // ─────────────────────────────────────────────────────────────────────────────
 
-Deno.test("MWIDocNode - Reactive parent/index", async (t) => {
-	await t.step("(nodePath) - Returns a NANOS instance", () => {
+describe("MWIDocNode - Reactive parent/index", () => {
+	it("(nodePath) - Returns a NANOS instance", () => {
 		const node = doc.createNode('h.div');
 		const path = $c.sm(node, 'nodePath');
 		assert(path instanceof NANOS, 'nodePath should return a NANOS');
 	});
 
-	await t.step(".nodePath() - Returns a NANOS instance via JS", () => {
+	it(".nodePath() - Returns a NANOS instance via JS", () => {
 		const node = doc.createNode('h.div');
 		const path = node.nodePath();
 		assert(path instanceof NANOS, 'nodePath should return a NANOS');
 	});
 
-	await t.step("(nodePath) - Same NANOS instance returned on repeated calls", () => {
+	it("(nodePath) - Same NANOS instance returned on repeated calls", () => {
 		const node = doc.createNode('h.div');
 		const path1 = $c.sm(node, 'nodePath');
 		const path2 = $c.sm(node, 'nodePath');
 		assertStrictEquals(path1, path2);
 	});
 
-	await t.step(".nodePath() - Same NANOS instance returned on repeated calls via JS", () => {
+	it(".nodePath() - Same NANOS instance returned on repeated calls via JS", () => {
 		const node = doc.createNode('h.div');
 		const path1 = node.nodePath();
 		const path2 = node.nodePath();
 		assertStrictEquals(path1, path2);
 	});
 
-	await t.step("(nodePath) - Path updates when parent is set", () => {
+	it("(nodePath) - Path updates when parent is set", () => {
 		const parent = doc.createNode('h.div');
 		const child = doc.createNode('m.t');
 		child.setAttr('t', 'reactive');
@@ -614,7 +615,7 @@ Deno.test("MWIDocNode - Reactive parent/index", async (t) => {
 		assertEquals(path.at(0), 0);
 	});
 
-	await t.step(".nodePath() - Path updates when parent is set via JS", () => {
+	it(".nodePath() - Path updates when parent is set via JS", () => {
 		const parent = doc.createNode('h.div');
 		const child = doc.createNode('m.t');
 		child.setAttr('t', 'reactive');
@@ -627,7 +628,7 @@ Deno.test("MWIDocNode - Reactive parent/index", async (t) => {
 		assertEquals(path.at(0), 0);
 	});
 
-	await t.step("(nodePath) - Path updates when index changes via setParent", () => {
+	it("(nodePath) - Path updates when index changes via setParent", () => {
 		const parent = doc.createNode('h.div');
 		const child = doc.createNode('m.t');
 		child.setAttr('t', 'test');
@@ -641,7 +642,7 @@ Deno.test("MWIDocNode - Reactive parent/index", async (t) => {
 		assertEquals(path.at(0), 7);
 	});
 
-	await t.step(".nodePath() - Path updates when index changes via setParent via JS", () => {
+	it(".nodePath() - Path updates when index changes via setParent via JS", () => {
 		const parent = doc.createNode('h.div');
 		const child = doc.createNode('m.t');
 		child.setAttr('t', 'test');
@@ -654,7 +655,7 @@ Deno.test("MWIDocNode - Reactive parent/index", async (t) => {
 		assertEquals(path.at(0), 4);
 	});
 
-	await t.step("Parent linkage - Template subDoc children have template as parent", () => {
+	it("Parent linkage - Template subDoc children have template as parent", () => {
 		const registry = getInstance('MWIRegistry');
 		registry.register('test.tpl.parent', ps("[(tpl=[[h.div 'inside-tpl']])]"));
 		const tplNode = doc.createNode('test.tpl.parent');
@@ -664,7 +665,7 @@ Deno.test("MWIDocNode - Reactive parent/index", async (t) => {
 		assertEquals(subDoc.at(0).getParent().index, 0);
 	});
 
-	await t.step("Parent linkage - Slotted content children have slot as parent", () => {
+	it("Parent linkage - Slotted content children have slot as parent", () => {
 		const registry = getInstance('MWIRegistry');
 		registry.register('test.tpl.slotParent', ps("[(tpl=[[h.div [m.slot]]])]"));
 		const tplNode = doc.createNode('test.tpl.slotParent');
