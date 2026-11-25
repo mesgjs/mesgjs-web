@@ -20,7 +20,7 @@ const ls = globalThis.ls;
 const ps = globalThis.ps;
 
 describe("m.rns attribute - MWICoreSlot (m.slot)", () => {
-	it("(hasAttr m.rns) - Not set when no slotSrc", async () => {
+	it("(hasAttr m.rns) - Not set when no slotSrc", () => {
 		const slotNode = $c.sm(doc, 'createNode', ls([, 'm.slot']));
 		$c.sm(slotNode, 'setSubSpec', ls([, 'Default content']));
 		$c.sm(slotNode, 'getHTML');
@@ -28,7 +28,7 @@ describe("m.rns attribute - MWICoreSlot (m.slot)", () => {
 		assertEquals($c.sm(slotNode, 'hasAttr', ls([, 'm.rns'])), false);
 	});
 
-	it(".hasAttr('m.rns') - Not set when no slotSrc via JS", async () => {
+	it(".hasAttr('m.rns') - Not set when no slotSrc via JS", () => {
 		const slotNode = doc.createNode('m.slot');
 		slotNode.setSubSpec('Default content');
 		slotNode.getHTML();
@@ -51,7 +51,7 @@ describe("m.rns attribute - MWICoreSlot (m.slot)", () => {
 		assertEquals(slotNode.hasAttr('m.rns'), false, 'm.rns should not be set when rendering natural children');
 	});
 
-	it("(getAttr m.rns) - Set to rendered sub-spec when rendering from slotSrc natural children", async () => {
+	it("(getAttr m.rns) - Set to rendered sub-spec when rendering from slotSrc natural children", () => {
 		const divNode = $c.sm(doc, 'createNode', ls([, 'h.div']));
 		$c.sm(divNode, 'setSubSpec', ls([, 'Source content']));
 		const slotNode = $c.sm(doc, 'createNode', ls([, 'm.slot', 'slotSrc', divNode]));
@@ -63,7 +63,7 @@ describe("m.rns attribute - MWICoreSlot (m.slot)", () => {
 		assertEquals(rns.at(0), 'Source content', 'rendered child should be simplified text spec from slotSrc');
 	});
 
-	it(".getAttr('m.rns') - Set to rendered sub-spec when rendering from slotSrc natural children via JS", async () => {
+	it(".getAttr('m.rns') - Set to rendered sub-spec when rendering from slotSrc natural children via JS", () => {
 		const divNode = doc.createNode('h.div');
 		divNode.setSubSpec('Source JS');
 		const slotNode = doc.createNode('m.slot', { slotSrc: divNode });
@@ -147,7 +147,7 @@ describe("m.rns attribute - MWICoreSlot (m.slot)", () => {
 		assertEquals(rns.at(2), 'C');
 	});
 
-	it("(getSpec) - m.rns appears in slot node spec after rendering alternate children", async () => {
+	it("(getSpec) - m.rns appears in slot node spec after rendering alternate children", () => {
 		const divNode = $c.sm(doc, 'createNode', ls([, 'h.div']));
 		$c.sm(divNode, 'setSubSpec', ls([, 'Slotted text']));
 		const slotNode = $c.sm(doc, 'createNode', ls([, 'm.slot', 'slotSrc', divNode]));

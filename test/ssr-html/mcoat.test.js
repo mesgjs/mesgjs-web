@@ -49,47 +49,47 @@ UOE: value is unset or the empty string`);
 describe("m.coat - Input Unset Cases", () => {
 	// SET: F, SNE: F, UNS: T, UOE: T
 
-	it("m.coat=[out=<in>] - unset input", async () => {
+	it("m.coat=[out=<in>] - unset input", () => {
 		const html = renderHTML(ps('[([h.div m.coat=[out=<in>]])]'));
 		assertEquals(html, '<div out></div>');
 	});
 
-	it("m.coat=[out=<in?a>] - unset input, SET test", async () => {
+	it("m.coat=[out=<in?a>] - unset input, SET test", () => {
 		const html = renderHTML(ps('[([h.div m.coat=[out=<in?a>]])]'));
 		assertEquals(html, '<div out></div>');
 	});
 
-	it("m.coat=[out=<in??a>] - unset input, SNE test", async () => {
+	it("m.coat=[out=<in??a>] - unset input, SNE test", () => {
 		const html = renderHTML(ps('[([h.div m.coat=[out=<in??a>]])]'));
 		assertEquals(html, '<div out></div>');
 	});
 
-	it("m.coat=[out=<in|a>] - unset input, UNS test", async () => {
+	it("m.coat=[out=<in|a>] - unset input, UNS test", () => {
 		const html = renderHTML(ps('[([h.div m.coat=[out=<in|a>]])]'));
 		assertEquals(html, '<div out="a"></div>');
 	});
 
-	it("m.coat=[out=<in||a>] - unset input, UOE test", async () => {
+	it("m.coat=[out=<in||a>] - unset input, UOE test", () => {
 		const html = renderHTML(ps('[([h.div m.coat=[out=<in||a>]])]'));
 		assertEquals(html, '<div out="a"></div>');
 	});
 
-	it("m.coat=[out=<in?a|b>] - unset input, SET test with toggles", async () => {
+	it("m.coat=[out=<in?a|b>] - unset input, SET test with toggles", () => {
 		const html = renderHTML(ps('[([h.div m.coat=[out=<in?a|b>]])]'));
 		assertEquals(html, '<div out="b"></div>');
 	});
 
-	it("m.coat=[out=<in??a||b>] - unset input, SNE test with toggles", async () => {
+	it("m.coat=[out=<in??a||b>] - unset input, SNE test with toggles", () => {
 		const html = renderHTML(ps('[([h.div m.coat=[out=<in??a||b>]])]'));
 		assertEquals(html, '<div out="b"></div>');
 	});
 
-	it("m.coat=[out=<in?a|b|c|d>] - unset input, SET test with multiple toggles", async () => {
+	it("m.coat=[out=<in?a|b|c|d>] - unset input, SET test with multiple toggles", () => {
 		const html = renderHTML(ps('[([h.div m.coat=[out=<in?a|b|c|d>]])]'));
 		assertEquals(html, '<div out="bd"></div>');
 	});
 
-	it("m.coat=[out=<in??a|b|c|d>] - unset input, SNE test with multiple toggles", async () => {
+	it("m.coat=[out=<in??a|b|c|d>] - unset input, SNE test with multiple toggles", () => {
 		const html = renderHTML(ps('[([h.div m.coat=[out=<in??a|b|c|d>]])]'));
 		assertEquals(html, '<div out="bd"></div>');
 	});
@@ -98,108 +98,108 @@ describe("m.coat - Input Unset Cases", () => {
 describe("m.coat - Input Empty String Cases", () => {
 	// SET: T, SNE: F, UNS: F, UOE: T
 
-	it("m.coat=[out=<in>] in='' - empty input", async () => {
+	it("m.coat=[out=<in>] in='' - empty input", () => {
 		const html = renderHTML(ps('[([src in="" [h.div m.coat=[out=<in>]]])]'));
 		assertEquals(html, '<div out></div>');
 	});
 
-	it("m.coat=[out=<in?a>] in='' - empty input, SET test", async () => {
+	it("m.coat=[out=<in?a>] in='' - empty input, SET test", () => {
 		const html = renderHTML(ps('[([src in="" [h.div m.coat=[out=<in?a>]]])]'));
 		assertEquals(html, '<div out="a"></div>');
 	});
 
-	it("m.coat=[out=<in??a>] in='' - empty input, SNE test", async () => {
+	it("m.coat=[out=<in??a>] in='' - empty input, SNE test", () => {
 		const html = renderHTML(ps('[([src in="" [h.div m.coat=[out=<in??a>]]])]'));
 		assertEquals(html, '<div out></div>');
 	});
 
-	it("m.coat=[out=<in|a>] in='' - empty input, UNS test", async () => {
+	it("m.coat=[out=<in|a>] in='' - empty input, UNS test", () => {
 		const html = renderHTML(ps('[([src in="" [h.div m.coat=[out=<in|a>]]])]'));
 		assertEquals(html, '<div out></div>');
 	});
 
-	it("m.coat=[out=<in||a>] in='' - empty input, UOE test", async () => {
+	it("m.coat=[out=<in||a>] in='' - empty input, UOE test", () => {
 		const html = renderHTML(ps('[([src in="" [h.div m.coat=[out=<in||a>]]])]'));
 		assertEquals(html, '<div out="a"></div>');
 	});
 
-	it("m.coat=[out=<in?a|b>] in='' - empty input, SET with toggles", async () => {
+	it("m.coat=[out=<in?a|b>] in='' - empty input, SET with toggles", () => {
 		const html = renderHTML(ps('[([src in="" [h.div m.coat=[out=<in?a|b>]]])]'));
 		assertEquals(html, '<div out="a"></div>');
 	});
 
-	it("m.coat=[out=<in??a||b>] in='' - empty input, SNE with toggles", async () => {
+	it("m.coat=[out=<in??a||b>] in='' - empty input, SNE with toggles", () => {
 		const html = renderHTML(ps('[([src in="" [h.div m.coat=[out=<in??a||b>]]])]'));
 		assertEquals(html, '<div out="b"></div>');
 	});
 
-	it("m.coat=[out=<in?a|b|c|d>] in='' - empty input, SET with multiple toggles", async () => {
+	it("m.coat=[out=<in?a|b|c|d>] in='' - empty input, SET with multiple toggles", () => {
 		const html = renderHTML(ps('[([src in="" [h.div m.coat=[out=<in?a|b|c|d>]]])]'));
 		assertEquals(html, '<div out="ac"></div>');
 	});
 
-	it("m.coat=[out=<in??a|b|c|d>] in='' - empty input, SNE with multiple toggles", async () => {
+	it("m.coat=[out=<in??a|b|c|d>] in='' - empty input, SNE with multiple toggles", () => {
 		const html = renderHTML(ps('[([src in="" [h.div m.coat=[out=<in??a|b|c|d>]]])]'));
 		assertEquals(html, '<div out="bd"></div>');
 	});
 });
 
 describe("m.coat - Input Non-Empty String Cases", () => {
-	it("m.coat=[out=<in>] in=value - non-empty input", async () => {
+	it("m.coat=[out=<in>] in=value - non-empty input", () => {
 		const html = renderHTML(ps('[([src in=value [h.div m.coat=[out=<in>]]])]'));
 		assertEquals(html, '<div out="value"></div>', 'Should render input value');
 	});
 
-	it("m.coat=[out=<in?a>] in=value - non-empty input, SET test", async () => {
+	it("m.coat=[out=<in?a>] in=value - non-empty input, SET test", () => {
 		const html = renderHTML(ps('[([src in=value [h.div m.coat=[out=<in?a>]]])]'));
 		assertEquals(html, '<div out="a"></div>', 'Should use "a" (in is SET and SNE)');
 	});
 
-	it("m.coat=[out=<in??a>] in=value - non-empty input, SNE test", async () => {
+	it("m.coat=[out=<in??a>] in=value - non-empty input, SNE test", () => {
 		const html = renderHTML(ps('[([src in=value [h.div m.coat=[out=<in??a>]]])]'));
 		assertEquals(html, '<div out="a"></div>', 'Should use "a" (in is SNE)');
 	});
 
-	it("m.coat=[out=<in|a>] in=value - non-empty input, UNS fallback", async () => {
+	it("m.coat=[out=<in|a>] in=value - non-empty input, UNS fallback", () => {
 		const html = renderHTML(ps('[([src in=value [h.div m.coat=[out=<in|a>]]])]'));
 		assertEquals(html, '<div out="value"></div>', 'Should copy in value (in is SET and SNE)');
 	});
 
-	it("m.coat=[out=<in||a>] in=value - non-empty input, UOE fallback", async () => {
+	it("m.coat=[out=<in||a>] in=value - non-empty input, UOE fallback", () => {
 		const html = renderHTML(ps('[([src in=value [h.div m.coat=[out=<in||a>]]])]'));
 		assertEquals(html, '<div out="value"></div>', 'Should copy in value (in is not UOE)');
 	});
 
-	it("m.coat=[out=<in?a|b>] in=value - non-empty input, SET with toggles", async () => {
+	it("m.coat=[out=<in?a|b>] in=value - non-empty input, SET with toggles", () => {
 		const html = renderHTML(ps('[([src in=value [h.div m.coat=[out=<in?a|b>]]])]'));
 		assertEquals(html, '<div out="a"></div>', 'Should use then "a" (in is SET and SNE)');
 	});
 
-	it("m.coat=[out=<in??a||b>] in=value - non-empty input, SNE with toggles", async () => {
+	it("m.coat=[out=<in??a||b>] in=value - non-empty input, SNE with toggles", () => {
 		const html = renderHTML(ps('[([src in=value [h.div m.coat=[out=<in??a||b>]]])]'));
 		assertEquals(html, '<div out="a"></div>', 'Should use then "a" (in is SNE)');
 	});
 
-	it("m.coat=[out=<in?a|b|c|d>] in=value - non-empty input, SET with multiple toggles", async () => {
+	it("m.coat=[out=<in?a|b|c|d>] in=value - non-empty input, SET with multiple toggles", () => {
 		const html = renderHTML(ps('[([src in=value [h.div m.coat=[out=<in?a|b|c|d>]]])]'));
 		assertEquals(html, '<div out="ac"></div>', 'Should use then "a" (in is SET and SNE)');
 	});
 
-	it("m.coat=[out=<in??a|b|c|d>] in=value - non-empty input, SNE with multiple toggles", async () => {
+	it("m.coat=[out=<in??a|b|c|d>] in=value - non-empty input, SNE with multiple toggles", () => {
 		const html = renderHTML(ps('[([src in=value [h.div m.coat=[out=<in??a|b|c|d>]]])]'));
 		assertEquals(html, '<div out="ac"></div>', 'Should use then "a" (in is SNE)');
 	});
 });
 
 describe("m.coat - Multiple Attributes", () => {
-	it("Multiple m.coat attributes with different expressions", async () => {
+	it("Multiple m.coat attributes with different expressions", () => {
 		const html = renderHTML(ps('[([src in1=x in2="" [h.div m.coat=[out1=<in1> out2=<in2??default> out3=<in3||fallback>]]])]'));
 		assert(html.includes('out1="x"'));
 		assert(html.includes('out2'));
 		assert(html.includes('out3="fallback"'));
 	});
 
-	it("m.coat with regular attributes", async () => {
+	it("m.coat with regular attributes", () => {
 		const html = renderHTML(ps('[([src in=val [h.div class=test m.coat=[out=<in>] id=myid]])]'));
 		assert(html.includes('class="test"'), 'Should preserve regular attributes');
 		assert(html.includes('out="val"'), 'Should render m.coat attribute');
@@ -208,37 +208,37 @@ describe("m.coat - Multiple Attributes", () => {
 });
 
 describe("m.coat - Edge Cases", () => {
-	it("m.coat with numeric input", async () => {
+	it("m.coat with numeric input", () => {
 		const html = renderHTML(ps('[([src in=42 [h.div m.coat=[out=<in>]]])]'));
 		assertEquals(html, '<div out="42"></div>', 'Should render numeric value as string');
 	});
 
-	it("m.coat with zero input, SET test", async () => {
+	it("m.coat with zero input, SET test", () => {
 		const html = renderHTML(ps('[([src in=0 [h.div m.coat=[out=<in?zeroisset>]]])]'));
 		assertEquals(html, '<div out="zeroisset"></div>');
 	});
 
-	it("m.coat with zero input, SNE test", async () => {
+	it("m.coat with zero input, SNE test", () => {
 		const html = renderHTML(ps('[([src in=0 [h.div m.coat=[out=<in??zeroisset>]]])]'));
 		assertEquals(html, '<div out="zeroisset"></div>');
 	});
 
-	it("m.coat with boolean true input, SET with toggles", async () => {
+	it("m.coat with boolean true input, SET with toggles", () => {
 		const html = renderHTML(ps('[([src in=@t [h.div m.coat=[out=<in?yes|no>]]])]'));
 		assertEquals(html, '<div out="yes"></div>', 'Should use then "yes" (true is SET and SNE)');
 	});
 
-	it("m.coat with boolean false input, SET with toggles", async () => {
+	it("m.coat with boolean false input, SET with toggles", () => {
 		const html = renderHTML(ps('[([src in=@f [h.div m.coat=[out=<in?yes|no>]]])]'));
 		assertEquals(html, '<div out="no"></div>', 'Should use else "no" (false is SET but empty, no copy)');
 	});
 
-	it("m.coat with special characters in values", async () => {
+	it("m.coat with special characters in values", () => {
 		const html = renderHTML(ps('[([src in="<>&\\"" [h.div m.coat=[out=<in>]]])]'));
 		assert(html.includes('out="&lt;&gt;&amp;&quot;"'), 'Should escape special characters');
 	});
 
-	it("m.coat with nested element", async () => {
+	it("m.coat with nested element", () => {
 		const html = renderHTML(ps('[([src in=outer [h.div m.coat=[out=<in>] [src in=inner [h.span m.coat=[out=<in>]]]]]])]'));
 		assert(html.includes('<div out="outer">'), 'Should render outer m.coat');
 		assert(html.includes('<span out="inner">'), 'Should render nested m.coat');
@@ -246,14 +246,14 @@ describe("m.coat - Edge Cases", () => {
 });
 
 describe("m.coat - Complex Expression Chains", () => {
-	it("Multiple outputs from same input", async () => {
+	it("Multiple outputs from same input", () => {
 		const html = renderHTML(ps('[([src in=shared [h.div m.coat=[out1=<in?yes> out2=<in|default> out3=<in>]]])]'));
 		assert(html.includes('out1="yes"'));
 		assert(html.includes('out2="shared"'));
 		assert(html.includes('out3="shared"'));
 	});
 
-	it("Different inputs for different outputs", async () => {
+	it("Different inputs for different outputs", () => {
 		const html = renderHTML(ps('[([src in1=a in2="" [h.div m.coat=[out1=<in1> out2=<in2||default>]]])]'));
 		assert(html.includes('out1="a"'));
 		assert(html.includes('out2="default'));
@@ -263,7 +263,7 @@ describe("m.coat - Complex Expression Chains", () => {
 describe("m.coat - Special Return Values (.f, .t, .u, .un)", () => {
 	const doc = getInstance('MWIDocument');
 
-	it("m.coat=[out=<.f>] - returns false (attribute stored as false, suppressed in HTML)", async () => {
+	it("m.coat=[out=<.f>] - returns false (attribute stored as false, suppressed in HTML)", () => {
 		const node = doc.createNode('h.div');
 		node.setAttr('id', 'coat-false-test');
 		node.setAttr('m.coat', ps('[(out=<.f>)]'));
@@ -274,7 +274,7 @@ describe("m.coat - Special Return Values (.f, .t, .u, .un)", () => {
 		assertEquals(node.getAttr('out'), false, 'Attribute should store false');
 	});
 
-	it("m.coat=[out=<.t>] - returns true (stored as true, boolean attribute in HTML)", async () => {
+	it("m.coat=[out=<.t>] - returns true (stored as true, boolean attribute in HTML)", () => {
 		const node = doc.createNode('h.div');
 		node.setAttr('m.coat', ps('[(out=<.t>)]'));
 		const html = node.getHTML();
@@ -284,7 +284,7 @@ describe("m.coat - Special Return Values (.f, .t, .u, .un)", () => {
 		assertEquals(node.getAttr('out'), true, 'Attribute should store true');
 	});
 
-	it("m.coat=[out=<.u>] - returns undefined (attribute suppressed)", async () => {
+	it("m.coat=[out=<.u>] - returns undefined (attribute suppressed)", () => {
 		const node = doc.createNode('h.div');
 		node.setAttr('m.coat', ps('[(out=<.u>)]'));
 		const html = node.getHTML();
@@ -293,7 +293,7 @@ describe("m.coat - Special Return Values (.f, .t, .u, .un)", () => {
 		assertEquals(node.getAttr('out'), undefined, 'Attribute should store undefined');
 	});
 
-	it("m.coat=[out=<.un>] - returns undefined via .un alias (attribute suppressed)", async () => {
+	it("m.coat=[out=<.un>] - returns undefined via .un alias (attribute suppressed)", () => {
 		const node = doc.createNode('h.div');
 		node.setAttr('m.coat', ps('[(out=<.un>)]'));
 		const html = node.getHTML();
@@ -302,7 +302,7 @@ describe("m.coat - Special Return Values (.f, .t, .u, .un)", () => {
 		assertEquals(node.getAttr('out'), undefined, 'Attribute should store undefined via .un alias');
 	});
 
-	it("m.coat - multiple attributes: .t for one, .f for another, .u for another", async () => {
+	it("m.coat - multiple attributes: .t for one, .f for another, .u for another", () => {
 		const html = renderHTML(ps('[([h.div m.coat=[enabled=<.t> disabled=<.f> custom=<.u>]])]'));
 		// 'enabled' → true → boolean attribute
 		// 'disabled' → false → no attribute
@@ -312,7 +312,7 @@ describe("m.coat - Special Return Values (.f, .t, .u, .un)", () => {
 		assert(!html.includes('custom'), 'undefined does not render');
 	});
 
-	it("m.coat=[disabled=<controller?<.t>|<.f>>] - derive boolean from slot source attribute", async () => {
+	it("m.coat=[disabled=<controller?<.t>|<.f>>] - derive boolean from slot source attribute", () => {
 		// When controller is set (truthy), disabled = true (boolean attribute);
 		// when controller is not set, disabled = false (not rendered)
 		const nodeOn = doc.createNode('h.div');
@@ -340,30 +340,30 @@ describe("m.coat - MWIData Global Store Access (<d:name>)", () => {
 		globalThis.$gss.set('MWIData', mwiData);
 	});
 
-	it("m.coat=[out=<d:key>] - reads from MWIData store", async () => {
+	it("m.coat=[out=<d:key>] - reads from MWIData store", () => {
 		mwiData.set('theme', 'dark');
 		const html = renderHTML(ps('[([h.div m.coat=[data-theme=<d:theme>]])]'));
 		assertEquals(html, '<div data-theme="dark"></div>');
 	});
 
-	it("m.coat=[out=<d:missing>] - missing MWIData key returns empty string", async () => {
+	it("m.coat=[out=<d:missing>] - missing MWIData key returns empty string", () => {
 		// 'missing' key is not set
 		const html = renderHTML(ps('[([h.div m.coat=[out=<d:missing>]])]'));
 		assertEquals(html, '<div out></div>');
 	});
 
-	it("m.coat=[out=<d:key|fallback>] - UNS fallback for missing MWIData key", async () => {
+	it("m.coat=[out=<d:key|fallback>] - UNS fallback for missing MWIData key", () => {
 		const html = renderHTML(ps('[([h.div m.coat=[out=<d:notset|fallback>]])]'));
 		assertEquals(html, '<div out="fallback"></div>');
 	});
 
-	it("m.coat=[out=<d:key?set>] - SET test for existing MWIData key", async () => {
+	it("m.coat=[out=<d:key?set>] - SET test for existing MWIData key", () => {
 		mwiData.set('mode', 'active');
 		const html = renderHTML(ps('[([h.div m.coat=[out=<d:mode?isSet>]])]'));
 		assertEquals(html, '<div out="isSet"></div>');
 	});
 
-	it("m.coat with multiple <d:...> references", async () => {
+	it("m.coat with multiple <d:...> references", () => {
 		mwiData.set('lang', 'en');
 		mwiData.set('dir', 'ltr');
 		const html = renderHTML(ps('[([h.div m.coat=[lang=<d:lang> dir=<d:dir>]])]'));
@@ -378,37 +378,37 @@ describe("m.coat - MWIData Global Store Access (<d:name>)", () => {
 });
 
 describe("m.coat - Ancestral Lookups (<a:name>, <A:name>)", () => {
-	it("m.coat=[out=<a:attr>] - inherits attribute strictly from ancestor", async () => {
+	it("m.coat=[out=<a:attr>] - inherits attribute strictly from ancestor", () => {
 		const html = renderHTML(ps('[([h.div theme="dark" [h.span m.coat=[data-theme=<a:theme>]]])]'));
 		assertEquals(html, '<div theme="dark"><span data-theme="dark"></span></div>');
 	});
 
-	it("m.coat=[out=<a:attr>] - ignores child's own attribute", async () => {
+	it("m.coat=[out=<a:attr>] - ignores child's own attribute", () => {
 		const html = renderHTML(ps('[([h.div theme="parent-val" [h.span theme="child-val" m.coat=[data-theme=<a:theme>]]])]'));
 		assertEquals(html, '<div theme="parent-val"><span theme="child-val" data-theme="parent-val"></span></div>');
 	});
 
-	it("m.coat=[out=<a:attr|fallback>] - fallback when ancestor does not define attribute", async () => {
+	it("m.coat=[out=<a:attr|fallback>] - fallback when ancestor does not define attribute", () => {
 		const html = renderHTML(ps('[([h.div [h.span m.coat=[data-theme=<a:theme|light>]]])]'));
 		assertEquals(html, '<div><span data-theme="light"></span></div>');
 	});
 
-	it("m.coat=[out=<A:attr>] - uses local attribute when present", async () => {
+	it("m.coat=[out=<A:attr>] - uses local attribute when present", () => {
 		const html = renderHTML(ps('[([h.div theme="parent-val" [h.span theme="child-val" m.coat=[data-theme=<A:theme>]]])]'));
 		assertEquals(html, '<div theme="parent-val"><span theme="child-val" data-theme="child-val"></span></div>');
 	});
 
-	it("m.coat=[out=<A:attr>] - falls back to ancestor when local attribute unset", async () => {
+	it("m.coat=[out=<A:attr>] - falls back to ancestor when local attribute unset", () => {
 		const html = renderHTML(ps('[([h.div theme="parent-val" [h.span m.coat=[data-theme=<A:theme>]]])]'));
 		assertEquals(html, '<div theme="parent-val"><span data-theme="parent-val"></span></div>');
 	});
 
-	it("m.coat=[out=<A:attr|fallback>] - falls back to fallback when neither local nor ancestor is set", async () => {
+	it("m.coat=[out=<A:attr|fallback>] - falls back to fallback when neither local nor ancestor is set", () => {
 		const html = renderHTML(ps('[([h.div [h.span m.coat=[data-theme=<A:theme|default-theme>]]])]'));
 		assertEquals(html, '<div><span data-theme="default-theme"></span></div>');
 	});
 
-	it("Multi-level scoped accordion hierarchy: navDet.name with <a:navDet.name>-lvl and <A:navDet.name>", async () => {
+	it("Multi-level scoped accordion hierarchy: navDet.name with <a:navDet.name>-lvl and <A:navDet.name>", () => {
 		// Root nav sets navDet.name="_M_navDet"
 		// Level 1 sets navDet.name="<a:navDet.name>-lvl" and name="<A:navDet.name>"
 		// Level 2 sets navDet.name="<a:navDet.name>-lvl" and name="<A:navDet.name>"
@@ -432,7 +432,7 @@ describe("m.coat - Ancestral Lookups (<a:name>, <A:name>)", () => {
 		assert(html.includes('<details name="_M_navDet-lvl-lvl-lvl">'), 'Level 3 details has _M_navDet-lvl-lvl-lvl');
 	});
 
-	it("Multi-level scoped accordion hierarchy with custom root name", async () => {
+	it("Multi-level scoped accordion hierarchy with custom root name", () => {
 		const spec = ps(`[(
 			[m.src name="siteNav"
 				[h.nav m.coat=[navDet.name=<name|_M_navDet>]
@@ -452,7 +452,7 @@ describe("m.coat - Ancestral Lookups (<a:name>, <A:name>)", () => {
 });
 
 describe("m.slat - Domain-Qualified Lookups (a:, A:, d:)", () => {
-	it("m.slat with d: prefix passes MWIData to element", async () => {
+	it("m.slat with d: prefix passes MWIData to element", () => {
 		const MWIDocument = getInterface('MWIDocument').proto;
 		const mwiData = MWIDocument.rxNANOS();
 		globalThis.$gss.set('MWIData', mwiData);
@@ -464,7 +464,7 @@ describe("m.slat - Domain-Qualified Lookups (a:, A:, d:)", () => {
 		globalThis.$gss.delete('MWIData');
 	});
 
-	it("m.slat with a: prefix passes ancestor attribute to element", async () => {
+	it("m.slat with a: prefix passes ancestor attribute to element", () => {
 		const html = renderHTML(ps(`[(
 			[h.div data.level=top
 				[h.div data.level=ignored-by-a m.slat=[data-level=[a:data.level]]]
@@ -473,7 +473,7 @@ describe("m.slat - Domain-Qualified Lookups (a:, A:, d:)", () => {
 		assert(html.includes('data-level="top"'));
 	});
 
-	it("m.slat with A: prefix passes local or ancestral attribute to element", async () => {
+	it("m.slat with A: prefix passes local or ancestral attribute to element", () => {
 		const html = renderHTML(ps(`[(
 			[h.div data.level=top
 				[h.div data.level=local-variant m.slat=[data-level=[A:data.level]]]

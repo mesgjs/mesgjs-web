@@ -1,10 +1,11 @@
 // CSR-DOM tests for m.script and m.style (MWIAggrScript interface)
 
+import { describe, it } from '@compat/test';
 import {
 	assert,
 	assertEquals,
 	assertStrictEquals,
-} from "https://deno.land/std@0.152.0/testing/asserts.ts";
+} from '@std/assert';
 
 import { setupRuntime, simulateBrowser } from '../harness.esm.js';
 
@@ -18,15 +19,15 @@ await setupRuntime({
 });
 
 const { fwait, getInstance } = globalThis.$c;
-const { ls, ps } = globalThis;
+const { ls, ps, reactive } = globalThis;
 
 await fwait('MWIDocument', 'mwi.comp.MWIAggrScript');
 
 // Set up browser-like environment for DOM testing
 await simulateBrowser();
 
-Deno.test('MWIAggrScript (m.script) - CSR-DOM to mode', async (t) => {
-	await t.step('(getDOM) - to mode with inline script returns empty DOM', async () => {
+describe('MWIAggrScript (m.script) - CSR-DOM to mode', () => {
+	it('(getDOM) - to mode with inline script returns empty DOM', () => {
 		const doc = getInstance('MWIDocument');
 		const scriptNode = $c.sm(doc, 'createNode', ls([, 'm.script']));
 		$c.sm(scriptNode, 'setAttr', ['m.text', 'console.log("test");']);
@@ -35,7 +36,7 @@ Deno.test('MWIAggrScript (m.script) - CSR-DOM to mode', async (t) => {
 		assertEquals(domNodes.size, 0, 'to mode should return empty DOM');
 	});
 
-	await t.step('.getDOM() - to mode with inline script returns empty DOM via JS', async () => {
+	it('.getDOM() - to mode with inline script returns empty DOM via JS', () => {
 		const doc = getInstance('MWIDocument');
 		const scriptNode = doc.createNode('m.script');
 		scriptNode.setAttr('m.text', 'alert("js");');
@@ -44,7 +45,7 @@ Deno.test('MWIAggrScript (m.script) - CSR-DOM to mode', async (t) => {
 		assertEquals(domNodes.size, 0, 'to mode should return empty DOM via JS');
 	});
 
-	await t.step('(getDOM) - to mode with external script returns empty DOM', async () => {
+	it('(getDOM) - to mode with external script returns empty DOM', () => {
 		const doc = getInstance('MWIDocument');
 		const scriptNode = $c.sm(doc, 'createNode', ls([, 'm.script']));
 		$c.sm(scriptNode, 'setAttr', ['src', '/app.js']);
@@ -53,14 +54,14 @@ Deno.test('MWIAggrScript (m.script) - CSR-DOM to mode', async (t) => {
 		assertEquals(domNodes.size, 0, 'to mode should return empty DOM');
 	});
 
-	await t.step('(getDOM) - to mode registers script in aggregation buffer', async () => {
+	it('(getDOM) - to mode registers script in aggregation buffer', async () => {
 		const doc = getInstance('MWIDocument');
 
 		const scriptNode = $c.sm(doc, 'createNode', ls([, 'm.script']));
 		$c.sm(scriptNode, 'setAttr', ['m.text', 'console.log("registered");']);
 		$c.sm(scriptNode, 'getDOM'); // Trigger registration
 
-		await globalThis.reactive.wait();
+		await reactive.wait();
 
 		const aggrData = $c.sm(doc, 'getAggr');
 		const buffer = aggrData.get('m.script:head');
@@ -68,7 +69,7 @@ Deno.test('MWIAggrScript (m.script) - CSR-DOM to mode', async (t) => {
 		assertEquals(buffer.size, 1, 'Buffer should have one registered script');
 	});
 
-	await t.step('(getDOM) - to mode with explicit buffer name registers in named buffer', async () => {
+	it('(getDOM) - to mode with explicit buffer name registers in named buffer', async () => {
 		const doc = getInstance('MWIDocument');
 
 		const scriptNode = $c.sm(doc, 'createNode', ls([, 'm.script']));
@@ -76,7 +77,7 @@ Deno.test('MWIAggrScript (m.script) - CSR-DOM to mode', async (t) => {
 		$c.sm(scriptNode, 'setAttr', ['src', '/footer.js']);
 		$c.sm(scriptNode, 'getDOM'); // Trigger registration
 
-		await globalThis.reactive.wait();
+		await reactive.wait();
 
 		const aggrData = $c.sm(doc, 'getAggr');
 		const buffer = aggrData.get('m.script:footer');
@@ -84,7 +85,7 @@ Deno.test('MWIAggrScript (m.script) - CSR-DOM to mode', async (t) => {
 		assertEquals(buffer.size, 1, 'Named buffer should have one registered script');
 	});
 
-	await t.step('.getDOM() - to mode with explicit buffer name via JS', async () => {
+	it('.getDOM() - to mode with explicit buffer name via JS', async () => {
 		const doc = getInstance('MWIDocument');
 
 		const scriptNode = doc.createNode('m.script');
@@ -92,7 +93,7 @@ Deno.test('MWIAggrScript (m.script) - CSR-DOM to mode', async (t) => {
 		scriptNode.setAttr('src', '/footer-js.js');
 		scriptNode.getDOM(); // Trigger registration
 
-		await globalThis.reactive.wait();
+		await reactive.wait();
 
 		const aggrData = doc.getAggr();
 		const buffer = aggrData.get('m.script:jsFooter');
@@ -100,7 +101,7 @@ Deno.test('MWIAggrScript (m.script) - CSR-DOM to mode', async (t) => {
 		assertEquals(buffer.size, 1, 'Named buffer should have one registered script via JS');
 	});
 
-	await t.step('(getDOM) - Multiple to nodes register in same buffer', async () => {
+	it('(getDOM) - Multiple to nodes register in same buffer', async () => {
 		const doc = getInstance('MWIDocument');
 
 		const script1 = $c.sm(doc, 'createNode', ls([, 'm.script']));
@@ -111,7 +112,7 @@ Deno.test('MWIAggrScript (m.script) - CSR-DOM to mode', async (t) => {
 		$c.sm(script2, 'setAttr', ['src', '/lib2.js']);
 		$c.sm(script2, 'getDOM');
 
-		await globalThis.reactive.wait();
+		await reactive.wait();
 
 		const aggrData = $c.sm(doc, 'getAggr');
 		const buffer = aggrData.get('m.script:head');
@@ -119,8 +120,8 @@ Deno.test('MWIAggrScript (m.script) - CSR-DOM to mode', async (t) => {
 	});
 });
 
-Deno.test('MWIAggrScript (m.script) - CSR-DOM from mode', async (t) => {
-	await t.step('(getDOM) - from mode returns empty DOM when buffer is empty', async () => {
+describe('MWIAggrScript (m.script) - CSR-DOM from mode', () => {
+	it('(getDOM) - from mode returns empty DOM when buffer is empty', () => {
 		const doc = getInstance('MWIDocument');
 
 		const fromNode = $c.sm(doc, 'createNode', ls([, 'm.script']));
@@ -130,7 +131,7 @@ Deno.test('MWIAggrScript (m.script) - CSR-DOM from mode', async (t) => {
 		assertEquals(domNodes.size, 0, 'from mode should return empty DOM when buffer is empty');
 	});
 
-	await t.step('.getDOM() - from mode returns empty DOM when buffer is empty via JS', async () => {
+	it('.getDOM() - from mode returns empty DOM when buffer is empty via JS', () => {
 		const doc = getInstance('MWIDocument');
 
 		const fromNode = doc.createNode('m.script');
@@ -140,7 +141,7 @@ Deno.test('MWIAggrScript (m.script) - CSR-DOM from mode', async (t) => {
 		assertEquals(domNodes.size, 0, 'from mode should return empty DOM when buffer is empty via JS');
 	});
 
-	await t.step('(getDOM) - from mode renders script elements from registered to nodes', async () => {
+	it('(getDOM) - from mode renders script elements from registered to nodes', () => {
 		const doc = getInstance('MWIDocument');
 
 		// Create and register a to node
@@ -153,13 +154,12 @@ Deno.test('MWIAggrScript (m.script) - CSR-DOM from mode', async (t) => {
 		$c.sm(fromNode, 'setAttr', ['from', 'head']);
 		const domNodes = $c.sm(fromNode, 'getDOM');
 
-		await reactive.wait();
 		assertEquals(domNodes.size, 1, 'from mode should render script element from to nodes');
 		assertEquals(domNodes.at(0).tagName, 'SCRIPT', 'Should render a script element');
 		assertEquals(domNodes.at(0).getAttribute('src'), '/test.js', 'Should have correct src attribute');
 	});
 
-	await t.step('.getDOM() - from mode renders script elements from registered to nodes via JS', async () => {
+	it('.getDOM() - from mode renders script elements from registered to nodes via JS', () => {
 		const doc = getInstance('MWIDocument');
 
 		// Create and register a to node
@@ -177,7 +177,7 @@ Deno.test('MWIAggrScript (m.script) - CSR-DOM from mode', async (t) => {
 		assertEquals(domNodes.at(0).getAttribute('src'), '/test-js.js', 'Should have correct src via JS');
 	});
 
-	await t.step('(getDOM) - from mode renders inline script with content', async () => {
+	it('(getDOM) - from mode renders inline script with content', () => {
 		const doc = getInstance('MWIDocument');
 
 		// Create and register a to node with inline content
@@ -195,7 +195,7 @@ Deno.test('MWIAggrScript (m.script) - CSR-DOM from mode', async (t) => {
 		assertEquals(domNodes.at(0).textContent, 'console.log("inline");', 'Should have inline content');
 	});
 
-	await t.step('(getDOM) - from mode renders multiple scripts in buffer', async () => {
+	it('(getDOM) - from mode renders multiple scripts in buffer', () => {
 		const doc = getInstance('MWIDocument');
 
 		// Register two to nodes
@@ -219,7 +219,7 @@ Deno.test('MWIAggrScript (m.script) - CSR-DOM from mode', async (t) => {
 		assertEquals(domNodes.at(1).getAttribute('src'), '/lib2.js', 'Second should have correct src');
 	});
 
-	await t.step('(getDOM) - from mode with named buffer', async () => {
+	it('(getDOM) - from mode with named buffer', () => {
 		const doc = getInstance('MWIDocument');
 
 		// Register a to node in a named buffer
@@ -238,7 +238,7 @@ Deno.test('MWIAggrScript (m.script) - CSR-DOM from mode', async (t) => {
 		assertEquals(domNodes.at(0).getAttribute('src'), '/footer.js', 'Should have correct src');
 	});
 
-	await t.step('(getDOM) - from mode DOM is stable across calls', async () => {
+	it('(getDOM) - from mode DOM is stable across calls', () => {
 		const doc = getInstance('MWIDocument');
 
 		const fromNode = $c.sm(doc, 'createNode', ls([, 'm.script']));
@@ -250,8 +250,8 @@ Deno.test('MWIAggrScript (m.script) - CSR-DOM from mode', async (t) => {
 	});
 });
 
-Deno.test('MWIAggrScript (m.script) - CSR-DOM deduplication', async (t) => {
-	await t.step('(getDOM) - Duplicate external scripts are deduplicated', async () => {
+describe('MWIAggrScript (m.script) - CSR-DOM deduplication', () => {
+	it('(getDOM) - Duplicate external scripts are deduplicated', () => {
 		const doc = getInstance('MWIDocument');
 
 		const fromNode = $c.sm(doc, 'createNode', ls([, 'm.script']));
@@ -265,13 +265,12 @@ Deno.test('MWIAggrScript (m.script) - CSR-DOM deduplication', async (t) => {
 
 		$c.sm(doc, 'append', ls([, fromNode, , script1, , script2]));
 		const domNodes = $c.sm(doc, 'getDOM');
-		await reactive.wait();
 
 		assertEquals(domNodes.size, 1, 'Duplicate scripts should be deduplicated in rendering');
 		assertEquals(domNodes.at(0).getAttribute('src'), '/dup.js', 'Should render the script once');
 	});
 
-	await t.step('.getDOM() - Duplicate inline scripts are deduplicated via JS', async () => {
+	it('.getDOM() - Duplicate inline scripts are deduplicated via JS', () => {
 		const doc = getInstance('MWIDocument');
 
 		const fromNode = doc.createNode('m.script');
@@ -285,13 +284,12 @@ Deno.test('MWIAggrScript (m.script) - CSR-DOM deduplication', async (t) => {
 
 		doc.append(fromNode, script1, script2);
 		const domNodes = doc.getDOM();
-		await reactive.wait();
 
 		assertEquals(domNodes.size, 1, 'Duplicate inline scripts should be deduplicated via JS');
 		assertEquals(domNodes.at(0).textContent, 'console.log("dup");', 'Should render the script once via JS');
 	});
 
-	await t.step('(getDOM) - Multiple distinct scripts are all rendered', async () => {
+	it('(getDOM) - Multiple distinct scripts are all rendered', () => {
 		const doc = getInstance('MWIDocument');
 
 		const fromNode = $c.sm(doc, 'createNode', ls([, 'm.script']));
@@ -305,7 +303,6 @@ Deno.test('MWIAggrScript (m.script) - CSR-DOM deduplication', async (t) => {
 
 		$c.sm(doc, 'append', ls([, fromNode, , script1, , script2]));
 		const domNodes = $c.sm(doc, 'getDOM');
-		await reactive.wait();
 
 		assertEquals(domNodes.size, 2, 'All distinct scripts should be rendered');
 		assertEquals(domNodes.at(0).getAttribute('src'), '/lib.js', 'First script rendered');
@@ -313,8 +310,8 @@ Deno.test('MWIAggrScript (m.script) - CSR-DOM deduplication', async (t) => {
 	});
 });
 
-Deno.test('MWIAggrScript (m.script) - CSR-DOM reactive behavior', async (t) => {
-	await t.step('(getDOM) - from mode reactively updates when to node is added', async () => {
+describe('MWIAggrScript (m.script) - CSR-DOM reactive behavior', () => {
+	it('(getDOM) - from mode reactively updates when to node is added', async () => {
 		const doc = getInstance('MWIDocument');
 
 		// Create a from node first (empty buffer)
@@ -330,13 +327,13 @@ Deno.test('MWIAggrScript (m.script) - CSR-DOM reactive behavior', async (t) => {
 		$c.sm(toNode, 'setAttr', ['src', '/added.js']);
 		$c.sm(toNode, 'getDOM'); // Register in buffer
 
-		await globalThis.reactive.wait();
+		await reactive.wait();
 		assertEquals(domNodes.size, 1, 'Should reactively update when to node is added');
 		assertEquals(domNodes.at(0).tagName, 'SCRIPT', 'Should render the added script');
 		assertEquals(domNodes.at(0).getAttribute('src'), '/added.js', 'Should have correct src');
 	});
 
-	await t.step('(getDOM) - from mode reactively updates when to node content changes', async () => {
+	it('(getDOM) - from mode reactively updates when to node content changes', async () => {
 		const doc = getInstance('MWIDocument');
 
 		// Create a to node with initial content (using m.text for inline script)
@@ -355,13 +352,13 @@ Deno.test('MWIAggrScript (m.script) - CSR-DOM reactive behavior', async (t) => {
 
 		// Change the script content
 		$c.sm(toNode, 'setAttr', ['m.text', 'console.log("updated");']);
-		await globalThis.reactive.wait();
+		await reactive.wait();
 		assertEquals(domNodes.at(0).textContent, 'console.log("updated");', 'Should reactively update content');
 	});
 });
 
-Deno.test('MWIAggrScript (m.script) - CSR-DOM end-to-end in document', async (t) => {
-	await t.step('(getDOM) - to/from round-trip in document', async () => {
+describe('MWIAggrScript (m.script) - CSR-DOM end-to-end in document', () => {
+	it('(getDOM) - to/from round-trip in document', () => {
 		const doc = getInstance('MWIDocument');
 
 		// Build a document with a `from` node and a `to` node
@@ -373,7 +370,6 @@ Deno.test('MWIAggrScript (m.script) - CSR-DOM end-to-end in document', async (t)
 
 		$c.sm(doc, 'append', ls([, fromNode, , toNode]));
 		const domNodes = $c.sm(doc, 'getDOM');
-		await reactive.wait();
 
 		// The document should contain the aggregated script (from the from node)
 		// and nothing from the to node (it renders empty)
@@ -382,7 +378,7 @@ Deno.test('MWIAggrScript (m.script) - CSR-DOM end-to-end in document', async (t)
 		assertEquals(domNodes.at(0).getAttribute('src'), '/app.js', 'Should have aggregated src');
 	});
 
-	await t.step('.getDOM() - to/from round-trip in document via JS', async () => {
+	it('.getDOM() - to/from round-trip in document via JS', () => {
 		const doc = getInstance('MWIDocument');
 
 		const fromNode = doc.createNode('m.script');
@@ -393,14 +389,13 @@ Deno.test('MWIAggrScript (m.script) - CSR-DOM end-to-end in document', async (t)
 
 		doc.append(fromNode, toNode);
 		const domNodes = doc.getDOM();
-		await reactive.wait();
 
 		assertEquals(domNodes.size, 1, 'Document should have one DOM node via JS');
 		assertEquals(domNodes.at(0).tagName, 'SCRIPT', 'Should render the aggregated script via JS');
 		assertEquals(domNodes.at(0).getAttribute('src'), '/app-js.js', 'Should have aggregated src via JS');
 	});
 
-	await t.step('(getDOM) - Surrounding content preserved with script aggregation', async () => {
+	it('(getDOM) - Surrounding content preserved with script aggregation', () => {
 		const doc = getInstance('MWIDocument');
 
 		const beforeNode = $c.sm(doc, 'createNode', ls([, 'm.t']));
@@ -418,7 +413,6 @@ Deno.test('MWIAggrScript (m.script) - CSR-DOM end-to-end in document', async (t)
 		$c.sm(doc, 'append', ls([, beforeNode, , fromNode, , afterNode, , toNode]));
 		const domNodes = $c.sm(doc, 'getDOM');
 
-		await globalThis.reactive.wait();
 		// Should have: Before text, Middle script (from aggregation), After text
 		// The to node renders empty, so we get 3 nodes total
 		assertEquals(domNodes.size, 3, 'Should have 3 DOM nodes (before, aggregated, after)');
@@ -429,8 +423,8 @@ Deno.test('MWIAggrScript (m.script) - CSR-DOM end-to-end in document', async (t)
 	});
 });
 
-Deno.test('MWIAggrStyle (m.style) - CSR-DOM to/from modes', async (t) => {
-	await t.step('(getDOM) - to mode with inline style returns empty DOM', async () => {
+describe('MWIAggrStyle (m.style) - CSR-DOM to/from modes', () => {
+	it('(getDOM) - to mode with inline style returns empty DOM', () => {
 		const doc = getInstance('MWIDocument');
 		const styleNode = $c.sm(doc, 'createNode', ls([, 'm.style']));
 		$c.sm(styleNode, 'setAttr', ['m.text', 'body { margin: 0; }']);
@@ -439,7 +433,7 @@ Deno.test('MWIAggrStyle (m.style) - CSR-DOM to/from modes', async (t) => {
 		assertEquals(domNodes.size, 0, 'to mode should return empty DOM');
 	});
 
-	await t.step('.getDOM() - to mode with inline style returns empty DOM via JS', async () => {
+	it('.getDOM() - to mode with inline style returns empty DOM via JS', () => {
 		const doc = getInstance('MWIDocument');
 		const styleNode = doc.createNode('m.style');
 		styleNode.setAttr('m.text', 'p { color: red; }');
@@ -448,7 +442,7 @@ Deno.test('MWIAggrStyle (m.style) - CSR-DOM to/from modes', async (t) => {
 		assertEquals(domNodes.size, 0, 'to mode should return empty DOM via JS');
 	});
 
-	await t.step('(getDOM) - to mode with external stylesheet returns empty DOM', async () => {
+	it('(getDOM) - to mode with external stylesheet returns empty DOM', () => {
 		const doc = getInstance('MWIDocument');
 		const styleNode = $c.sm(doc, 'createNode', ls([, 'm.style']));
 		$c.sm(styleNode, 'setAttr', ['href', '/theme.css']);
@@ -457,14 +451,14 @@ Deno.test('MWIAggrStyle (m.style) - CSR-DOM to/from modes', async (t) => {
 		assertEquals(domNodes.size, 0, 'to mode should return empty DOM');
 	});
 
-	await t.step('(getDOM) - to mode registers stylesheet in aggregation buffer', async () => {
+	it('(getDOM) - to mode registers stylesheet in aggregation buffer', async () => {
 		const doc = getInstance('MWIDocument');
 
 		const styleNode = $c.sm(doc, 'createNode', ls([, 'm.style']));
 		$c.sm(styleNode, 'setAttr', ['m.text', '.registered { }']);
 		$c.sm(styleNode, 'getDOM'); // Trigger registration
 
-		await globalThis.reactive.wait();
+		await reactive.wait();
 
 		const aggrData = $c.sm(doc, 'getAggr');
 		const buffer = aggrData.get('m.style:head');
@@ -472,7 +466,7 @@ Deno.test('MWIAggrStyle (m.style) - CSR-DOM to/from modes', async (t) => {
 		assertEquals(buffer.size, 1, 'Buffer should have one registered stylesheet');
 	});
 
-	await t.step('(getDOM) - from mode returns empty DOM when buffer is empty', async () => {
+	it('(getDOM) - from mode returns empty DOM when buffer is empty', () => {
 		const doc = getInstance('MWIDocument');
 
 		const fromNode = $c.sm(doc, 'createNode', ls([, 'm.style']));
@@ -482,7 +476,7 @@ Deno.test('MWIAggrStyle (m.style) - CSR-DOM to/from modes', async (t) => {
 		assertEquals(domNodes.size, 0, 'from mode should return empty DOM when buffer is empty');
 	});
 
-	await t.step('(getDOM) - from mode renders inline style from registered to nodes', async () => {
+	it('(getDOM) - from mode renders inline style from registered to nodes', () => {
 		const doc = getInstance('MWIDocument');
 
 		// Create and register a to node with inline style
@@ -500,7 +494,7 @@ Deno.test('MWIAggrStyle (m.style) - CSR-DOM to/from modes', async (t) => {
 		assertEquals(domNodes.at(0).textContent, 'body { color: blue; }', 'Should have inline content');
 	});
 
-	await t.step('.getDOM() - from mode renders external stylesheet from registered to nodes via JS', async () => {
+	it('.getDOM() - from mode renders external stylesheet from registered to nodes via JS', () => {
 		const doc = getInstance('MWIDocument');
 
 		// Create and register a to node with external stylesheet
@@ -519,7 +513,7 @@ Deno.test('MWIAggrStyle (m.style) - CSR-DOM to/from modes', async (t) => {
 		assertEquals(domNodes.at(0).getAttribute('href'), '/app.css', 'Should have correct href via JS');
 	});
 
-	await t.step('(getDOM) - from mode renders multiple stylesheets in buffer', async () => {
+	it('(getDOM) - from mode renders multiple stylesheets in buffer', () => {
 		const doc = getInstance('MWIDocument');
 
 		// Register two to nodes
@@ -543,7 +537,7 @@ Deno.test('MWIAggrStyle (m.style) - CSR-DOM to/from modes', async (t) => {
 		assertEquals(domNodes.at(1).getAttribute('href'), '/theme.css', 'Second should have correct href');
 	});
 
-	await t.step('(getDOM) - Duplicate external stylesheets are deduplicated', async () => {
+	it('(getDOM) - Duplicate external stylesheets are deduplicated', () => {
 		const doc = getInstance('MWIDocument');
 
 		const fromNode = $c.sm(doc, 'createNode', ls([, 'm.style']));
@@ -557,13 +551,12 @@ Deno.test('MWIAggrStyle (m.style) - CSR-DOM to/from modes', async (t) => {
 
 		$c.sm(doc, 'append', ls([, fromNode, , style1, , style2]));
 		const domNodes = $c.sm(doc, 'getDOM');
-		await reactive.wait();
 
 		assertEquals(domNodes.size, 1, 'Duplicate stylesheets should be deduplicated in rendering');
 		assertEquals(domNodes.at(0).getAttribute('href'), '/dup.css', 'Should render the stylesheet once');
 	});
 
-	await t.step('.getDOM() - Duplicate inline styles are deduplicated via JS', async () => {
+	it('.getDOM() - Duplicate inline styles are deduplicated via JS', () => {
 		const doc = getInstance('MWIDocument');
 
 		const fromNode = doc.createNode('m.style');
@@ -577,13 +570,12 @@ Deno.test('MWIAggrStyle (m.style) - CSR-DOM to/from modes', async (t) => {
 
 		doc.append(fromNode, style1, style2);
 		const domNodes = doc.getDOM();
-		await reactive.wait();
 
 		assertEquals(domNodes.size, 1, 'Duplicate inline styles should be deduplicated via JS');
 		assertEquals(domNodes.at(0).textContent, '.dup { }', 'Should render the style once via JS');
 	});
 
-	await t.step('(getDOM) - to/from round-trip in document', async () => {
+	it('(getDOM) - to/from round-trip in document', () => {
 		const doc = getInstance('MWIDocument');
 
 		const fromNode = $c.sm(doc, 'createNode', ls([, 'm.style']));
@@ -594,14 +586,13 @@ Deno.test('MWIAggrStyle (m.style) - CSR-DOM to/from modes', async (t) => {
 
 		$c.sm(doc, 'append', ls([, fromNode, , toNode]));
 		const domNodes = $c.sm(doc, 'getDOM');
-		await reactive.wait();
 
 		assertEquals(domNodes.size, 1, 'Document should have one DOM node');
 		assertEquals(domNodes.at(0).tagName, 'LINK', 'Should render the aggregated stylesheet');
 		assertEquals(domNodes.at(0).getAttribute('href'), '/app.css', 'Should have aggregated href');
 	});
 
-	await t.step('.getDOM() - to/from round-trip in document via JS', async () => {
+	it('.getDOM() - to/from round-trip in document via JS', () => {
 		const doc = getInstance('MWIDocument');
 
 		const fromNode = doc.createNode('m.style');
@@ -612,7 +603,6 @@ Deno.test('MWIAggrStyle (m.style) - CSR-DOM to/from modes', async (t) => {
 
 		doc.append(fromNode, toNode);
 		const domNodes = doc.getDOM();
-		await reactive.wait();
 
 		assertEquals(domNodes.size, 1, 'Document should have one DOM node via JS');
 		assertEquals(domNodes.at(0).tagName, 'LINK', 'Should render the aggregated stylesheet via JS');

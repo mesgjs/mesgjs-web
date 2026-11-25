@@ -3,10 +3,11 @@
  * Unit and compliance verification tests for MWI Color Token Generator Tool.
  */
 
+import { describe, it } from '@compat/test';
 import {
 	assert,
 	assertEquals,
-} from "https://deno.land/std@0.152.0/testing/asserts.ts";
+} from '@std/assert';
 
 import {
 	oklchToOklab,
@@ -43,8 +44,8 @@ import {
 	parseAndValidateJsonConfig,
 } from '../util/color-token-generator/js/token-exporter.esm.js';
 
-Deno.test("Color Engine - Conversion & Gamut Transforms", async (t) => {
-	await t.step("OKLCH <-> OKLab round-trip", () => {
+describe("Color Engine - Conversion & Gamut Transforms", () => {
+	it("OKLCH <-> OKLab round-trip", () => {
 		const l = 0.65, c = 0.15, h = 180;
 		const lab = oklchToOklab(l, c, h);
 		const lch = oklabToOklch(lab.l, lab.a, lab.b);
@@ -54,7 +55,7 @@ Deno.test("Color Engine - Conversion & Gamut Transforms", async (t) => {
 		assert(Math.abs(lch.h - h) < 1e-4, "Hue preserved");
 	});
 
-	await t.step("Hex <-> RGB conversions", () => {
+	it("Hex <-> RGB conversions", () => {
 		const hex = "#3454d1";
 		const rgb = hexToRgb(hex);
 		assert(rgb !== null, "Hex parsing succeeds");
@@ -62,7 +63,7 @@ Deno.test("Color Engine - Conversion & Gamut Transforms", async (t) => {
 		assertEquals(backHex.toLowerCase(), hex.toLowerCase(), "Hex roundtrip succeeds");
 	});
 
-	await t.step("OKLCH string parsing and formatting", () => {
+	it("OKLCH string parsing and formatting", () => {
 		const parsed = parseOklch("oklch(55% 0.18 260deg)");
 		assert(parsed !== null, "Parsing percentage and deg works");
 		assert(Math.abs(parsed.l - 0.55) < 1e-4, "Parsed lightness matches");
@@ -74,8 +75,8 @@ Deno.test("Color Engine - Conversion & Gamut Transforms", async (t) => {
 	});
 });
 
-Deno.test("Color Engine - WCAG Contrast Math", async (t) => {
-	await t.step("Black and White luminance and contrast", () => {
+describe("Color Engine - WCAG Contrast Math", () => {
+	it("Black and White luminance and contrast", () => {
 		const blackLum = getRelativeLuminanceFromOklch(0, 0, 0);
 		const whiteLum = getRelativeLuminanceFromOklch(1, 0, 0);
 
@@ -86,7 +87,7 @@ Deno.test("Color Engine - WCAG Contrast Math", async (t) => {
 		assert(ratio >= 20.0, "Black vs white contrast is ~21:1");
 	});
 
-	await t.step("Contrast evaluation helper", () => {
+	it("Contrast evaluation helper", () => {
 		const c1 = { l: 0.40, c: 0.18, h: 260 };
 		const c2 = { l: 0.99, c: 0.0, h: 260 };
 		const res = getOklchContrast(c1, c2);
@@ -96,9 +97,9 @@ Deno.test("Color Engine - WCAG Contrast Math", async (t) => {
 	});
 });
 
-Deno.test("Role Recipes - Preset Compliance", async (t) => {
+describe("Role Recipes - Preset Compliance", () => {
 	for (const [famKey, famDef] of Object.entries(COLOR_FAMILIES)) {
-		await t.step(`Preset: ${famKey} passes role contrast requirements`, () => {
+		it(`Preset: ${famKey} passes role contrast requirements`, () => {
 			if (famKey === 'neutral') {
 				const generated = generateNeutralTokens(famDef.defaultOklch);
 				assert(generated.compliance.lightSurface.passesAA, "Light surface passes AA");
@@ -114,8 +115,8 @@ Deno.test("Role Recipes - Preset Compliance", async (t) => {
 	}
 });
 
-Deno.test("Role Recipes - Token Structure & Serialization", async (t) => {
-	await t.step("Chromatic family produces sRGB hex tokens and excludes generic outline/surface-variant", () => {
+describe("Role Recipes - Token Structure & Serialization", () => {
+	it("Chromatic family produces sRGB hex tokens and excludes generic outline/surface-variant", () => {
 		const generated = generateChromaticTokens('primary', COLOR_FAMILIES.primary.defaultOklch);
 
 		// Must not contain chromatic overrides for generic tokens
@@ -149,7 +150,7 @@ Deno.test("Role Recipes - Token Structure & Serialization", async (t) => {
 		}
 	});
 
-	await t.step("Neutral family solely owns on-surface, outline, and inverse roles", () => {
+	it("Neutral family solely owns on-surface, outline, and inverse roles", () => {
 		const generated = generateNeutralTokens(COLOR_FAMILIES.neutral.defaultOklch);
 
 		const expectedSemantic = [
@@ -179,8 +180,8 @@ Deno.test("Role Recipes - Token Structure & Serialization", async (t) => {
 	});
 });
 
-Deno.test("Token Exporter - CSS and JSON Formatter", async (t) => {
-	await t.step("Theme State Configuration CSS exports standalone root setup and mode resolvers", () => {
+describe("Token Exporter - CSS and JSON Formatter", () => {
+	it("Theme State Configuration CSS exports standalone root setup and mode resolvers", () => {
 		const css = formatThemeStateConfigCss();
 
 		assert(css.includes("MWI Theme State Configuration"), "Includes header");
@@ -195,7 +196,7 @@ Deno.test("Token Exporter - CSS and JSON Formatter", async (t) => {
 		assert(css.includes("html[data-contrast='high']"), "Includes data-contrast high override");
 	});
 
-	await t.step("Chromatic CSS exports modular token blocks without repeating Theme State Configuration", () => {
+	it("Chromatic CSS exports modular token blocks without repeating Theme State Configuration", () => {
 		const generated = generateChromaticTokens('primary', COLOR_FAMILIES.primary.defaultOklch);
 		const css = formatChromaticCss(generated);
 
@@ -225,7 +226,7 @@ Deno.test("Token Exporter - CSS and JSON Formatter", async (t) => {
 		assert(!css.includes("--color-on-surface: CanvasText;"), "Chromatic forced colors does not touch surface tokens");
 	});
 
-	await t.step("Neutral CSS includes generative OKLCH parameters, hex semantics, and sole ownership of overrides without repeating Theme State Configuration", () => {
+	it("Neutral CSS includes generative OKLCH parameters, hex semantics, and sole ownership of overrides without repeating Theme State Configuration", () => {
 		const generated = generateNeutralTokens(COLOR_FAMILIES.neutral.defaultOklch);
 		const css = formatNeutralCss(generated);
 
@@ -262,7 +263,7 @@ Deno.test("Token Exporter - CSS and JSON Formatter", async (t) => {
 		assert(css.includes("--color-inverse-surface: CanvasText;"), "Forced colors maps inverse surface");
 	});
 
-	await t.step("JSON Config serialization preserves base OKLCH and compliance", () => {
+	it("JSON Config serialization preserves base OKLCH and compliance", () => {
 		const generated = generateChromaticTokens('primary', COLOR_FAMILIES.primary.defaultOklch);
 		const jsonStr = formatJsonConfig(generated);
 		const parsed = JSON.parse(jsonStr);
@@ -274,8 +275,8 @@ Deno.test("Token Exporter - CSS and JSON Formatter", async (t) => {
 	});
 });
 
-Deno.test("Anchored Color Mode - Mathematical Solver & Auto-Tune", async (t) => {
-	await t.step("Solve partner color for dark anchor (Navy #0A192F)", () => {
+describe("Anchored Color Mode - Mathematical Solver & Auto-Tune", () => {
+	it("Solve partner color for dark anchor (Navy #0A192F)", () => {
 		const anchor = hexToOklch('#0A192F');
 		const solved = solvePartnerColor(anchor, { minRatio: 4.5 });
 
@@ -286,7 +287,7 @@ Deno.test("Anchored Color Mode - Mathematical Solver & Auto-Tune", async (t) => 
 		assert(solved.partnerOklch.l >= 0.95, "Partner lightness should be near white");
 	});
 
-	await t.step("Solve partner color for light anchor (Pastel Yellow #FEF08A)", () => {
+	it("Solve partner color for light anchor (Pastel Yellow #FEF08A)", () => {
 		const anchor = hexToOklch('#FEF08A');
 		const solved = solvePartnerColor(anchor, { minRatio: 4.5 });
 
@@ -297,7 +298,7 @@ Deno.test("Anchored Color Mode - Mathematical Solver & Auto-Tune", async (t) => 
 		assert(solved.partnerOklch.l <= 0.15, "Partner lightness should be near black");
 	});
 
-	await t.step("Mid-tone compliance adjustment calculation (#00A3C4)", () => {
+	it("Mid-tone compliance adjustment calculation (#00A3C4)", () => {
 		const anchor = hexToOklch('#00A3C4');
 		const adj = calculateComplianceAdjustment(anchor, 4.5, 'auto');
 
@@ -306,7 +307,7 @@ Deno.test("Anchored Color Mode - Mathematical Solver & Auto-Tune", async (t) => 
 		assert(adj.ratio >= 4.49, `Adjusted color ratio must meet 4.5:1 (got ${adj.ratio})`);
 	});
 
-	await t.step("Determinism and mathematical reproducibility", () => {
+	it("Determinism and mathematical reproducibility", () => {
 		const anchor = hexToOklch('#0052CC');
 		const tuning = { ...DEFAULT_BRAND_TUNING, containerChromaFactor: 0.45 };
 
@@ -317,18 +318,18 @@ Deno.test("Anchored Color Mode - Mathematical Solver & Auto-Tune", async (t) => 
 	});
 });
 
-Deno.test("Anchored Color Mode - Chromatic Generation & Knob Customization", async (t) => {
+describe("Anchored Color Mode - Chromatic Generation & Knob Customization", () => {
 	const brandHex = '#0052CC';
 	const anchor = hexToOklch(brandHex);
 
-	await t.step("Light mode --color-primary exactly preserves input brand color", () => {
+	it("Light mode --color-primary exactly preserves input brand color", () => {
 		const generated = generateAnchoredChromaticTokens('primary', anchor);
 		assertEquals(generated.strategy, 'anchored');
 		assertEquals(generated.light['--color-primary'].cssValue.toLowerCase(), brandHex.toLowerCase());
 		assert(generated.compliance.lightMain.passesAA, "Derived on-primary satisfies AA");
 	});
 
-	await t.step("Container Chroma Factor knob modulates container vibrancy", () => {
+	it("Container Chroma Factor knob modulates container vibrancy", () => {
 		const genLowChroma = generateAnchoredChromaticTokens('primary', anchor, {
 			tuning: { containerChromaFactor: 0.15 },
 		});
@@ -344,7 +345,7 @@ Deno.test("Anchored Color Mode - Chromatic Generation & Knob Customization", asy
 		assert(genHighChroma.compliance.lightContainer.passesAA, "High chroma container passes AA");
 	});
 
-	await t.step("Dark Target Lightness knob adjusts dark mode brand luminance", () => {
+	it("Dark Target Lightness knob adjusts dark mode brand luminance", () => {
 		const genL70 = generateAnchoredChromaticTokens('primary', anchor, {
 			tuning: { darkTargetLightness: 0.70 },
 		});
@@ -358,7 +359,7 @@ Deno.test("Anchored Color Mode - Chromatic Generation & Knob Customization", asy
 		assert(genL85.compliance.darkMain.passesAA, "Dark L=0.85 passes AA");
 	});
 
-	await t.step("Explicit dark anchor overrides auto-synthesized dark mode role", () => {
+	it("Explicit dark anchor overrides auto-synthesized dark mode role", () => {
 		const explicitDarkHex = '#7090FF';
 		const darkAnchor = hexToOklch(explicitDarkHex);
 		const genExplicit = generateAnchoredChromaticTokens('primary', anchor, {
@@ -369,7 +370,7 @@ Deno.test("Anchored Color Mode - Chromatic Generation & Knob Customization", asy
 		assert(genExplicit.compliance.darkMain.passesAA, "Explicit dark anchor passes AA against derived on-primary");
 	});
 
-	await t.step("Universal dispatcher generateTokens routes appropriately", () => {
+	it("Universal dispatcher generateTokens routes appropriately", () => {
 		const tonal = generateTokens('primary', anchor, { strategy: 'tonal' });
 		const anchored = generateTokens('primary', anchor, { strategy: 'anchored' });
 		const neutral = generateTokens('neutral', anchor, { strategy: 'anchored' });
@@ -380,7 +381,7 @@ Deno.test("Anchored Color Mode - Chromatic Generation & Knob Customization", asy
 	});
 });
 
-Deno.test("Anchored Color Mode - Import & Export Round-Trip", async (t) => {
+describe("Anchored Color Mode - Import & Export Round-Trip", () => {
 	const brandHex = '#E11D48';
 	const anchor = hexToOklch(brandHex);
 	const customTuning = {
@@ -392,7 +393,7 @@ Deno.test("Anchored Color Mode - Import & Export Round-Trip", async (t) => {
 		autoTuneDirection: 'auto',
 	};
 
-	await t.step("CSS Export includes Anchored metadata header", () => {
+	it("CSS Export includes Anchored metadata header", () => {
 		const generated = generateAnchoredChromaticTokens('primary', anchor, { tuning: customTuning });
 		const css = formatChromaticCss(generated);
 
@@ -401,7 +402,7 @@ Deno.test("Anchored Color Mode - Import & Export Round-Trip", async (t) => {
 		assert(css.includes(`"strategy":"anchored"`), "CSS reproduction JSON includes anchored strategy");
 	});
 
-	await t.step("JSON Config round-trip preserves strategy, anchor, and tuning knobs", () => {
+	it("JSON Config round-trip preserves strategy, anchor, and tuning knobs", () => {
 		const generated = generateAnchoredChromaticTokens('secondary', anchor, { tuning: customTuning });
 		const jsonStr = formatJsonConfig(generated);
 
@@ -420,7 +421,7 @@ Deno.test("Anchored Color Mode - Import & Export Round-Trip", async (t) => {
 		assertEquals(cfg.tuning.partnerChroma, 0.01);
 	});
 
-	await t.step("JSON Validation catches malformed input and invalid values gracefully", () => {
+	it("JSON Validation catches malformed input and invalid values gracefully", () => {
 		const invalid1 = parseAndValidateJsonConfig("invalid json");
 		assertEquals(invalid1.valid, false);
 		assert(invalid1.error.includes("Invalid JSON"));

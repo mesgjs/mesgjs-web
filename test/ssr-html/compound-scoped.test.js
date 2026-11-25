@@ -20,7 +20,7 @@ await fwait(REG_READY_FT);
 const registry = getInstance('MWIRegistry');
 
 describe("MWICoreScpCSS SSR Compound - Complete Page with Scoped CSS", () => {
-	it("Card component with scoped styles and m.coat/m.percl", async () => {
+	it("Card component with scoped styles and m.coat/m.percl", () => {
 		registry.register('test.ssr.compound.card', ls([
 			'allowLate', true,
 			'scopedCSS', '.@@ { border: 1px solid #ccc; padding: 1rem; } .@@ .header { font-weight: bold; }',

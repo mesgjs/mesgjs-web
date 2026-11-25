@@ -1,9 +1,10 @@
+import { describe, it } from '@compat/test';
 import {
 	assert,
 	assertEquals,
 	assertExists,
 	assertStrictEquals,
-} from "https://deno.land/std@0.152.0/testing/asserts.ts";
+} from '@std/assert';
 
 import { setupRuntime, simulateBrowser } from '../harness.esm.js';
 
@@ -12,8 +13,7 @@ const REG_READY_FT = 'mwi.compRegReady';
 await setupRuntime();
 
 const { fwait, getInstance } = globalThis.$c;
-const ls = globalThis.ls;
-const ps = globalThis.ps;
+const { ls, ps, reactive } = globalThis;
 
 // Wait for registry to be ready
 await fwait(REG_READY_FT);
@@ -24,8 +24,8 @@ await simulateBrowser();
 const doc = getInstance('MWIDocument');
 const registry = getInstance('MWIRegistry');
 
-Deno.test("MWICoreTpl (template handler) - CSR-DOM Basic Rendering", async (t) => {
-	await t.step("(getDOM) - Renders simple template content", async () => {
+describe("MWICoreTpl (template handler) - CSR-DOM Basic Rendering", () => {
+	it("(getDOM) - Renders simple template content", () => {
 		registry.register('test.tpl.csr.simple', ls(['allowLate', true, 'tpl', ps('[([m.t t="Simple template"])]')]));
 		const tplNode = $c.sm(doc, 'createNode', ['test.tpl.csr.simple']);
 		const domNodes = $c.sm(tplNode, 'getDOM');
@@ -36,7 +36,7 @@ Deno.test("MWICoreTpl (template handler) - CSR-DOM Basic Rendering", async (t) =
 		assertEquals(textDomNode.nodeValue, 'Simple template');
 	});
 
-	await t.step(".getDOM() - Renders simple template content via JS", async () => {
+	it(".getDOM() - Renders simple template content via JS", () => {
 		registry.register('test.tpl.csr.simple2', ls(['allowLate', true, 'tpl', ps('[([m.t t="Simple template 2"])]')]));
 		const tplNode = doc.createNode('test.tpl.csr.simple2');
 		const domNodes = tplNode.getDOM();
@@ -45,7 +45,7 @@ Deno.test("MWICoreTpl (template handler) - CSR-DOM Basic Rendering", async (t) =
 		assertEquals(domNodes.at(0).textContent, 'Simple template 2');
 	});
 
-	await t.step("(getDOM) - Renders empty template", async () => {
+	it("(getDOM) - Renders empty template", () => {
 		registry.register('test.tpl.csr.empty', ls(['allowLate', true, 'tpl', ps('[()]')]));
 		const tplNode = $c.sm(doc, 'createNode', ['test.tpl.csr.empty']);
 		const domNodes = $c.sm(tplNode, 'getDOM');
@@ -53,7 +53,7 @@ Deno.test("MWICoreTpl (template handler) - CSR-DOM Basic Rendering", async (t) =
 		assertEquals(domNodes.size, 0);
 	});
 
-	await t.step(".getDOM() - Renders empty template via JS", async () => {
+	it(".getDOM() - Renders empty template via JS", () => {
 		registry.register('test.tpl.csr.empty2', ls(['allowLate', true, 'tpl', ps('[()]')]));
 		const tplNode = doc.createNode('test.tpl.csr.empty2');
 		const domNodes = tplNode.getDOM();
@@ -62,8 +62,8 @@ Deno.test("MWICoreTpl (template handler) - CSR-DOM Basic Rendering", async (t) =
 	});
 });
 
-Deno.test("MWICoreTpl (template handler) - CSR-DOM Multiple Items", async (t) => {
-	await t.step("(getDOM) - Renders multiple text items", async () => {
+describe("MWICoreTpl (template handler) - CSR-DOM Multiple Items", () => {
+	it("(getDOM) - Renders multiple text items", () => {
 		registry.register('test.tpl.csr.multi', ls([
 			'allowLate', true,
 			'tpl', ps('[([m.t t="First"] [m.t t="Second"] [m.t t="Third"])]')
@@ -77,7 +77,7 @@ Deno.test("MWICoreTpl (template handler) - CSR-DOM Multiple Items", async (t) =>
 		assertEquals(domNodes.at(2).textContent, 'Third');
 	});
 
-	await t.step(".getDOM() - Renders multiple text items via JS", async () => {
+	it(".getDOM() - Renders multiple text items via JS", () => {
 		registry.register('test.tpl.csr.multi2', ls([
 			'allowLate', true,
 			'tpl', ps('[([m.t t="A"] [m.t t="B"] [m.t t="C"])]')
@@ -92,8 +92,8 @@ Deno.test("MWICoreTpl (template handler) - CSR-DOM Multiple Items", async (t) =>
 	});
 });
 
-Deno.test("MWICoreTpl (template handler) - CSR-DOM Nested Structure", async (t) => {
-	await t.step("(getDOM) - Renders nested fragments", async () => {
+describe("MWICoreTpl (template handler) - CSR-DOM Nested Structure", () => {
+	it("(getDOM) - Renders nested fragments", () => {
 		registry.register('test.tpl.csr.nested', ls([
 			'allowLate', true,
 			'tpl', ps('[([m.frg [m.t t="Outer"] [m.frg [m.t t="Inner"]]])]')
@@ -106,7 +106,7 @@ Deno.test("MWICoreTpl (template handler) - CSR-DOM Nested Structure", async (t) 
 		assertEquals(domNodes.at(1).textContent, 'Inner');
 	});
 
-	await t.step(".getDOM() - Renders nested fragments via JS", async () => {
+	it(".getDOM() - Renders nested fragments via JS", () => {
 		registry.register('test.tpl.csr.nested2', ls([
 			'allowLate', true,
 			'tpl', ps('[([m.frg [m.t t="Level1"] [m.frg [m.t t="Level2"]]])]')
@@ -120,8 +120,8 @@ Deno.test("MWICoreTpl (template handler) - CSR-DOM Nested Structure", async (t) 
 	});
 });
 
-Deno.test("MWICoreTpl (template handler) - CSR-DOM Mixed Content Types", async (t) => {
-	await t.step("(getDOM) - Renders text, comment, and fragment", async () => {
+describe("MWICoreTpl (template handler) - CSR-DOM Mixed Content Types", () => {
+	it("(getDOM) - Renders text, comment, and fragment", () => {
 		registry.register('test.tpl.csr.mixed', ls([
 			'allowLate', true,
 			'tpl', ps('[([m.t t="Text"] [m.com t="Comment"] [m.frg [m.t t="Fragment"]])]')
@@ -138,7 +138,7 @@ Deno.test("MWICoreTpl (template handler) - CSR-DOM Mixed Content Types", async (
 		assertEquals(domNodes.at(2).nodeValue, 'Fragment');
 	});
 
-	await t.step(".getDOM() - Renders text, comment, and fragment via JS", async () => {
+	it(".getDOM() - Renders text, comment, and fragment via JS", () => {
 		registry.register('test.tpl.csr.mixed2', ls([
 			'allowLate', true,
 			'tpl', ps('[([m.t t="A"] [m.com t="B"] [m.frg [m.t t="C"]])]')
@@ -153,8 +153,8 @@ Deno.test("MWICoreTpl (template handler) - CSR-DOM Mixed Content Types", async (
 	});
 });
 
-Deno.test("MWICoreTpl (template handler) - CSR-DOM Slot Integration", async (t) => {
-	await t.step("(getDOM) - Template with named slot renders empty when template has no matching attribute", async () => {
+describe("MWICoreTpl (template handler) - CSR-DOM Slot Integration", () => {
+	it("(getDOM) - Template with named slot renders empty when template has no matching attribute", () => {
 		registry.register('test.tpl.csr.slot', ls([
 			'allowLate', true,
 			'tpl', ps('[([m.slot name=content])]')
@@ -165,7 +165,7 @@ Deno.test("MWICoreTpl (template handler) - CSR-DOM Slot Integration", async (t) 
 		assertEquals(domNodes.size, 0);
 	});
 
-	await t.step(".getDOM() - Template with named slot renders empty when template has no matching attribute via JS", async () => {
+	it(".getDOM() - Template with named slot renders empty when template has no matching attribute via JS", () => {
 		registry.register('test.tpl.csr.slot2', ls([
 			'allowLate', true,
 			'tpl', ps('[([m.slot name=data])]')
@@ -176,7 +176,7 @@ Deno.test("MWICoreTpl (template handler) - CSR-DOM Slot Integration", async (t) 
 		assertEquals(domNodes.size, 0);
 	});
 
-	await t.step("(getDOM) - Template with default slot content", async () => {
+	it("(getDOM) - Template with default slot content", () => {
 		registry.register('test.tpl.csr.slot.default', ls([
 			'allowLate', true,
 			'tpl', ps('[([m.slot [m.t t="Default content"]])]')
@@ -188,7 +188,7 @@ Deno.test("MWICoreTpl (template handler) - CSR-DOM Slot Integration", async (t) 
 		assertEquals(domNodes.at(0).textContent, 'Default content');
 	});
 
-	await t.step(".getDOM() - Template with default slot content via JS", async () => {
+	it(".getDOM() - Template with default slot content via JS", () => {
 		registry.register('test.tpl.csr.slot.default2', ls([
 			'allowLate', true,
 			'tpl', ps('[([m.slot [m.t t="Fallback"]])]')
@@ -200,7 +200,7 @@ Deno.test("MWICoreTpl (template handler) - CSR-DOM Slot Integration", async (t) 
 		assertEquals(domNodes.at(0).textContent, 'Fallback');
 	});
 
-	await t.step("(getDOM) - Template acts as slotSrc - named slots filled from template attributes", async () => {
+	it("(getDOM) - Template acts as slotSrc - named slots filled from template attributes", () => {
 		registry.register('test.tpl.csr.slot.named', ls([
 			'allowLate', true,
 			'tpl', ps('[([m.slot name=header] [m.t t="Body"] [m.slot name=footer])]')
@@ -216,7 +216,7 @@ Deno.test("MWICoreTpl (template handler) - CSR-DOM Slot Integration", async (t) 
 		assertEquals(domNodes.at(2).textContent, 'Footer content');
 	});
 
-	await t.step(".getDOM() - Template acts as slotSrc - named slots filled from template attributes via JS", async () => {
+	it(".getDOM() - Template acts as slotSrc - named slots filled from template attributes via JS", () => {
 		registry.register('test.tpl.csr.slot.named2', ls([
 			'allowLate', true,
 			'tpl', ps('[([m.slot name=top] [m.t t="Middle"] [m.slot name=bottom])]')
@@ -232,7 +232,7 @@ Deno.test("MWICoreTpl (template handler) - CSR-DOM Slot Integration", async (t) 
 		assertEquals(domNodes.at(2).textContent, 'Bottom content');
 	});
 
-	await t.step("(getDOM) - Template with default slot and natural children", async () => {
+	it("(getDOM) - Template with default slot and natural children", () => {
 		registry.register('test.tpl.csr.slot.children', ls([
 			'allowLate', true,
 			'tpl', ps('[([m.slot [m.t t="Default"]])]')
@@ -245,7 +245,7 @@ Deno.test("MWICoreTpl (template handler) - CSR-DOM Slot Integration", async (t) 
 		assertEquals(domNodes.at(0).textContent, 'Natural child content');
 	});
 
-	await t.step(".getDOM() - Template with default slot and natural children via JS", async () => {
+	it(".getDOM() - Template with default slot and natural children via JS", () => {
 		registry.register('test.tpl.csr.slot.children2', ls([
 			'allowLate', true,
 			'tpl', ps('[([m.slot [m.t t="Fallback"]])]')
@@ -259,8 +259,8 @@ Deno.test("MWICoreTpl (template handler) - CSR-DOM Slot Integration", async (t) 
 	});
 });
 
-Deno.test("MWICoreTpl (template handler) - CSR-DOM HTML Elements", async (t) => {
-	await t.step("(getDOM) - Template with HTML div", async () => {
+describe("MWICoreTpl (template handler) - CSR-DOM HTML Elements", () => {
+	it("(getDOM) - Template with HTML div", () => {
 		registry.register('test.tpl.csr.html', ls([
 			'allowLate', true,
 			'tpl', ps('[([h.div [m.t t="Template with HTML"]])]')
@@ -274,7 +274,7 @@ Deno.test("MWICoreTpl (template handler) - CSR-DOM HTML Elements", async (t) => 
 		assertEquals(divElem.textContent, 'Template with HTML');
 	});
 
-	await t.step(".getDOM() - Template with HTML div via JS", async () => {
+	it(".getDOM() - Template with HTML div via JS", () => {
 		registry.register('test.tpl.csr.html2', ls([
 			'allowLate', true,
 			'tpl', ps('[([h.span [m.t t="Span content"]])]')
@@ -288,7 +288,7 @@ Deno.test("MWICoreTpl (template handler) - CSR-DOM HTML Elements", async (t) => 
 		assertEquals(spanElem.textContent, 'Span content');
 	});
 
-	await t.step("(getDOM) - Template with complex HTML structure", async () => {
+	it("(getDOM) - Template with complex HTML structure", () => {
 		registry.register('test.tpl.csr.complex', ls([
 			'allowLate', true,
 			'tpl', ps('[([h.div class=container [h.h1 [m.t t="Title"]] [h.p [m.t t="Content"]]])]')
@@ -307,7 +307,7 @@ Deno.test("MWICoreTpl (template handler) - CSR-DOM HTML Elements", async (t) => 
 		assertEquals(divElem.children[1].textContent, 'Content');
 	});
 
-	await t.step(".getDOM() - Template with complex HTML structure via JS", async () => {
+	it(".getDOM() - Template with complex HTML structure via JS", () => {
 		registry.register('test.tpl.csr.complex2', ls([
 			'allowLate', true,
 			'tpl', ps('[([h.section [h.h2 [m.t t="Heading"]] [h.div [m.t t="Text"]]])]')
@@ -324,8 +324,8 @@ Deno.test("MWICoreTpl (template handler) - CSR-DOM HTML Elements", async (t) => 
 	});
 });
 
-Deno.test("MWICoreTpl (template handler) - CSR-DOM Reactive Updates", async (t) => {
-	await t.step("(getDOM) - Reactive update to template slot content", async () => {
+describe("MWICoreTpl (template handler) - CSR-DOM Reactive Updates", () => {
+	it("(getDOM) - Reactive update to template slot content", async () => {
 		registry.register('test.tpl.csr.reactive', ls([
 			'allowLate', true,
 			'tpl', ps('[([m.slot name=content])]')
@@ -348,7 +348,7 @@ Deno.test("MWICoreTpl (template handler) - CSR-DOM Reactive Updates", async (t) 
 		assertEquals(domNodes.size, 1);
 	});
 
-	await t.step(".getDOM() - Reactive update to template slot content via JS", async () => {
+	it(".getDOM() - Reactive update to template slot content via JS", async () => {
 		registry.register('test.tpl.csr.reactive2', ls([
 			'allowLate', true,
 			'tpl', ps('[([m.slot name=data])]')
@@ -369,7 +369,7 @@ Deno.test("MWICoreTpl (template handler) - CSR-DOM Reactive Updates", async (t) 
 		assertEquals(domNodes.size, 1);
 	});
 
-	await t.step("(getDOM) - Reactive update to template natural children", async () => {
+	it("(getDOM) - Reactive update to template natural children", async () => {
 		registry.register('test.tpl.csr.reactive.children', ls([
 			'allowLate', true,
 			'tpl', ps('[([m.slot [m.t t="Default"]])]')
@@ -386,7 +386,7 @@ Deno.test("MWICoreTpl (template handler) - CSR-DOM Reactive Updates", async (t) 
 		assertEquals(domNodes.size, 1);
 	});
 
-	await t.step(".getDOM() - Reactive update to template natural children via JS", async () => {
+	it(".getDOM() - Reactive update to template natural children via JS", async () => {
 		registry.register('test.tpl.csr.reactive.children2', ls([
 			'allowLate', true,
 			'tpl', ps('[([m.slot [m.t t="Fallback"]])]')
@@ -405,8 +405,8 @@ Deno.test("MWICoreTpl (template handler) - CSR-DOM Reactive Updates", async (t) 
 	});
 });
 
-Deno.test("MWICoreTpl (template handler) - CSR-DOM Reactive Slotting Cases", async (t) => {
-	await t.step("(getDOM) - Reactive change to attribute on template node", async () => {
+describe("MWICoreTpl (template handler) - CSR-DOM Reactive Slotting Cases", () => {
+	it("(getDOM) - Reactive change to attribute on template node", async () => {
 		registry.register('test.tpl.csr.reactive.attr', ls([
 			'allowLate', true,
 			'tpl', ps('[([m.slot name=header] [m.t t="Body"])]')
@@ -428,7 +428,7 @@ Deno.test("MWICoreTpl (template handler) - CSR-DOM Reactive Slotting Cases", asy
 		assertEquals(domNodes.at(1).textContent, 'Body');
 	});
 
-	await t.step(".getDOM() - Reactive change to attribute on template node via JS", async () => {
+	it(".getDOM() - Reactive change to attribute on template node via JS", async () => {
 		registry.register('test.tpl.csr.reactive.attr2', ls([
 			'allowLate', true,
 			'tpl', ps('[([m.slot name=title] [m.t t="Content"])]')
@@ -446,7 +446,7 @@ Deno.test("MWICoreTpl (template handler) - CSR-DOM Reactive Slotting Cases", asy
 		assertEquals(domNodes.at(0).textContent, 'JS Changed');
 	});
 
-	await t.step("(getDOM) - Reactive change to attribute within template's sub-spec", async () => {
+	it("(getDOM) - Reactive change to attribute within template's sub-spec", async () => {
 		registry.register('test.tpl.csr.reactive.subspec', ls([
 			'allowLate', true,
 			'tpl', ps('[([m.slot name=content])]')
@@ -471,7 +471,7 @@ Deno.test("MWICoreTpl (template handler) - CSR-DOM Reactive Slotting Cases", asy
 		assertEquals(domNodes.at(0).textContent, 'Modified Text');
 	});
 
-	await t.step(".getDOM() - Reactive change to attribute within template's sub-spec via JS", async () => {
+	it(".getDOM() - Reactive change to attribute within template's sub-spec via JS", async () => {
 		registry.register('test.tpl.csr.reactive.subspec2', ls([
 			'allowLate', true,
 			'tpl', ps('[([m.slot name=data])]')
@@ -494,7 +494,7 @@ Deno.test("MWICoreTpl (template handler) - CSR-DOM Reactive Slotting Cases", asy
 		assertEquals(domNodes.at(0).textContent, 'JS Modified');
 	});
 
-	await t.step("(getDOM) - Reactive change to template's sub-doc using append", async () => {
+	it("(getDOM) - Reactive change to template's sub-doc using append", async () => {
 		registry.register('test.tpl.csr.reactive.subdoc', ls([
 			'allowLate', true,
 			'tpl', ps('[([m.slot [m.t t="Default"]])]')
@@ -527,7 +527,7 @@ Deno.test("MWICoreTpl (template handler) - CSR-DOM Reactive Slotting Cases", asy
 		assertEquals(domNodes.at(2).textContent, 'Second Child');
 	});
 
-	await t.step(".getDOM() - Reactive change to template's sub-doc using append via JS", async () => {
+	it(".getDOM() - Reactive change to template's sub-doc using append via JS", async () => {
 		registry.register('test.tpl.csr.reactive.subdoc2', ls([
 			'allowLate', true,
 			'tpl', ps('[([m.slot [m.t t="Fallback"]])]')
@@ -558,8 +558,8 @@ Deno.test("MWICoreTpl (template handler) - CSR-DOM Reactive Slotting Cases", asy
 	});
 });
 
-Deno.test("MWICoreTpl (template handler) - CSR-DOM Attribute Slotting", async (t) => {
-	await t.step("(getDOM) - Template with m.slat remaps attributes", async () => {
+describe("MWICoreTpl (template handler) - CSR-DOM Attribute Slotting", () => {
+	it("(getDOM) - Template with m.slat remaps attributes", () => {
 		registry.register('test.tpl.csr.slat', ls([
 			'allowLate', true,
 			'tpl', ps('[([m.slot name=title])]')
@@ -576,7 +576,7 @@ Deno.test("MWICoreTpl (template handler) - CSR-DOM Attribute Slotting", async (t
 		assertEquals(domNodes.at(0).textContent, 'Custom Title');
 	});
 
-	await t.step(".getDOM() - Template with m.slat remaps attributes via JS", async () => {
+	it(".getDOM() - Template with m.slat remaps attributes via JS", () => {
 		registry.register('test.tpl.csr.slat2', ls([
 			'allowLate', true,
 			'tpl', ps('[([m.slot name=content])]')
@@ -594,8 +594,8 @@ Deno.test("MWICoreTpl (template handler) - CSR-DOM Attribute Slotting", async (t
 	});
 });
 
-Deno.test("MWICoreTpl (template handler) - CSR-DOM Special Characters", async (t) => {
-	await t.step("(getDOM) - Template with special characters", async () => {
+describe("MWICoreTpl (template handler) - CSR-DOM Special Characters", () => {
+	it("(getDOM) - Template with special characters", () => {
 		registry.register('test.tpl.csr.special', ls([
 			'allowLate', true,
 			'tpl', ps('[([m.t t="<>&\\"\'"])]')
@@ -608,7 +608,7 @@ Deno.test("MWICoreTpl (template handler) - CSR-DOM Special Characters", async (t
 		assertEquals(domNodes.at(0).textContent, '<>&"\'');
 	});
 
-	await t.step(".getDOM() - Template with special characters via JS", async () => {
+	it(".getDOM() - Template with special characters via JS", () => {
 		registry.register('test.tpl.csr.special2', ls([
 			'allowLate', true,
 			'tpl', ps('[([m.t t="Test & <test>"])]')

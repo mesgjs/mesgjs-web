@@ -9,12 +9,13 @@
 // - Scoped CSS syncs with SSR-generated style elements
 // - Reactive updates work correctly after hydration
 
+import { describe, it } from '@compat/test';
 import {
 	assert,
 	assertEquals,
 	assertExists,
 	assertStrictEquals,
-} from "https://deno.land/std@0.152.0/testing/asserts.ts";
+} from '@std/assert';
 
 import { setupRuntime, simulateBrowser } from '../harness.esm.js';
 
@@ -23,13 +24,12 @@ const REG_READY_FT = 'mwi.compRegReady';
 await setupRuntime();
 
 const { fwait, getInstance } = globalThis.$c;
+const { ls, ps, reactive } = globalThis;
 await fwait(REG_READY_FT);
 
 // Set up browser-like environment for DOM testing
 await simulateBrowser();
 
-const ps = globalThis.ps;
-const ls = globalThis.ls;
 const registry = getInstance('MWIRegistry');
 
 // ---------------------------------------------------------------------------
@@ -50,10 +50,12 @@ function ssrHTML (node) {
 // Returns the parsed element.
 function loadSSRIntoDOM (html, target = 'body') {
 	if (target === 'body') {
-		document.body.innerHTML = html;
+		const clean = html.replace(/^<body[^>]*>|<\/body>$/gi, '');
+		document.body.innerHTML = clean;
 		return document.body;
 	} else if (target === 'head') {
-		document.head.innerHTML = html;
+		const clean = html.replace(/^<head[^>]*>|<\/head>$/gi, '');
+		document.head.innerHTML = clean;
 		return document.head;
 	}
 }
@@ -69,10 +71,9 @@ function csrSync (node, cursor) {
 // MWICoreHeadBody - m.head managed region sync
 // ---------------------------------------------------------------------------
 
-Deno.test("SSR-CSR Hydration - m.head managed region sync", async (t) => {
-	await simulateBrowser();
-
-	await t.step("m.head: SSR boundary markers preserved during CSR sync", () => {
+describe("SSR-CSR Hydration - m.head managed region sync", () => {
+	it("m.head: SSR boundary markers preserved during CSR sync", async () => {
+		await simulateBrowser();
 		const doc = makeDoc();
 		const headNode = doc.createNode('m.head');
 		const titleNode = doc.createNode('h.title');
@@ -114,9 +115,8 @@ Deno.test("SSR-CSR Hydration - m.head managed region sync", async (t) => {
 		assertStrictEquals(domNodes.at(0), document.head, 'head element reused');
 	});
 
-	await simulateBrowser();
-
-	await t.step("m.head: SSR children preserved and synced", () => {
+	it("m.head: SSR children preserved and synced", async () => {
+		await simulateBrowser();
 		const doc = makeDoc();
 		const headNode = doc.createNode('m.head');
 		const titleNode = doc.createNode('h.title');
@@ -139,9 +139,8 @@ Deno.test("SSR-CSR Hydration - m.head managed region sync", async (t) => {
 		assertStrictEquals(domNodes.at(0), document.head, 'head element reused');
 	});
 
-	await simulateBrowser();
-
-	await t.step("m.head: External content in first protected region preserved", () => {
+	it("m.head: External content in first protected region preserved", async () => {
+		await simulateBrowser();
 		const doc = makeDoc();
 		const headNode = doc.createNode('m.head');
 		const titleNode = doc.createNode('h.title');
@@ -174,9 +173,8 @@ Deno.test("SSR-CSR Hydration - m.head managed region sync", async (t) => {
 		assertStrictEquals(externalAfter, externalBefore, 'same external script element');
 	});
 
-	await simulateBrowser();
-
-	await t.step("m.head: Live DOM additions in protected region preserved during reactive updates", async () => {
+	it("m.head: Live DOM additions in protected region preserved during reactive updates", async () => {
+		await simulateBrowser();
 		const doc = makeDoc();
 		const headNode = doc.createNode('m.head');
 		const titleNode = doc.createNode('h.title');
@@ -204,7 +202,7 @@ Deno.test("SSR-CSR Hydration - m.head managed region sync", async (t) => {
 
 		// Now do a reactive update
 		titleNode.setAttr('m.text', 'Updated');
-		await globalThis.reactive.wait();  // Wait for reactive update to propagate
+		await reactive.wait();  // Wait for reactive update to propagate
 
 		// External content should still be preserved after reactive update
 		const externalAfterUpdate = document.getElementById('external-meta');
@@ -216,9 +214,8 @@ Deno.test("SSR-CSR Hydration - m.head managed region sync", async (t) => {
 		assertEquals(title.textContent, 'Updated', 'title updated');
 	});
 
-	await simulateBrowser();
-
-	await t.step("m.head: m.csrStatic content added during CSR sync", () => {
+	it("m.head: m.csrStatic content added during CSR sync", async () => {
+		await simulateBrowser();
 		const doc = makeDoc();
 		const headNode = doc.createNode('m.head');
 		const titleNode = doc.createNode('h.title');
@@ -263,10 +260,9 @@ Deno.test("SSR-CSR Hydration - m.head managed region sync", async (t) => {
 // MWICoreHeadBody - m.body managed region sync
 // ---------------------------------------------------------------------------
 
-Deno.test("SSR-CSR Hydration - m.body managed region sync", async (t) => {
-	await simulateBrowser();
-
-	await t.step("m.body: SSR boundary markers preserved during CSR sync", () => {
+describe("SSR-CSR Hydration - m.body managed region sync", () => {
+	it("m.body: SSR boundary markers preserved during CSR sync", async () => {
+		await simulateBrowser();
 		const doc = makeDoc();
 		const bodyNode = doc.createNode('m.body');
 		const divNode = doc.createNode('h.div');
@@ -308,9 +304,8 @@ Deno.test("SSR-CSR Hydration - m.body managed region sync", async (t) => {
 		assertStrictEquals(domNodes.at(0), document.body, 'body element reused');
 	});
 
-	await simulateBrowser();
-
-	await t.step("m.body: External content in first protected region preserved", () => {
+	it("m.body: External content in first protected region preserved", async () => {
+		await simulateBrowser();
 		const doc = makeDoc();
 		const bodyNode = doc.createNode('m.body');
 		const divNode = doc.createNode('h.div');
@@ -342,9 +337,8 @@ Deno.test("SSR-CSR Hydration - m.body managed region sync", async (t) => {
 		assertStrictEquals(externalAfter, externalBefore, 'same external element');
 	});
 
-	await simulateBrowser();
-
-	await t.step("m.body: m.csrStatic content added during CSR sync", () => {
+	it("m.body: m.csrStatic content added during CSR sync", async () => {
+		await simulateBrowser();
 		const doc = makeDoc();
 		const bodyNode = doc.createNode('m.body');
 		const divNode = doc.createNode('h.div');
@@ -389,10 +383,9 @@ Deno.test("SSR-CSR Hydration - m.body managed region sync", async (t) => {
 // MWICoreScpCSS - Scoped CSS sync
 // ---------------------------------------------------------------------------
 
-Deno.test("SSR-CSR Hydration - m.scpcss scoped CSS sync", async (t) => {
-	await simulateBrowser();
-
-	await t.step("m.scpcss: SSR style element reused during CSR sync", () => {
+describe("SSR-CSR Hydration - m.scpcss scoped CSS sync", () => {
+	it("m.scpcss: SSR style element reused during CSR sync", async () => {
+		await simulateBrowser();
 		// Register a component with scoped CSS
 		registry.register('test.hyd.scpcss.basic', ls([
 			'allowLate', true,
@@ -424,9 +417,8 @@ Deno.test("SSR-CSR Hydration - m.scpcss scoped CSS sync", async (t) => {
 		assertStrictEquals(csrStyle, ssrStyle, 'SSR style element reused');
 	});
 
-	await simulateBrowser();
-
-	await t.step("m.scpcss: Multiple components - SSR style element reused and content verified", () => {
+	it("m.scpcss: Multiple components - SSR style element reused and content verified", async () => {
+		await simulateBrowser();
 		// Register multiple components with scoped CSS
 		registry.register('test.hyd.scpcss.multi1', ls([
 			'allowLate', true,
@@ -464,9 +456,8 @@ Deno.test("SSR-CSR Hydration - m.scpcss scoped CSS sync", async (t) => {
 		assert(csrStyle.textContent.includes('padding: 2rem'), 'CSS includes second component');
 	});
 
-	await simulateBrowser();
-
-	await t.step("m.scpcss: Reactive component addition after sync", async () => {
+	it("m.scpcss: Reactive component addition after sync", async () => {
+		await simulateBrowser();
 		// Register initial component
 		registry.register('test.hyd.scpcss.reactive1', ls([
 			'allowLate', true,
@@ -499,7 +490,7 @@ Deno.test("SSR-CSR Hydration - m.scpcss scoped CSS sync", async (t) => {
 			'scopedCSS', '.@@ { color: green; }'
 		]));
 		doc.createNode('test.hyd.scpcss.reactive2');
-		await globalThis.reactive.wait();  // Wait for reactive update to propagate
+		await reactive.wait();  // Wait for reactive update to propagate
 
 		// Style element should be updated with new CSS
 		assert(csrStyle.textContent.includes('color: red'), 'original CSS still present');
@@ -512,10 +503,9 @@ Deno.test("SSR-CSR Hydration - m.scpcss scoped CSS sync", async (t) => {
 // Combined managed region + scoped CSS integration
 // ---------------------------------------------------------------------------
 
-Deno.test("SSR-CSR Hydration - m.head with m.scpcss integration", async (t) => {
-	await simulateBrowser();
-
-	await t.step("m.head with m.scpcss child: both sync correctly", () => {
+describe("SSR-CSR Hydration - m.head with m.scpcss integration", () => {
+	it("m.head with m.scpcss child: both sync correctly", async () => {
+		await simulateBrowser();
 		// Register a component with scoped CSS
 		registry.register('test.hyd.integration.comp', ls([
 			'allowLate', true,
@@ -541,7 +531,7 @@ Deno.test("SSR-CSR Hydration - m.head with m.scpcss integration", async (t) => {
 		assert(html.includes('display: flex'), 'includes CSS');
 
 		// Load into browser
-		document.head.innerHTML = html;
+		loadSSRIntoDOM(html, 'head');
 
 		const ssrTitle = document.head.querySelector('title');
 		const ssrStyle = document.head.querySelector('style');
@@ -559,9 +549,8 @@ Deno.test("SSR-CSR Hydration - m.head with m.scpcss integration", async (t) => {
 		assertStrictEquals(domNodes.at(0), document.head, 'head element reused');
 	});
 
-	await simulateBrowser();
-
-	await t.step("m.head with external content + m.scpcss: all preserved during reactive updates", async () => {
+	it("m.head with external content + m.scpcss: all preserved during reactive updates", async () => {
+		await simulateBrowser();
 		// Register component with scoped CSS
 		registry.register('test.hyd.integration.reactive', ls([
 			'allowLate', true,
@@ -580,7 +569,7 @@ Deno.test("SSR-CSR Hydration - m.head with m.scpcss integration", async (t) => {
 
 		// SSR
 		const html = ssrHTML(headNode);
-		document.head.innerHTML = html;
+		loadSSRIntoDOM(html, 'head');
 
 		// Add external content before CSR
 		const externalLink = document.createElement('link');
@@ -603,7 +592,7 @@ Deno.test("SSR-CSR Hydration - m.head with m.scpcss integration", async (t) => {
 
 		// Reactive update
 		titleNode.setAttr('m.text', 'Updated');
-		await globalThis.reactive.wait();  // Wait for reactive update to propagate
+		await reactive.wait();  // Wait for reactive update to propagate
 
 		// External content should still be preserved
 		const externalAfterUpdate = document.getElementById('external-link');

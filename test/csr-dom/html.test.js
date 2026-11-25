@@ -1,9 +1,10 @@
+import { describe, it } from '@compat/test';
 import {
 	assert,
 	assertEquals,
 	assertExists,
 	assertStrictEquals,
-} from "https://deno.land/std@0.152.0/testing/asserts.ts";
+} from '@std/assert';
 
 import { setupRuntime, simulateBrowser } from '../harness.esm.js';
 
@@ -12,6 +13,7 @@ const REG_READY_FT = 'mwi.compRegReady';
 await setupRuntime();
 
 const { fwait, getInstance } = globalThis.$c;
+const { reactive } = globalThis;
 await fwait(REG_READY_FT);
 
 // Set up browser-like environment for DOM testing
@@ -20,8 +22,8 @@ await simulateBrowser();
 const doc = getInstance('MWIDocument');
 const ls = globalThis.ls;
 
-Deno.test("MWIHTML (h.*) - CSR-DOM Basic Element Rendering", async (t) => {
-	await t.step("(getDOM) - Simple div element", () => {
+describe("MWIHTML (h.*) - CSR-DOM Basic Element Rendering", () => {
+	it("(getDOM) - Simple div element", () => {
 		const divNode = $c.sm(doc, 'createNode', ['h.div']);
 		const domNodes = $c.sm(divNode, 'getDOM');
 
@@ -31,7 +33,7 @@ Deno.test("MWIHTML (h.*) - CSR-DOM Basic Element Rendering", async (t) => {
 		assertEquals(domNodes.size, 1);
 	});
 
-	await t.step(".getDOM() - Simple div element via JS", () => {
+	it(".getDOM() - Simple div element via JS", () => {
 		const divNode = doc.createNode('h.div');
 		const domNodes = divNode.getDOM();
 
@@ -40,7 +42,7 @@ Deno.test("MWIHTML (h.*) - CSR-DOM Basic Element Rendering", async (t) => {
 		assertEquals(domNodes.size, 1);
 	});
 
-	await t.step("(getDOM) - Div with class attribute", () => {
+	it("(getDOM) - Div with class attribute", () => {
 		const divNode = $c.sm(doc, 'createNode', ['h.div']);
 		$c.sm(divNode, 'setAttr', ['class', 'test-class']);
 		const domNodes = $c.sm(divNode, 'getDOM');
@@ -50,7 +52,7 @@ Deno.test("MWIHTML (h.*) - CSR-DOM Basic Element Rendering", async (t) => {
 		assertEquals(domNodes.size, 1);
 	});
 
-	await t.step(".getDOM() - Div with class attribute via JS", () => {
+	it(".getDOM() - Div with class attribute via JS", () => {
 		const divNode = doc.createNode('h.div');
 		divNode.setAttr('class', 'js-test-class');
 		const domNodes = divNode.getDOM();
@@ -60,7 +62,7 @@ Deno.test("MWIHTML (h.*) - CSR-DOM Basic Element Rendering", async (t) => {
 		assertEquals(domNodes.size, 1);
 	});
 
-	await t.step("(getDOM) - Div with multiple attributes", () => {
+	it("(getDOM) - Div with multiple attributes", () => {
 		const divNode = $c.sm(doc, 'createNode', ['h.div']);
 		$c.sm(divNode, 'setAttr', ['class', 'container']);
 		$c.sm(divNode, 'setAttr', ['id', 'main']);
@@ -74,7 +76,7 @@ Deno.test("MWIHTML (h.*) - CSR-DOM Basic Element Rendering", async (t) => {
 		assertEquals(domNodes.size, 1);
 	});
 
-	await t.step(".getDOM() - Div with multiple attributes via JS", () => {
+	it(".getDOM() - Div with multiple attributes via JS", () => {
 		const divNode = doc.createNode('h.div');
 		divNode.setAttr('class', 'wrapper');
 		divNode.setAttr('id', 'content');
@@ -89,8 +91,8 @@ Deno.test("MWIHTML (h.*) - CSR-DOM Basic Element Rendering", async (t) => {
 	});
 });
 
-Deno.test("MWIHTML (h.*) - CSR-DOM Element with Children", async (t) => {
-	await t.step("(getDOM) - Div with text child", () => {
+describe("MWIHTML (h.*) - CSR-DOM Element with Children", () => {
+	it("(getDOM) - Div with text child", () => {
 		const divNode = $c.sm(doc, 'createNode', ['h.div']);
 		const textNode = $c.sm(doc, 'createNode', ['m.t']);
 		$c.sm(textNode, 'setAttr', ['t', 'Hello World']);
@@ -107,7 +109,7 @@ Deno.test("MWIHTML (h.*) - CSR-DOM Element with Children", async (t) => {
 		assertEquals(domNodes.size, 1);
 	});
 
-	await t.step(".getDOM() - Div with text child via JS", () => {
+	it(".getDOM() - Div with text child via JS", () => {
 		const divNode = doc.createNode('h.div');
 		const textNode = doc.createNode('m.t');
 		textNode.setAttr('t', 'JS Hello');
@@ -122,7 +124,7 @@ Deno.test("MWIHTML (h.*) - CSR-DOM Element with Children", async (t) => {
 		assertEquals(domNodes.size, 1);
 	});
 
-	await t.step("(getDOM) - Div with multiple children", () => {
+	it("(getDOM) - Div with multiple children", () => {
 		const divNode = $c.sm(doc, 'createNode', ['h.div']);
 		const text1 = $c.sm(doc, 'createNode', ['m.t']);
 		$c.sm(text1, 'setAttr', ['t', 'First']);
@@ -139,7 +141,7 @@ Deno.test("MWIHTML (h.*) - CSR-DOM Element with Children", async (t) => {
 		assertEquals(domNodes.size, 1);
 	});
 
-	await t.step(".getDOM() - Div with multiple children via JS", () => {
+	it(".getDOM() - Div with multiple children via JS", () => {
 		const divNode = doc.createNode('h.div');
 		const text1 = doc.createNode('m.t');
 		text1.setAttr('t', 'JS First');
@@ -156,7 +158,7 @@ Deno.test("MWIHTML (h.*) - CSR-DOM Element with Children", async (t) => {
 		assertEquals(domNodes.size, 1);
 	});
 
-	await t.step("(getDOM) - Nested div elements", () => {
+	it("(getDOM) - Nested div elements", () => {
 		const outerDiv = $c.sm(doc, 'createNode', ['h.div']);
 		$c.sm(outerDiv, 'setAttr', ['class', 'outer']);
 		const innerDiv = $c.sm(doc, 'createNode', ['h.div']);
@@ -177,7 +179,7 @@ Deno.test("MWIHTML (h.*) - CSR-DOM Element with Children", async (t) => {
 		assertEquals(domNodes.size, 1);
 	});
 
-	await t.step(".getDOM() - Nested div elements via JS", () => {
+	it(".getDOM() - Nested div elements via JS", () => {
 		const outerDiv = doc.createNode('h.div');
 		outerDiv.setAttr('class', 'js-outer');
 		const innerDiv = doc.createNode('h.div');
@@ -197,8 +199,8 @@ Deno.test("MWIHTML (h.*) - CSR-DOM Element with Children", async (t) => {
 	});
 });
 
-Deno.test("MWIHTML (h.*) - CSR-DOM Void Elements", async (t) => {
-	await t.step("(getDOM) - Void element (br)", () => {
+describe("MWIHTML (h.*) - CSR-DOM Void Elements", () => {
+	it("(getDOM) - Void element (br)", () => {
 		const brNode = $c.sm(doc, 'createNode', ['h.br']);
 		const domNodes = $c.sm(brNode, 'getDOM');
 
@@ -207,7 +209,7 @@ Deno.test("MWIHTML (h.*) - CSR-DOM Void Elements", async (t) => {
 		assertEquals(domNodes.size, 1);
 	});
 
-	await t.step(".getDOM() - Void element (br) via JS", () => {
+	it(".getDOM() - Void element (br) via JS", () => {
 		const brNode = doc.createNode('h.br');
 		const domNodes = brNode.getDOM();
 
@@ -216,7 +218,7 @@ Deno.test("MWIHTML (h.*) - CSR-DOM Void Elements", async (t) => {
 		assertEquals(domNodes.size, 1);
 	});
 
-	await t.step("(getDOM) - Void element with attributes", () => {
+	it("(getDOM) - Void element with attributes", () => {
 		const brNode = $c.sm(doc, 'createNode', ['h.br']);
 		$c.sm(brNode, 'setAttr', ['class', 'line-break']);
 		const domNodes = $c.sm(brNode, 'getDOM');
@@ -226,7 +228,7 @@ Deno.test("MWIHTML (h.*) - CSR-DOM Void Elements", async (t) => {
 		assertEquals(domNodes.size, 1);
 	});
 
-	await t.step(".getDOM() - Void element with attributes via JS", () => {
+	it(".getDOM() - Void element with attributes via JS", () => {
 		const brNode = doc.createNode('h.br');
 		brNode.setAttr('class', 'js-break');
 		const domNodes = brNode.getDOM();
@@ -236,7 +238,7 @@ Deno.test("MWIHTML (h.*) - CSR-DOM Void Elements", async (t) => {
 		assertEquals(domNodes.size, 1);
 	});
 
-	await t.step("(getDOM) - Void element ignores children", () => {
+	it("(getDOM) - Void element ignores children", () => {
 		const brNode = $c.sm(doc, 'createNode', ['h.br']);
 		const textNode = $c.sm(doc, 'createNode', ['m.t']);
 		$c.sm(textNode, 'setAttr', ['t', 'Ignored']);
@@ -249,7 +251,7 @@ Deno.test("MWIHTML (h.*) - CSR-DOM Void Elements", async (t) => {
 		assertEquals(domNodes.size, 1);
 	});
 
-	await t.step(".getDOM() - Void element ignores children via JS", () => {
+	it(".getDOM() - Void element ignores children via JS", () => {
 		const brNode = doc.createNode('h.br');
 		const textNode = doc.createNode('m.t');
 		textNode.setAttr('t', 'Ignored');
@@ -262,8 +264,8 @@ Deno.test("MWIHTML (h.*) - CSR-DOM Void Elements", async (t) => {
 	});
 });
 
-Deno.test("MWIHTML (h.*) - CSR-DOM Reactive Updates", async (t) => {
-	await t.step("(getDOM) - Reactive attribute update", async () => {
+describe("MWIHTML (h.*) - CSR-DOM Reactive Updates", () => {
+	it("(getDOM) - Reactive attribute update", async () => {
 		const divNode = $c.sm(doc, 'createNode', ['h.div']);
 		$c.sm(divNode, 'setAttr', ['class', 'initial']);
 		const domNodes = $c.sm(divNode, 'getDOM');
@@ -273,14 +275,14 @@ Deno.test("MWIHTML (h.*) - CSR-DOM Reactive Updates", async (t) => {
 
 		// Update attribute
 		$c.sm(divNode, 'setAttr', ['class', 'updated']);
-		await globalThis.reactive.wait();
+		await reactive.wait();
 
 		// Same element, updated attribute
 		assertEquals(divElem.className, 'updated');
 		assertEquals(domNodes.size, 1);
 	});
 
-	await t.step(".getDOM() - Reactive attribute update via JS", async () => {
+	it(".getDOM() - Reactive attribute update via JS", async () => {
 		const divNode = doc.createNode('h.div');
 		divNode.setAttr('class', 'js-initial');
 		const domNodes = divNode.getDOM();
@@ -289,13 +291,13 @@ Deno.test("MWIHTML (h.*) - CSR-DOM Reactive Updates", async (t) => {
 		assertEquals(divElem.className, 'js-initial');
 
 		divNode.setAttr('class', 'js-updated');
-		await globalThis.reactive.wait();
+		await reactive.wait();
 
 		assertEquals(divElem.className, 'js-updated');
 		assertEquals(domNodes.size, 1);
 	});
 
-	await t.step("(getDOM) - Reactive child content update", async () => {
+	it("(getDOM) - Reactive child content update", async () => {
 		const divNode = $c.sm(doc, 'createNode', ['h.div']);
 		const textNode = $c.sm(doc, 'createNode', ['m.t']);
 		$c.sm(textNode, 'setAttr', ['t', 'Initial']);
@@ -307,14 +309,14 @@ Deno.test("MWIHTML (h.*) - CSR-DOM Reactive Updates", async (t) => {
 
 		// Update child text
 		$c.sm(textNode, 'setAttr', ['t', 'Updated']);
-		await globalThis.reactive.wait();
+		await reactive.wait();
 
 		// Same div, updated child content
 		assertEquals(divElem.childNodes[0].nodeValue, 'Updated');
 		assertEquals(domNodes.size, 1);
 	});
 
-	await t.step(".getDOM() - Reactive child content update via JS", async () => {
+	it(".getDOM() - Reactive child content update via JS", async () => {
 		const divNode = doc.createNode('h.div');
 		const textNode = doc.createNode('m.t');
 		textNode.setAttr('t', 'JS Initial');
@@ -325,13 +327,13 @@ Deno.test("MWIHTML (h.*) - CSR-DOM Reactive Updates", async (t) => {
 		assertEquals(divElem.childNodes[0].nodeValue, 'JS Initial');
 
 		textNode.setAttr('t', 'JS Updated');
-		await globalThis.reactive.wait();
+		await reactive.wait();
 
 		assertEquals(divElem.childNodes[0].nodeValue, 'JS Updated');
 		assertEquals(domNodes.size, 1);
 	});
 
-	await t.step("(getDOM) - Reactive child empty to non-empty", async () => {
+	it("(getDOM) - Reactive child empty to non-empty", async () => {
 		const divNode = $c.sm(doc, 'createNode', ['h.div']);
 		const textNode = $c.sm(doc, 'createNode', ['m.t']);
 		$c.sm(textNode, 'setAttr', ['t', '']);
@@ -344,7 +346,7 @@ Deno.test("MWIHTML (h.*) - CSR-DOM Reactive Updates", async (t) => {
 
 		// Update to non-empty
 		$c.sm(textNode, 'setAttr', ['t', 'Now has text']);
-		await globalThis.reactive.wait();
+		await reactive.wait();
 
 		// Should now have one text node child
 		assertEquals(divElem.childNodes.length, 1);
@@ -353,7 +355,7 @@ Deno.test("MWIHTML (h.*) - CSR-DOM Reactive Updates", async (t) => {
 		assertEquals(domNodes.size, 1);
 	});
 
-	await t.step(".getDOM() - Reactive child empty to non-empty via JS", async () => {
+	it(".getDOM() - Reactive child empty to non-empty via JS", async () => {
 		const divNode = doc.createNode('h.div');
 		const textNode = doc.createNode('m.t');
 		textNode.setAttr('t', '');
@@ -364,7 +366,7 @@ Deno.test("MWIHTML (h.*) - CSR-DOM Reactive Updates", async (t) => {
 		assertEquals(divElem.childNodes.length, 0);
 
 		textNode.setAttr('t', 'Now has text');
-		await globalThis.reactive.wait();
+		await reactive.wait();
 
 		assertEquals(divElem.childNodes.length, 1);
 		assertEquals(divElem.childNodes[0].nodeType, 3); // Text node
@@ -373,8 +375,8 @@ Deno.test("MWIHTML (h.*) - CSR-DOM Reactive Updates", async (t) => {
 	});
 });
 
-Deno.test("MWIHTML (h.*) - CSR-DOM Various Element Types", async (t) => {
-	await t.step("(getDOM) - Paragraph element", () => {
+describe("MWIHTML (h.*) - CSR-DOM Various Element Types", () => {
+	it("(getDOM) - Paragraph element", () => {
 		const pNode = $c.sm(doc, 'createNode', ['h.p']);
 		const textNode = $c.sm(doc, 'createNode', ['m.t']);
 		$c.sm(textNode, 'setAttr', ['t', 'Paragraph text']);
@@ -387,7 +389,7 @@ Deno.test("MWIHTML (h.*) - CSR-DOM Various Element Types", async (t) => {
 		assertEquals(domNodes.size, 1);
 	});
 
-	await t.step(".getDOM() - Paragraph element via JS", () => {
+	it(".getDOM() - Paragraph element via JS", () => {
 		const pNode = doc.createNode('h.p');
 		const textNode = doc.createNode('m.t');
 		textNode.setAttr('t', 'JS Paragraph');
@@ -400,7 +402,7 @@ Deno.test("MWIHTML (h.*) - CSR-DOM Various Element Types", async (t) => {
 		assertEquals(domNodes.size, 1);
 	});
 
-	await t.step("(getDOM) - Span element", () => {
+	it("(getDOM) - Span element", () => {
 		const spanNode = $c.sm(doc, 'createNode', ['h.span']);
 		$c.sm(spanNode, 'setAttr', ['class', 'highlight']);
 		const textNode = $c.sm(doc, 'createNode', ['m.t']);
@@ -415,7 +417,7 @@ Deno.test("MWIHTML (h.*) - CSR-DOM Various Element Types", async (t) => {
 		assertEquals(domNodes.size, 1);
 	});
 
-	await t.step(".getDOM() - Span element via JS", () => {
+	it(".getDOM() - Span element via JS", () => {
 		const spanNode = doc.createNode('h.span');
 		spanNode.setAttr('class', 'js-highlight');
 		const textNode = doc.createNode('m.t');
@@ -431,24 +433,24 @@ Deno.test("MWIHTML (h.*) - CSR-DOM Various Element Types", async (t) => {
 	});
 });
 
-Deno.test("MWIHTML (h.*) - CSR-DOM HTMLElement[MWINode] back-reference", async (t) => {
+describe("MWIHTML (h.*) - CSR-DOM HTMLElement[MWINode] back-reference", () => {
 	const NODE_SYM = Symbol.for('MWINode');
 
-	await t.step("(getDOM) - DOM element has MWINode back-reference", () => {
+	it("(getDOM) - DOM element has MWINode back-reference", () => {
 		const divNode = $c.sm(doc, 'createNode', ['h.div']);
 		const domNodes = $c.sm(divNode, 'getDOM');
 
 		assertStrictEquals(domNodes.at(0)[NODE_SYM], divNode);
 	});
 
-	await t.step(".getDOM() - DOM element has MWINode back-reference via JS", () => {
+	it(".getDOM() - DOM element has MWINode back-reference via JS", () => {
 		const divNode = doc.createNode('h.div');
 		const domNodes = divNode.getDOM();
 
 		assertStrictEquals(domNodes.at(0)[NODE_SYM], divNode);
 	});
 
-	await t.step("(getDOM) - Each element has its own MWINode back-reference", () => {
+	it("(getDOM) - Each element has its own MWINode back-reference", () => {
 		const outerDiv = $c.sm(doc, 'createNode', ['h.div']);
 		const innerSpan = $c.sm(doc, 'createNode', ['h.span']);
 		$c.sm(outerDiv, 'append', [innerSpan]);
@@ -459,7 +461,7 @@ Deno.test("MWIHTML (h.*) - CSR-DOM HTMLElement[MWINode] back-reference", async (
 		assertStrictEquals(outerElem.children[0][NODE_SYM], innerSpan);
 	});
 
-	await t.step(".getDOM() - Each element has its own MWINode back-reference via JS", () => {
+	it(".getDOM() - Each element has its own MWINode back-reference via JS", () => {
 		const outerDiv = doc.createNode('h.div');
 		const innerSpan = doc.createNode('h.span');
 		outerDiv.append(innerSpan);
@@ -470,38 +472,38 @@ Deno.test("MWIHTML (h.*) - CSR-DOM HTMLElement[MWINode] back-reference", async (
 		assertStrictEquals(outerElem.children[0][NODE_SYM], innerSpan);
 	});
 
-	await t.step("(getDOM) - MWINode back-reference stable across reactive updates", async () => {
+	it("(getDOM) - MWINode back-reference stable across reactive updates", async () => {
 		const divNode = $c.sm(doc, 'createNode', ['h.div']);
 		$c.sm(divNode, 'setAttr', ['title', 'Initial']);
 		const domNodes = $c.sm(divNode, 'getDOM');
 
 		const divElem = domNodes.at(0);
 		$c.sm(divNode, 'setAttr', ['title', 'Updated']);
-		await globalThis.reactive.wait();
+		await reactive.wait();
 
 		assertStrictEquals(divElem[NODE_SYM], divNode);
 	});
 
-	await t.step(".getDOM() - MWINode back-reference stable across reactive updates via JS", async () => {
+	it(".getDOM() - MWINode back-reference stable across reactive updates via JS", async () => {
 		const divNode = doc.createNode('h.div');
 		divNode.setAttr('title', 'JS Initial');
 		const domNodes = divNode.getDOM();
 
 		const divElem = domNodes.at(0);
 		divNode.setAttr('title', 'JS Updated');
-		await globalThis.reactive.wait();
+		await reactive.wait();
 
 		assertStrictEquals(divElem[NODE_SYM], divNode);
 	});
 
-	await t.step("(getDOM) - Void element also has MWINode back-reference", () => {
+	it("(getDOM) - Void element also has MWINode back-reference", () => {
 		const brNode = $c.sm(doc, 'createNode', ['h.br']);
 		const domNodes = $c.sm(brNode, 'getDOM');
 
 		assertStrictEquals(domNodes.at(0)[NODE_SYM], brNode);
 	});
 
-	await t.step(".getDOM() - Void element also has MWINode back-reference via JS", () => {
+	it(".getDOM() - Void element also has MWINode back-reference via JS", () => {
 		const brNode = doc.createNode('h.br');
 		const domNodes = brNode.getDOM();
 

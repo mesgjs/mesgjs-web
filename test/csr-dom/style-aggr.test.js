@@ -1,8 +1,9 @@
+import { describe, it } from '@compat/test';
 import {
 	assert,
 	assertEquals,
 	assertStrictEquals,
-} from "https://deno.land/std@0.152.0/testing/asserts.ts";
+} from '@std/assert';
 
 import { setupRuntime, simulateBrowser } from '../harness.esm.js';
 
@@ -22,8 +23,8 @@ await fwait('MWIDocument', 'mwi.comp.MWIStyleAggr');
 
 await simulateBrowser();
 
-Deno.test('MWIStyleAggr (m.stag) - CSR-DOM collector mode', async (t) => {
-	await t.step('(getDOM) - collector node returns empty DOM', () => {
+describe('MWIStyleAggr (m.stag) - CSR-DOM collector mode', () => {
+	it('(getDOM) - collector node returns empty DOM', () => {
 		const doc = getInstance('MWIDocument');
 		const collector = $c.sm(doc, 'createNode', ls([, 'm.stag']));
 		$c.sm(collector, 'setSubSpec', { subSpec: ls([, ':root', , 'container-name', , 'group1']) });
@@ -32,7 +33,7 @@ Deno.test('MWIStyleAggr (m.stag) - CSR-DOM collector mode', async (t) => {
 		assertEquals(domNodes.size, 0, 'collector node should return empty DOM');
 	});
 
-	await t.step('.getDOM() - collector node returns empty DOM via JS', () => {
+	it('.getDOM() - collector node returns empty DOM via JS', () => {
 		const doc = getInstance('MWIDocument');
 		const collector = doc.createNode('m.stag');
 		collector.setSubSpec({ subSpec: ls([, ':root', , 'container-name', , 'group1']) });
@@ -42,8 +43,8 @@ Deno.test('MWIStyleAggr (m.stag) - CSR-DOM collector mode', async (t) => {
 	});
 });
 
-Deno.test('MWIStyleAggr (m.stag) - CSR-DOM render mode & mounting', async (t) => {
-	await t.step('(getDOM) - renders <style> element with aggregated CSS rules', async () => {
+describe('MWIStyleAggr (m.stag) - CSR-DOM render mode & mounting', () => {
+	it('(getDOM) - renders <style> element with aggregated CSS rules', async () => {
 		const doc = getInstance('MWIDocument');
 		const renderNode = $c.sm(doc, 'createNode', ls([, 'm.stag']));
 		const c1 = $c.sm(doc, 'createNode', ls([, 'm.stag']));
@@ -60,7 +61,7 @@ Deno.test('MWIStyleAggr (m.stag) - CSR-DOM render mode & mounting', async (t) =>
 		assertEquals(domNodes.at(0).textContent, ':root { container-name: group1 group2; }', 'Style tag content should match aggregated CSS');
 	});
 
-	await t.step('.getDOM() - renders <style> element via JS', async () => {
+	it('.getDOM() - renders <style> element via JS', async () => {
 		const doc = getInstance('MWIDocument');
 		const renderNode = doc.createNode('m.stag');
 		const c1 = doc.createNode('m.stag');
@@ -75,7 +76,7 @@ Deno.test('MWIStyleAggr (m.stag) - CSR-DOM render mode & mounting', async (t) =>
 		assertEquals(domNodes.at(0).textContent, ':root { container-name: group1; }', 'Style tag content should match aggregated CSS via JS');
 	});
 
-	await t.step('(getDOM) - render node DOM is stable across multiple getDOM calls', () => {
+	it('(getDOM) - render node DOM is stable across multiple getDOM calls', () => {
 		const doc = getInstance('MWIDocument');
 		const renderNode = doc.createNode('m.stag');
 		const dom1 = renderNode.getDOM();
@@ -85,8 +86,8 @@ Deno.test('MWIStyleAggr (m.stag) - CSR-DOM render mode & mounting', async (t) =>
 	});
 });
 
-Deno.test('MWIStyleAggr (m.stag) - CSR-DOM Reactivity', async (t) => {
-	await t.step('(getDOM) - dynamically appending a collector node updates stylesheet reactively', async () => {
+describe('MWIStyleAggr (m.stag) - CSR-DOM Reactivity', () => {
+	it('(getDOM) - dynamically appending a collector node updates stylesheet reactively', async () => {
 		const doc = getInstance('MWIDocument');
 		const renderNode = doc.createNode('m.stag');
 		const c1 = doc.createNode('m.stag');
@@ -108,7 +109,7 @@ Deno.test('MWIStyleAggr (m.stag) - CSR-DOM Reactivity', async (t) => {
 		assertEquals(domNodes.at(0).textContent, ':root { container-name: initial added; }', 'Stylesheet should reactively update with new value');
 	});
 
-	await t.step('(getDOM) - modifying subSpec on existing collector node updates stylesheet reactively', async () => {
+	it('(getDOM) - modifying subSpec on existing collector node updates stylesheet reactively', async () => {
 		const doc = getInstance('MWIDocument');
 		const renderNode = doc.createNode('m.stag');
 		const c1 = doc.createNode('m.stag');

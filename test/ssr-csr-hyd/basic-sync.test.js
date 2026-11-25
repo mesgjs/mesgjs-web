@@ -8,12 +8,13 @@
 //   6. Verify matching nodes are preserved (same identity)
 //   7. Verify mismatches are rerendered (different identity)
 
+import { describe, it } from '@compat/test';
 import {
 	assertEquals,
 	assertExists,
 	assertNotStrictEquals,
 	assertStrictEquals,
-} from "https://deno.land/std@0.152.0/testing/asserts.ts";
+} from '@std/assert';
 
 import { setupRuntime, simulateBrowser } from '../harness.esm.js';
 
@@ -22,12 +23,11 @@ const REG_READY_FT = 'mwi.compRegReady';
 await setupRuntime();
 
 const { fwait, getInstance } = globalThis.$c;
+const { ps, reactive } = globalThis;
 await fwait(REG_READY_FT);
 
 // Set up browser-like environment for DOM testing
 await simulateBrowser();
-
-const ps = globalThis.ps;
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -69,8 +69,8 @@ function csrSync (spec, cursor) {
 // Basic element preservation
 // ---------------------------------------------------------------------------
 
-Deno.test("SSR-CSR Hydration - Basic element preservation", async (t) => {
-	await t.step("Single div: SSR node is reused by CSR", () => {
+describe("SSR-CSR Hydration - Basic element preservation", () => {
+	it("Single div: SSR node is reused by CSR", () => {
 		const spec = ps('[( [h.div Hello] )]');
 
 		// SSR
@@ -90,7 +90,7 @@ Deno.test("SSR-CSR Hydration - Basic element preservation", async (t) => {
 		assertEquals(domNodes.at(0).textContent, 'Hello', 'content preserved');
 	});
 
-	await t.step("Single span: SSR node is reused by CSR", () => {
+	it("Single span: SSR node is reused by CSR", () => {
 		const spec = ps('[( [h.span World] )]');
 
 		const html = ssrHTML(spec);
@@ -102,7 +102,7 @@ Deno.test("SSR-CSR Hydration - Basic element preservation", async (t) => {
 		assertStrictEquals(domNodes.at(0), ssrRoot, 'CSR reuses the SSR span element');
 	});
 
-	await t.step("Multiple siblings: all SSR nodes reused", () => {
+	it("Multiple siblings: all SSR nodes reused", () => {
 		const spec = ps('[( [h.div First] [h.p Second] [h.span Third] )]');
 
 		const html = ssrHTML(spec);
@@ -122,7 +122,7 @@ Deno.test("SSR-CSR Hydration - Basic element preservation", async (t) => {
 		assertStrictEquals(domNodes.at(2), ssrSpan, 'third sibling reused');
 	});
 
-	await t.step("Element with attributes: SSR node reused, attributes synced", () => {
+	it("Element with attributes: SSR node reused, attributes synced", () => {
 		const spec = ps('[( [h.div id=myid class=box data-x=42 Content] )]');
 
 		const html = ssrHTML(spec);
@@ -141,8 +141,8 @@ Deno.test("SSR-CSR Hydration - Basic element preservation", async (t) => {
 // Text node preservation
 // ---------------------------------------------------------------------------
 
-Deno.test("SSR-CSR Hydration - Text node preservation", async (t) => {
-	await t.step("Text node inside div: SSR text node reused", () => {
+describe("SSR-CSR Hydration - Text node preservation", () => {
+	it("Text node inside div: SSR text node reused", () => {
 		const spec = ps('[( [h.div "Hello World"] )]');
 
 		const html = ssrHTML(spec);
@@ -159,7 +159,7 @@ Deno.test("SSR-CSR Hydration - Text node preservation", async (t) => {
 		assertStrictEquals(csrDiv.firstChild, ssrText, 'text node reused');
 	});
 
-	await t.step("Explicit m.t node: SSR text node reused", () => {
+	it("Explicit m.t node: SSR text node reused", () => {
 		const spec = ps('[( [h.div [m.t t="Explicit text"]] )]');
 
 		const html = ssrHTML(spec);
@@ -173,7 +173,7 @@ Deno.test("SSR-CSR Hydration - Text node preservation", async (t) => {
 		assertStrictEquals(domNodes.at(0).firstChild, ssrText, 'explicit text node reused');
 	});
 
-	await t.step("Multiple text nodes: each SSR text node reused", () => {
+	it("Multiple text nodes: each SSR text node reused", () => {
 		const doc = makeDoc();
 		const divNode = doc.createNode('h.div');
 		const t1 = doc.createNode('m.t');
@@ -202,8 +202,8 @@ Deno.test("SSR-CSR Hydration - Text node preservation", async (t) => {
 // Comment node preservation
 // ---------------------------------------------------------------------------
 
-Deno.test("SSR-CSR Hydration - Comment node preservation", async (t) => {
-	await t.step("Comment node inside div: SSR comment node reused", () => {
+describe("SSR-CSR Hydration - Comment node preservation", () => {
+	it("Comment node inside div: SSR comment node reused", () => {
 		const spec = ps('[( [h.div [m.com t="My comment"] "After"] )]');
 
 		const html = ssrHTML(spec);
@@ -220,7 +220,7 @@ Deno.test("SSR-CSR Hydration - Comment node preservation", async (t) => {
 		assertStrictEquals(csrDiv.firstChild, ssrComment, 'comment node reused');
 	});
 
-	await t.step("Comment with different content: not reused (mismatch)", () => {
+	it("Comment with different content: not reused (mismatch)", () => {
 		// SSR a comment with one text, then CSR with a different text
 		const ssrSpec = ps('[( [h.div [m.com t="SSR comment"]] )]');
 		const csrSpec = ps('[( [h.div [m.com t="CSR comment"]] )]');
@@ -249,8 +249,8 @@ Deno.test("SSR-CSR Hydration - Comment node preservation", async (t) => {
 // Nested structure preservation
 // ---------------------------------------------------------------------------
 
-Deno.test("SSR-CSR Hydration - Nested structure preservation", async (t) => {
-	await t.step("Nested divs: all SSR nodes reused", () => {
+describe("SSR-CSR Hydration - Nested structure preservation", () => {
+	it("Nested divs: all SSR nodes reused", () => {
 		const spec = ps('[( [h.div [h.div [h.span Deep]]] )]');
 
 		const html = ssrHTML(spec);
@@ -270,7 +270,7 @@ Deno.test("SSR-CSR Hydration - Nested structure preservation", async (t) => {
 		assertStrictEquals(csrOuter.firstChild.firstChild, ssrSpan, 'inner span reused');
 	});
 
-	await t.step("Mixed content (elements + text): SSR nodes reused", () => {
+	it("Mixed content (elements + text): SSR nodes reused", () => {
 		const spec = ps('[( [h.div Before [h.span Middle] After] )]');
 
 		const html = ssrHTML(spec);
@@ -292,7 +292,7 @@ Deno.test("SSR-CSR Hydration - Nested structure preservation", async (t) => {
 		assertStrictEquals(csrDiv.childNodes[1], ssrSpan, 'span reused');
 	});
 
-	await t.step("Complex nested structure: all SSR nodes reused", () => {
+	it("Complex nested structure: all SSR nodes reused", () => {
 		const spec = ps(`[( [h.article
 			[h.header [h.h1 Title]]
 			[h.section [h.p Content]]
@@ -321,7 +321,7 @@ Deno.test("SSR-CSR Hydration - Nested structure preservation", async (t) => {
 		assertStrictEquals(csrArticle.children[1].children[0], ssrP, 'p reused');
 	});
 
-	await t.step("Fragment children: SSR nodes reused (fragment is transparent)", () => {
+	it("Fragment children: SSR nodes reused (fragment is transparent)", () => {
 		const spec = ps('[( [h.div [m.frg [h.span A] [h.span B]]] )]');
 
 		const html = ssrHTML(spec);
@@ -345,8 +345,8 @@ Deno.test("SSR-CSR Hydration - Nested structure preservation", async (t) => {
 // Mismatch / rerender scenarios
 // ---------------------------------------------------------------------------
 
-Deno.test("SSR-CSR Hydration - Mismatch rerender", async (t) => {
-	await t.step("Tag mismatch: CSR generates new element", () => {
+describe("SSR-CSR Hydration - Mismatch rerender", () => {
+	it("Tag mismatch: CSR generates new element", () => {
 		// SSR renders a <div>, but CSR spec has a <span> — mismatch
 		const ssrSpec = ps('[( [h.div Content] )]');
 		const csrSpec = ps('[( [h.span Content] )]');
@@ -363,7 +363,7 @@ Deno.test("SSR-CSR Hydration - Mismatch rerender", async (t) => {
 		assertNotStrictEquals(csrElem, ssrDiv, 'CSR created a new element (not the SSR div)');
 	});
 
-	await t.step("Extra SSR elements: CSR removes extras", () => {
+	it("Extra SSR elements: CSR removes extras", () => {
 		// SSR renders 3 divs, CSR spec only has 2
 		const ssrSpec = ps('[( [h.div A] [h.div B] [h.div C] )]');
 		const csrSpec = ps('[( [h.div A] [h.div B] )]');
@@ -382,7 +382,7 @@ Deno.test("SSR-CSR Hydration - Mismatch rerender", async (t) => {
 		assertStrictEquals(domNodes.at(1), ssrDiv2, 'second div reused');
 	});
 
-	await t.step("Missing SSR element: CSR generates new element", () => {
+	it("Missing SSR element: CSR generates new element", () => {
 		// SSR renders 1 div, CSR spec has 2 — second one must be generated
 		const ssrSpec = ps('[( [h.div A] )]');
 		const csrSpec = ps('[( [h.div A] [h.div B] )]');
@@ -400,7 +400,7 @@ Deno.test("SSR-CSR Hydration - Mismatch rerender", async (t) => {
 		assertEquals(domNodes.at(1).textContent, 'B', 'second div has correct content');
 	});
 
-	await t.step("Text content mismatch: CSR updates text in reused node", () => {
+	it("Text content mismatch: CSR updates text in reused node", () => {
 		// SSR renders "Old text", CSR spec has "New text"
 		// The div element should be reused, but text content updated
 		const ssrSpec = ps('[( [h.div "Old text"] )]');
@@ -417,7 +417,7 @@ Deno.test("SSR-CSR Hydration - Mismatch rerender", async (t) => {
 		assertEquals(csrDiv.textContent, 'New text', 'text content updated by CSR');
 	});
 
-	await t.step("Nested tag mismatch: outer reused, inner regenerated", () => {
+	it("Nested tag mismatch: outer reused, inner regenerated", () => {
 		// SSR: <div><span>text</span></div>
 		// CSR: <div><p>text</p></div>
 		// The outer div should be reused, but the inner element regenerated
@@ -444,8 +444,8 @@ Deno.test("SSR-CSR Hydration - Mismatch rerender", async (t) => {
 // m.csr opt-in CSR nodes
 // ---------------------------------------------------------------------------
 
-Deno.test("SSR-CSR Hydration - m.csr opt-in CSR nodes", async (t) => {
-	await t.step("m.csr node: SSR emits nothing, CSR generates element", () => {
+describe("SSR-CSR Hydration - m.csr opt-in CSR nodes", () => {
+	it("m.csr node: SSR emits nothing, CSR generates element", () => {
 		// A node with m.csr=true is suppressed in SSR output
 		const doc = makeDoc();
 		const divNode = doc.createNode('h.div');
@@ -463,7 +463,7 @@ Deno.test("SSR-CSR Hydration - m.csr opt-in CSR nodes", async (t) => {
 		assertEquals(domNodes.at(0).textContent, 'CSR only', 'CSR content correct');
 	});
 
-	await t.step("m.csr sibling: SSR-rendered siblings preserved, m.csr generated", () => {
+	it("m.csr sibling: SSR-rendered siblings preserved, m.csr generated", () => {
 		// SSR: <div>SSR</div>  (m.csr div is omitted)
 		// CSR: <div>SSR</div><div>CSR only</div>
 		const doc = makeDoc();
@@ -501,8 +501,8 @@ Deno.test("SSR-CSR Hydration - m.csr opt-in CSR nodes", async (t) => {
 // ID-based resync
 // ---------------------------------------------------------------------------
 
-Deno.test("SSR-CSR Hydration - ID-based resync", async (t) => {
-	await t.step("Element with id: found via getElementById when cursor mismatches", () => {
+describe("SSR-CSR Hydration - ID-based resync", () => {
+	it("Element with id: found via getElementById when cursor mismatches", () => {
 		// SSR renders: <span>skip</span><div id="target">Content</div>
 		// CSR cursor starts at <span>, but spec is for a <div id="target">
 		// The sync should skip the span and find the div by id
@@ -525,7 +525,7 @@ Deno.test("SSR-CSR Hydration - ID-based resync", async (t) => {
 		assertStrictEquals(domNodes.at(0), ssrDiv, 'div found via getElementById');
 	});
 
-	await t.step("Element with id: direct match preferred over getElementById", () => {
+	it("Element with id: direct match preferred over getElementById", () => {
 		// SSR renders: <div id="target">Content</div>
 		// CSR cursor starts at the div — should match directly, not via getElementById
 		document.body.innerHTML = '<div id="target">Content</div>';
@@ -542,7 +542,7 @@ Deno.test("SSR-CSR Hydration - ID-based resync", async (t) => {
 		assertStrictEquals(domNodes.at(0), ssrDiv, 'div matched directly (not via getElementById)');
 	});
 
-	await t.step("Multiple elements with ids: each found correctly", () => {
+	it("Multiple elements with ids: each found correctly", () => {
 		const spec = ps('[( [h.div id=first First] [h.div id=second Second] )]');
 
 		const html = ssrHTML(spec);
@@ -564,8 +564,8 @@ Deno.test("SSR-CSR Hydration - ID-based resync", async (t) => {
 // Reactive updates after hydration
 // ---------------------------------------------------------------------------
 
-Deno.test("SSR-CSR Hydration - Reactive updates after hydration", async (t) => {
-	await t.step("Attribute update after hydration: SSR node updated in place", async () => {
+describe("SSR-CSR Hydration - Reactive updates after hydration", () => {
+	it("Attribute update after hydration: SSR node updated in place", async () => {
 		const doc = makeDoc();
 		const divNode = doc.createNode('h.div');
 		divNode.setAttr('class', 'initial');
@@ -584,13 +584,13 @@ Deno.test("SSR-CSR Hydration - Reactive updates after hydration", async (t) => {
 
 		// Reactive update
 		divNode.setAttr('class', 'updated');
-		await globalThis.reactive.wait();
+		await reactive.wait();
 
 		assertStrictEquals(domNodes.at(0), ssrDiv, 'same DOM node after update');
 		assertEquals(domNodes.at(0).className, 'updated', 'class updated reactively');
 	});
 
-	await t.step("Text update after hydration: SSR text node updated in place", async () => {
+	it("Text update after hydration: SSR text node updated in place", async () => {
 		const doc = makeDoc();
 		const divNode = doc.createNode('h.div');
 		const textNode = doc.createNode('m.t');
@@ -612,13 +612,13 @@ Deno.test("SSR-CSR Hydration - Reactive updates after hydration", async (t) => {
 
 		// Reactive update
 		textNode.setAttr('t', 'Updated text');
-		await globalThis.reactive.wait();
+		await reactive.wait();
 
 		assertEquals(domNodes.at(0).firstChild.data, 'Updated text', 'text updated reactively');
 		assertStrictEquals(domNodes.at(0).firstChild, ssrText, 'same text node after update');
 	});
 
-	await t.step("Child append after hydration: new child added to reused parent", async () => {
+	it("Child append after hydration: new child added to reused parent", async () => {
 		const doc = makeDoc();
 		const divNode = doc.createNode('h.div');
 		const span1 = doc.createNode('h.span');
@@ -642,7 +642,7 @@ Deno.test("SSR-CSR Hydration - Reactive updates after hydration", async (t) => {
 		const span2 = doc.createNode('h.span');
 		span2.append('Second');
 		divNode.append(span2);
-		await globalThis.reactive.wait();
+		await reactive.wait();
 
 		assertEquals(domNodes.at(0).children.length, 2, 'two children after append');
 		assertStrictEquals(domNodes.at(0).children[0], ssrSpan1, 'first span still reused');

@@ -1,8 +1,9 @@
+import { describe, it } from '@compat/test';
 import {
 	assert,
 	assertEquals,
 	assertStrictEquals,
-} from "https://deno.land/std@0.152.0/testing/asserts.ts";
+} from '@std/assert';
 
 import { setupRuntime, simulateBrowser } from '../harness.esm.js';
 
@@ -12,8 +13,7 @@ const MWI_DOC_RDY_FT = 'MWIDocument';
 await setupRuntime();
 
 const { fwait, getInstance, getInterface } = globalThis.$c;
-const ls = globalThis.ls;
-const ps = globalThis.ps;
+const { ls, ps, reactive } = globalThis;
 
 // Wait for registry and MWIDocument to be ready
 await fwait(REG_READY_FT, MWI_DOC_RDY_FT);
@@ -24,12 +24,11 @@ await simulateBrowser();
 const doc = getInstance('MWIDocument');
 const MWIDocument = getInterface('MWIDocument').proto;
 
-Deno.test("MWIDocNode - CSR-DOM Basic Rendering", async (t) => {
-	await t.step("(getDOM) - Empty element (no attributes, no children)", async () => {
+describe("MWIDocNode - CSR-DOM Basic Rendering", () => {
+	it("(getDOM) - Empty element (no attributes, no children)", () => {
 		const divNode = $c.sm(doc, 'createNode', ['h.div']);
 		const domNodes = $c.sm(divNode, 'getDOM');
 
-		await globalThis.reactive.wait();
 		assertEquals(domNodes.size, 1);
 		const divElem = domNodes.at(0);
 		assertEquals(divElem.tagName, 'DIV');
@@ -37,66 +36,61 @@ Deno.test("MWIDocNode - CSR-DOM Basic Rendering", async (t) => {
 		assertEquals(divElem.attributes.length, 0);
 	});
 
-	await t.step(".getDOM() - Empty element via JS", async () => {
+	it(".getDOM() - Empty element via JS", () => {
 		const divNode = doc.createNode('h.div');
 		const domNodes = divNode.getDOM();
 
-		await globalThis.reactive.wait();
 		assertEquals(domNodes.size, 1);
 		const divElem = domNodes.at(0);
 		assertEquals(divElem.tagName, 'DIV');
 		assertEquals(divElem.children.length, 0);
 	});
 
-	await t.step("(getDOM) - Element with attributes only", async () => {
+	it("(getDOM) - Element with attributes only", () => {
 		const divNode = $c.sm(doc, 'createNode', ['h.div']);
 		$c.sm(divNode, 'setAttr', ['id', 'test-id']);
 		$c.sm(divNode, 'setAttr', ['class', 'test-class']);
 		const domNodes = $c.sm(divNode, 'getDOM');
 
-		await globalThis.reactive.wait();
 		const divElem = domNodes.at(0);
 		assertEquals(divElem.id, 'test-id');
 		assertEquals(divElem.className, 'test-class');
 	});
 
-	await t.step(".getDOM() - Element with attributes only via JS", async () => {
+	it(".getDOM() - Element with attributes only via JS", () => {
 		const divNode = doc.createNode('h.div');
 		divNode.setAttr('id', 'js-test-id');
 		divNode.setAttr('title', 'Test Title');
 		const domNodes = divNode.getDOM();
 
-		await globalThis.reactive.wait();
 		const divElem = domNodes.at(0);
 		assertEquals(divElem.id, 'js-test-id');
 		assertEquals(divElem.title, 'Test Title');
 	});
 
-	await t.step("(getDOM) - Element with children only", async () => {
+	it("(getDOM) - Element with children only", () => {
 		const divNode = $c.sm(doc, 'createNode', ['h.div']);
 		const textNode = $c.sm(doc, 'createNode', ['m.t']);
 		$c.sm(textNode, 'setAttr', ['t', 'Child text']);
 		$c.sm(divNode, 'append', [textNode]);
 		const domNodes = $c.sm(divNode, 'getDOM');
 
-		await globalThis.reactive.wait();
 		const divElem = domNodes.at(0);
 		assertEquals(divElem.textContent, 'Child text');
 	});
 
-	await t.step(".getDOM() - Element with children only via JS", async () => {
+	it(".getDOM() - Element with children only via JS", () => {
 		const divNode = doc.createNode('h.div');
 		const textNode = doc.createNode('m.t');
 		textNode.setAttr('t', 'JS Child text');
 		divNode.append(textNode);
 		const domNodes = divNode.getDOM();
 
-		await globalThis.reactive.wait();
 		const divElem = domNodes.at(0);
 		assertEquals(divElem.textContent, 'JS Child text');
 	});
 
-	await t.step("(getDOM) - Element with both attributes and children", async () => {
+	it("(getDOM) - Element with both attributes and children", () => {
 		const divNode = $c.sm(doc, 'createNode', ['h.div']);
 		$c.sm(divNode, 'setAttr', ['id', 'container']);
 		$c.sm(divNode, 'setAttr', ['class', 'wrapper']);
@@ -105,43 +99,39 @@ Deno.test("MWIDocNode - CSR-DOM Basic Rendering", async (t) => {
 		$c.sm(divNode, 'append', [textNode]);
 		const domNodes = $c.sm(divNode, 'getDOM');
 
-		await globalThis.reactive.wait();
 		const divElem = domNodes.at(0);
 		assertEquals(divElem.id, 'container');
 		assertEquals(divElem.className, 'wrapper');
 		assertEquals(divElem.textContent, 'Content');
 	});
 
-	await t.step(".getDOM() - Element with both attributes and children via JS", async () => {
+	it(".getDOM() - Element with both attributes and children via JS", () => {
 		const divNode = doc.createNode('h.div');
 		divNode.setAttr('id', 'js-container');
 		divNode.setAttr('data-test', 'value');
 		divNode.append('JS Content');
 		const domNodes = divNode.getDOM();
 
-		await globalThis.reactive.wait();
 		const divElem = domNodes.at(0);
 		assertEquals(divElem.id, 'js-container');
 		assertEquals(divElem.getAttribute('data-test'), 'value');
 		assertEquals(divElem.textContent, 'JS Content');
 	});
 
-	await t.step("(getDOM) - Void element (h.br)", async () => {
+	it("(getDOM) - Void element (h.br)", () => {
 		const brNode = $c.sm(doc, 'createNode', ['h.br']);
 		const domNodes = $c.sm(brNode, 'getDOM');
 
-		await globalThis.reactive.wait();
 		assertEquals(domNodes.size, 1);
 		const brElem = domNodes.at(0);
 		assertEquals(brElem.tagName, 'BR');
 		assertEquals(brElem.childNodes.length, 0);
 	});
 
-	await t.step(".getDOM() - Void element (h.br) via JS", async () => {
+	it(".getDOM() - Void element (h.br) via JS", () => {
 		const brNode = doc.createNode('h.br');
 		const domNodes = brNode.getDOM();
 
-		await globalThis.reactive.wait();
 		assertEquals(domNodes.size, 1);
 		const brElem = domNodes.at(0);
 		assertEquals(brElem.tagName, 'BR');
@@ -149,8 +139,8 @@ Deno.test("MWIDocNode - CSR-DOM Basic Rendering", async (t) => {
 	});
 });
 
-Deno.test("MWIDocNode - CSR-DOM Attribute Rendering", async (t) => {
-	await t.step("(getDOM) - Standard HTML attributes", async () => {
+describe("MWIDocNode - CSR-DOM Attribute Rendering", () => {
+	it("(getDOM) - Standard HTML attributes", () => {
 		const divNode = $c.sm(doc, 'createNode', ['h.div']);
 		$c.sm(divNode, 'setAttr', ['id', 'my-id']);
 		$c.sm(divNode, 'setAttr', ['class', 'my-class']);
@@ -158,7 +148,6 @@ Deno.test("MWIDocNode - CSR-DOM Attribute Rendering", async (t) => {
 		$c.sm(divNode, 'setAttr', ['data-value', 'test']);
 		const domNodes = $c.sm(divNode, 'getDOM');
 
-		await globalThis.reactive.wait();
 		const divElem = domNodes.at(0);
 		assertEquals(divElem.id, 'my-id');
 		assertEquals(divElem.className, 'my-class');
@@ -166,120 +155,111 @@ Deno.test("MWIDocNode - CSR-DOM Attribute Rendering", async (t) => {
 		assertEquals(divElem.getAttribute('data-value'), 'test');
 	});
 
-	await t.step(".getDOM() - Standard HTML attributes via JS", async () => {
+	it(".getDOM() - Standard HTML attributes via JS", () => {
 		const divNode = doc.createNode('h.div');
 		divNode.setAttr('id', 'js-id');
 		divNode.setAttr('aria-label', 'Label');
 		divNode.setAttr('data-test', 'value');
 		const domNodes = divNode.getDOM();
 
-		await globalThis.reactive.wait();
 		const divElem = domNodes.at(0);
 		assertEquals(divElem.id, 'js-id');
 		assertEquals(divElem.getAttribute('aria-label'), 'Label');
 		assertEquals(divElem.getAttribute('data-test'), 'value');
 	});
 
-	await t.step("(getDOM) - Boolean attributes", async () => {
+	it("(getDOM) - Boolean attributes", () => {
 		const inputNode = $c.sm(doc, 'createNode', ['h.input']);
 		$c.sm(inputNode, 'setAttr', ['disabled', true]);
 		$c.sm(inputNode, 'setAttr', ['readonly', true]);
 		const domNodes = $c.sm(inputNode, 'getDOM');
 
-		await globalThis.reactive.wait();
 		const inputElem = domNodes.at(0);
-		assertEquals(inputElem.disabled, true);
-		assertEquals(inputElem.readOnly, true);
+		assertEquals(inputElem.hasAttribute('disabled'), true);
+		assertEquals(inputElem.hasAttribute('readonly'), true);
 	});
 
-	await t.step(".getDOM() - Boolean attributes via JS", async () => {
+	it(".getDOM() - Boolean attributes via JS", () => {
 		const inputNode = doc.createNode('h.input');
 		inputNode.setAttr('disabled', true);
 		inputNode.setAttr('checked', true);
 		const domNodes = inputNode.getDOM();
 
-		await globalThis.reactive.wait();
 		const inputElem = domNodes.at(0);
-		assertEquals(inputElem.disabled, true);
-		assertEquals(inputElem.checked, true);
+		assertEquals(inputElem.hasAttribute('disabled'), true);
+		assertEquals(inputElem.hasAttribute('checked'), true);
 	});
 
-	await t.step("(getDOM) - Non-HTML attributes do not render (m.id)", async () => {
+	it("(getDOM) - Non-HTML attributes do not render (m.id)", () => {
 		const divNode = $c.sm(doc, 'createNode', ['h.div']);
 		$c.sm(divNode, 'setAttr', ['id', 'real-id']);
 		// Access m.id to ensure it's set
 		$c.sm(divNode, 'getAttr', ['m.id']);
 		const domNodes = $c.sm(divNode, 'getDOM');
 
-		await globalThis.reactive.wait();
 		const divElem = domNodes.at(0);
 		assertEquals(divElem.id, 'real-id');
 		assertEquals(divElem.hasAttribute('m.id'), false);
 	});
 
-	await t.step(".getDOM() - Non-HTML attributes do not render (m.percl)", async () => {
+	it(".getDOM() - Non-HTML attributes do not render (m.percl)", () => {
 		const divNode = doc.createNode('h.div');
 		divNode.setAttr('m.percl', 'perm-class');
 		const domNodes = divNode.getDOM();
 
-		await globalThis.reactive.wait();
 		const divElem = domNodes.at(0);
 		assertEquals(divElem.hasAttribute('m.percl'), false);
 		// But the permanent class should appear in the class attribute
 		assert(divElem.className.includes('perm-class'));
 	});
 
-	await t.step("(getDOM) - List-valued attributes do not render", async () => {
+	it("(getDOM) - List-valued attributes do not render", () => {
 		const divNode = $c.sm(doc, 'createNode', ['h.div']);
 		const listVal = ps('[(item1 item2 item3)]');
 		$c.sm(divNode, 'setAttr', ['c.items', listVal]);
 		$c.sm(divNode, 'setAttr', ['id', 'test-id']);
 		const domNodes = $c.sm(divNode, 'getDOM');
 
-		await globalThis.reactive.wait();
 		const divElem = domNodes.at(0);
 		assertEquals(divElem.hasAttribute('c.items'), false);
 		assertEquals(divElem.id, 'test-id');
 	});
 
-	await t.step(".getDOM() - List-valued attributes do not render via JS", async () => {
+	it(".getDOM() - List-valued attributes do not render via JS", () => {
 		const divNode = doc.createNode('h.div');
 		const listVal = ps('[(alpha beta gamma)]');
 		divNode.setAttr('c.data', listVal);
 		divNode.setAttr('title', 'Test');
 		const domNodes = divNode.getDOM();
 
-		await globalThis.reactive.wait();
 		const divElem = domNodes.at(0);
 		assertEquals(divElem.hasAttribute('c.data'), false);
 		assertEquals(divElem.title, 'Test');
 	});
 });
 
-Deno.test("MWIDocNode - CSR-DOM Child Content Rendering", async (t) => {
-	await t.step("(getDOM) - Single text child", async () => {
+describe("MWIDocNode - CSR-DOM Child Content Rendering", () => {
+	it("(getDOM) - Single text child", () => {
 		const divNode = $c.sm(doc, 'createNode', ['h.div']);
 		const textNode = $c.sm(doc, 'createNode', ['m.t']);
 		$c.sm(textNode, 'setAttr', ['t', 'Single child']);
 		$c.sm(divNode, 'append', [textNode]);
 		const domNodes = $c.sm(divNode, 'getDOM');
 
-		await globalThis.reactive.wait();
 		const divElem = domNodes.at(0);
 		assertEquals(divElem.textContent, 'Single child');
 	});
 
-	await t.step(".getDOM() - Single text child via JS", async () => {
+	it(".getDOM() - Single text child via JS", () => {
 		const divNode = doc.createNode('h.div');
 		divNode.append('JS single child');
 		const domNodes = divNode.getDOM();
 
-		await globalThis.reactive.wait();
 		const divElem = domNodes.at(0);
 		assertEquals(divElem.textContent, 'JS single child');
 	});
 
-	await t.step("(getDOM) - Multiple text children", async () => {
+	it("(getDOM) - Multiple text children", () => {
 		const divNode = $c.sm(doc, 'createNode', ['h.div']);
 		const text1 = $c.sm(doc, 'createNode', ['m.t']);
 		$c.sm(text1, 'setAttr', ['t', 'First']);
@@ -290,22 +270,20 @@ Deno.test("MWIDocNode - CSR-DOM Child Content Rendering", async (t) => {
 		$c.sm(divNode, 'append', [text1, text2, text3]);
 		const domNodes = $c.sm(divNode, 'getDOM');
 
-		await globalThis.reactive.wait();
 		const divElem = domNodes.at(0);
 		assertEquals(divElem.textContent, 'FirstSecondThird');
 	});
 
-	await t.step(".getDOM() - Multiple text children via JS", async () => {
+	it(".getDOM() - Multiple text children via JS", () => {
 		const divNode = doc.createNode('h.div');
 		divNode.append('First', 'Second', 'Third');
 		const domNodes = divNode.getDOM();
 
-		await globalThis.reactive.wait();
 		const divElem = domNodes.at(0);
 		assertEquals(divElem.textContent, 'FirstSecondThird');
 	});
 
-	await t.step("(getDOM) - Mixed content (text and element children)", async () => {
+	it("(getDOM) - Mixed content (text and element children)", () => {
 		const divNode = $c.sm(doc, 'createNode', ['h.div']);
 		const textNode = $c.sm(doc, 'createNode', ['m.t']);
 		$c.sm(textNode, 'setAttr', ['t', 'Text']);
@@ -314,7 +292,6 @@ Deno.test("MWIDocNode - CSR-DOM Child Content Rendering", async (t) => {
 		$c.sm(divNode, 'append', [textNode, spanNode]);
 		const domNodes = $c.sm(divNode, 'getDOM');
 
-		await globalThis.reactive.wait();
 		const divElem = domNodes.at(0);
 		assertEquals(divElem.textContent, 'TextSpan');
 		// Text renders as text node, so we have 1 element child (<span>) and 1 text node child
@@ -325,14 +302,13 @@ Deno.test("MWIDocNode - CSR-DOM Child Content Rendering", async (t) => {
 		assertEquals(divElem.children[0].textContent, 'Span');
 	});
 
-	await t.step(".getDOM() - Mixed content via JS", async () => {
+	it(".getDOM() - Mixed content via JS", () => {
 		const divNode = doc.createNode('h.div');
 		const spanNode = doc.createNode('h.span');
 		spanNode.append('Span content');
 		divNode.append('Before', spanNode, 'After');
 		const domNodes = divNode.getDOM();
 
-		await globalThis.reactive.wait();
 		const divElem = domNodes.at(0);
 		assertEquals(divElem.textContent, 'BeforeSpan contentAfter');
 		// Text renders as text nodes, so we have 1 element child (<span>) and 2 text node children
@@ -345,7 +321,7 @@ Deno.test("MWIDocNode - CSR-DOM Child Content Rendering", async (t) => {
 		assertEquals(divElem.childNodes[2].nodeValue, 'After');
 	});
 
-	await t.step("(getDOM) - Nested elements", async () => {
+	it("(getDOM) - Nested elements", () => {
 		const outerDiv = $c.sm(doc, 'createNode', ['h.div']);
 		const innerDiv = $c.sm(doc, 'createNode', ['h.div']);
 		const textNode = $c.sm(doc, 'createNode', ['m.t']);
@@ -354,157 +330,145 @@ Deno.test("MWIDocNode - CSR-DOM Child Content Rendering", async (t) => {
 		$c.sm(outerDiv, 'append', [innerDiv]);
 		const domNodes = $c.sm(outerDiv, 'getDOM');
 
-		await globalThis.reactive.wait();
 		const outerElem = domNodes.at(0);
 		assertEquals(outerElem.textContent, 'Nested');
 		assertEquals(outerElem.children.length, 1);
 		assertEquals(outerElem.children[0].tagName, 'DIV');
 	});
 
-	await t.step(".getDOM() - Nested elements via JS", async () => {
+	it(".getDOM() - Nested elements via JS", () => {
 		const outerDiv = doc.createNode('h.div');
 		const innerDiv = doc.createNode('h.div');
 		innerDiv.append('Inner content');
 		outerDiv.append(innerDiv);
 		const domNodes = outerDiv.getDOM();
 
-		await globalThis.reactive.wait();
 		const outerElem = domNodes.at(0);
 		assertEquals(outerElem.textContent, 'Inner content');
 		assertEquals(outerElem.children.length, 1);
 	});
 
-	await t.step("(getDOM) - Void element has no children in output", async () => {
+	it("(getDOM) - Void element has no children in output", () => {
 		const brNode = $c.sm(doc, 'createNode', ['h.br']);
 		// Try to append (should be ignored)
 		$c.sm(brNode, 'append', ['text']);
 		const domNodes = $c.sm(brNode, 'getDOM');
 
-		await globalThis.reactive.wait();
 		const brElem = domNodes.at(0);
 		assertEquals(brElem.childNodes.length, 0);
 	});
 
-	await t.step(".getDOM() - Void element has no children in output via JS", async () => {
+	it(".getDOM() - Void element has no children in output via JS", () => {
 		const brNode = doc.createNode('h.br');
 		brNode.append('ignored text');
 		const domNodes = brNode.getDOM();
 
-		await globalThis.reactive.wait();
 		const brElem = domNodes.at(0);
 		assertEquals(brElem.childNodes.length, 0);
 	});
 });
 
-Deno.test("MWIDocNode - CSR-DOM Reactive Updates", async (t) => {
-	await t.step("(getDOM) - Reactive attribute changes", async () => {
+describe("MWIDocNode - CSR-DOM Reactive Updates", () => {
+	it("(getDOM) - Reactive attribute changes", async () => {
 		const divNode = $c.sm(doc, 'createNode', ['h.div']);
 		$c.sm(divNode, 'setAttr', ['title', 'Initial']);
 		const domNodes = $c.sm(divNode, 'getDOM');
 
-		await globalThis.reactive.wait();
 		const divElem = domNodes.at(0);
 		assertEquals(divElem.title, 'Initial');
 
 		// Change attribute
 		$c.sm(divNode, 'setAttr', ['title', 'Updated']);
-		await globalThis.reactive.wait();
+		await reactive.wait();
 		assertEquals(divElem.title, 'Updated');
 		assertStrictEquals(domNodes.at(0), divElem, 'Should be same element');
 	});
 
-	await t.step(".getDOM() - Reactive attribute changes via JS", async () => {
+	it(".getDOM() - Reactive attribute changes via JS", async () => {
 		const divNode = doc.createNode('h.div');
 		divNode.setAttr('title', 'JS Initial');
 		const domNodes = divNode.getDOM();
 
-		await globalThis.reactive.wait();
 		const divElem = domNodes.at(0);
 		assertEquals(divElem.title, 'JS Initial');
 
 		divNode.setAttr('title', 'JS Updated');
-		await globalThis.reactive.wait();
+		await reactive.wait();
 		assertEquals(divElem.title, 'JS Updated');
 	});
 
-	await t.step("(getDOM) - Reactive child content changes", async () => {
+	it("(getDOM) - Reactive child content changes", async () => {
 		const divNode = $c.sm(doc, 'createNode', ['h.div']);
 		const textNode = $c.sm(doc, 'createNode', ['m.t']);
 		$c.sm(textNode, 'setAttr', ['t', 'Initial']);
 		$c.sm(divNode, 'append', [textNode]);
 		const domNodes = $c.sm(divNode, 'getDOM');
 
-		await globalThis.reactive.wait();
 		const divElem = domNodes.at(0);
 		assertEquals(divElem.textContent, 'Initial');
 
 		// Change text content
 		$c.sm(textNode, 'setAttr', ['t', 'Updated']);
-		await globalThis.reactive.wait();
+		await reactive.wait();
 		assertEquals(divElem.textContent, 'Updated');
 	});
 
-	await t.step(".getDOM() - Reactive child content changes via JS", async () => {
+	it(".getDOM() - Reactive child content changes via JS", async () => {
 		const divNode = doc.createNode('h.div');
 		const textNode = doc.createNode('m.t');
 		textNode.setAttr('t', 'JS Initial');
 		divNode.append(textNode);
 		const domNodes = divNode.getDOM();
 
-		await globalThis.reactive.wait();
 		const divElem = domNodes.at(0);
 		assertEquals(divElem.textContent, 'JS Initial');
 
 		textNode.setAttr('t', 'JS Updated');
-		await globalThis.reactive.wait();
+		await reactive.wait();
 		assertEquals(divElem.textContent, 'JS Updated');
 	});
 
-	await t.step("(getDOM) - DOM is stable across calls", async () => {
+	it("(getDOM) - DOM is stable across calls", () => {
 		const divNode = $c.sm(doc, 'createNode', ['h.div']);
 		const dom1 = $c.sm(divNode, 'getDOM');
 		const dom2 = $c.sm(divNode, 'getDOM');
 
-		await globalThis.reactive.wait();
 		assertStrictEquals(dom1, dom2, 'Should return same NANOS instance');
 		assertStrictEquals(dom1.at(0), dom2.at(0), 'Should return same DOM element');
 	});
 
-	await t.step(".getDOM() - DOM is stable across calls via JS", async () => {
+	it(".getDOM() - DOM is stable across calls via JS", () => {
 		const divNode = doc.createNode('h.div');
 		const dom1 = divNode.getDOM();
 		const dom2 = divNode.getDOM();
 
-		await globalThis.reactive.wait();
 		assertStrictEquals(dom1, dom2, 'Should return same NANOS instance');
 		assertStrictEquals(dom1.at(0), dom2.at(0), 'Should return same DOM element');
 	});
 });
 
-Deno.test("MWIDocNode - CSR-DOM Edge Cases", async (t) => {
-	await t.step("(getDOM) - Element with only whitespace text children", async () => {
+describe("MWIDocNode - CSR-DOM Edge Cases", () => {
+	it("(getDOM) - Element with only whitespace text children", () => {
 		const divNode = $c.sm(doc, 'createNode', ['h.div']);
 		const textNode = $c.sm(doc, 'createNode', ['m.t']);
 		$c.sm(textNode, 'setAttr', ['t', '   ']);
 		$c.sm(divNode, 'append', [textNode]);
 		const domNodes = $c.sm(divNode, 'getDOM');
 
-		await globalThis.reactive.wait();
 		const divElem = domNodes.at(0);
 		assertEquals(divElem.textContent, '   ');
 	});
 
-	await t.step(".getDOM() - Element with only whitespace text children via JS", async () => {
+	it(".getDOM() - Element with only whitespace text children via JS", () => {
 		const divNode = doc.createNode('h.div');
 		divNode.append('   ');
 		const domNodes = divNode.getDOM();
 
-		await globalThis.reactive.wait();
 		const divElem = domNodes.at(0);
 		assertEquals(divElem.textContent, '   ');
 	});
 
-	await t.step("(getDOM) - Element with empty text nodes", async () => {
+	it("(getDOM) - Element with empty text nodes", () => {
 		const divNode = $c.sm(doc, 'createNode', ['h.div']);
 		const text1 = $c.sm(doc, 'createNode', ['m.t']);
 		$c.sm(text1, 'setAttr', ['t', '']);
@@ -515,22 +479,20 @@ Deno.test("MWIDocNode - CSR-DOM Edge Cases", async (t) => {
 		$c.sm(divNode, 'append', [text1, text2, text3]);
 		const domNodes = $c.sm(divNode, 'getDOM');
 
-		await globalThis.reactive.wait();
 		const divElem = domNodes.at(0);
 		assertEquals(divElem.textContent, 'Content');
 	});
 
-	await t.step(".getDOM() - Element with empty text nodes via JS", async () => {
+	it(".getDOM() - Element with empty text nodes via JS", () => {
 		const divNode = doc.createNode('h.div');
 		divNode.append('', 'Content', '');
 		const domNodes = divNode.getDOM();
 
-		await globalThis.reactive.wait();
 		const divElem = domNodes.at(0);
 		assertEquals(divElem.textContent, 'Content');
 	});
 
-	await t.step("(getDOM) - Deeply nested structure", async () => {
+	it("(getDOM) - Deeply nested structure", () => {
 		const level1 = $c.sm(doc, 'createNode', ['h.div']);
 		const level2 = $c.sm(doc, 'createNode', ['h.div']);
 		const level3 = $c.sm(doc, 'createNode', ['h.div']);
@@ -543,13 +505,12 @@ Deno.test("MWIDocNode - CSR-DOM Edge Cases", async (t) => {
 		$c.sm(level1, 'append', [level2]);
 		const domNodes = $c.sm(level1, 'getDOM');
 
-		await globalThis.reactive.wait();
 		const level1Elem = domNodes.at(0);
 		assertEquals(level1Elem.textContent, 'Deep');
 		assertEquals(level1Elem.querySelectorAll('div').length, 3);
 	});
 
-	await t.step(".getDOM() - Deeply nested structure via JS", async () => {
+	it(".getDOM() - Deeply nested structure via JS", () => {
 		const level1 = doc.createNode('h.div');
 		const level2 = doc.createNode('h.div');
 		const level3 = doc.createNode('h.div');
@@ -558,59 +519,54 @@ Deno.test("MWIDocNode - CSR-DOM Edge Cases", async (t) => {
 		level1.append(level2);
 		const domNodes = level1.getDOM();
 
-		await globalThis.reactive.wait();
 		const level1Elem = domNodes.at(0);
 		assertEquals(level1Elem.textContent, 'Deep content');
 		assertEquals(level1Elem.querySelectorAll('div').length, 2);
 	});
 });
 
-Deno.test("MWIDocNode - CSR-DOM Slotting Without Slot Source", async (t) => {
-	await t.step("(getDOM) - m.slat with no slot source uses else default", async () => {
+describe("MWIDocNode - CSR-DOM Slotting Without Slot Source", () => {
+	it("(getDOM) - m.slat with no slot source uses else default", () => {
 		const divNode = $c.sm(doc, 'createNode', ['h.div']);
 		$c.sm(divNode, 'setAttr', ['m.slat', ps('[(title=[missing else=DefaultValue])]')]);
 		const domNodes = $c.sm(divNode, 'getDOM');
 
-		await globalThis.reactive.wait();
 		const divElem = domNodes.at(0);
 		assertEquals(divElem.title, 'DefaultValue');
 	});
 
-	await t.step(".getDOM() - m.slat with no slot source uses else default via JS", async () => {
+	it(".getDOM() - m.slat with no slot source uses else default via JS", () => {
 		const divNode = doc.createNode('h.div');
 		divNode.setAttr('m.slat', ps('[(title=[missing else="JS DefaultValue"])]'));
 		const domNodes = divNode.getDOM();
 
-		await globalThis.reactive.wait();
 		const divElem = domNodes.at(0);
 		assertEquals(divElem.title, 'JS DefaultValue');
 	});
 
-	await t.step("(getDOM) - Multiple m.slat targets with no slot source", async () => {
+	it("(getDOM) - Multiple m.slat targets with no slot source", () => {
 		const divNode = $c.sm(doc, 'createNode', ['h.div']);
 		$c.sm(divNode, 'setAttr', ['m.slat', ps('[(title=[src1 else=Default1] data-info=[src2 else=Default2])]')]);
 		const domNodes = $c.sm(divNode, 'getDOM');
 
-		await globalThis.reactive.wait();
 		const divElem = domNodes.at(0);
 		assertEquals(divElem.title, 'Default1');
 		assertEquals(divElem.getAttribute('data-info'), 'Default2');
 	});
 
-	await t.step(".getDOM() - Multiple m.slat targets with no slot source via JS", async () => {
+	it(".getDOM() - Multiple m.slat targets with no slot source via JS", () => {
 		const divNode = doc.createNode('h.div');
 		divNode.setAttr('m.slat', ps('[(title=[src1 else="JS Default1"] data-info=[src2 else="JS Default2"])]'));
 		const domNodes = divNode.getDOM();
 
-		await globalThis.reactive.wait();
 		const divElem = domNodes.at(0);
 		assertEquals(divElem.title, 'JS Default1');
 		assertEquals(divElem.getAttribute('data-info'), 'JS Default2');
 	});
 });
 
-Deno.test("MWIDocNode - CSR-DOM m.coat Rendering", async (t) => {
-	await t.step("(getDOM) - m.coat with slot source renders computed attribute", async () => {
+describe("MWIDocNode - CSR-DOM m.coat Rendering", () => {
+	it("(getDOM) - m.coat with slot source renders computed attribute", () => {
 		const fragNode = $c.sm(doc, 'createNode', ['m.frg']);
 		$c.sm(fragNode, 'setAttr', ['name', 'World']);
 
@@ -618,12 +574,11 @@ Deno.test("MWIDocNode - CSR-DOM m.coat Rendering", async (t) => {
 		$c.sm(divNode, 'setAttr', ['m.coat', ps('[(title=<name>)]')]);
 		const domNodes = $c.sm(divNode, 'getDOM');
 
-		await globalThis.reactive.wait();
 		const divElem = domNodes.at(0);
 		assertEquals(divElem.title, 'World');
 	});
 
-	await t.step(".getDOM() - m.coat with slot source renders computed attribute via JS", async () => {
+	it(".getDOM() - m.coat with slot source renders computed attribute via JS", () => {
 		const fragNode = doc.createNode('m.frg');
 		fragNode.setAttr('name', 'JS World');
 
@@ -631,12 +586,11 @@ Deno.test("MWIDocNode - CSR-DOM m.coat Rendering", async (t) => {
 		divNode.setAttr('m.coat', ps('[(title=<name>)]'));
 		const domNodes = divNode.getDOM();
 
-		await globalThis.reactive.wait();
 		const divElem = domNodes.at(0);
 		assertEquals(divElem.title, 'JS World');
 	});
 
-	await t.step("(getDOM) - m.coat with default fallback renders default", async () => {
+	it("(getDOM) - m.coat with default fallback renders default", () => {
 		const fragNode = $c.sm(doc, 'createNode', ['m.frg']);
 		// name is not set
 
@@ -644,12 +598,11 @@ Deno.test("MWIDocNode - CSR-DOM m.coat Rendering", async (t) => {
 		$c.sm(divNode, 'setAttr', ['m.coat', ps('[(title=<name|Default>)]')]);
 		const domNodes = $c.sm(divNode, 'getDOM');
 
-		await globalThis.reactive.wait();
 		const divElem = domNodes.at(0);
 		assertEquals(divElem.title, 'Default');
 	});
 
-	await t.step(".getDOM() - m.coat with default fallback renders default via JS", async () => {
+	it(".getDOM() - m.coat with default fallback renders default via JS", () => {
 		const fragNode = doc.createNode('m.frg');
 		// name is not set
 
@@ -657,14 +610,13 @@ Deno.test("MWIDocNode - CSR-DOM m.coat Rendering", async (t) => {
 		divNode.setAttr('m.coat', ps('[(title=<name|Fallback>)]'));
 		const domNodes = divNode.getDOM();
 
-		await globalThis.reactive.wait();
 		const divElem = domNodes.at(0);
 		assertEquals(divElem.title, 'Fallback');
 	});
 });
 
-Deno.test("MWIDocNode - CSR-DOM m.coat Reactivity", async (t) => {
-	await t.step("(getDOM) - DOM updates when slot source attribute changes", async () => {
+describe("MWIDocNode - CSR-DOM m.coat Reactivity", () => {
+	it("(getDOM) - DOM updates when slot source attribute changes", async () => {
 		const fragNode = $c.sm(doc, 'createNode', ['m.frg']);
 		$c.sm(fragNode, 'setAttr', ['name', 'Initial']);
 
@@ -672,17 +624,16 @@ Deno.test("MWIDocNode - CSR-DOM m.coat Reactivity", async (t) => {
 		$c.sm(divNode, 'setAttr', ['m.coat', ps('[(title=<name>)]')]);
 		const domNodes = $c.sm(divNode, 'getDOM');
 
-		await globalThis.reactive.wait();
 		const divElem = domNodes.at(0);
 		assertEquals(divElem.title, 'Initial');
 
 		// Change the source attribute - DOM should reactively update
 		$c.sm(fragNode, 'setAttr', ['name', 'Updated']);
-		await globalThis.reactive.wait();
+		await reactive.wait();
 		assertEquals(divElem.title, 'Updated');
 	});
 
-	await t.step(".getDOM() - DOM updates when slot source attribute changes via JS", async () => {
+	it(".getDOM() - DOM updates when slot source attribute changes via JS", async () => {
 		const fragNode = doc.createNode('m.frg');
 		fragNode.setAttr('name', 'JS Initial');
 
@@ -690,17 +641,16 @@ Deno.test("MWIDocNode - CSR-DOM m.coat Reactivity", async (t) => {
 		divNode.setAttr('m.coat', ps('[(title=<name>)]'));
 		const domNodes = divNode.getDOM();
 
-		await globalThis.reactive.wait();
 		const divElem = domNodes.at(0);
 		assertEquals(divElem.title, 'JS Initial');
 
 		// Change the source attribute - DOM should reactively update
 		fragNode.setAttr('name', 'JS Updated');
-		await globalThis.reactive.wait();
+		await reactive.wait();
 		assertEquals(divElem.title, 'JS Updated');
 	});
 
-	await t.step("(getDOM) - DOM updates when m.coat spec changes", async () => {
+	it("(getDOM) - DOM updates when m.coat spec changes", async () => {
 		const fragNode = $c.sm(doc, 'createNode', ['m.frg']);
 		$c.sm(fragNode, 'setAttr', ['name', 'World']);
 		$c.sm(fragNode, 'setAttr', ['greeting', 'Hello']);
@@ -709,17 +659,16 @@ Deno.test("MWIDocNode - CSR-DOM m.coat Reactivity", async (t) => {
 		$c.sm(divNode, 'setAttr', ['m.coat', ps('[(title=<name>)]')]);
 		const domNodes = $c.sm(divNode, 'getDOM');
 
-		await globalThis.reactive.wait();
 		const divElem = domNodes.at(0);
 		assertEquals(divElem.title, 'World');
 
 		// Change the m.coat spec - DOM should reactively update
 		$c.sm(divNode, 'setAttr', ['m.coat', ps('[(title=<greeting>)]')]);
-		await globalThis.reactive.wait();
+		await reactive.wait();
 		assertEquals(divElem.title, 'Hello');
 	});
 
-	await t.step(".getDOM() - DOM updates when m.coat spec changes via JS", async () => {
+	it(".getDOM() - DOM updates when m.coat spec changes via JS", async () => {
 		const fragNode = doc.createNode('m.frg');
 		fragNode.setAttr('name', 'JS World');
 		fragNode.setAttr('greeting', 'JS Hello');
@@ -728,17 +677,16 @@ Deno.test("MWIDocNode - CSR-DOM m.coat Reactivity", async (t) => {
 		divNode.setAttr('m.coat', ps('[(title=<name>)]'));
 		const domNodes = divNode.getDOM();
 
-		await globalThis.reactive.wait();
 		const divElem = domNodes.at(0);
 		assertEquals(divElem.title, 'JS World');
 
 		// Change the m.coat spec - DOM should reactively update
 		divNode.setAttr('m.coat', ps('[(title=<greeting>)]'));
-		await globalThis.reactive.wait();
+		await reactive.wait();
 		assertEquals(divElem.title, 'JS Hello');
 	});
 
-	await t.step("(getDOM) - DOM updates when conditional expression changes", async () => {
+	it("(getDOM) - DOM updates when conditional expression changes", async () => {
 		const fragNode = $c.sm(doc, 'createNode', ['m.frg']);
 		// name is not set initially
 
@@ -746,22 +694,21 @@ Deno.test("MWIDocNode - CSR-DOM m.coat Reactivity", async (t) => {
 		$c.sm(divNode, 'setAttr', ['m.coat', ps('[(title=<name|Default>)]')]);
 		const domNodes = $c.sm(divNode, 'getDOM');
 
-		await globalThis.reactive.wait();
 		const divElem = domNodes.at(0);
 		assertEquals(divElem.title, 'Default');
 
 		// Set the source attribute - DOM should update
 		$c.sm(fragNode, 'setAttr', ['name', 'SetValue']);
-		await globalThis.reactive.wait();
+		await reactive.wait();
 		assertEquals(divElem.title, 'SetValue');
 
 		// Clear the source attribute - DOM should revert to default
 		$c.sm(fragNode, 'delAttr', ['name']);
-		await globalThis.reactive.wait();
+		await reactive.wait();
 		assertEquals(divElem.title, 'Default');
 	});
 
-	await t.step(".getDOM() - DOM updates when conditional expression changes via JS", async () => {
+	it(".getDOM() - DOM updates when conditional expression changes via JS", async () => {
 		const fragNode = doc.createNode('m.frg');
 		// name is not set initially
 
@@ -769,24 +716,23 @@ Deno.test("MWIDocNode - CSR-DOM m.coat Reactivity", async (t) => {
 		divNode.setAttr('m.coat', ps('[(title=<name|Fallback>)]'));
 		const domNodes = divNode.getDOM();
 
-		await globalThis.reactive.wait();
 		const divElem = domNodes.at(0);
 		assertEquals(divElem.title, 'Fallback');
 
 		// Set the source attribute - DOM should update
 		fragNode.setAttr('name', 'JSSetValue');
-		await globalThis.reactive.wait();
+		await reactive.wait();
 		assertEquals(divElem.title, 'JSSetValue');
 
 		// Clear the source attribute - DOM should revert to fallback
 		fragNode.delAttr('name');
-		await globalThis.reactive.wait();
+		await reactive.wait();
 		assertEquals(divElem.title, 'Fallback');
 	});
 });
 
-Deno.test("MWIDocNode - CSR-DOM m.slat Reactivity", async (t) => {
-	await t.step("(getDOM) - DOM updates when slot source attribute changes", async () => {
+describe("MWIDocNode - CSR-DOM m.slat Reactivity", () => {
+	it("(getDOM) - DOM updates when slot source attribute changes", async () => {
 		const fragNode = $c.sm(doc, 'createNode', ['m.frg']);
 		$c.sm(fragNode, 'setAttr', ['title', 'Initial']);
 
@@ -794,17 +740,16 @@ Deno.test("MWIDocNode - CSR-DOM m.slat Reactivity", async (t) => {
 		$c.sm(divNode, 'setAttr', ['m.slat', ps('[(title=[])]')]);
 		const domNodes = $c.sm(divNode, 'getDOM');
 
-		await globalThis.reactive.wait();
 		const divElem = domNodes.at(0);
 		assertEquals(divElem.title, 'Initial');
 
 		// Change the source attribute - DOM should reactively update
 		$c.sm(fragNode, 'setAttr', ['title', 'Updated']);
-		await globalThis.reactive.wait();
+		await reactive.wait();
 		assertEquals(divElem.title, 'Updated');
 	});
 
-	await t.step(".getDOM() - DOM updates when slot source attribute changes via JS", async () => {
+	it(".getDOM() - DOM updates when slot source attribute changes via JS", async () => {
 		const fragNode = doc.createNode('m.frg');
 		fragNode.setAttr('title', 'JS Initial');
 
@@ -812,17 +757,16 @@ Deno.test("MWIDocNode - CSR-DOM m.slat Reactivity", async (t) => {
 		divNode.setAttr('m.slat', ps('[(title=[])]'));
 		const domNodes = divNode.getDOM();
 
-		await globalThis.reactive.wait();
 		const divElem = domNodes.at(0);
 		assertEquals(divElem.title, 'JS Initial');
 
 		// Change the source attribute - DOM should reactively update
 		fragNode.setAttr('title', 'JS Updated');
-		await globalThis.reactive.wait();
+		await reactive.wait();
 		assertEquals(divElem.title, 'JS Updated');
 	});
 
-	await t.step("(getDOM) - DOM updates when m.slat spec changes", async () => {
+	it("(getDOM) - DOM updates when m.slat spec changes", async () => {
 		const fragNode = $c.sm(doc, 'createNode', ['m.frg']);
 		$c.sm(fragNode, 'setAttr', ['src1', 'Value1']);
 		$c.sm(fragNode, 'setAttr', ['src2', 'Value2']);
@@ -831,17 +775,16 @@ Deno.test("MWIDocNode - CSR-DOM m.slat Reactivity", async (t) => {
 		$c.sm(divNode, 'setAttr', ['m.slat', ps('[(title=[src1])]')]);
 		const domNodes = $c.sm(divNode, 'getDOM');
 
-		await globalThis.reactive.wait();
 		const divElem = domNodes.at(0);
 		assertEquals(divElem.title, 'Value1');
 
 		// Change the m.slat spec - DOM should reactively update
 		$c.sm(divNode, 'setAttr', ['m.slat', ps('[(title=[src2])]')]);
-		await globalThis.reactive.wait();
+		await reactive.wait();
 		assertEquals(divElem.title, 'Value2');
 	});
 
-	await t.step(".getDOM() - DOM updates when m.slat spec changes via JS", async () => {
+	it(".getDOM() - DOM updates when m.slat spec changes via JS", async () => {
 		const fragNode = doc.createNode('m.frg');
 		fragNode.setAttr('src1', 'JS Value1');
 		fragNode.setAttr('src2', 'JS Value2');
@@ -850,17 +793,16 @@ Deno.test("MWIDocNode - CSR-DOM m.slat Reactivity", async (t) => {
 		divNode.setAttr('m.slat', ps('[(title=[src1])]'));
 		const domNodes = divNode.getDOM();
 
-		await globalThis.reactive.wait();
 		const divElem = domNodes.at(0);
 		assertEquals(divElem.title, 'JS Value1');
 
 		// Change the m.slat spec - DOM should reactively update
 		divNode.setAttr('m.slat', ps('[(title=[src2])]'));
-		await globalThis.reactive.wait();
+		await reactive.wait();
 		assertEquals(divElem.title, 'JS Value2');
 	});
 
-	await t.step("(getDOM) - DOM updates when else fallback changes", async () => {
+	it("(getDOM) - DOM updates when else fallback changes", async () => {
 		const fragNode = $c.sm(doc, 'createNode', ['m.frg']);
 		// source attribute not set initially
 
@@ -868,22 +810,21 @@ Deno.test("MWIDocNode - CSR-DOM m.slat Reactivity", async (t) => {
 		$c.sm(divNode, 'setAttr', ['m.slat', ps('[(title=[missing else=Default])]')]);
 		const domNodes = $c.sm(divNode, 'getDOM');
 
-		await globalThis.reactive.wait();
 		const divElem = domNodes.at(0);
 		assertEquals(divElem.title, 'Default');
 
 		// Set the source attribute - DOM should update
 		$c.sm(fragNode, 'setAttr', ['missing', 'Found']);
-		await globalThis.reactive.wait();
+		await reactive.wait();
 		assertEquals(divElem.title, 'Found');
 
 		// Clear the source attribute - DOM should revert to else default
 		$c.sm(fragNode, 'delAttr', ['missing']);
-		await globalThis.reactive.wait();
+		await reactive.wait();
 		assertEquals(divElem.title, 'Default');
 	});
 
-	await t.step(".getDOM() - DOM updates when else fallback changes via JS", async () => {
+	it(".getDOM() - DOM updates when else fallback changes via JS", async () => {
 		const fragNode = doc.createNode('m.frg');
 		// source attribute not set initially
 
@@ -891,29 +832,27 @@ Deno.test("MWIDocNode - CSR-DOM m.slat Reactivity", async (t) => {
 		divNode.setAttr('m.slat', ps('[(title=[missing else=Fallback])]'));
 		const domNodes = divNode.getDOM();
 
-		await globalThis.reactive.wait();
 		const divElem = domNodes.at(0);
 		assertEquals(divElem.title, 'Fallback');
 
 		// Set the source attribute - DOM should update
 		fragNode.setAttr('missing', 'JSFound');
-		await globalThis.reactive.wait();
+		await reactive.wait();
 		assertEquals(divElem.title, 'JSFound');
 
 		// Clear the source attribute - DOM should revert to else fallback
 		fragNode.delAttr('missing');
-		await globalThis.reactive.wait();
+		await reactive.wait();
 		assertEquals(divElem.title, 'Fallback');
 	});
 });
 
-Deno.test("MWIDocNode - CSR-DOM m.coat Special Return Values (.f, .t, .u)", async (t) => {
-	await t.step("(getDOM) - m.coat=[out=<.t>] stores true, renders as boolean attribute", async () => {
+describe("MWIDocNode - CSR-DOM m.coat Special Return Values (.f, .t, .u)", () => {
+	it("(getDOM) - m.coat=[out=<.t>] stores true, renders as boolean attribute", () => {
 		const divNode = $c.sm(doc, 'createNode', ['h.div']);
 		$c.sm(divNode, 'setAttr', ['m.coat', ps('[(out=<.t>)]')]);
 		const domNodes = $c.sm(divNode, 'getDOM');
 
-		await globalThis.reactive.wait();
 		// true attribute value stores as boolean true on the node
 		assertEquals(divNode.getAttr('out'), true, 'Attribute should store true');
 		// In DOM, boolean attributes are present (value is empty string or attribute name)
@@ -921,40 +860,37 @@ Deno.test("MWIDocNode - CSR-DOM m.coat Special Return Values (.f, .t, .u)", asyn
 		assertEquals(divElem.hasAttribute('out'), true, 'Boolean true renders as attribute in DOM');
 	});
 
-	await t.step(".getDOM() - m.coat=[out=<.t>] stores true, renders as boolean attribute via JS", async () => {
+	it(".getDOM() - m.coat=[out=<.t>] stores true, renders as boolean attribute via JS", () => {
 		const divNode = doc.createNode('h.div');
 		divNode.setAttr('m.coat', ps('[(out=<.t>)]'));
 		const domNodes = divNode.getDOM();
 
-		await globalThis.reactive.wait();
 		assertEquals(divNode.getAttr('out'), true, 'Attribute should store true');
 		const divElem = domNodes.at(0);
 		assertEquals(divElem.hasAttribute('out'), true, 'Boolean true renders as attribute in DOM');
 	});
 
-	await t.step("(getDOM) - m.coat=[out=<.f>] stores false, not rendered in DOM", async () => {
+	it("(getDOM) - m.coat=[out=<.f>] stores false, not rendered in DOM", () => {
 		const divNode = $c.sm(doc, 'createNode', ['h.div']);
 		$c.sm(divNode, 'setAttr', ['m.coat', ps('[(out=<.f>)]')]);
 		const domNodes = $c.sm(divNode, 'getDOM');
 
-		await globalThis.reactive.wait();
 		assertEquals(divNode.getAttr('out'), false, 'Attribute should store false');
 		const divElem = domNodes.at(0);
 		assertEquals(divElem.hasAttribute('out'), false, 'false does not render as DOM attribute');
 	});
 
-	await t.step(".getDOM() - m.coat=[out=<.u>] stores undefined, not rendered in DOM via JS", async () => {
+	it(".getDOM() - m.coat=[out=<.u>] stores undefined, not rendered in DOM via JS", () => {
 		const divNode = doc.createNode('h.div');
 		divNode.setAttr('m.coat', ps('[(out=<.u>)]'));
 		const domNodes = divNode.getDOM();
 
-		await globalThis.reactive.wait();
 		assertEquals(divNode.getAttr('out'), undefined, 'Attribute should store undefined');
 		const divElem = domNodes.at(0);
 		assertEquals(divElem.hasAttribute('out'), false, 'undefined does not render as DOM attribute');
 	});
 
-	await t.step("(getDOM) - m.coat=[disabled=<controller?<.t>|<.f>>] - derive boolean from slot source", async () => {
+	it("(getDOM) - m.coat=[disabled=<controller?<.t>|<.f>>] - derive boolean from slot source", async () => {
 		const srcOn = $c.sm(doc, 'createNode', ['m.frg']);
 		$c.sm(srcOn, 'setAttr', ['controller', 'on']);
 
@@ -962,7 +898,6 @@ Deno.test("MWIDocNode - CSR-DOM m.coat Special Return Values (.f, .t, .u)", asyn
 		$c.sm(nodeOn, 'setAttr', ['m.coat', ps('[(disabled=<controller?<.t>|<.f>>)]')]);
 		const domOn = $c.sm(nodeOn, 'getDOM');
 
-		await globalThis.reactive.wait();
 		assertEquals(nodeOn.getAttr('disabled'), true, 'disabled should be true when controller is set');
 		assertEquals(domOn.at(0).hasAttribute('disabled'), true, 'disabled boolean attribute present in DOM');
 
@@ -973,96 +908,90 @@ Deno.test("MWIDocNode - CSR-DOM m.coat Special Return Values (.f, .t, .u)", asyn
 		$c.sm(nodeOff, 'setAttr', ['m.coat', ps('[(disabled=<controller?<.t>|<.f>>)]')]);
 		const domOff = $c.sm(nodeOff, 'getDOM');
 
-		await globalThis.reactive.wait();
+		await reactive.wait();
 		assertEquals(nodeOff.getAttr('disabled'), false, 'disabled should be false when controller is not set');
 		assertEquals(domOff.at(0).hasAttribute('disabled'), false, 'disabled attribute absent in DOM');
 	});
 });
 
-Deno.test("MWIDocNode - CSR-DOM m.coat MWIData Reactivity (<d:name>)", async (t) => {
-	// Set up MWIData reactive NANOS in global shared storage
-	const mwiData = MWIDocument.rxNANOS();
-	globalThis.$gss.set('MWIData', mwiData);
+describe("MWIDocNode - CSR-DOM m.coat MWIData Reactivity (<d:name>)", () => {
+	let mwiData;
 
-	await t.step("(getDOM) - m.coat=[out=<d:key>] renders from MWIData store", async () => {
+	it("(getDOM) - m.coat=[out=<d:key>] renders from MWIData store", () => {
+		mwiData = MWIDocument.rxNANOS();
+		globalThis.$gss.set('MWIData', mwiData);
 		mwiData.set('theme', 'dark');
 		const divNode = $c.sm(doc, 'createNode', ['h.div']);
 		$c.sm(divNode, 'setAttr', ['m.coat', ps('[(data-theme=<d:theme>)]')]);
 		const domNodes = $c.sm(divNode, 'getDOM');
 
-		await globalThis.reactive.wait();
 		const divElem = domNodes.at(0);
 		assertEquals(divElem.getAttribute('data-theme'), 'dark');
 	});
 
-	await t.step(".getDOM() - m.coat=[out=<d:key>] renders from MWIData store via JS", async () => {
+	it(".getDOM() - m.coat=[out=<d:key>] renders from MWIData store via JS", () => {
 		mwiData.set('locale', 'en-US');
 		const divNode = doc.createNode('h.div');
 		divNode.setAttr('m.coat', ps('[(lang=<d:locale>)]'));
 		const domNodes = divNode.getDOM();
 
-		await globalThis.reactive.wait();
 		const divElem = domNodes.at(0);
 		assertEquals(divElem.getAttribute('lang'), 'en-US');
 	});
 
-	await t.step("(getDOM) - DOM updates reactively when MWIData entry changes", async () => {
+	it("(getDOM) - DOM updates reactively when MWIData entry changes", async () => {
 		mwiData.set('color', 'red');
 		const divNode = $c.sm(doc, 'createNode', ['h.div']);
 		$c.sm(divNode, 'setAttr', ['m.coat', ps('[(data-color=<d:color>)]')]);
 		const domNodes = $c.sm(divNode, 'getDOM');
 
-		await globalThis.reactive.wait();
 		const divElem = domNodes.at(0);
 		assertEquals(divElem.getAttribute('data-color'), 'red');
 
 		// Change MWIData entry - DOM should reactively update
 		mwiData.set('color', 'blue');
-		await globalThis.reactive.wait();
+		await reactive.wait();
 		assertEquals(divElem.getAttribute('data-color'), 'blue', 'DOM should update when MWIData changes');
 		assertStrictEquals(domNodes.at(0), divElem, 'Should be same element');
 	});
 
-	await t.step(".getDOM() - DOM updates reactively when MWIData entry changes via JS", async () => {
+	it(".getDOM() - DOM updates reactively when MWIData entry changes via JS", async () => {
 		mwiData.set('size', 'small');
 		const divNode = doc.createNode('h.div');
 		divNode.setAttr('m.coat', ps('[(data-size=<d:size>)]'));
 		const domNodes = divNode.getDOM();
 
-		await globalThis.reactive.wait();
 		const divElem = domNodes.at(0);
 		assertEquals(divElem.getAttribute('data-size'), 'small');
 
 		// Change MWIData entry - DOM should reactively update
 		mwiData.set('size', 'large');
-		await globalThis.reactive.wait();
+		await reactive.wait();
 		assertEquals(divElem.getAttribute('data-size'), 'large', 'DOM should update when MWIData changes');
 	});
 
-	await t.step("(getDOM) - MWIData key added reactively updates DOM from missing to value", async () => {
+	it("(getDOM) - MWIData key added reactively updates DOM from missing to value", async () => {
 		// 'new-key' not yet in mwiData
 		const divNode = $c.sm(doc, 'createNode', ['h.div']);
 		$c.sm(divNode, 'setAttr', ['m.coat', ps('[(data-val=<d:new-key||absent>)]')]);
 		const domNodes = $c.sm(divNode, 'getDOM');
 
-		await globalThis.reactive.wait();
 		const divElem = domNodes.at(0);
 		assertEquals(divElem.getAttribute('data-val'), 'absent', 'Should use fallback when key missing');
 
 		// Add the key to MWIData
 		mwiData.set('new-key', 'present');
-		await globalThis.reactive.wait();
+		await reactive.wait();
 		assertEquals(divElem.getAttribute('data-val'), 'present', 'DOM should update when key is added to MWIData');
 	});
 
-	await t.step(".getDOM() - multiple <d:...> references in one m.coat, all reactive via JS", async () => {
+	it(".getDOM() - multiple <d:...> references in one m.coat, all reactive via JS", async () => {
 		mwiData.set('dir', 'ltr');
 		mwiData.set('lang2', 'fr');
 		const divNode = doc.createNode('h.div');
 		divNode.setAttr('m.coat', ps('[(dir=<d:dir> lang=<d:lang2>)]'));
 		const domNodes = divNode.getDOM();
 
-		await globalThis.reactive.wait();
 		const divElem = domNodes.at(0);
 		assertEquals(divElem.getAttribute('dir'), 'ltr');
 		assertEquals(divElem.getAttribute('lang'), 'fr');
@@ -1070,7 +999,7 @@ Deno.test("MWIDocNode - CSR-DOM m.coat MWIData Reactivity (<d:name>)", async (t)
 		// Change both MWIData entries
 		mwiData.set('dir', 'rtl');
 		mwiData.set('lang2', 'ar');
-		await globalThis.reactive.wait();
+		await reactive.wait();
 		assertEquals(divElem.getAttribute('dir'), 'rtl', 'dir should update');
 		assertEquals(divElem.getAttribute('lang'), 'ar', 'lang should update');
 	});
@@ -1079,8 +1008,8 @@ Deno.test("MWIDocNode - CSR-DOM m.coat MWIData Reactivity (<d:name>)", async (t)
 	globalThis.$gss.delete('MWIData');
 });
 
-Deno.test("MWIDocNode - CSR-DOM m.coat Ancestral Reactivity (<a:name>, <A:name>)", async (t) => {
-	await t.step("(getDOM) - Descendant with <a:name> reactively updates DOM when ancestor attribute changes", async () => {
+describe("MWIDocNode - CSR-DOM m.coat Ancestral Reactivity (<a:name>, <A:name>)", () => {
+	it("(getDOM) - Descendant with <a:name> reactively updates DOM when ancestor attribute changes", async () => {
 		const parent = doc.createNode('h.div');
 		parent.setAttr('theme', 'dark');
 		const child = doc.createNode('h.span');
@@ -1088,7 +1017,7 @@ Deno.test("MWIDocNode - CSR-DOM m.coat Ancestral Reactivity (<a:name>, <A:name>)
 		parent.append(child);
 
 		const domNodes = parent.getDOM();
-		await globalThis.reactive.wait();
+		await reactive.wait();
 
 		const parentElem = domNodes.at(0);
 		const spanElem = parentElem.children[0];
@@ -1096,12 +1025,12 @@ Deno.test("MWIDocNode - CSR-DOM m.coat Ancestral Reactivity (<a:name>, <A:name>)
 
 		// Mutate ancestor attribute
 		parent.setAttr('theme', 'light');
-		await globalThis.reactive.wait();
+		await reactive.wait();
 
 		assertEquals(spanElem.getAttribute('data-theme'), 'light', 'Descendant DOM should update when ancestor attribute changes');
 	});
 
-	await t.step(".getDOM() - Descendant with <a:name> reactively updates DOM when ancestor attribute changes via JS", async () => {
+	it(".getDOM() - Descendant with <a:name> reactively updates DOM when ancestor attribute changes via JS", async () => {
 		const parent = doc.createNode('h.div');
 		parent.setAttr('mode', 'edit');
 		const child = doc.createNode('h.span');
@@ -1109,7 +1038,7 @@ Deno.test("MWIDocNode - CSR-DOM m.coat Ancestral Reactivity (<a:name>, <A:name>)
 		parent.append(child);
 
 		const domNodes = parent.getDOM();
-		await globalThis.reactive.wait();
+		await reactive.wait();
 
 		const parentElem = domNodes.at(0);
 		const spanElem = parentElem.children[0];
@@ -1117,12 +1046,12 @@ Deno.test("MWIDocNode - CSR-DOM m.coat Ancestral Reactivity (<a:name>, <A:name>)
 
 		// Mutate ancestor attribute
 		parent.setAttr('mode', 'view');
-		await globalThis.reactive.wait();
+		await reactive.wait();
 
 		assertEquals(spanElem.getAttribute('data-mode'), 'view', 'Descendant DOM should update when ancestor attribute changes');
 	});
 
-	await t.step("(getDOM) - <A:name> prefers local attribute, falls back to ancestor reactively", async () => {
+	it("(getDOM) - <A:name> prefers local attribute, falls back to ancestor reactively", async () => {
 		const parent = doc.createNode('h.div');
 		parent.setAttr('color', 'blue');
 		const child = doc.createNode('h.span');
@@ -1131,7 +1060,7 @@ Deno.test("MWIDocNode - CSR-DOM m.coat Ancestral Reactivity (<a:name>, <A:name>)
 		parent.append(child);
 
 		const domNodes = parent.getDOM();
-		await globalThis.reactive.wait();
+		await reactive.wait();
 
 		const parentElem = domNodes.at(0);
 		const spanElem = parentElem.children[0];
@@ -1139,18 +1068,18 @@ Deno.test("MWIDocNode - CSR-DOM m.coat Ancestral Reactivity (<a:name>, <A:name>)
 
 		// Delete local attribute -> should reactively fall back to parent's 'blue'
 		child.delAttr('color');
-		await globalThis.reactive.wait();
+		await reactive.wait();
 
 		assertEquals(spanElem.getAttribute('data-color'), 'blue', 'Should fall back to ancestor when local attribute deleted');
 
 		// Mutate parent attribute -> should reactively update to parent's new value
 		parent.setAttr('color', 'green');
-		await globalThis.reactive.wait();
+		await reactive.wait();
 
 		assertEquals(spanElem.getAttribute('data-color'), 'green', 'Should follow ancestor changes when local is unset');
 	});
 
-	await t.step(".getDOM() - Multi-level hierarchy reactively propagates ancestral updates to grandchild", async () => {
+	it(".getDOM() - Multi-level hierarchy reactively propagates ancestral updates to grandchild", async () => {
 		const root = doc.createNode('h.div');
 		root.setAttr('navDet.name', '_M_navDet');
 		const child = doc.createNode('h.div');
@@ -1162,7 +1091,7 @@ Deno.test("MWIDocNode - CSR-DOM m.coat Ancestral Reactivity (<a:name>, <A:name>)
 		child.append(grandchild);
 
 		const domNodes = root.getDOM();
-		await globalThis.reactive.wait();
+		await reactive.wait();
 
 		const rootElem = domNodes.at(0);
 		const childElem = rootElem.children[0];
@@ -1172,7 +1101,7 @@ Deno.test("MWIDocNode - CSR-DOM m.coat Ancestral Reactivity (<a:name>, <A:name>)
 
 		// Update root navDet.name
 		root.setAttr('navDet.name', 'siteNav');
-		await globalThis.reactive.wait();
+		await reactive.wait();
 
 		assertEquals(grandchildElem.getAttribute('data-name'), 'siteNav-lvl-lvl', 'Grandchild should update to siteNav-lvl-lvl');
 	});

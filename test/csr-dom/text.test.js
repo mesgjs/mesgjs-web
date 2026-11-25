@@ -1,7 +1,8 @@
+import { describe, it } from '@compat/test';
 import {
 	assertEquals,
 	assertExists,
-} from "https://deno.land/std@0.152.0/testing/asserts.ts";
+} from '@std/assert';
 
 import { setupRuntime, simulateBrowser } from '../harness.esm.js';
 
@@ -10,6 +11,7 @@ const REG_READY_FT = 'mwi.compRegReady';
 await setupRuntime();
 
 const { fwait, getInstance } = globalThis.$c;
+const { reactive } = globalThis;
 await fwait(REG_READY_FT);
 
 // Set up browser-like environment for DOM testing
@@ -17,8 +19,8 @@ await simulateBrowser();
 
 const doc = getInstance('MWIDocument');
 
-Deno.test("MWICoreText (m.t) - CSR-DOM Tests", async (t) => {
-	await t.step("(getDOM) - Simple text as text node", async () => {
+describe("MWICoreText (m.t) - CSR-DOM Tests", () => {
+	it("(getDOM) - Simple text as text node", () => {
 		const textNode = $c.sm(doc, 'createNode', ['m.t']);
 		$c.sm(textNode, 'setAttr', ['t', 'Hello World']);
 		const domNodes = $c.sm(textNode, 'getDOM');
@@ -31,7 +33,7 @@ Deno.test("MWICoreText (m.t) - CSR-DOM Tests", async (t) => {
 		assertEquals(domNodes.size, 1);
 	});
 
-	await t.step(".getDOM() - Simple text via JS", () => {
+	it(".getDOM() - Simple text via JS", () => {
 		const textNode = doc.createNode('m.t');
 		textNode.setAttr('t', 'Simple text content');
 		const domNodes = textNode.getDOM();
@@ -42,7 +44,7 @@ Deno.test("MWICoreText (m.t) - CSR-DOM Tests", async (t) => {
 		assertEquals(domNodes.size, 1);
 	});
 
-	await t.step("(getDOM) - Empty text removes node", async () => {
+	it("(getDOM) - Empty text removes node", () => {
 		const textNode = $c.sm(doc, 'createNode', ['m.t']);
 		$c.sm(textNode, 'setAttr', ['t', '']);
 		const domNodes = $c.sm(textNode, 'getDOM');
@@ -51,7 +53,7 @@ Deno.test("MWICoreText (m.t) - CSR-DOM Tests", async (t) => {
 		assertEquals(domNodes.size, 0);
 	});
 
-	await t.step(".getDOM() - Empty text via JS", async () => {
+	it(".getDOM() - Empty text via JS", () => {
 		const textNode = doc.createNode('m.t');
 		textNode.setAttr('t', '');
 		const domNodes = textNode.getDOM();
@@ -60,7 +62,7 @@ Deno.test("MWICoreText (m.t) - CSR-DOM Tests", async (t) => {
 		assertEquals(domNodes.size, 0);
 	});
 
-	await t.step("(getDOM) - Text with special characters", async () => {
+	it("(getDOM) - Text with special characters", () => {
 		const textNode = $c.sm(doc, 'createNode', ['m.t']);
 		$c.sm(textNode, 'setAttr', ['t', '<tag> & "quotes"']);
 		const domNodes = $c.sm(textNode, 'getDOM');
@@ -72,7 +74,7 @@ Deno.test("MWICoreText (m.t) - CSR-DOM Tests", async (t) => {
 		assertEquals(domNodes.size, 1);
 	});
 
-	await t.step(".getDOM() - Text with special characters via JS", () => {
+	it(".getDOM() - Text with special characters via JS", () => {
 		const textNode = doc.createNode('m.t');
 		textNode.setAttr('t', '<tag> & "quotes"');
 		const domNodes = textNode.getDOM();
@@ -83,7 +85,7 @@ Deno.test("MWICoreText (m.t) - CSR-DOM Tests", async (t) => {
 		assertEquals(domNodes.size, 1);
 	});
 
-	await t.step("(getDOM) - Reactive text update", async () => {
+	it("(getDOM) - Reactive text update", async () => {
 		const textNode = $c.sm(doc, 'createNode', ['m.t']);
 		$c.sm(textNode, 'setAttr', ['t', 'Initial text']);
 		const domNodes = $c.sm(textNode, 'getDOM');
@@ -101,7 +103,7 @@ Deno.test("MWICoreText (m.t) - CSR-DOM Tests", async (t) => {
 		assertEquals(domNodes.size, 1); // Still just one node
 	});
 
-	await t.step(".getDOM() - Reactive text update via JS", async () => {
+	it(".getDOM() - Reactive text update via JS", async () => {
 		const textNode = doc.createNode('m.t');
 		textNode.setAttr('t', 'Initial text');
 		const domNodes = textNode.getDOM();
@@ -119,7 +121,7 @@ Deno.test("MWICoreText (m.t) - CSR-DOM Tests", async (t) => {
 		assertEquals(domNodes.size, 1); // Still just one node
 	});
 
-	await t.step("(getDOM) - Reactive empty to non-empty", async () => {
+	it("(getDOM) - Reactive empty to non-empty", async () => {
 		const textNode = $c.sm(doc, 'createNode', ['m.t']);
 		$c.sm(textNode, 'setAttr', ['t', '']);
 		const domNodes = $c.sm(textNode, 'getDOM');
@@ -138,7 +140,7 @@ Deno.test("MWICoreText (m.t) - CSR-DOM Tests", async (t) => {
 		assertEquals(domNodes.size, 1);
 	});
 
-	await t.step(".getDOM() - Reactive empty to non-empty via JS", async () => {
+	it(".getDOM() - Reactive empty to non-empty via JS", async () => {
 		const textNode = doc.createNode('m.t');
 		textNode.setAttr('t', '');
 		const domNodes = textNode.getDOM();
@@ -153,7 +155,7 @@ Deno.test("MWICoreText (m.t) - CSR-DOM Tests", async (t) => {
 		assertEquals(domNodes.size, 1);
 	});
 
-	await t.step("(getDOM) - Reactive non-empty to empty", async () => {
+	it("(getDOM) - Reactive non-empty to empty", async () => {
 		const textNode = $c.sm(doc, 'createNode', ['m.t']);
 		$c.sm(textNode, 'setAttr', ['t', 'Has text']);
 		const domNodes = $c.sm(textNode, 'getDOM');
@@ -170,7 +172,7 @@ Deno.test("MWICoreText (m.t) - CSR-DOM Tests", async (t) => {
 		assertEquals(domNodes.size, 0);
 	});
 
-	await t.step(".getDOM() - Reactive non-empty to empty via JS", async () => {
+	it(".getDOM() - Reactive non-empty to empty via JS", async () => {
 		const textNode = doc.createNode('m.t');
 		textNode.setAttr('t', 'Has text');
 		const domNodes = textNode.getDOM();

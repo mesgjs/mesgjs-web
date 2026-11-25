@@ -48,7 +48,7 @@ Examples:
   mwi-color-tokens default-theme/primary.json > dist/default-theme/primary.css
 
   # Pipe JSON via stdin
-  cat default-theme/neutral.json | mwi-color-tokens - > dist/default-theme/neutral.css
+  mwi-color-tokens - < default-theme/neutral.json > dist/default-theme/neutral.css
 ```
 
 ### 2.3 Execution Flow & Core Modules

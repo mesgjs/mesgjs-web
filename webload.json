@@ -1,0 +1,25 @@
+{
+	"imports": {
+		"@escape-js": "https://cdn.jsdelivr.net/gh/mesgjs/escape-js@0.1.0/src/escape.esm.js",
+		"mesgjs/": "./resources/mesgjs/",
+		"@nanos": "https://cdn.jsdelivr.net/gh/mesgjs/nanos@1.5.1/src/nanos.esm.js",
+		"@reactive": "https://cdn.jsdelivr.net/gh/mesgjs/reactive@0.1.6/src/reactive.esm.js",
+		"mesgjs-web/": "./",
+		"@std/assert": "https://esm.sh/jsr/@std/assert?target=node",
+		"@compat/test": "https://esm.sh/jsr/@tundralibs/compat@2.8.1/test?target=node",
+		"@cross/test": "https://esm.sh/jsr/@cross/test?target=node",
+		"@compat/file": "https://cdn.jsdelivr.net/gh/bkatzung/extcompat@0.6.0/src/file.esm.js",
+		"@tundralibs/compat/file": "https://esm.sh/jsr/@tundralibs/compat@2.8.1/file?target=node",
+		"@compat/path": "https://esm.sh/jsr/@tundralibs/compat@2.8.1/path?target=node",
+		"@compat/runtime": "https://esm.sh/jsr/@tundralibs/compat@2.8.1/runtime?target=node",
+		"@compat/stdin": "https://cdn.jsdelivr.net/gh/bkatzung/extcompat@0.6.0/src/stdin.esm.js",
+		"@compat/subprocess": "https://cdn.jsdelivr.net/gh/bkatzung/extcompat@0.6.0/src/subprocess.esm.js",
+		"@compat/cli": "https://esm.sh/jsr/@tundralibs/compat@2.8.1/cli?target=node",
+		"linkedom": "https://esm.sh/linkedom@0.18.9?target=es2022"
+	},
+	"script-src": [
+		"https://cdn.jsdelivr.net/gh/bkatzung/",
+		"https://cdn.jsdelivr.net/gh/mesgjs/",
+		"https://esm.sh/"
+	]
+}

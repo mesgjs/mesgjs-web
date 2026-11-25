@@ -1,8 +1,9 @@
+import { describe, it } from '@compat/test';
 import {
 	assertEquals,
 	assertExists,
 	assertStrictEquals,
-} from "https://deno.land/std@0.152.0/testing/asserts.ts";
+} from '@std/assert';
 
 import { setupRuntime, simulateBrowser } from '../harness.esm.js';
 
@@ -30,8 +31,8 @@ function makeDocNode (type, attrs = {}) {
 	return node;
 }
 
-Deno.test("MWIDOMSync - Initialization", async (t) => {
-	await t.step("(cursor) - Returns initial cursor node", () => {
+describe("MWIDOMSync - Initialization", () => {
+	it("(cursor) - Returns initial cursor node", () => {
 		const container = document.createElement('div');
 		const textNode = document.createTextNode('hello');
 		container.appendChild(textNode);
@@ -40,7 +41,7 @@ Deno.test("MWIDOMSync - Initialization", async (t) => {
 		assertStrictEquals($c.sm(sync, 'cursor'), textNode, 'cursor should be the initial node');
 	});
 
-	await t.step(".cursor - Returns initial cursor node via JS", () => {
+	it(".cursor - Returns initial cursor node via JS", () => {
 		const container = document.createElement('div');
 		const elem = document.createElement('span');
 		container.appendChild(elem);
@@ -49,19 +50,19 @@ Deno.test("MWIDOMSync - Initialization", async (t) => {
 		assertStrictEquals(sync.cursor, elem, 'cursor should be the initial element');
 	});
 
-	await t.step("(cursor) - Returns null when initialized with null", () => {
+	it("(cursor) - Returns null when initialized with null", () => {
 		const sync = createSync(null);
 		assertEquals($c.sm(sync, 'cursor'), null, 'cursor should be null');
 	});
 
-	await t.step("(cursor) - Returns undefined when initialized with undefined", () => {
+	it("(cursor) - Returns undefined when initialized with undefined", () => {
 		const sync = createSync(undefined);
 		assertEquals($c.sm(sync, 'cursor'), undefined, 'cursor should be undefined');
 	});
 });
 
-Deno.test("MWIDOMSync - Text Node Sync", async (t) => {
-	await t.step("(sync) - Matches text node with matching content", () => {
+describe("MWIDOMSync - Text Node Sync", () => {
+	it("(sync) - Matches text node with matching content", () => {
 		const container = document.createElement('div');
 		const textNode = document.createTextNode('Hello World');
 		container.appendChild(textNode);
@@ -75,7 +76,7 @@ Deno.test("MWIDOMSync - Text Node Sync", async (t) => {
 		assertEquals($c.sm(sync, 'cursor'), null, 'cursor should advance past matched node');
 	});
 
-	await t.step(".sync() - Matches text node with matching content via JS", () => {
+	it(".sync() - Matches text node with matching content via JS", () => {
 		const container = document.createElement('div');
 		const textNode = document.createTextNode('JS Hello');
 		container.appendChild(textNode);
@@ -88,7 +89,7 @@ Deno.test("MWIDOMSync - Text Node Sync", async (t) => {
 		assertEquals(sync.cursor, null, 'cursor should advance past matched node');
 	});
 
-	await t.step("(sync) - Does not match text node with different content", () => {
+	it("(sync) - Does not match text node with different content", () => {
 		const container = document.createElement('div');
 		const textNode = document.createTextNode('Different text');
 		container.appendChild(textNode);
@@ -102,7 +103,7 @@ Deno.test("MWIDOMSync - Text Node Sync", async (t) => {
 		assertStrictEquals($c.sm(sync, 'cursor'), textNode, 'cursor should not advance on mismatch');
 	});
 
-	await t.step("(sync) - Does not match element node for m.t tag", () => {
+	it("(sync) - Does not match element node for m.t tag", () => {
 		const container = document.createElement('div');
 		const elem = document.createElement('span');
 		container.appendChild(elem);
@@ -114,7 +115,7 @@ Deno.test("MWIDOMSync - Text Node Sync", async (t) => {
 		assertEquals(result, undefined, 'should return undefined when cursor is not a text node');
 	});
 
-	await t.step("(sync) - Advances cursor after successful text match", () => {
+	it("(sync) - Advances cursor after successful text match", () => {
 		const container = document.createElement('div');
 		const text1 = document.createTextNode('First');
 		const text2 = document.createTextNode('Second');
@@ -135,8 +136,8 @@ Deno.test("MWIDOMSync - Text Node Sync", async (t) => {
 	});
 });
 
-Deno.test("MWIDOMSync - Comment Node Sync", async (t) => {
-	await t.step("(sync) - Matches comment node with matching content", () => {
+describe("MWIDOMSync - Comment Node Sync", () => {
+	it("(sync) - Matches comment node with matching content", () => {
 		const container = document.createElement('div');
 		const commentNode = document.createComment('My comment');
 		container.appendChild(commentNode);
@@ -149,7 +150,7 @@ Deno.test("MWIDOMSync - Comment Node Sync", async (t) => {
 		assertEquals($c.sm(sync, 'cursor'), null, 'cursor should advance past matched node');
 	});
 
-	await t.step(".sync() - Matches comment node via JS", () => {
+	it(".sync() - Matches comment node via JS", () => {
 		const container = document.createElement('div');
 		const commentNode = document.createComment('JS comment');
 		container.appendChild(commentNode);
@@ -161,7 +162,7 @@ Deno.test("MWIDOMSync - Comment Node Sync", async (t) => {
 		assertStrictEquals(result, commentNode, 'should return the matching comment node');
 	});
 
-	await t.step("(sync) - Does not match comment node with different content", () => {
+	it("(sync) - Does not match comment node with different content", () => {
 		const container = document.createElement('div');
 		const commentNode = document.createComment('Actual comment');
 		container.appendChild(commentNode);
@@ -174,7 +175,7 @@ Deno.test("MWIDOMSync - Comment Node Sync", async (t) => {
 		assertStrictEquals($c.sm(sync, 'cursor'), commentNode, 'cursor should not advance on mismatch');
 	});
 
-	await t.step("(sync) - Does not match text node for m.com tag", () => {
+	it("(sync) - Does not match text node for m.com tag", () => {
 		const container = document.createElement('div');
 		const textNode = document.createTextNode('text');
 		container.appendChild(textNode);
@@ -187,8 +188,8 @@ Deno.test("MWIDOMSync - Comment Node Sync", async (t) => {
 	});
 });
 
-Deno.test("MWIDOMSync - Element Node Sync", async (t) => {
-	await t.step("(sync) - Matches element by tag name", () => {
+describe("MWIDOMSync - Element Node Sync", () => {
+	it("(sync) - Matches element by tag name", () => {
 		const container = document.createElement('div');
 		const span = document.createElement('span');
 		container.appendChild(span);
@@ -201,7 +202,7 @@ Deno.test("MWIDOMSync - Element Node Sync", async (t) => {
 		assertEquals($c.sm(sync, 'cursor'), null, 'cursor should advance past matched element');
 	});
 
-	await t.step(".sync() - Matches element by tag name via JS", () => {
+	it(".sync() - Matches element by tag name via JS", () => {
 		const container = document.createElement('div');
 		const divElem = document.createElement('div');
 		container.appendChild(divElem);
@@ -213,7 +214,7 @@ Deno.test("MWIDOMSync - Element Node Sync", async (t) => {
 		assertStrictEquals(result, divElem, 'should return the matching element');
 	});
 
-	await t.step("(sync) - Does not match element with different tag name", () => {
+	it("(sync) - Does not match element with different tag name", () => {
 		const container = document.createElement('div');
 		const span = document.createElement('span');
 		container.appendChild(span);
@@ -226,7 +227,7 @@ Deno.test("MWIDOMSync - Element Node Sync", async (t) => {
 		assertStrictEquals($c.sm(sync, 'cursor'), span, 'cursor should not advance on mismatch');
 	});
 
-	await t.step("(sync) - Advances past text nodes before matching element", () => {
+	it("(sync) - Advances past text nodes before matching element", () => {
 		const container = document.createElement('div');
 		const textNode = document.createTextNode('whitespace');
 		const span = document.createElement('span');
@@ -241,7 +242,7 @@ Deno.test("MWIDOMSync - Element Node Sync", async (t) => {
 		assertEquals($c.sm(sync, 'cursor'), null, 'cursor should advance past matched element');
 	});
 
-	await t.step("(sync) - Advances past comment nodes before matching element", () => {
+	it("(sync) - Advances past comment nodes before matching element", () => {
 		const container = document.createElement('div');
 		const commentNode = document.createComment('comment');
 		const divElem = document.createElement('div');
@@ -255,7 +256,7 @@ Deno.test("MWIDOMSync - Element Node Sync", async (t) => {
 		assertStrictEquals(result, divElem, 'should advance past comment node and match div');
 	});
 
-	await t.step("(sync) - Advances past multiple text/comment nodes before matching element", () => {
+	it("(sync) - Advances past multiple text/comment nodes before matching element", () => {
 		const container = document.createElement('div');
 		const text1 = document.createTextNode('text1');
 		const comment = document.createComment('comment');
@@ -274,8 +275,8 @@ Deno.test("MWIDOMSync - Element Node Sync", async (t) => {
 	});
 });
 
-Deno.test("MWIDOMSync - Non-local Element Sync (getElementById)", async (t) => {
-	await t.step("(sync) - Falls back to getElementById when no local match", () => {
+describe("MWIDOMSync - Non-local Element Sync (getElementById)", () => {
+	it("(sync) - Falls back to getElementById when no local match", () => {
 		// Create an element with an id in the document
 		const targetElem = document.createElement('div');
 		targetElem.id = 'target-element';
@@ -296,7 +297,7 @@ Deno.test("MWIDOMSync - Non-local Element Sync (getElementById)", async (t) => {
 		document.body.removeChild(targetElem);
 	});
 
-	await t.step("(sync) - Returns undefined when id not found in document", () => {
+	it("(sync) - Returns undefined when id not found in document", () => {
 		const docNode = makeDocNode('h.div');
 		docNode.setAttr('id', 'nonexistent-id-xyz');
 
@@ -306,7 +307,7 @@ Deno.test("MWIDOMSync - Non-local Element Sync (getElementById)", async (t) => {
 		assertEquals(result, undefined, 'should return undefined when id not found');
 	});
 
-	await t.step("(sync) - Does not use getElementById when local match succeeds", () => {
+	it("(sync) - Does not use getElementById when local match succeeds", () => {
 		const container = document.createElement('div');
 		const localSpan = document.createElement('span');
 		localSpan.id = 'target-span';
@@ -330,8 +331,8 @@ Deno.test("MWIDOMSync - Non-local Element Sync (getElementById)", async (t) => {
 	});
 });
 
-Deno.test("MWIDOMSync - Sequential Sync Operations", async (t) => {
-	await t.step("(sync) - Syncs a sequence of mixed nodes", () => {
+describe("MWIDOMSync - Sequential Sync Operations", () => {
+	it("(sync) - Syncs a sequence of mixed nodes", () => {
 		const container = document.createElement('div');
 		const text1 = document.createTextNode('Hello');
 		const span = document.createElement('span');
@@ -358,7 +359,7 @@ Deno.test("MWIDOMSync - Sequential Sync Operations", async (t) => {
 		assertEquals($c.sm(sync, 'cursor'), null, 'cursor should be null after all nodes synced');
 	});
 
-	await t.step("(sync) - Cursor advances correctly through multiple elements", () => {
+	it("(sync) - Cursor advances correctly through multiple elements", () => {
 		const container = document.createElement('div');
 		const div1 = document.createElement('div');
 		const div2 = document.createElement('div');

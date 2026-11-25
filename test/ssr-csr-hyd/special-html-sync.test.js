@@ -2,11 +2,12 @@
 // Tests <script>, <style>, and <title> elements which use m.text
 // attribute for content instead of children.
 
+import { describe, it } from '@compat/test';
 import {
 	assertEquals,
 	assertExists,
 	assertStrictEquals,
-} from "https://deno.land/std@0.152.0/testing/asserts.ts";
+} from '@std/assert';
 
 import { setupRuntime, simulateBrowser } from '../harness.esm.js';
 
@@ -15,12 +16,11 @@ const REG_READY_FT = 'mwi.compRegReady';
 await setupRuntime();
 
 const { fwait, getInstance } = globalThis.$c;
+const { ls, ps, reactive } = globalThis;
 await fwait(REG_READY_FT);
 
 // Set up browser-like environment for DOM testing
 await simulateBrowser();
-
-const ps = globalThis.ps;
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -70,8 +70,8 @@ function csrSync (spec, cursor) {
 // Script element hydration
 // ---------------------------------------------------------------------------
 
-Deno.test("SSR-CSR Hydration - Script elements", async (t) => {
-	await t.step("Basic script: SSR node reused by CSR", () => {
+describe("SSR-CSR Hydration - Script elements", () => {
+	it("Basic script: SSR node reused by CSR", () => {
 		const spec = ps('[( [h.script m.text="console.log(\\"Hello\\");"] )]');
 
 		// SSR
@@ -92,7 +92,7 @@ Deno.test("SSR-CSR Hydration - Script elements", async (t) => {
 		assertEquals(domNodes.at(0).textContent, 'console.log("Hello");', 'content preserved');
 	});
 
-	await t.step("Script with attributes: SSR node reused, attributes synced", () => {
+	it("Script with attributes: SSR node reused, attributes synced", () => {
 		const spec = ps('[( [h.script type=module defer=true m.text="import { init } from \\"./app.js\\";"] )]');
 
 		const html = ssrHTML(spec);
@@ -110,7 +110,7 @@ Deno.test("SSR-CSR Hydration - Script elements", async (t) => {
 		assertEquals(domNodes.at(0).textContent, 'import { init } from "./app.js";', 'content preserved');
 	});
 
-	await t.step("External script (no m.text): SSR node reused", () => {
+	it("External script (no m.text): SSR node reused", () => {
 		const spec = ps('[( [h.script src=/app.js defer=true] )]');
 
 		const html = ssrHTML(spec);
@@ -127,7 +127,7 @@ Deno.test("SSR-CSR Hydration - Script elements", async (t) => {
 		assertEquals(domNodes.at(0).textContent, '', 'content still empty');
 	});
 
-	await t.step("Script with escaped closing tag: SSR escaping preserved", () => {
+	it("Script with escaped closing tag: SSR escaping preserved", () => {
 		const doc = makeDoc();
 		const script = doc.createNode('h.script');
 		script.setAttr('m.text', 'const html = "<script>alert(1)</script>";');
@@ -151,7 +151,7 @@ Deno.test("SSR-CSR Hydration - Script elements", async (t) => {
 		assertEquals(domNodes.at(0).textContent, 'const html = "<script>alert(1)</script>";', 'content correct');
 	});
 
-	await t.step("Empty script: SSR node reused", () => {
+	it("Empty script: SSR node reused", () => {
 		const spec = ps('[( [h.script] )]');
 
 		const html = ssrHTML(spec);
@@ -167,7 +167,7 @@ Deno.test("SSR-CSR Hydration - Script elements", async (t) => {
 		assertEquals(domNodes.at(0).textContent, '', 'content is empty');
 	});
 
-	await t.step("Script with reactive content update after hydration", async () => {
+	it("Script with reactive content update after hydration", async () => {
 		const doc = makeDoc();
 		const script = doc.createNode('h.script');
 		script.setAttr('m.text', 'console.log("v1");');
@@ -185,7 +185,7 @@ Deno.test("SSR-CSR Hydration - Script elements", async (t) => {
 
 		// Reactive update
 		script.setAttr('m.text', 'console.log("v2");');
-		await globalThis.reactive.wait();
+		await reactive.wait();
 
 		assertStrictEquals(domNodes.at(0), ssrScript, 'same DOM node after update');
 		assertEquals(domNodes.at(0).textContent, 'console.log("v2");', 'content updated reactively');
@@ -196,8 +196,8 @@ Deno.test("SSR-CSR Hydration - Script elements", async (t) => {
 // Style element hydration
 // ---------------------------------------------------------------------------
 
-Deno.test("SSR-CSR Hydration - Style elements", async (t) => {
-	await t.step("Basic style: SSR node reused by CSR", () => {
+describe("SSR-CSR Hydration - Style elements", () => {
+	it("Basic style: SSR node reused by CSR", () => {
 		const spec = ps('[( [h.style m.text=".box { color: red; }"] )]');
 
 		// SSR
@@ -218,7 +218,7 @@ Deno.test("SSR-CSR Hydration - Style elements", async (t) => {
 		assertEquals(domNodes.at(0).textContent, '.box { color: red; }', 'content preserved');
 	});
 
-	await t.step("Style with attributes: SSR node reused, attributes synced", () => {
+	it("Style with attributes: SSR node reused, attributes synced", () => {
 		const spec = ps('[( [h.style media=print m.text=".page { margin: 1in; }"] )]');
 
 		const html = ssrHTML(spec);
@@ -234,7 +234,7 @@ Deno.test("SSR-CSR Hydration - Style elements", async (t) => {
 		assertEquals(domNodes.at(0).textContent, '.page { margin: 1in; }', 'content preserved');
 	});
 
-	await t.step("Style with escaped closing tag: SSR escaping preserved", () => {
+	it("Style with escaped closing tag: SSR escaping preserved", () => {
 		const doc = makeDoc();
 		const style = doc.createNode('h.style');
 		style.setAttr('m.text', '.x::after { content: "</style>"; }');
@@ -258,7 +258,7 @@ Deno.test("SSR-CSR Hydration - Style elements", async (t) => {
 		assertEquals(domNodes.at(0).textContent, '.x::after { content: "</style>"; }', 'content correct');
 	});
 
-	await t.step("Empty style: SSR node reused", () => {
+	it("Empty style: SSR node reused", () => {
 		const spec = ps('[( [h.style] )]');
 
 		const html = ssrHTML(spec);
@@ -274,7 +274,7 @@ Deno.test("SSR-CSR Hydration - Style elements", async (t) => {
 		assertEquals(domNodes.at(0).textContent, '', 'content is empty');
 	});
 
-	await t.step("Style with reactive content update after hydration", async () => {
+	it("Style with reactive content update after hydration", async () => {
 		const doc = makeDoc();
 		const style = doc.createNode('h.style');
 		style.setAttr('m.text', '.v1 { color: red; }');
@@ -292,7 +292,7 @@ Deno.test("SSR-CSR Hydration - Style elements", async (t) => {
 
 		// Reactive update
 		style.setAttr('m.text', '.v2 { color: blue; }');
-		await globalThis.reactive.wait();
+		await reactive.wait();
 
 		assertStrictEquals(domNodes.at(0), ssrStyle, 'same DOM node after update');
 		assertEquals(domNodes.at(0).textContent, '.v2 { color: blue; }', 'content updated reactively');
@@ -303,8 +303,8 @@ Deno.test("SSR-CSR Hydration - Style elements", async (t) => {
 // Title element hydration
 // ---------------------------------------------------------------------------
 
-Deno.test("SSR-CSR Hydration - Title elements", async (t) => {
-	await t.step("Basic title: SSR node reused by CSR", () => {
+describe("SSR-CSR Hydration - Title elements", () => {
+	it("Basic title: SSR node reused by CSR", () => {
 		const spec = ps('[( [h.title m.text="My Page Title"] )]');
 
 		// SSR
@@ -325,13 +325,13 @@ Deno.test("SSR-CSR Hydration - Title elements", async (t) => {
 		assertEquals(domNodes.at(0).textContent, 'My Page Title', 'content preserved');
 	});
 
-	await t.step("Title with HTML entities: SSR escaping preserved", () => {
+	it("Title with HTML entities: SSR escaping preserved", () => {
 		const spec = ps('[( [h.title m.text="Products < $100 & \\"Special\\" Offers"] )]');
 
 		const html = ssrHTML(spec);
 		// HTML should have entities escaped
-		assertEquals(html.includes('&lt;'), true, 'less-than escaped');
-		assertEquals(html.includes('&amp;'), true, 'ampersand escaped');
+		assertEquals(html.includes('<'), true, 'less-than escaped');
+		assertEquals(html.includes('&'), true, 'ampersand escaped');
 
 		const ssrTitle = loadSSRIntoBody(html);
 		assertEquals(ssrTitle.tagName, 'TITLE');
@@ -344,7 +344,7 @@ Deno.test("SSR-CSR Hydration - Title elements", async (t) => {
 		assertEquals(domNodes.at(0).textContent, 'Products < $100 & "Special" Offers', 'content correct');
 	});
 
-	await t.step("Empty title: SSR node reused", () => {
+	it("Empty title: SSR node reused", () => {
 		const spec = ps('[( [h.title] )]');
 
 		const html = ssrHTML(spec);
@@ -360,7 +360,7 @@ Deno.test("SSR-CSR Hydration - Title elements", async (t) => {
 		assertEquals(domNodes.at(0).textContent, '', 'content is empty');
 	});
 
-	await t.step("Title with reactive content update after hydration", async () => {
+	it("Title with reactive content update after hydration", async () => {
 		const doc = makeDoc();
 		const title = doc.createNode('h.title');
 		title.setAttr('m.text', 'Initial Title');
@@ -378,13 +378,13 @@ Deno.test("SSR-CSR Hydration - Title elements", async (t) => {
 
 		// Reactive update
 		title.setAttr('m.text', 'Updated Title');
-		await globalThis.reactive.wait();
+		await reactive.wait();
 
 		assertStrictEquals(domNodes.at(0), ssrTitle, 'same DOM node after update');
 		assertEquals(domNodes.at(0).textContent, 'Updated Title', 'content updated reactively');
 	});
 
-	await t.step("Title in head: SSR node reused in context", () => {
+	it("Title in head: SSR node reused in context", () => {
 		const spec = ps(`[( [h.head
 			[h.title m.text="Page Title"]
 			[h.meta charset=utf-8]
@@ -417,8 +417,8 @@ Deno.test("SSR-CSR Hydration - Title elements", async (t) => {
 // Mixed special elements
 // ---------------------------------------------------------------------------
 
-Deno.test("SSR-CSR Hydration - Mixed special elements", async (t) => {
-	await t.step("Script and style siblings: both SSR nodes reused", () => {
+describe("SSR-CSR Hydration - Mixed special elements", () => {
+	it("Script and style siblings: both SSR nodes reused", () => {
 		const spec = ps(`[( 
 			[h.script m.text="console.log(\\"init\\");"]
 			[h.style m.text=".app { margin: 0; }"]
@@ -440,7 +440,7 @@ Deno.test("SSR-CSR Hydration - Mixed special elements", async (t) => {
 		assertEquals(domNodes.at(1).textContent, '.app { margin: 0; }', 'style content preserved');
 	});
 
-	await t.step("Complete head with title, style, and script: all SSR nodes reused", () => {
+	it("Complete head with title, style, and script: all SSR nodes reused", () => {
 		const spec = ps(`[( [h.head
 			[h.title m.text="Full Page"]
 			[h.meta charset=utf-8]

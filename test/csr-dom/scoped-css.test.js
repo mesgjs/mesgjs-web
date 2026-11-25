@@ -1,8 +1,9 @@
+import { describe, it } from '@compat/test';
 import {
 	assert,
 	assertEquals,
 	assertStrictEquals,
-} from "https://deno.land/std@0.152.0/testing/asserts.ts";
+} from '@std/assert';
 
 import { setupRuntime, simulateBrowser } from '../harness.esm.js';
 
@@ -12,23 +13,22 @@ await setupRuntime();
 await simulateBrowser();
 
 const { fwait, getInstance } = globalThis.$c;
-const ls = globalThis.ls;
-const ps = globalThis.ps;
+const { ls, ps, reactive } = globalThis;
 
 // Wait for registry to be ready
 await fwait(REG_READY_FT);
 
 const registry = getInstance('MWIRegistry');
 
-Deno.test("MWICoreScpCSS CSR - Basic DOM Rendering", async (t) => {
-	await t.step("Create empty style element", () => {
+describe("MWICoreScpCSS CSR - Basic DOM Rendering", () => {
+	it("Create empty style element", () => {
 		const doc = getInstance('MWIDocument');
 		const scpNode = doc.createNode('m.scpcss');
 		const dom = $c.sm(scpNode, 'getDOM');
 		assertEquals(dom.size, 0, "Empty document should return empty NANOS");
 	});
 
-	await t.step("Create style element with CSS", () => {
+	it("Create style element with CSS", () => {
 		registry.register('test.csr.scpcss.basic', ls([
 			'allowLate', true,
 			'if', 'MWIHTML',
@@ -46,7 +46,7 @@ Deno.test("MWICoreScpCSS CSR - Basic DOM Rendering", async (t) => {
 		assert(styleElem.textContent.includes('_MO_'), "Should contain component ID");
 	});
 
-	await t.step("Style element properties", () => {
+	it("Style element properties", () => {
 		registry.register('test.csr.scpcss.props', ls([
 			'allowLate', true,
 			'if', 'MWIHTML',
@@ -63,8 +63,8 @@ Deno.test("MWICoreScpCSS CSR - Basic DOM Rendering", async (t) => {
 	});
 });
 
-Deno.test("MWICoreScpCSS CSR - Reactive Behavior", async (t) => {
-	await t.step("Add component after m.scpcss creation", async () => {
+describe("MWICoreScpCSS CSR - Reactive Behavior", () => {
+	it("Add component after m.scpcss creation", () => {
 		registry.register('test.csr.scpcss.reactive1', ls([
 			'allowLate', true,
 			'if', 'MWIHTML',
@@ -87,7 +87,7 @@ Deno.test("MWICoreScpCSS CSR - Reactive Behavior", async (t) => {
 		assert(styleElem.textContent.includes('color: red'), "Should include CSS");
 	});
 
-	await t.step("Add multiple components reactively", async () => {
+	it("Add multiple components reactively", () => {
 		registry.register('test.csr.scpcss.reactive2a', ls([
 			'allowLate', true,
 			'if', 'MWIHTML',
@@ -118,7 +118,7 @@ Deno.test("MWICoreScpCSS CSR - Reactive Behavior", async (t) => {
 		assert(styleElem.textContent.includes('color: green'), "Should now include second CSS");
 	});
 
-	await t.step("Reactive consistency - stable element reference", async () => {
+	it("Reactive consistency - stable element reference", () => {
 		registry.register('test.csr.scpcss.stable', ls([
 			'allowLate', true,
 			'if', 'MWIHTML',
@@ -139,7 +139,7 @@ Deno.test("MWICoreScpCSS CSR - Reactive Behavior", async (t) => {
 		assertStrictEquals(dom1, dom2, "Should return same NANOS instance");
 	});
 
-	await t.step("Style element content updates reactively", async () => {
+	it("Style element content updates reactively", async () => {
 		registry.register('test.csr.scpcss.update', ls([
 			'allowLate', true,
 			'if', 'MWIHTML',
@@ -169,8 +169,8 @@ Deno.test("MWICoreScpCSS CSR - Reactive Behavior", async (t) => {
 	});
 });
 
-Deno.test("MWICoreScpCSS CSR - Integration with Document", async (t) => {
-	await t.step("m.scpcss in document head pattern", async () => {
+describe("MWICoreScpCSS CSR - Integration with Document", () => {
+	it("m.scpcss in document head pattern", () => {
 		registry.register('test.csr.scpcss.head', ls([
 			'allowLate', true,
 			'if', 'MWIHTML',
@@ -193,7 +193,7 @@ Deno.test("MWICoreScpCSS CSR - Integration with Document", async (t) => {
 		assertEquals(scpDOM.size, 1, "m.scpcss should have style element");
 	});
 
-	await t.step("Multiple m.scpcss nodes in DOM", async () => {
+	it("Multiple m.scpcss nodes in DOM", () => {
 		registry.register('test.csr.scpcss.multi', ls([
 			'allowLate', true,
 			'if', 'MWIHTML',
@@ -222,8 +222,8 @@ Deno.test("MWICoreScpCSS CSR - Integration with Document", async (t) => {
 	});
 });
 
-Deno.test("MWICoreScpCSS CSR - Edge Cases", async (t) => {
-	await t.step("Rapid component additions", async () => {
+describe("MWICoreScpCSS CSR - Edge Cases", () => {
+	it("Rapid component additions", () => {
 		// Register multiple components
 		for (let i = 0; i < 5; i++) {
 			registry.register(`test.csr.scpcss.rapid${i}`, ls([
@@ -241,8 +241,6 @@ Deno.test("MWICoreScpCSS CSR - Edge Cases", async (t) => {
 			doc.createNode(`test.csr.scpcss.rapid${i}`);
 		}
 
-		// Wait for reactive updates
-
 		const dom = $c.sm(scpNode, 'getDOM');
 		const styleElem = dom.at(0);
 
@@ -252,7 +250,7 @@ Deno.test("MWICoreScpCSS CSR - Edge Cases", async (t) => {
 		}
 	});
 
-	await t.step("Component type reuse", async () => {
+	it("Component type reuse", () => {
 		registry.register('test.csr.scpcss.reuse', ls([
 			'allowLate', true,
 			'if', 'MWIHTML',
@@ -274,7 +272,7 @@ Deno.test("MWICoreScpCSS CSR - Edge Cases", async (t) => {
 		assertEquals(matches?.length, 1, "CSS should only appear once despite multiple instances");
 	});
 
-	await t.step("Late component registration (test mode)", async () => {
+	it("Late component registration (test mode)", () => {
 		const doc = getInstance('MWIDocument');
 		const scpNode = doc.createNode('m.scpcss');
 
@@ -300,8 +298,8 @@ Deno.test("MWICoreScpCSS CSR - Edge Cases", async (t) => {
 	});
 });
 
-Deno.test("MWICoreScpCSS CSR - Real-World Integration", async (t) => {
-	await t.step("Dynamic page with scoped CSS", async () => {
+describe("MWICoreScpCSS CSR - Real-World Integration", () => {
+	it("Dynamic page with scoped CSS", () => {
 		registry.register('test.csr.scpcss.dynamic', ls([
 			'allowLate', true,
 			'if', 'MWIHTML',
@@ -325,7 +323,7 @@ Deno.test("MWICoreScpCSS CSR - Real-World Integration", async (t) => {
 		assert(styleElem.textContent.includes('background: #f0f0f0'), "Should include CSS");
 	});
 
-	await t.step("Card component with scoped styles", async () => {
+	it("Card component with scoped styles", () => {
 		registry.register('test.csr.scpcss.card', ls([
 			'allowLate', true,
 			'if', 'MWIHTML',
@@ -344,7 +342,7 @@ Deno.test("MWICoreScpCSS CSR - Real-World Integration", async (t) => {
 		assert(styleElem.textContent.includes('font-weight: bold'), "Should include header style");
 	});
 
-	await t.step("Component library with selective loading", async () => {
+	it("Component library with selective loading", () => {
 		// Register component library
 		for (let i = 0; i < 10; i++) {
 			registry.register(`test.csr.scpcss.complib${i}`, ls([
@@ -374,8 +372,8 @@ Deno.test("MWICoreScpCSS CSR - Real-World Integration", async (t) => {
 	});
 });
 
-Deno.test("MWICoreScpCSS CSR - Empty to Non-Empty Transitions", async (t) => {
-	await t.step("Transition from empty to non-empty", async () => {
+describe("MWICoreScpCSS CSR - Empty to Non-Empty Transitions", () => {
+	it("Transition from empty to non-empty", () => {
 		registry.register('test.csr.scpcss.transition', ls([
 			'allowLate', true,
 			'if', 'MWIHTML',
@@ -397,7 +395,7 @@ Deno.test("MWICoreScpCSS CSR - Empty to Non-Empty Transitions", async (t) => {
 		assert(dom.at(0).textContent.includes('display: block'), "Should have CSS content");
 	});
 
-	await t.step("Empty state with whitespace-only CSS", async () => {
+	it("Empty state with whitespace-only CSS", () => {
 		registry.register('test.csr.scpcss.whitespace', ls([
 			'allowLate', true,
 			'if', 'MWIHTML',
@@ -413,8 +411,8 @@ Deno.test("MWICoreScpCSS CSR - Empty to Non-Empty Transitions", async (t) => {
 	});
 });
 
-Deno.test("MWICoreScpCSS CSR - CSS Content in DOM", async (t) => {
-	await t.step("CSS with newlines preserved", async () => {
+describe("MWICoreScpCSS CSR - CSS Content in DOM", () => {
+	it("CSS with newlines preserved", () => {
 		registry.register('test.csr.scpcss.newlines', ls([
 			'allowLate', true,
 			'if', 'MWIHTML',
@@ -431,7 +429,7 @@ Deno.test("MWICoreScpCSS CSR - CSS Content in DOM", async (t) => {
 		assert(styleElem.textContent.includes('margin: 0'), "Should preserve all rules");
 	});
 
-	await t.step("CSS with media queries", async () => {
+	it("CSS with media queries", () => {
 		registry.register('test.csr.scpcss.media', ls([
 			'allowLate', true,
 			'if', 'MWIHTML',
@@ -448,7 +446,7 @@ Deno.test("MWICoreScpCSS CSR - CSS Content in DOM", async (t) => {
 		assert(styleElem.textContent.includes('min-width: 768px'), "Should include condition");
 	});
 
-	await t.step("CSS with keyframes", async () => {
+	it("CSS with keyframes", () => {
 		registry.register('test.csr.scpcss.keyframes', ls([
 			'allowLate', true,
 			'if', 'MWIHTML',

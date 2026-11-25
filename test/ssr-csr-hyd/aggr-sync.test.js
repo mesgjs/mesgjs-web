@@ -18,13 +18,14 @@
 //   7. Reactive updates: content changes update the DOM reactively after hydration
 //   8. End-to-end document sync: full document with from/to nodes
 
+import { describe, it } from '@compat/test';
 import {
 	assert,
 	assertEquals,
 	assertExists,
 	assertNotStrictEquals,
 	assertStrictEquals,
-} from "https://deno.land/std@0.152.0/testing/asserts.ts";
+} from '@std/assert';
 
 import { setupRuntime, simulateBrowser } from '../harness.esm.js';
 
@@ -38,7 +39,7 @@ await setupRuntime({
 });
 
 const { fwait, getInstance } = globalThis.$c;
-const { ls, ps } = globalThis;
+const { ls, ps, reactive } = globalThis;
 
 await fwait('MWIDocument', 'mwi.comp.MWIAggr');
 
@@ -77,10 +78,9 @@ function csrSync (node, cursor) {
 // from mode: SSR-generated aggregated DOM nodes are reused during CSR sync
 // ---------------------------------------------------------------------------
 
-Deno.test('MWIAggr (m.aggr) - SSR-CSR Hydration: from mode basic sync', async (t) => {
-	await simulateBrowser();
-
-	await t.step('(getDOM) - from mode: SSR-generated element reused during CSR sync', async () => {
+describe('MWIAggr (m.aggr) - SSR-CSR Hydration: from mode basic sync', () => {
+	it('(getDOM) - from mode: SSR-generated element reused during CSR sync', async () => {
+		await simulateBrowser();
 		// SSR: build a doc with a `from` node and a `to` node
 		const ssrDoc = makeDoc();
 		const fromNode = $c.sm(ssrDoc, 'from', { item: ps(`[(m.aggr from=default)]`) });
@@ -115,9 +115,8 @@ Deno.test('MWIAggr (m.aggr) - SSR-CSR Hydration: from mode basic sync', async (t
 		// Single, guarded text node should be adopted too
 	});
 
-	await simulateBrowser();
-
-	await t.step('.getDOM() - from mode: SSR-generated element reused during CSR sync via JS', async () => {
+	it('.getDOM() - from mode: SSR-generated element reused during CSR sync via JS', async () => {
+		await simulateBrowser();
 		// SSR
 		const ssrDoc = makeDoc();
 		const fromNode = $c.sm(ssrDoc, 'from', { item: ps(`[(m.aggr from=default)]`) });
@@ -144,9 +143,8 @@ Deno.test('MWIAggr (m.aggr) - SSR-CSR Hydration: from mode basic sync', async (t
 		assertStrictEquals(domNodes.at(0), ssrDiv, 'SSR div element reused via JS');
 	});
 
-	await simulateBrowser();
-
-	await t.step('(getDOM) - from mode: multiple aggregated elements reused during CSR sync', async () => {
+	it('(getDOM) - from mode: multiple aggregated elements reused during CSR sync', async () => {
+		await simulateBrowser();
 		// SSR: two `to` nodes contributing to the same buffer
 		const ssrDoc = makeDoc();
 		const fromNode = $c.sm(ssrDoc, 'from', { item: ps(`[(m.aggr from=default)]`) });
@@ -182,10 +180,9 @@ Deno.test('MWIAggr (m.aggr) - SSR-CSR Hydration: from mode basic sync', async (t
 // Named buffer sync
 // ---------------------------------------------------------------------------
 
-Deno.test('MWIAggr (m.aggr) - SSR-CSR Hydration: named buffer sync', async (t) => {
-	await simulateBrowser();
-
-	await t.step('(getDOM) - named buffer: SSR-generated element reused during CSR sync', async () => {
+describe('MWIAggr (m.aggr) - SSR-CSR Hydration: named buffer sync', () => {
+	it('(getDOM) - named buffer: SSR-generated element reused during CSR sync', async () => {
+		await simulateBrowser();
 		// SSR: named buffer
 		const ssrDoc = makeDoc();
 		const fromNode = $c.sm(ssrDoc, 'from', { item: ps(`[(m.aggr from=scripts)]`) });
@@ -212,9 +209,8 @@ Deno.test('MWIAggr (m.aggr) - SSR-CSR Hydration: named buffer sync', async (t) =
 		assertStrictEquals(domNodes.at(0), ssrScript, 'SSR script element reused');
 	});
 
-	await simulateBrowser();
-
-	await t.step('(getDOM) - multiple named buffers: each syncs independently', async () => {
+	it('(getDOM) - multiple named buffers: each syncs independently', async () => {
+		await simulateBrowser();
 		// SSR: two named buffers — fromHead first, then fromBody, then toHead, then toBody
 		const ssrDoc = makeDoc();
 		const fromHead = $c.sm(ssrDoc, 'from', { item: ps(`[(m.aggr from=head-items)]`) });
@@ -252,10 +248,9 @@ Deno.test('MWIAggr (m.aggr) - SSR-CSR Hydration: named buffer sync', async (t) =
 // m.csr suppression: SSR emits nothing; CSR generates content fresh
 // ---------------------------------------------------------------------------
 
-Deno.test('MWIAggr (m.aggr) - SSR-CSR Hydration: m.csr suppression', async (t) => {
-	await simulateBrowser();
-
-	await t.step('(getDOM) - from mode with m.csr: SSR emits nothing, CSR generates element', async () => {
+describe('MWIAggr (m.aggr) - SSR-CSR Hydration: m.csr suppression', () => {
+	it('(getDOM) - from mode with m.csr: SSR emits nothing, CSR generates element', async () => {
+		await simulateBrowser();
 		// SSR: from node with m.csr=true emits nothing
 		const ssrDoc = makeDoc();
 		const fromNode = $c.sm(ssrDoc, 'from', { item: ps(`[(m.aggr from=default m.csr=true)]`) });
@@ -278,9 +273,8 @@ Deno.test('MWIAggr (m.aggr) - SSR-CSR Hydration: m.csr suppression', async (t) =
 		assertEquals(domNodes.at(0).textContent, 'CSROnly', 'CSR content correct');
 	});
 
-	await simulateBrowser();
-
-	await t.step('(getDOM) - to mode with m.csr: SSR emits nothing, CSR still registers', async () => {
+	it('(getDOM) - to mode with m.csr: SSR emits nothing, CSR still registers', async () => {
+		await simulateBrowser();
 		// SSR: to node with m.csr=true does not store content
 		const ssrDoc = makeDoc();
 		const fromNode = $c.sm(ssrDoc, 'from', { item: ps(`[(m.aggr from=default)]`) });
@@ -308,10 +302,9 @@ Deno.test('MWIAggr (m.aggr) - SSR-CSR Hydration: m.csr suppression', async (t) =
 // CSR-only fallback: when buffer is empty, fallback content is generated
 // ---------------------------------------------------------------------------
 
-Deno.test('MWIAggr (m.aggr) - SSR-CSR Hydration: CSR-only fallback', async (t) => {
-	await simulateBrowser();
-
-	await t.step('(getDOM) - from mode with fallback: SSR emits nothing, CSR renders fallback', async () => {
+describe('MWIAggr (m.aggr) - SSR-CSR Hydration: CSR-only fallback', () => {
+	it('(getDOM) - from mode with fallback: SSR emits nothing, CSR renders fallback', async () => {
+		await simulateBrowser();
 		// SSR: from node with no to nodes — empty buffer renders nothing
 		// The from node has fallback children that render in CSR when buffer is empty
 		const ssrDoc = makeDoc();
@@ -335,9 +328,8 @@ Deno.test('MWIAggr (m.aggr) - SSR-CSR Hydration: CSR-only fallback', async (t) =
 		assertEquals(domNodes.at(0).textContent, 'Loading', 'CSR fallback content correct');
 	});
 
-	await simulateBrowser();
-
-	await t.step('(getDOM) - from mode: fallback switches to registered content when to node is added', async () => {
+	it('(getDOM) - from mode: fallback switches to registered content when to node is added', async () => {
+		await simulateBrowser();
 		// CSR: from node starts with fallback, then switches to registered content
 		// Build the initial doc with just the from node (with fallback children)
 		const ssrDoc = makeDoc();
@@ -358,7 +350,7 @@ Deno.test('MWIAggr (m.aggr) - SSR-CSR Hydration: CSR-only fallback', async (t) =
 		$c.sm(csrDoc, 'append', ls([, csrToNode]));
 		$c.sm(csrDoc, 'getDOM');
 
-		await globalThis.reactive.wait();
+		await reactive.wait();
 		assertEquals(domNodes.size, 1, 'CSR switches to registered content');
 		assertEquals(domNodes.at(0).tagName, 'SPAN', 'registered span rendered');
 		assertEquals(domNodes.at(0).textContent, 'RegisteredContent', 'registered content shown');
@@ -369,10 +361,9 @@ Deno.test('MWIAggr (m.aggr) - SSR-CSR Hydration: CSR-only fallback', async (t) =
 // Reactive updates after hydration
 // ---------------------------------------------------------------------------
 
-Deno.test('MWIAggr (m.aggr) - SSR-CSR Hydration: reactive updates after hydration', async (t) => {
-	await simulateBrowser();
-
-	await t.step('(getDOM) - from mode: reactive update after sync reuses SSR node', async () => {
+describe('MWIAggr (m.aggr) - SSR-CSR Hydration: reactive updates after hydration', () => {
+	it('(getDOM) - from mode: reactive update after sync reuses SSR node', async () => {
+		await simulateBrowser();
 		// SSR: a to node with a span child (explicit id so SSR can assign it for sync)
 		// Note: a bare text node as the first aggregated item cannot receive an id,
 		// so we wrap it in a span to enable proper DOM reuse during sync.
@@ -411,15 +402,14 @@ Deno.test('MWIAggr (m.aggr) - SSR-CSR Hydration: reactive updates after hydratio
 		const csrSpanSubDoc = $c.sm(csrSpanNode, 'getSubDoc');
 		const csrTextNode = csrSpanSubDoc.at(0);
 		$c.sm(csrTextNode, 'setAttr', ['t', 'Updated']);
-		await globalThis.reactive.wait();
+		await reactive.wait();
 
 		assertEquals(domNodes.at(0).textContent, 'Updated', 'text updated reactively');
 		assertStrictEquals(domNodes.at(0), ssrSpan, 'same span node after update');
 	});
 
-	await simulateBrowser();
-
-	await t.step('(getDOM) - from mode: reactive update with element node reuses SSR element', async () => {
+	it('(getDOM) - from mode: reactive update with element node reuses SSR element', async () => {
+		await simulateBrowser();
 		// SSR: a to node with a div child (explicit id provided — no auto-assign needed)
 		const ssrDoc = makeDoc();
 		const fromNode = $c.sm(ssrDoc, 'from', { item: ps(`[(m.aggr from=default)]`) });
@@ -450,15 +440,14 @@ Deno.test('MWIAggr (m.aggr) - SSR-CSR Hydration: reactive updates after hydratio
 		const csrToSubDoc = $c.sm(csrToNode, 'getSubDoc');
 		const csrDivNode = csrToSubDoc.at(0);
 		$c.sm(csrDivNode, 'setAttr', ['class', 'updated']);
-		await globalThis.reactive.wait();
+		await reactive.wait();
 
 		assertStrictEquals(domNodes.at(0), ssrDiv, 'same DOM node after update');
 		assertEquals(domNodes.at(0).className, 'updated', 'class updated reactively');
 	});
 
-	await simulateBrowser();
-
-	await t.step('(getDOM) - from mode: new to node added after hydration updates DOM reactively', async () => {
+	it('(getDOM) - from mode: new to node added after hydration updates DOM reactively', async () => {
+		await simulateBrowser();
 		// SSR: one to node with explicit id on first element (avoids auto-assign dependency)
 		const ssrDoc = makeDoc();
 		const fromNode = $c.sm(ssrDoc, 'from', { item: ps(`[(m.aggr from=default)]`) });
@@ -486,7 +475,7 @@ Deno.test('MWIAggr (m.aggr) - SSR-CSR Hydration: reactive updates after hydratio
 		$c.sm(csrDoc, 'append', ls([, csrToNode2]));
 		$c.sm(csrDoc, 'getDOM');
 
-		await globalThis.reactive.wait();
+		await reactive.wait();
 
 		assertEquals(domNodes.size, 2, 'two DOM nodes after adding second to node');
 		assertStrictEquals(domNodes.at(0), ssrLi1, 'first li still reused');
@@ -500,10 +489,9 @@ Deno.test('MWIAggr (m.aggr) - SSR-CSR Hydration: reactive updates after hydratio
 // End-to-end document sync
 // ---------------------------------------------------------------------------
 
-Deno.test('MWIAggr (m.aggr) - SSR-CSR Hydration: end-to-end document sync', async (t) => {
-	await simulateBrowser();
-
-	await t.step('(getDOM) - full document: surrounding content and aggregated content all synced', async () => {
+describe('MWIAggr (m.aggr) - SSR-CSR Hydration: end-to-end document sync', () => {
+	it('(getDOM) - full document: surrounding content and aggregated content all synced', async () => {
+		await simulateBrowser();
 		// SSR: a container div with before span, from node (aggregated content), after span, and to node.
 		// Wrapping in a container element is required so that the SSR children are preserved
 		// during the initial CSR render (when the from node defers while to nodes register).
@@ -561,9 +549,8 @@ Deno.test('MWIAggr (m.aggr) - SSR-CSR Hydration: end-to-end document sync', asyn
 		assertStrictEquals(csrAfter, ssrAfter, 'after span reused');
 	});
 
-	await simulateBrowser();
-
-	await t.step('(getDOM) - nested aggregation: from-within-to structure syncs correctly', async () => {
+	it('(getDOM) - nested aggregation: from-within-to structure syncs correctly', async () => {
+		await simulateBrowser();
 		// SSR: nested aggregation (from inside to's subSpec)
 		// Structure:
 		//   [h.header [m.aggr from=header]]
@@ -618,10 +605,9 @@ Deno.test('MWIAggr (m.aggr) - SSR-CSR Hydration: end-to-end document sync', asyn
 // to mode: does not render DOM; does not affect sync cursor
 // ---------------------------------------------------------------------------
 
-Deno.test('MWIAggr (m.aggr) - SSR-CSR Hydration: to mode behavior', async (t) => {
-	await simulateBrowser();
-
-	await t.step('(getDOM) - to mode returns empty DOM (does not affect sync)', async () => {
+describe('MWIAggr (m.aggr) - SSR-CSR Hydration: to mode behavior', () => {
+	it('(getDOM) - to mode returns empty DOM (does not affect sync)', async () => {
+		await simulateBrowser();
 		// SSR: a div, then a to node (which renders nothing), then another div
 		// No from node, so aggregated content is never rendered in SSR
 		const ssrDoc = makeDoc();

@@ -8,7 +8,7 @@
  */
 
 import { marked } from "https://esm.sh/marked@11.1.1";
-import { NANOS } from "https://cdn.jsdelivr.net/gh/mesgjs/nanos@1.1.2/src/nanos.esm.js";
+import { NANOS } from '@nanos';
 
 /**
  * Create a NANOS list from key-value pairs

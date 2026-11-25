@@ -13,11 +13,18 @@ It uses the same underlying color mathematics, gamut clipping, and contrast eval
 ### 2.1 Command Syntax
 
 ```bash
-# Using the shell wrapper
+# Using the auto-probing shell wrapper
 bin/mwi-color-tokens [options] [config-file.json]
 
-# Or via Deno directly
-deno run --allow-read util/color-token-cli.esm.js [options] [config-file.json]
+# Explicit engine selection via environment variable
+MESGJS_ENGINE=deno bin/mwi-color-tokens [options] [config-file.json]
+MESGJS_ENGINE=bun bin/mwi-color-tokens [options] [config-file.json]
+MESGJS_ENGINE=node bin/mwi-color-tokens [options] [config-file.json]
+
+# Or via explicit runtimes directly
+deno run --config deno.json --allow-read util/color-token-cli.esm.js [options] [config-file.json]
+wicbun --config webload.json ./util/color-token-cli.esm.js [options] [config-file.json]
+wicnode --config webload.json ./util/color-token-cli.esm.js [options] [config-file.json]
 ```
 
 ### 2.2 Options and Flags

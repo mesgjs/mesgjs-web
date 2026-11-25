@@ -1,6 +1,7 @@
 import { readTextFile } from '@compat/file';
 import { lex, parse } from "mesgjs/src/lexparse.esm.js";
 import { transpileTree } from "mesgjs/src/transpile.esm.js";
+import { parseHTML } from 'linkedom';
 
 // Set up the Mesgjs runtime. May only be called once per process.
 // Previously transpiled modules will be loaded normally by the runtime.
@@ -90,13 +91,85 @@ export function renderHTML (content) {
 	return doc.getHTML();
 }
 
-// Use JSDOM to simulate browser-like environment
-// Note: this will rebind window and document on each call!
-let jsdom;
-export async function simulateBrowser () {
-	if (!jsdom) jsdom = await import('npm:jsdom');
-	globalThis.window = (new jsdom.JSDOM('')).window;
-	globalThis.document = window.document;
+// Use LinkeDOM to simulate browser-like environment with pure ESM support
+// Note: this will rebind window, document, and core DOM constructors on each call!
+export function simulateBrowser (html = '<!DOCTYPE html><html><head></head><body></body></html>') {
+	const dom = parseHTML(html);
+
+	globalThis.window = dom.window;
+	globalThis.document = dom.document;
+	globalThis.customElements = dom.customElements;
+	globalThis.HTMLElement = dom.HTMLElement;
+	globalThis.Element = dom.Element;
+	globalThis.Node = dom.Node;
+	globalThis.Text = dom.Text;
+	globalThis.Comment = dom.Comment;
+	globalThis.DocumentFragment = dom.DocumentFragment;
+	globalThis.Event = dom.Event;
+	globalThis.CustomEvent = dom.CustomEvent;
+
+	// Ensure standard HTML IDL getter/setter for HTMLSelectElement.value
+	// and getter for .selectedOptions
+	const selectProto = dom.HTMLSelectElement?.prototype || dom.window.HTMLSelectElement?.prototype;
+	if (selectProto && !selectProto.__mwiPolyfilled) {
+		selectProto.__mwiPolyfilled = true;
+		const valSym = Symbol.for('mwi.selectValue');
+		Object.defineProperty(selectProto, 'value', {
+			get () {
+				const targetVal = this[valSym];
+				if (targetVal !== undefined) {
+					for (const opt of this.options) {
+						opt.selected = (opt.value === targetVal);
+					}
+					return targetVal;
+				}
+				for (const opt of this.options) {
+					if (opt.selected) return opt.value;
+				}
+				return this.options[0]?.value || '';
+			},
+			set (val) {
+				const strVal = String(val);
+				this[valSym] = strVal;
+				for (const opt of this.options) {
+					opt.selected = (opt.value === strVal);
+				}
+			},
+			configurable: true,
+			enumerable: true,
+		});
+		Object.defineProperty(selectProto, 'selectedOptions', {
+			get () {
+				const selected = [];
+				for (const opt of this.options) {
+					if (opt.selected) selected.push(opt);
+				}
+				return selected;
+			},
+			configurable: true,
+			enumerable: true,
+		});
+	}
+
+	// Ensure standard HTML IDL getter/setter for HTMLTextAreaElement.value
+	const taProto = dom.HTMLTextAreaElement?.prototype || dom.window.HTMLTextAreaElement?.prototype;
+	if (taProto && !taProto.__mwiPolyfilled) {
+		taProto.__mwiPolyfilled = true;
+		const valSym = Symbol.for('mwi.taValue');
+		Object.defineProperty(taProto, 'value', {
+			get () {
+				if (this[valSym] !== undefined) return this[valSym];
+				return this.textContent;
+			},
+			set (val) {
+				this[valSym] = String(val);
+			},
+			configurable: true,
+			enumerable: true,
+		});
+	}
+
+	return dom;
 }
 
 // Transpile a Mesgjs source file, returning the generated JavaScript code string.

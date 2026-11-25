@@ -16,17 +16,17 @@ await fwait(REG_READY_FT);
 const ps = globalThis.ps;
 
 describe("Compound SSR - Variety of HTML Tags", () => {
-	it("Simple div with text", async () => {
+	it("Simple div with text", () => {
 		const html = renderHTML(ps('[([h.div "Hello World"])]'));
 		assertEquals(html, '<div>Hello World</div>');
 	});
 
-	it("Nested divs", async () => {
+	it("Nested divs", () => {
 		const html = renderHTML(ps('[([h.div [h.div "Nested"]])]'));
 		assertEquals(html, '<div><div>Nested</div></div>');
 	});
 
-	it("Div with attributes", async () => {
+	it("Div with attributes", () => {
 		const html = renderHTML(ps('[([h.div id=test data-index=42 class=container Content])]'));
 		assert(html.includes('<div'));
 		assert(html.includes('id="test"'));
@@ -35,31 +35,31 @@ describe("Compound SSR - Variety of HTML Tags", () => {
 		assert(html.includes('>Content</div>'));
 	});
 
-	it("Paragraph tag", async () => {
+	it("Paragraph tag", () => {
 		const html = renderHTML(ps('[([h.p "Paragraph text"])]'));
 		assertEquals(html, '<p>Paragraph text</p>');
 	});
 
-	it("Heading tags (h1-h6)", async () => {
+	it("Heading tags (h1-h6)", () => {
 		const html = renderHTML(ps('[([h.h1 "Heading 1"] [h.h2 "Heading 2"] [h.h3 "Heading 3"])]'));
 		assert(html.includes('<h1>Heading 1</h1>'));
 		assert(html.includes('<h2>Heading 2</h2>'));
 		assert(html.includes('<h3>Heading 3</h3>'));
 	});
 
-	it("Span tag", async () => {
+	it("Span tag", () => {
 		const html = renderHTML(ps('[([h.span "Inline text"])]'));
 		assertEquals(html, '<span>Inline text</span>');
 	});
 
-	it("Link (anchor) tag", async () => {
+	it("Link (anchor) tag", () => {
 		const html = renderHTML(ps('[([h.a href="https://example.com" "Link text"])]'));
 		assert(html.includes('<a'));
 		assert(html.includes('href="https://example.com"'));
 		assert(html.includes('>Link text</a>'));
 	});
 
-	it("Image tag (void element)", async () => {
+	it("Image tag (void element)", () => {
 		const html = renderHTML(ps('[([h.img src=image.jpg alt="Description"])]'));
 		assert(html.includes('<img'));
 		assert(html.includes('src="image.jpg"'));
@@ -68,17 +68,17 @@ describe("Compound SSR - Variety of HTML Tags", () => {
 		assert(!html.includes('</img>'));
 	});
 
-	it("Line break (void element)", async () => {
+	it("Line break (void element)", () => {
 		const html = renderHTML(ps('[([h.br])]'));
 		assertEquals(html, '<br>');
 	});
 
-	it("Horizontal rule (void element)", async () => {
+	it("Horizontal rule (void element)", () => {
 		const html = renderHTML(ps('[([h.hr])]'));
 		assertEquals(html, '<hr>');
 	});
 
-	it("List elements (ul, ol, li)", async () => {
+	it("List elements (ul, ol, li)", () => {
 		const html = renderHTML(ps('[([h.ul [h.li "Item 1"] [h.li "Item 2"]])]'));
 		assert(html.includes('<ul>'));
 		assert(html.includes('<li>Item 1</li>'));
@@ -86,7 +86,7 @@ describe("Compound SSR - Variety of HTML Tags", () => {
 		assert(html.includes('</ul>'));
 	});
 
-	it("Table elements", async () => {
+	it("Table elements", () => {
 		const html = renderHTML(ps('[([h.table [h.tr [h.td "Cell"]]])]'));
 		assert(html.includes('<table>'));
 		assert(html.includes('<tr>'));
@@ -95,7 +95,7 @@ describe("Compound SSR - Variety of HTML Tags", () => {
 		assert(html.includes('</table>'));
 	});
 
-	it("Form elements", async () => {
+	it("Form elements", () => {
 		const html = renderHTML(ps('[([h.form [h.input type=text name=username] [h.button "Submit"]])]'));
 		assert(html.includes('<form>'));
 		assert(html.includes('<input'));
@@ -105,7 +105,7 @@ describe("Compound SSR - Variety of HTML Tags", () => {
 		assert(html.includes('</form>'));
 	});
 
-	it("Semantic HTML5 elements", async () => {
+	it("Semantic HTML5 elements", () => {
 		const html = renderHTML(ps('[([h.header "Header"] [h.nav "Nav"] [h.main "Main"] [h.footer "Footer"])]'));
 		assert(html.includes('<header>Header</header>'));
 		assert(html.includes('<nav>Nav</nav>'));
@@ -113,7 +113,7 @@ describe("Compound SSR - Variety of HTML Tags", () => {
 		assert(html.includes('<footer>Footer</footer>'));
 	});
 
-	it("Article and section", async () => {
+	it("Article and section", () => {
 		const html = renderHTML(ps('[([h.article [h.section "Section content"]])]'));
 		assert(html.includes('<article>'));
 		assert(html.includes('<section>Section content</section>'));
@@ -122,12 +122,12 @@ describe("Compound SSR - Variety of HTML Tags", () => {
 });
 
 describe("Compound SSR - Complex Document Structures", () => {
-	it("Multi-level nesting", async () => {
+	it("Multi-level nesting", () => {
 		const html = renderHTML(ps('[([h.div [h.div [h.div [h.div "Deep"]]]])]'));
 		assertEquals(html, '<div><div><div><div>Deep</div></div></div></div>');
 	});
 
-	it("Mixed content types", async () => {
+	it("Mixed content types", () => {
 		const html = renderHTML(ps('[([h.div "Text" [h.span "Span"] "More text"])]'));
 		assert(html.includes('<div>'));
 		assert(html.includes('Text'));
@@ -136,7 +136,7 @@ describe("Compound SSR - Complex Document Structures", () => {
 		assert(html.includes('</div>'));
 	});
 
-	it("Multiple siblings with attributes", async () => {
+	it("Multiple siblings with attributes", () => {
 		const html = renderHTML(ps('[([h.div id=first class=box "First"] [h.div id=second class=box "Second"])]'));
 		assert(html.includes('id="first"'));
 		assert(html.includes('id="second"'));
@@ -145,7 +145,7 @@ describe("Compound SSR - Complex Document Structures", () => {
 		assert(html.includes('>Second</div>'));
 	});
 
-	it("Complex form structure", async () => {
+	it("Complex form structure", () => {
 		const spec = ps(`[([h.form action=/submit method=post
 			[h.label for=name "Name:"]
 			[h.input type=text id=name name=name]
@@ -166,7 +166,7 @@ describe("Compound SSR - Complex Document Structures", () => {
 		assert(html.includes('type="submit"'));
 	});
 
-	it("Navigation menu structure", async () => {
+	it("Navigation menu structure", () => {
 		const spec = ps(`[([h.nav class=main-nav
 			[h.ul
 				[h.li [h.a href=/ "Home"]]
@@ -186,7 +186,7 @@ describe("Compound SSR - Complex Document Structures", () => {
 		assert(html.includes('href="/contact"'));
 	});
 
-	it("Article with header and sections", async () => {
+	it("Article with header and sections", () => {
 		const spec = ps(`[([h.article
 			[h.header [h.h1 "Article Title"]]
 			[h.section [h.p "First paragraph"]]
@@ -205,23 +205,23 @@ describe("Compound SSR - Complex Document Structures", () => {
 });
 
 describe("Compound SSR - Core Components Integration", () => {
-	it("Text nodes (m.t) in HTML", async () => {
+	it("Text nodes (m.t) in HTML", () => {
 		const html = renderHTML(ps('[([h.div [m.t t="Explicit text node"]])]'));
 		assertEquals(html, '<div>Explicit text node</div>');
 	});
 
-	it("Comments (m.com) in HTML", async () => {
+	it("Comments (m.com) in HTML", () => {
 		const html = renderHTML(ps('[([h.div [m.com t="This is a comment"] Content])]'));
 		assert(html.includes('<!--This is a comment-->'));
 		assert(html.includes('Content'));
 	});
 
-	it("Fragments (m.frg) flatten into parent", async () => {
+	it("Fragments (m.frg) flatten into parent", () => {
 		const html = renderHTML(ps('[([h.div [m.frg "Text1" "Text2"]])]'));
 		assertEquals(html, '<div>Text1Text2</div>');
 	});
 
-	it("Mixed HTML and core components", async () => {
+	it("Mixed HTML and core components", () => {
 		const spec = ps(`[([h.div
 			[m.com t="Section start"]
 			[h.p "Paragraph"]
@@ -237,7 +237,7 @@ describe("Compound SSR - Core Components Integration", () => {
 });
 
 describe("Compound SSR - Special Attributes", () => {
-	it("Boolean attributes", async () => {
+	it("Boolean attributes", () => {
 		const html = renderHTML(ps('[([h.input type=checkbox checked=@t disabled=@t])]'));
 		assert(html.includes('<input'));
 		assert(html.includes('type="checkbox"'));
@@ -247,29 +247,29 @@ describe("Compound SSR - Special Attributes", () => {
 		assert(!html.includes('disabled="'));
 	});
 
-	it("Data attributes", async () => {
+	it("Data attributes", () => {
 		const html = renderHTML(ps('[([h.div data-id=123 data-name=test Content])]'));
 		assert(html.includes('data-id="123"'));
 		assert(html.includes('data-name="test"'));
 	});
 
-	it("ARIA attributes", async () => {
+	it("ARIA attributes", () => {
 		const html = renderHTML(ps('[([h.button aria-label=Close aria-pressed=true "X"])]'));
 		assert(html.includes('aria-label="Close"'));
 		assert(html.includes(' aria-pressed'));
 	});
 
-	it("Class attribute", async () => {
+	it("Class attribute", () => {
 		const html = renderHTML(ps('[([h.div class="btn btn-primary active" Button])]'));
 		assert(html.includes('class="btn btn-primary active"'));
 	});
 
-	it("Style attribute", async () => {
+	it("Style attribute", () => {
 		const html = renderHTML(ps('[([h.div style="color: red; margin: 10px" Styled])]'));
 		assert(html.includes('style="color:red;margin:10px"'));
 	});
 
-	it("Multiple attributes on nested elements", async () => {
+	it("Multiple attributes on nested elements", () => {
 		const spec = ps(`[([h.div id=outer class=container
 			[h.div id=inner class=box data-value=42 Content]
 		])]`);
@@ -281,7 +281,7 @@ describe("Compound SSR - Special Attributes", () => {
 		assert(html.includes('data-value="42"'));
 	});
 
-	it("Numeric attributes via setAttr with JS numbers", async () => {
+	it("Numeric attributes via setAttr with JS numbers", () => {
 		const doc = getInstance('MWIDocument');
 		const divNode = doc.createNode('h.div');
 		divNode.setAttr('data-count', 100);
@@ -295,7 +295,7 @@ describe("Compound SSR - Special Attributes", () => {
 		assert(html.includes('tabindex="-1"'), 'Should render negative number');
 	});
 
-	it("Numeric attributes in nested SLID spec", async () => {
+	it("Numeric attributes in nested SLID spec", () => {
 		const spec = ps(`[([h.div data-outer=1
 			[h.div data-inner=2 data-zero=0 data-neg=-5 "Nested"]
 		])]`);
@@ -309,22 +309,22 @@ describe("Compound SSR - Special Attributes", () => {
 });
 
 describe("Compound SSR - Edge Cases", () => {
-	it("Empty elements", async () => {
+	it("Empty elements", () => {
 		const html = renderHTML(ps('[([h.div])]'));
 		assertEquals(html, '<div></div>');
 	});
 
-	it("Element with only whitespace", async () => {
+	it("Element with only whitespace", () => {
 		const html = renderHTML(ps('[([h.div "   "])]'));
 		assertEquals(html, '<div>   </div>');
 	});
 
-	it("Multiple void elements", async () => {
+	it("Multiple void elements", () => {
 		const html = renderHTML(ps('[([h.br] [h.hr] [h.br])]'));
 		assertEquals(html, '<br><hr><br>');
 	});
 
-	it("Deeply nested with void elements", async () => {
+	it("Deeply nested with void elements", () => {
 		const html = renderHTML(ps('[([h.div [h.p "Text" [h.br] "More"]])]'));
 		assert(html.includes('<div>'));
 		assert(html.includes('<p>'));
@@ -335,19 +335,19 @@ describe("Compound SSR - Edge Cases", () => {
 		assert(html.includes('</div>'));
 	});
 
-	it("Empty fragment", async () => {
+	it("Empty fragment", () => {
 		const html = renderHTML(ps('[([h.div [m.frg]])]'));
 		assertEquals(html, '<div></div>');
 	});
 
-	it("Multiple empty elements", async () => {
+	it("Multiple empty elements", () => {
 		const html = renderHTML(ps('[([h.div] [h.span] [h.p])]'));
 		assertEquals(html, '<div></div><span></span><p></p>');
 	});
 });
 
 describe("Compound SSR - Real-World Patterns", () => {
-	it("Card component pattern", async () => {
+	it("Card component pattern", () => {
 		const spec = ps(`[([h.div class=card
 			[h.div class=card-header [h.h3 "Card Title"]]
 			[h.div class=card-body [h.p "Card content goes here."]]
@@ -363,7 +363,7 @@ describe("Compound SSR - Real-World Patterns", () => {
 		assert(html.includes('<button>Action</button>'));
 	});
 
-	it("Hero section pattern", async () => {
+	it("Hero section pattern", () => {
 		const spec = ps(`[([h.section class=hero
 			[h.div class=hero-content
 				[h.h1 "Welcome"]
@@ -378,7 +378,7 @@ describe("Compound SSR - Real-World Patterns", () => {
 		assert(html.includes('class="cta"'));
 	});
 
-	it("Grid layout pattern", async () => {
+	it("Grid layout pattern", () => {
 		const spec = ps(`[([h.div class=grid
 			[h.div class=grid-item "Item 1"]
 			[h.div class=grid-item "Item 2"]
@@ -391,7 +391,7 @@ describe("Compound SSR - Real-World Patterns", () => {
 		assertEquals(itemCount, 4);
 	});
 
-	it("Modal dialog pattern", async () => {
+	it("Modal dialog pattern", () => {
 		const spec = ps(`[([h.div class=modal
 			[h.div class=modal-overlay]
 			[h.div class=modal-content

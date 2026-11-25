@@ -5,11 +5,12 @@
 // in protected regions is preserved across reactive updates, and that m.csrStatic
 // content is appended after the end marker.
 
+import { describe, it } from '@compat/test';
 import {
 	assert,
 	assertEquals,
 	assertExists,
-} from "https://deno.land/std@0.152.0/testing/asserts.ts";
+} from '@std/assert';
 
 import { setupRuntime, simulateBrowser } from '../harness.esm.js';
 
@@ -26,11 +27,10 @@ await simulateBrowser();
 
 const doc = getInstance('MWIDocument');
 const MWIDocNode = getInterface('MWIDocNode').proto;
-const ls = globalThis.ls;
-const ps = globalThis.ps;
+const { ls, ps, reactive } = globalThis;
 
-Deno.test("MWICoreHeadBody - CSR m.head adopts document.head", async (t) => {
-	await t.step("(getDOM) - m.head returns document.head element", () => {
+describe("MWICoreHeadBody - CSR m.head adopts document.head", () => {
+	it("(getDOM) - m.head returns document.head element", () => {
 		const headNode = doc.createNode('m.head');
 		const domNodes = headNode.getDOM();
 		assertExists(domNodes.at(0));
@@ -38,15 +38,15 @@ Deno.test("MWICoreHeadBody - CSR m.head adopts document.head", async (t) => {
 		assertEquals(domNodes.size, 1);
 	});
 
-	await t.step(".getDOM() - m.head returns document.head via JS", () => {
+	it(".getDOM() - m.head returns document.head via JS", () => {
 		const headNode = doc.createNode('m.head');
 		const domNodes = headNode.getDOM();
 		assertEquals(domNodes.at(0), document.head, 'returns the actual document.head element');
 	});
 });
 
-Deno.test("MWICoreHeadBody - CSR m.body adopts document.body", async (t) => {
-	await t.step("(getDOM) - m.body returns document.body element", () => {
+describe("MWICoreHeadBody - CSR m.body adopts document.body", () => {
+	it("(getDOM) - m.body returns document.body element", () => {
 		const bodyNode = doc.createNode('m.body');
 		const domNodes = bodyNode.getDOM();
 		assertExists(domNodes.at(0));
@@ -54,18 +54,16 @@ Deno.test("MWICoreHeadBody - CSR m.body adopts document.body", async (t) => {
 		assertEquals(domNodes.size, 1);
 	});
 
-	await t.step(".getDOM() - m.body returns document.body via JS", () => {
+	it(".getDOM() - m.body returns document.body via JS", () => {
 		const bodyNode = doc.createNode('m.body');
 		const domNodes = bodyNode.getDOM();
 		assertEquals(domNodes.at(0), document.body, 'returns the actual document.body element');
 	});
 });
 
-Deno.test("MWICoreHeadBody - CSR boundary markers inserted", async (t) => {
-	// Use a fresh browser environment for each test group
-	await simulateBrowser();
-
-	await t.step("(getDOM) - m.head inserts begin/end boundary markers", async () => {
+describe("MWICoreHeadBody - CSR boundary markers inserted", () => {
+	it("(getDOM) - m.head inserts begin/end boundary markers", async () => {
+		await simulateBrowser();
 		const headNode = doc.createNode('m.head');
 		headNode.getDOM();
 
@@ -83,9 +81,8 @@ Deno.test("MWICoreHeadBody - CSR boundary markers inserted", async (t) => {
 		assert(end.type === 'x', 'end marker has type="x"');
 	});
 
-	await simulateBrowser();
-
-	await t.step("(getDOM) - m.body inserts begin/end boundary markers", async () => {
+	it("(getDOM) - m.body inserts begin/end boundary markers", async () => {
+		await simulateBrowser();
 		const bodyNode = doc.createNode('m.body');
 		bodyNode.getDOM();
 
@@ -102,10 +99,9 @@ Deno.test("MWICoreHeadBody - CSR boundary markers inserted", async (t) => {
 	});
 });
 
-Deno.test("MWICoreHeadBody - CSR managed children synchronized", async (t) => {
-	await simulateBrowser();
-
-	await t.step("(getDOM) - m.head children appear between boundary markers", async () => {
+describe("MWICoreHeadBody - CSR managed children synchronized", () => {
+	it("(getDOM) - m.head children appear between boundary markers", async () => {
+		await simulateBrowser();
 		const headNode = doc.createNode('m.head');
 		const titleNode = doc.createNode('h.title');
 		titleNode.setAttr('m.text', 'Test Page');
@@ -138,9 +134,8 @@ Deno.test("MWICoreHeadBody - CSR managed children synchronized", async (t) => {
 		assert(foundTitle, 'title is in the managed region');
 	});
 
-	await simulateBrowser();
-
-	await t.step("(getDOM) - m.head external content in protected region preserved", async () => {
+	it("(getDOM) - m.head external content in protected region preserved", async () => {
+		await simulateBrowser();
 		// Simulate external content added before MWI renders
 		const externalScript = document.createElement('script');
 		externalScript.src = '/external.js';
@@ -158,10 +153,9 @@ Deno.test("MWICoreHeadBody - CSR managed children synchronized", async (t) => {
 	});
 });
 
-Deno.test("MWICoreHeadBody - CSR reactive managed region updates", async (t) => {
-	await simulateBrowser();
-
-	await t.step("(getDOM) - m.head managed region updates reactively", async () => {
+describe("MWICoreHeadBody - CSR reactive managed region updates", () => {
+	it("(getDOM) - m.head managed region updates reactively", async () => {
+		await simulateBrowser();
 		const headNode = doc.createNode('m.head');
 		const titleNode = doc.createNode('h.title');
 		titleNode.setAttr('m.text', 'Initial Title');
@@ -174,16 +168,15 @@ Deno.test("MWICoreHeadBody - CSR reactive managed region updates", async (t) => 
 
 		// Update the title reactively
 		titleNode.setAttr('m.text', 'Updated Title');
-		await globalThis.reactive.wait();
+		await reactive.wait();
 
 		assertEquals(titleElem.textContent, 'Updated Title', 'title updated reactively');
 	});
 });
 
-Deno.test("MWICoreHeadBody - CSR m.csrStatic content appended", async (t) => {
-	await simulateBrowser();
-
-	await t.step("(getDOM) - m.head m.csrStatic content appended after end marker", async () => {
+describe("MWICoreHeadBody - CSR m.csrStatic content appended", () => {
+	it("(getDOM) - m.head m.csrStatic content appended after end marker", async () => {
+		await simulateBrowser();
 		const headNode = doc.createNode('m.head');
 		const csrStatic = ps('[( [h.script src="/csr-only.js"] )]');
 		headNode.setAttr('m.csrStatic', csrStatic);
@@ -215,10 +208,9 @@ Deno.test("MWICoreHeadBody - CSR m.csrStatic content appended", async (t) => {
 	});
 });
 
-Deno.test("MWICoreHeadBody - CSR getManagedRegion helper", async (t) => {
-	await simulateBrowser();
-
-	await t.step(".getManagedRegion() - finds existing boundary markers", async () => {
+describe("MWICoreHeadBody - CSR getManagedRegion helper", () => {
+	it(".getManagedRegion() - finds existing boundary markers", async () => {
+		await simulateBrowser();
 		const headNode = doc.createNode('m.head');
 		headNode.getDOM();
 
@@ -229,9 +221,8 @@ Deno.test("MWICoreHeadBody - CSR getManagedRegion helper", async (t) => {
 		assertEquals(end.dataset.mwi, 'end', 'end marker has correct data-mwi');
 	});
 
-	await simulateBrowser();
-
-	await t.step(".getManagedRegion() - returns null for missing markers", () => {
+	it(".getManagedRegion() - returns null for missing markers", async () => {
+		await simulateBrowser();
 		// Fresh document.head with no markers
 		const { begin, end } = MWIDocNode.getManagedRegion(document.head);
 		assertEquals(begin, null, 'begin is null when no markers');

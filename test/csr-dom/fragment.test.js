@@ -1,7 +1,8 @@
+import { describe, it } from '@compat/test';
 import {
 	assertEquals,
 	assertExists,
-} from "https://deno.land/std@0.152.0/testing/asserts.ts";
+} from '@std/assert';
 
 import { setupRuntime, simulateBrowser } from '../harness.esm.js';
 
@@ -10,6 +11,7 @@ const REG_READY_FT = 'mwi.compRegReady';
 await setupRuntime();
 
 const { debugConfig, fwait, getInstance } = globalThis.$c;
+const { reactive } = globalThis;
 await fwait(REG_READY_FT);
 
 // Set up browser-like environment for DOM testing
@@ -17,8 +19,8 @@ await simulateBrowser();
 
 const doc = getInstance('MWIDocument');
 
-Deno.test("MWICoreFrag (m.frg) - CSR-DOM Tests", async (t) => {
-	await t.step("(getDOM) - Empty fragment", async () => {
+describe("MWICoreFrag (m.frg) - CSR-DOM Tests", () => {
+	it("(getDOM) - Empty fragment", async () => {
 		const fragNode = $c.sm(doc, 'createNode', ['m.frg']);
 		const domNodes = await $c.sm(fragNode, 'getDOM');
 
@@ -26,14 +28,14 @@ Deno.test("MWICoreFrag (m.frg) - CSR-DOM Tests", async (t) => {
 		assertEquals(domNodes.size, 0);
 	});
 
-	await t.step(".getDOM() - Empty fragment via JS", async () => {
+	it(".getDOM() - Empty fragment via JS", async () => {
 		const fragNode = await doc.createNode('m.frg');
 		const domNodes = await fragNode.getDOM();
 
 		assertEquals(domNodes.size, 0);
 	});
 
-	await t.step("(getDOM) - Fragment with single text child", async () => {
+	it("(getDOM) - Fragment with single text child", async () => {
 		const fragNode = $c.sm(doc, 'createNode', ['m.frg']);
 		const textNode = $c.sm(doc, 'createNode', ['m.t']);
 		$c.sm(textNode, 'setAttr', ['t', 'Hello World']);
@@ -48,7 +50,7 @@ Deno.test("MWICoreFrag (m.frg) - CSR-DOM Tests", async (t) => {
 		assertEquals(domNodes.size, 1);
 	});
 
-	await t.step(".getDOM() - Fragment with single text child via JS", async () => {
+	it(".getDOM() - Fragment with single text child via JS", async () => {
 		const fragNode = await doc.createNode('m.frg');
 		const textNode = await doc.createNode('m.t');
 		textNode.setAttr('t', 'JS Hello World');
@@ -61,7 +63,7 @@ Deno.test("MWICoreFrag (m.frg) - CSR-DOM Tests", async (t) => {
 		assertEquals(domNodes.size, 1);
 	});
 
-	await t.step("(getDOM) - Fragment with multiple text children", async () => {
+	it("(getDOM) - Fragment with multiple text children", async () => {
 		const fragNode = $c.sm(doc, 'createNode', ['m.frg']);
 		const text1 = $c.sm(doc, 'createNode', ['m.t']);
 		$c.sm(text1, 'setAttr', ['t', 'First']);
@@ -79,7 +81,7 @@ Deno.test("MWICoreFrag (m.frg) - CSR-DOM Tests", async (t) => {
 		assertEquals(domNodes.at(2).nodeValue, 'Third');
 	});
 
-	await t.step(".getDOM() - Fragment with multiple text children via JS", async () => {
+	it(".getDOM() - Fragment with multiple text children via JS", async () => {
 		const fragNode = await doc.createNode('m.frg');
 		const text1 = await doc.createNode('m.t');
 		text1.setAttr('t', 'JS First');
@@ -96,7 +98,7 @@ Deno.test("MWICoreFrag (m.frg) - CSR-DOM Tests", async (t) => {
 		assertEquals(domNodes.at(2).nodeValue, 'JS Third');
 	});
 
-	await t.step("(getDOM) - Fragment with mixed content (text and comment)", async () => {
+	it("(getDOM) - Fragment with mixed content (text and comment)", async () => {
 		const fragNode = $c.sm(doc, 'createNode', ['m.frg']);
 		const textNode = $c.sm(doc, 'createNode', ['m.t']);
 		$c.sm(textNode, 'setAttr', ['t', 'Text content']);
@@ -113,7 +115,7 @@ Deno.test("MWICoreFrag (m.frg) - CSR-DOM Tests", async (t) => {
 		assertEquals(domNodes.at(1).nodeValue, 'Comment content');
 	});
 
-	await t.step(".getDOM() - Fragment with mixed content via JS", async () => {
+	it(".getDOM() - Fragment with mixed content via JS", async () => {
 		const fragNode = await doc.createNode('m.frg');
 		const textNode = await doc.createNode('m.t');
 		textNode.setAttr('t', 'JS Text');
@@ -128,7 +130,7 @@ Deno.test("MWICoreFrag (m.frg) - CSR-DOM Tests", async (t) => {
 		assertEquals(domNodes.at(1).nodeValue, 'JS Comment');
 	});
 
-	await t.step("(getDOM) - Nested fragments flatten transparently", async () => {
+	it("(getDOM) - Nested fragments flatten transparently", async () => {
 		const outerFrag = $c.sm(doc, 'createNode', ['m.frg']);
 		const innerFrag = $c.sm(doc, 'createNode', ['m.frg']);
 		const textNode = $c.sm(doc, 'createNode', ['m.t']);
@@ -142,7 +144,7 @@ Deno.test("MWICoreFrag (m.frg) - CSR-DOM Tests", async (t) => {
 		assertEquals(domNodes.at(0).nodeValue, 'Inner content');
 	});
 
-	await t.step(".getDOM() - Nested fragments via JS", async () => {
+	it(".getDOM() - Nested fragments via JS", async () => {
 		const outerFrag = await doc.createNode('m.frg');
 		const innerFrag = await doc.createNode('m.frg');
 		const textNode = await doc.createNode('m.t');
@@ -155,7 +157,7 @@ Deno.test("MWICoreFrag (m.frg) - CSR-DOM Tests", async (t) => {
 		assertEquals(domNodes.at(0).nodeValue, 'JS Inner');
 	});
 
-	await t.step("(getDOM) - Reactive child update", async () => {
+	it("(getDOM) - Reactive child update", async () => {
 		const fragNode = $c.sm(doc, 'createNode', ['m.frg']);
 		const textNode = $c.sm(doc, 'createNode', ['m.t']);
 		$c.sm(textNode, 'setAttr', ['t', 'Initial']);
@@ -168,14 +170,14 @@ Deno.test("MWICoreFrag (m.frg) - CSR-DOM Tests", async (t) => {
 
 		// Update child text
 		$c.sm(textNode, 'setAttr', ['t', 'Updated']);
-		await globalThis.reactive.wait();
+		await reactive.wait();
 
 		// Same node, updated content
 		assertEquals(textDomNode.nodeValue, 'Updated');
 		assertEquals(domNodes.size, 1);
 	});
 
-	await t.step(".getDOM() - Reactive child update via JS", async () => {
+	it(".getDOM() - Reactive child update via JS", async () => {
 		const fragNode = await doc.createNode('m.frg');
 		const textNode = await doc.createNode('m.t');
 		textNode.setAttr('t', 'Initial');
@@ -186,13 +188,13 @@ Deno.test("MWICoreFrag (m.frg) - CSR-DOM Tests", async (t) => {
 		assertEquals(textDomNode.nodeValue, 'Initial');
 
 		textNode.setAttr('t', 'Updated');
-		await globalThis.reactive.wait();
+		await reactive.wait();
 
 		assertEquals(textDomNode.nodeValue, 'Updated');
 		assertEquals(domNodes.size, 1);
 	});
 
-	await t.step("(getDOM) - Reactive child empty to non-empty", async () => {
+	it("(getDOM) - Reactive child empty to non-empty", async () => {
 		const fragNode = $c.sm(doc, 'createNode', ['m.frg']);
 		const textNode = $c.sm(doc, 'createNode', ['m.t']);
 		$c.sm(textNode, 'setAttr', ['t', '']);
@@ -204,7 +206,7 @@ Deno.test("MWICoreFrag (m.frg) - CSR-DOM Tests", async (t) => {
 
 		// Update to non-empty
 		$c.sm(textNode, 'setAttr', ['t', 'Now has text']);
-		await globalThis.reactive.wait();
+		await reactive.wait();
 		assertEquals(await $c.sm(fragNode, 'getDOM'), domNodes, 'always same DOM-node list');
 
 		// Should now have one text node
@@ -212,7 +214,7 @@ Deno.test("MWICoreFrag (m.frg) - CSR-DOM Tests", async (t) => {
 		assertEquals(domNodes.at(0)?.nodeValue, 'Now has text');
 	});
 
-	await t.step(".getDOM() - Reactive child empty to non-empty via JS", async () => {
+	it(".getDOM() - Reactive child empty to non-empty via JS", async () => {
 		const fragNode = await doc.createNode('m.frg');
 		const textNode = await doc.createNode('m.t');
 		textNode.setAttr('t', '');
@@ -222,13 +224,13 @@ Deno.test("MWICoreFrag (m.frg) - CSR-DOM Tests", async (t) => {
 		assertEquals(domNodes.size, 0);
 
 		textNode.setAttr('t', 'Now has text');
-		await globalThis.reactive.wait();
+		await reactive.wait();
 
 		assertEquals(domNodes.size, 1);
 		assertEquals(domNodes.at(0)?.nodeValue, 'Now has text');
 	});
 
-	await t.step("(getDOM) - Fragment with empty text nodes", async () => {
+	it("(getDOM) - Fragment with empty text nodes", async () => {
 		const fragNode = $c.sm(doc, 'createNode', ['m.frg']);
 		const text1 = $c.sm(doc, 'createNode', ['m.t']);
 		$c.sm(text1, 'setAttr', ['t', '']);
@@ -244,7 +246,7 @@ Deno.test("MWICoreFrag (m.frg) - CSR-DOM Tests", async (t) => {
 		assertEquals(domNodes.at(0).nodeValue, 'Content');
 	});
 
-	await t.step(".getDOM() - Fragment with empty text nodes via JS", async () => {
+	it(".getDOM() - Fragment with empty text nodes via JS", async () => {
 		const fragNode = await doc.createNode('m.frg');
 		const text1 = await doc.createNode('m.t');
 		text1.setAttr('t', '');

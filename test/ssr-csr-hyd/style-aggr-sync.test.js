@@ -1,11 +1,12 @@
 // Tests for SSR-to-CSR DOM hydration of m.stag (style aggregation).
 
+import { describe, it } from '@compat/test';
 import {
 	assert,
 	assertEquals,
 	assertExists,
 	assertStrictEquals,
-} from "https://deno.land/std@0.152.0/testing/asserts.ts";
+} from '@std/assert';
 
 import { setupRuntime, simulateBrowser } from '../harness.esm.js';
 
@@ -19,7 +20,7 @@ await setupRuntime({
 });
 
 const { fwait, getInstance } = globalThis.$c;
-const { ls, ps } = globalThis;
+const { ls, ps, reactive } = globalThis;
 
 await fwait('MWIDocument', 'mwi.comp.MWIStyleAggr');
 
@@ -38,10 +39,9 @@ function csrSync (node, cursor) {
 	return node.document.getDOM({ sync });
 }
 
-Deno.test('MWIStyleAggr (m.stag) - SSR-CSR Hydration: basic sync', async (t) => {
-	await simulateBrowser();
-
-	await t.step('(getDOM) - SSR-generated style element reused during CSR sync', async () => {
+describe('MWIStyleAggr (m.stag) - SSR-CSR Hydration: basic sync', () => {
+	it('(getDOM) - SSR-generated style element reused during CSR sync', async () => {
+		await simulateBrowser();
 		// SSR: build a document with render node and collector nodes
 		const ssrDoc = makeDoc();
 		const renderNode = ssrDoc.createNode('m.stag');
@@ -72,9 +72,8 @@ Deno.test('MWIStyleAggr (m.stag) - SSR-CSR Hydration: basic sync', async (t) => 
 		assertEquals(domNodes.at(0).textContent, ':root { container-name: theme; }', 'content preserved');
 	});
 
-	await simulateBrowser();
-
-	await t.step('.getDOM() - SSR-generated style element reused during CSR sync via JS', async () => {
+	it('.getDOM() - SSR-generated style element reused during CSR sync via JS', async () => {
+		await simulateBrowser();
 		const ssrDoc = makeDoc();
 		const renderNode = ssrDoc.createNode('m.stag');
 		const c1 = ssrDoc.createNode('m.stag');
@@ -99,10 +98,9 @@ Deno.test('MWIStyleAggr (m.stag) - SSR-CSR Hydration: basic sync', async (t) => 
 	});
 });
 
-Deno.test('MWIStyleAggr (m.stag) - SSR-CSR Hydration: post-hydration reactivity', async (t) => {
-	await simulateBrowser();
-
-	await t.step('(getDOM) - dynamically adding a collector node after hydration updates synced style element', async () => {
+describe('MWIStyleAggr (m.stag) - SSR-CSR Hydration: post-hydration reactivity', () => {
+	it('(getDOM) - dynamically adding a collector node after hydration updates synced style element', async () => {
+		await simulateBrowser();
 		const ssrDoc = makeDoc();
 		const renderNode = ssrDoc.createNode('m.stag');
 		const c1 = ssrDoc.createNode('m.stag');
@@ -136,9 +134,8 @@ Deno.test('MWIStyleAggr (m.stag) - SSR-CSR Hydration: post-hydration reactivity'
 		assertEquals(domNodes.at(0).textContent, ':root { container-name: base dynamic; }', 'style element text updated reactively after hydration');
 	});
 
-	await simulateBrowser();
-
-	await t.step('(getDOM) - modifying existing collector node after hydration updates synced style element', async () => {
+	it('(getDOM) - modifying existing collector node after hydration updates synced style element', async () => {
+		await simulateBrowser();
 		const ssrDoc = makeDoc();
 		const renderNode = ssrDoc.createNode('m.stag');
 		const c1 = ssrDoc.createNode('m.stag');

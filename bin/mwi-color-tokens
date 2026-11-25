@@ -1,3 +1,47 @@
-#!/bin/sh
-basedir=$(dirname "$0")
-exec deno run --allow-read "$basedir/../util/color-token-cli.esm.js" "$@"
+#!/usr/bin/env bash
+# bin/mwi-color-tokens
+# MWI Color Token Generator CLI utility
+# Author: Brian Katzung <briank@kappacs.com>
+
+SOURCE="${BASH_SOURCE[0]}"
+while [ -L "$SOURCE" ]; do
+  DIR="$( cd -P "$( dirname "$SOURCE" )" >/dev/null 2>&1 && pwd )"
+  SOURCE="$(readlink "$SOURCE")"
+  [[ $SOURCE != /* ]] && SOURCE="$DIR/$SOURCE"
+done
+SCRIPT_DIR="$( cd -P "$( dirname "$SOURCE" )" >/dev/null 2>&1 && pwd )"
+
+CLI_TARGET="$SCRIPT_DIR/../util/color-token-cli.esm.js"
+CONFIG="$SCRIPT_DIR/../webload.json"
+DENO_PERMS="--allow-read --allow-write --allow-env"
+
+# 1. Explicit specification via MESGJS_ENGINE
+case "$MESGJS_ENGINE" in
+"") ;;
+deno)
+  exec deno run --config "$CONFIG" $DENO_PERMS "$CLI_TARGET" "$@"
+  ;;
+bun)
+  exec wicbun --config "$CONFIG" "$CLI_TARGET" "$@"
+  ;;
+node)
+  exec wicnode --config "$CONFIG" "$CLI_TARGET" "$@"
+  ;;
+*)
+  echo "Error: Unknown MESGJS_ENGINE '$MESGJS_ENGINE'. Expected 'deno', 'bun', or 'node'." >&2
+  exit 1
+  ;;
+esac
+
+# 2. Automated Probe Ladder (Deno -> Bun/wicbun -> Node/wicnode)
+if command -v deno >/dev/null 2>&1; then
+  exec deno run --config "$CONFIG" $DENO_PERMS "$CLI_TARGET" "$@"
+elif command -v wicbun >/dev/null 2>&1 && command -v bun >/dev/null 2>&1; then
+  exec wicbun --config "$CONFIG" "$CLI_TARGET" "$@"
+elif command -v wicnode >/dev/null 2>&1 && command -v node >/dev/null 2>&1; then
+  exec wicnode --config "$CONFIG" "$CLI_TARGET" "$@"
+else
+  echo "Error: mwi-color-tokens requires Deno, wicbun (from @bkatzung/webload) and bun, or wicnode (from @bkatzung/webload) and node." >&2
+  echo "Install Deno (https://deno.land) or install WebLoad (npm i -g @bkatzung/webload) with node and/or bun." >&2
+  exit 1
+fi

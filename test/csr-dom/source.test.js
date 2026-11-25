@@ -1,8 +1,9 @@
+import { describe, it } from '@compat/test';
 import {
 	assert,
 	assertEquals,
 	assertStrictEquals,
-} from "https://deno.land/std@0.152.0/testing/asserts.ts";
+} from '@std/assert';
 
 import { setupRuntime, simulateBrowser } from '../harness.esm.js';
 
@@ -11,8 +12,7 @@ const REG_READY_FT = 'mwi.compRegReady';
 await setupRuntime();
 
 const { fwait, getInstance } = globalThis.$c;
-const ls = globalThis.ls;
-const ps = globalThis.ps;
+const { ls, ps, reactive } = globalThis;
 
 // Wait for registry to be ready
 await fwait(REG_READY_FT);
@@ -20,10 +20,9 @@ await fwait(REG_READY_FT);
 const doc = getInstance('MWIDocument');
 const registry = getInstance('MWIRegistry');
 
-Deno.test("MWICoreSource CSR - Basic DOM Rendering", async (t) => {
-	await simulateBrowser();
-
-	await t.step("m.src renders children without wrapper", async () => {
+describe("MWICoreSource CSR - Basic DOM Rendering", () => {
+	it("m.src renders children without wrapper", async () => {
+		await simulateBrowser();
 		const srcNode = doc.createNode('m.src');
 		srcNode.setSubSpec({ subSpec: ps('[( [h.div id=child1 DIV] [h.span id=child2 SPAN] )]') });
 
@@ -37,18 +36,16 @@ Deno.test("MWICoreSource CSR - Basic DOM Rendering", async (t) => {
 		assertEquals(dom.at(1).id, 'child2');
 	});
 
-	await simulateBrowser();
-
-	await t.step("Empty m.src renders no DOM nodes", () => {
+	it("Empty m.src renders no DOM nodes", async () => {
+		await simulateBrowser();
 		const srcNode = doc.createNode('m.src');
 
 		const dom = $c.sm(srcNode, 'getDOM');
 		assertEquals(dom.next, 0);
 	});
 
-	await simulateBrowser();
-
-	await t.step("m.src with single child", () => {
+	it("m.src with single child", async () => {
+		await simulateBrowser();
 		const srcNode = doc.createNode('m.src');
 		srcNode.setSubSpec(ps('[( [h.p id="solo"] )]'));
 
@@ -59,10 +56,9 @@ Deno.test("MWICoreSource CSR - Basic DOM Rendering", async (t) => {
 	});
 });
 
-Deno.test("MWICoreSource CSR - m.ci Pass-Through in DOM", async (t) => {
-	await simulateBrowser();
-
-	await t.step("@@ in m.src child uses m.src's slotSrc m.ci", async () => {
+describe("MWICoreSource CSR - m.ci Pass-Through in DOM", () => {
+	it("@@ in m.src child uses m.src's slotSrc m.ci", async () => {
+		await simulateBrowser();
 		registry.register('test.tpl.srccidom', ls([
 			'allowLate', true,
 			'tpl', ps('[( [m.src [h.div m.coat=[data-ci="@@"]]] )]')
@@ -78,9 +74,8 @@ Deno.test("MWICoreSource CSR - m.ci Pass-Through in DOM", async (t) => {
 		assertEquals(divNode.getAttribute('data-ci'), tplCI);
 	});
 
-	await simulateBrowser();
-
-	await t.step("@@ in nested m.src resolves to outermost slotSrc m.ci", async () => {
+	it("@@ in nested m.src resolves to outermost slotSrc m.ci", async () => {
+		await simulateBrowser();
 		registry.register('test.tpl.nestedsrcdom', ls([
 			'allowLate', true,
 			'tpl', ps('[( [m.src [m.src [h.div m.coat=[data-ci="@@"]]]] )]')
@@ -96,9 +91,8 @@ Deno.test("MWICoreSource CSR - m.ci Pass-Through in DOM", async (t) => {
 		assertEquals(divNode.getAttribute('data-ci'), tplCI);
 	});
 
-	await simulateBrowser();
-
-	await t.step("@@ in m.src without slotSrc uses m.src's own CI", () => {
+	it("@@ in m.src without slotSrc uses m.src's own CI", async () => {
+		await simulateBrowser();
 		const srcNode = doc.createNode('m.src');
 		srcNode.setSubSpec(ps('[( [h.div m.coat=[data-ci="@@"]] )]'));
 
@@ -115,10 +109,9 @@ Deno.test("MWICoreSource CSR - m.ci Pass-Through in DOM", async (t) => {
 	});
 });
 
-Deno.test("MWICoreSource CSR - Slotting Boundary in DOM", async (t) => {
-	await simulateBrowser();
-
-	await t.step("m.src creates boundary - children can't see template attributes", async () => {
+describe("MWICoreSource CSR - Slotting Boundary in DOM", () => {
+	it("m.src creates boundary - children can't see template attributes", async () => {
+		await simulateBrowser();
 		registry.register('test.tpl.srcbounddom', ls([
 			'allowLate', true,
 			'tpl', ps('[( [m.src myattr="src-value" [h.div m.coat=[data-from="<myattr>"]]] )]')
@@ -135,9 +128,8 @@ Deno.test("MWICoreSource CSR - Slotting Boundary in DOM", async (t) => {
 		assertEquals(divNode.getAttribute('data-from'), 'src-value');
 	});
 
-	await simulateBrowser();
-
-	await t.step("Slotting through m.src requires explicit slot-through", async () => {
+	it("Slotting through m.src requires explicit slot-through", async () => {
+		await simulateBrowser();
 		registry.register('test.tpl.slotthroughdom', ls([
 			'allowLate', true,
 			'tpl', ps('[( [m.src m.slat=[srcattr=[tplattr]] [h.div m.coat=[data-val="<srcattr>"]]] )]')
@@ -155,10 +147,9 @@ Deno.test("MWICoreSource CSR - Slotting Boundary in DOM", async (t) => {
 	});
 });
 
-Deno.test("MWICoreSource CSR - Comparison with m.frg in DOM", async (t) => {
-	await simulateBrowser();
-
-	await t.step("m.src passes through slotSrc m.ci, m.frg also passes through", async () => {
+describe("MWICoreSource CSR - Comparison with m.frg in DOM", () => {
+	it("m.src passes through slotSrc m.ci, m.frg also passes through", async () => {
+		await simulateBrowser();
 		registry.register('test.tpl.srcvsfragdom', ls([
 			'allowLate', true,
 			'tpl', ps('[( [m.src [h.div m.coat=[data-src="@@"]]] [m.frg [h.div m.coat=[data-frg="@@"]]] )]')
@@ -178,9 +169,8 @@ Deno.test("MWICoreSource CSR - Comparison with m.frg in DOM", async (t) => {
 		assertEquals(fragDiv.getAttribute('data-frg'), tplCI);
 	});
 
-	await simulateBrowser();
-
-	await t.step("m.src creates boundary, m.frg does not", async () => {
+	it("m.src creates boundary, m.frg does not", async () => {
+		await simulateBrowser();
 		registry.register('test.tpl.boundariesdom', ls([
 			'allowLate', true,
 			'tpl', ps('[( [m.src myattr="src" [h.div m.coat=[data-src="<myattr>"]]] [m.frg myattr="frg" [h.div m.coat=[data-frg="<myattr>"]]] )]')
@@ -201,10 +191,9 @@ Deno.test("MWICoreSource CSR - Comparison with m.frg in DOM", async (t) => {
 	});
 });
 
-Deno.test("MWICoreSource CSR - Reactive Behavior", async (t) => {
-	await simulateBrowser();
-
-	await t.step("m.src children react to slotSrc attribute changes", async () => {
+describe("MWICoreSource CSR - Reactive Behavior", () => {
+	it("m.src children react to slotSrc attribute changes", async () => {
+		await simulateBrowser();
 		registry.register('test.tpl.srcreactive', ls([
 			'allowLate', true,
 			'tpl', ps('[( [m.src myattr="initial" [h.div m.coat=[data-val="<myattr>"]]] )]')
@@ -229,9 +218,8 @@ Deno.test("MWICoreSource CSR - Reactive Behavior", async (t) => {
 		assertEquals(divNode.getAttribute('data-val'), 'updated');
 	});
 
-	await simulateBrowser();
-
-	await t.step("m.src passes through reactive m.ci changes", async () => {
+	it("m.src passes through reactive m.ci changes", async () => {
+		await simulateBrowser();
 		// This test verifies that if slotSrc's m.ci could change (hypothetically),
 		// m.src would pass through the new value. In practice, m.ci is immutable,
 		// but the pass-through mechanism should be reactive.
@@ -249,10 +237,9 @@ Deno.test("MWICoreSource CSR - Reactive Behavior", async (t) => {
 	});
 });
 
-Deno.test("MWICoreSource CSR - Complex Scenarios", async (t) => {
-	await simulateBrowser();
-
-	await t.step("Multiple levels of m.src all pass through same m.ci", async () => {
+describe("MWICoreSource CSR - Complex Scenarios", () => {
+	it("Multiple levels of m.src all pass through same m.ci", async () => {
+		await simulateBrowser();
 		registry.register('test.tpl.multileveldom', ls([
 			'allowLate', true,
 			'tpl', ps('[( [m.src [m.src [m.src [h.div m.coat=[data-ci="@@"]]]]] )]')
@@ -268,9 +255,8 @@ Deno.test("MWICoreSource CSR - Complex Scenarios", async (t) => {
 		assertEquals(divNode.getAttribute('data-ci'), tplCI);
 	});
 
-	await simulateBrowser();
-
-	await t.step("m.src in slot passes through slot's m.ci", () => {
+	it("m.src in slot passes through slot's m.ci", async () => {
+		await simulateBrowser();
 		const slotNode = doc.createNode('m.slot');
 		slotNode.setSubSpec(ps('[( [m.src [h.div m.coat=[data-ci="@@"]]] )]'));
 
@@ -282,9 +268,8 @@ Deno.test("MWICoreSource CSR - Complex Scenarios", async (t) => {
 		assertEquals(divNode.getAttribute('data-ci'), slotCI);
 	});
 
-	await simulateBrowser();
-
-	await t.step("@@ with prefix/suffix in m.src child", async () => {
+	it("@@ with prefix/suffix in m.src child", async () => {
+		await simulateBrowser();
 		registry.register('test.tpl.ciprefixdom', ls([
 			'allowLate', true,
 			'tpl', ps('[( [m.src [h.div m.coat=[data-ci="prefix-@@-suffix"]]] )]')

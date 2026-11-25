@@ -1,9 +1,10 @@
+import { describe, it } from '@compat/test';
 import {
 	assert,
 	assertEquals,
 	assertExists,
 	assertStrictEquals,
-} from "https://deno.land/std@0.152.0/testing/asserts.ts";
+} from '@std/assert';
 
 import { setupRuntime, simulateBrowser } from '../harness.esm.js';
 
@@ -12,6 +13,7 @@ const REG_READY_FT = 'mwi.compRegReady';
 await setupRuntime();
 
 const { fwait, getInstance } = globalThis.$c;
+const { reactive } = globalThis;
 await fwait(REG_READY_FT);
 
 // Set up browser-like environment for DOM testing
@@ -21,8 +23,8 @@ const doc = getInstance('MWIDocument');
 const ls = globalThis.ls;
 const ps = globalThis.ps;
 
-Deno.test("MWICoreSlot (m.slot) - CSR-DOM Default Content", async (t) => {
-	await t.step("(getDOM) - Renders default content in absence of slot source", async () => {
+describe("MWICoreSlot (m.slot) - CSR-DOM Default Content", () => {
+	it("(getDOM) - Renders default content in absence of slot source", () => {
 		const slotNode = $c.sm(doc, 'createNode', ['m.slot']);
 		$c.sm(slotNode, 'setSubSpec', ['Default']);
 		const domNodes = $c.sm(slotNode, 'getDOM');
@@ -34,7 +36,7 @@ Deno.test("MWICoreSlot (m.slot) - CSR-DOM Default Content", async (t) => {
 		assertEquals(textDomNode.nodeValue, 'Default');
 	});
 
-	await t.step(".getDOM() - Renders default content in absence of slot source via JS", async () => {
+	it(".getDOM() - Renders default content in absence of slot source via JS", () => {
 		const slotNode = doc.createNode('m.slot');
 		slotNode.setSubSpec('JS Default');
 		const domNodes = slotNode.getDOM();
@@ -45,7 +47,7 @@ Deno.test("MWICoreSlot (m.slot) - CSR-DOM Default Content", async (t) => {
 		assertEquals(textDomNode.nodeValue, 'JS Default');
 	});
 
-	await t.step("(getDOM) - Multiple default content items", async () => {
+	it("(getDOM) - Multiple default content items", () => {
 		const slotNode = $c.sm(doc, 'createNode', ['m.slot']);
 		const text1 = $c.sm(doc, 'createNode', ['m.t']);
 		$c.sm(text1, 'setAttr', ['t', 'First']);
@@ -59,7 +61,7 @@ Deno.test("MWICoreSlot (m.slot) - CSR-DOM Default Content", async (t) => {
 		assertEquals(domNodes.at(1).textContent, 'Second');
 	});
 
-	await t.step(".getDOM() - Multiple default content items via JS", async () => {
+	it(".getDOM() - Multiple default content items via JS", () => {
 		const slotNode = doc.createNode('m.slot');
 		const text1 = doc.createNode('m.t');
 		text1.setAttr('t', 'JS First');
@@ -74,8 +76,8 @@ Deno.test("MWICoreSlot (m.slot) - CSR-DOM Default Content", async (t) => {
 	});
 });
 
-Deno.test("MWICoreSlot (m.slot) - CSR-DOM Slot Source Integration", async (t) => {
-	await t.step("(getDOM) - Renders fallback on default slot against void source", async () => {
+describe("MWICoreSlot (m.slot) - CSR-DOM Slot Source Integration", () => {
+	it("(getDOM) - Renders fallback on default slot against void source", () => {
 		const brNode = $c.sm(doc, 'createNode', ['h.br']);
 		const slotNode = $c.sm(doc, 'createNode', ls([, 'm.slot', 'slotSrc', brNode]));
 		assertStrictEquals($c.sm(slotNode, 'slotSrc'), brNode);
@@ -86,7 +88,7 @@ Deno.test("MWICoreSlot (m.slot) - CSR-DOM Slot Source Integration", async (t) =>
 		assertEquals(domNodes.at(0).textContent, 'Default');
 	});
 
-	await t.step(".getDOM() - Renders fallback on default slot against void source via JS", async () => {
+	it(".getDOM() - Renders fallback on default slot against void source via JS", () => {
 		const brNode = doc.createNode('h.br');
 		const slotNode = doc.createNode('m.slot', { slotSrc: brNode });
 		assertStrictEquals(slotNode.slotSrc, brNode);
@@ -97,7 +99,7 @@ Deno.test("MWICoreSlot (m.slot) - CSR-DOM Slot Source Integration", async (t) =>
 		assertEquals(domNodes.at(0).textContent, 'JS Default');
 	});
 
-	await t.step("(getDOM) - Renders fallback on default slot against empty container", async () => {
+	it("(getDOM) - Renders fallback on default slot against empty container", () => {
 		const divNode = $c.sm(doc, 'createNode', ['h.div']);
 		const slotNode = $c.sm(doc, 'createNode', ls([, 'm.slot', 'slotSrc', divNode]));
 		$c.sm(slotNode, 'setSubSpec', ['Fallback']);
@@ -107,7 +109,7 @@ Deno.test("MWICoreSlot (m.slot) - CSR-DOM Slot Source Integration", async (t) =>
 		assertEquals(domNodes.at(0).textContent, 'Fallback');
 	});
 
-	await t.step(".getDOM() - Renders fallback on default slot against empty container via JS", async () => {
+	it(".getDOM() - Renders fallback on default slot against empty container via JS", () => {
 		const divNode = doc.createNode('h.div');
 		const slotNode = doc.createNode('m.slot', { slotSrc: divNode });
 		slotNode.setSubSpec('JS Fallback');
@@ -117,7 +119,7 @@ Deno.test("MWICoreSlot (m.slot) - CSR-DOM Slot Source Integration", async (t) =>
 		assertEquals(domNodes.at(0).textContent, 'JS Fallback');
 	});
 
-	await t.step("(getDOM) - Renders natural children on default slot against non-empty container", async () => {
+	it("(getDOM) - Renders natural children on default slot against non-empty container", () => {
 		const divNode = $c.sm(doc, 'createNode', ['h.div']);
 		$c.sm(divNode, 'setSubSpec', ['Natural child']);
 		const slotNode = $c.sm(doc, 'createNode', ls([, 'm.slot', 'slotSrc', divNode]));
@@ -128,7 +130,7 @@ Deno.test("MWICoreSlot (m.slot) - CSR-DOM Slot Source Integration", async (t) =>
 		assertEquals(domNodes.at(0).textContent, 'Natural child');
 	});
 
-	await t.step(".getDOM() - Renders natural children on default slot against non-empty container via JS", async () => {
+	it(".getDOM() - Renders natural children on default slot against non-empty container via JS", () => {
 		const divNode = doc.createNode('h.div');
 		divNode.setSubSpec('JS Natural child');
 		const slotNode = doc.createNode('m.slot', { slotSrc: divNode });
@@ -140,8 +142,8 @@ Deno.test("MWICoreSlot (m.slot) - CSR-DOM Slot Source Integration", async (t) =>
 	});
 });
 
-Deno.test("MWICoreSlot (m.slot) - CSR-DOM Named Slots", async (t) => {
-	await t.step("(getDOM) - Named slot with matching attribute renders attribute content", async () => {
+describe("MWICoreSlot (m.slot) - CSR-DOM Named Slots", () => {
+	it("(getDOM) - Named slot with matching attribute renders attribute content", () => {
 		const divNode = $c.sm(doc, 'createNode', ['h.div']);
 		$c.sm(divNode, 'setAttr', ['header-slot', ps('[([m.t t="Header from attr"])]')]);
 		const slotNode = $c.sm(doc, 'createNode', ls([, 'm.slot', 'slotSrc', divNode]));
@@ -153,7 +155,7 @@ Deno.test("MWICoreSlot (m.slot) - CSR-DOM Named Slots", async (t) => {
 		assertEquals(domNodes.at(0).textContent, 'Header from attr');
 	});
 
-	await t.step(".getDOM() - Named slot with matching attribute renders attribute content via JS", async () => {
+	it(".getDOM() - Named slot with matching attribute renders attribute content via JS", () => {
 		const divNode = doc.createNode('h.div');
 		divNode.setAttr('footer-slot', ps('[([m.t t="Footer from attr"])]'));
 		const slotNode = doc.createNode('m.slot', { slotSrc: divNode });
@@ -165,7 +167,7 @@ Deno.test("MWICoreSlot (m.slot) - CSR-DOM Named Slots", async (t) => {
 		assertEquals(domNodes.at(0).textContent, 'Footer from attr');
 	});
 
-	await t.step("(getDOM) - Named slot without matching attribute renders fallback", async () => {
+	it("(getDOM) - Named slot without matching attribute renders fallback", () => {
 		const divNode = $c.sm(doc, 'createNode', ['h.div']);
 		$c.sm(divNode, 'setAttr', ['other-attr', 'value']);
 		const slotNode = $c.sm(doc, 'createNode', ls([, 'm.slot', 'slotSrc', divNode]));
@@ -177,7 +179,7 @@ Deno.test("MWICoreSlot (m.slot) - CSR-DOM Named Slots", async (t) => {
 		assertEquals(domNodes.at(0).textContent, 'Fallback for missing');
 	});
 
-	await t.step(".getDOM() - Named slot without matching attribute renders fallback via JS", async () => {
+	it(".getDOM() - Named slot without matching attribute renders fallback via JS", () => {
 		const divNode = doc.createNode('h.div');
 		divNode.setAttr('other-attr', 'value');
 		const slotNode = doc.createNode('m.slot', { slotSrc: divNode });
@@ -190,8 +192,8 @@ Deno.test("MWICoreSlot (m.slot) - CSR-DOM Named Slots", async (t) => {
 	});
 });
 
-Deno.test("MWICoreSlot (m.slot) - CSR-DOM Reactive Updates", async (t) => {
-	await t.step("(getDOM) - Reactive update to default content", async () => {
+describe("MWICoreSlot (m.slot) - CSR-DOM Reactive Updates", () => {
+	it("(getDOM) - Reactive update to default content", async () => {
 		const slotNode = $c.sm(doc, 'createNode', ['m.slot']);
 		const textNode = $c.sm(doc, 'createNode', ['m.t']);
 		$c.sm(textNode, 'setAttr', ['t', 'Initial']);
@@ -202,13 +204,13 @@ Deno.test("MWICoreSlot (m.slot) - CSR-DOM Reactive Updates", async (t) => {
 
 		// Update the text
 		$c.sm(textNode, 'setAttr', ['t', 'Updated']);
-		await globalThis.reactive.wait();
+		await reactive.wait();
 
 		assertEquals(domNodes.at(0).textContent, 'Updated');
 		assertEquals(domNodes.size, 1);
 	});
 
-	await t.step(".getDOM() - Reactive update to default content via JS", async () => {
+	it(".getDOM() - Reactive update to default content via JS", async () => {
 		const slotNode = doc.createNode('m.slot');
 		const textNode = doc.createNode('m.t');
 		textNode.setAttr('t', 'JS Initial');
@@ -218,14 +220,13 @@ Deno.test("MWICoreSlot (m.slot) - CSR-DOM Reactive Updates", async (t) => {
 		assertEquals(domNodes.at(0).textContent, 'JS Initial');
 
 		textNode.setAttr('t', 'JS Updated');
-		await globalThis.reactive.wait();
+		await reactive.wait();
 
 		assertEquals(domNodes.at(0).textContent, 'JS Updated');
 		assertEquals(domNodes.size, 1);
 	});
 
-	// CONTINUE HERE: HANGING HERE (in REQ3)
-	await t.step("(getDOM) - Reactive update to slotSrc natural children", async () => {
+	it("(getDOM) - Reactive update to slotSrc natural children", async () => {
 		const divNode = $c.sm(doc, 'createNode', ['h.div']);
 		const textNode = $c.sm(doc, 'createNode', ['m.t']);
 		$c.sm(textNode, 'setAttr', ['t', 'Initial child']);
@@ -239,13 +240,13 @@ Deno.test("MWICoreSlot (m.slot) - CSR-DOM Reactive Updates", async (t) => {
 
 		// Update the source's child
 		$c.sm(textNode, 'setAttr', ['t', 'Updated child']);
-		await globalThis.reactive.wait();
+		await reactive.wait();
 
 		assertEquals(domNodes.at(0).textContent, 'Updated child');
 		assertEquals(domNodes.size, 1);
 	});
 
-	await t.step(".getDOM() - Reactive update to slotSrc natural children via JS", async () => {
+	it(".getDOM() - Reactive update to slotSrc natural children via JS", async () => {
 		const divNode = doc.createNode('h.div');
 		const textNode = doc.createNode('m.t');
 		textNode.setAttr('t', 'JS Initial child');
@@ -258,13 +259,13 @@ Deno.test("MWICoreSlot (m.slot) - CSR-DOM Reactive Updates", async (t) => {
 		assertEquals(domNodes.at(0).textContent, 'JS Initial child');
 
 		textNode.setAttr('t', 'JS Updated child');
-		await globalThis.reactive.wait();
+		await reactive.wait();
 
 		assertEquals(domNodes.at(0).textContent, 'JS Updated child');
 		assertEquals(domNodes.size, 1);
 	});
 
-	await t.step("(getDOM) - Reactive switch from fallback to natural children", async () => {
+	it("(getDOM) - Reactive switch from fallback to natural children", async () => {
 		const divNode = $c.sm(doc, 'createNode', ['h.div']);
 		const slotNode = $c.sm(doc, 'createNode', ls([, 'm.slot', 'slotSrc', divNode]));
 		$c.sm(slotNode, 'setSubSpec', ['Fallback']);
@@ -277,14 +278,14 @@ Deno.test("MWICoreSlot (m.slot) - CSR-DOM Reactive Updates", async (t) => {
 		const textNode = $c.sm(doc, 'createNode', ['m.t']);
 		$c.sm(textNode, 'setAttr', ['t', 'New child']);
 		$c.sm(divNode, 'append', [textNode]);
-		await globalThis.reactive.wait();
+		await reactive.wait();
 
 		// Should now show source's child
 		assertEquals(domNodes.at(0).textContent, 'New child');
 		assertEquals(domNodes.size, 1);
 	});
 
-	await t.step(".getDOM() - Reactive switch from fallback to natural children via JS", async () => {
+	it(".getDOM() - Reactive switch from fallback to natural children via JS", async () => {
 		const divNode = doc.createNode('h.div');
 		const slotNode = doc.createNode('m.slot', { slotSrc: divNode });
 		slotNode.setSubSpec('JS Fallback');
@@ -295,15 +296,15 @@ Deno.test("MWICoreSlot (m.slot) - CSR-DOM Reactive Updates", async (t) => {
 		const textNode = doc.createNode('m.t');
 		textNode.setAttr('t', 'JS New child');
 		divNode.append(textNode);
-		await globalThis.reactive.wait();
+		await reactive.wait();
 
 		assertEquals(domNodes.at(0).textContent, 'JS New child');
 		assertEquals(domNodes.size, 1);
 	});
 });
 
-Deno.test("MWICoreSlot (m.slot) - CSR-DOM Named Slot Reactivity", async (t) => {
-	await t.step("(getDOM) - Reactive update to named slot attribute content", async () => {
+describe("MWICoreSlot (m.slot) - CSR-DOM Named Slot Reactivity", () => {
+	it("(getDOM) - Reactive update to named slot attribute content", async () => {
 		const divNode = $c.sm(doc, 'createNode', ['h.div']);
 		const textNode = $c.sm(doc, 'createNode', ['m.t']);
 		$c.sm(textNode, 'setAttr', ['t', 'Initial attr']);
@@ -322,12 +323,12 @@ Deno.test("MWICoreSlot (m.slot) - CSR-DOM Named Slot Reactivity", async (t) => {
 
 		// Update the attribute content
 		headerList.at(0).set('t', 'Updated attr');
-		await globalThis.reactive.wait();
+		await reactive.wait();
 		assertEquals(domNodes.at(0).textContent, 'Updated attr');
 		assertEquals(domNodes.size, 1);
 	});
 
-	await t.step(".getDOM() - Reactive update to named slot attribute content via JS", async () => {
+	it(".getDOM() - Reactive update to named slot attribute content via JS", async () => {
 		const divNode = doc.createNode('h.div');
 		const textNode = doc.createNode('m.t');
 		textNode.setAttr('t', 'JS Initial attr');
@@ -344,7 +345,7 @@ Deno.test("MWICoreSlot (m.slot) - CSR-DOM Named Slot Reactivity", async (t) => {
 		assertEquals(domNodes.at(0).textContent, 'JS Initial attr');
 
 		footerList.at(0).set('t', 'JS Updated attr');
-		await globalThis.reactive.wait();
+		await reactive.wait();
 
 		assertEquals(domNodes.at(0).textContent, 'JS Updated attr');
 		assertEquals(domNodes.size, 1);

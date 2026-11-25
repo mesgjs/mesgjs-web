@@ -1,7 +1,8 @@
+import { describe, it } from '@compat/test';
 import {
 	assert,
 	assertEquals,
-} from "https://deno.land/std@0.152.0/testing/asserts.ts";
+} from '@std/assert';
 
 import { setupRuntime, simulateBrowser } from '../harness.esm.js';
 
@@ -11,16 +12,15 @@ await setupRuntime();
 await simulateBrowser();
 
 const { fwait, getInstance } = globalThis.$c;
-const ls = globalThis.ls;
-const ps = globalThis.ps;
+const { ls, ps, reactive } = globalThis;
 
 // Wait for registry to be ready
 await fwait(REG_READY_FT);
 
 const registry = getInstance('MWIRegistry');
 
-Deno.test("MWICoreScpCSS CSR Compound - Card Component with m.coat", async (t) => {
-	await t.step("Card component with scoped styles and m.percl", async () => {
+describe("MWICoreScpCSS CSR Compound - Card Component with m.coat", () => {
+	it("Card component with scoped styles and m.percl", () => {
 		// Register card component with scoped CSS
 		registry.register('test.csr.compound.card', ls([
 			'allowLate', true,
@@ -41,8 +41,6 @@ Deno.test("MWICoreScpCSS CSR Compound - Card Component with m.coat", async (t) =
 
 		$c.sm(doc, 'append', cardNode);
 
-		await globalThis.reactive.wait();
-
 		// Verify style element exists
 		const styleDom = $c.sm(scpNode, 'getDOM');
 		assertEquals(styleDom.size, 1, "Should have style element");
@@ -59,7 +57,7 @@ Deno.test("MWICoreScpCSS CSR Compound - Card Component with m.coat", async (t) =
 		assert(cardDom.size > 0, "Card should have DOM elements");
 
 		const cardDiv = cardDom.at(0);
-		assert(cardDiv instanceof globalThis.window.HTMLDivElement, "Should be div element");
+		assertEquals(cardDiv.tagName, 'DIV', "Should be div element");
 
 		// Verify m.percl was applied (component ID should be in class)
 		const classes = cardDiv.className.split(' ');
@@ -67,7 +65,7 @@ Deno.test("MWICoreScpCSS CSR Compound - Card Component with m.coat", async (t) =
 		assert(hasComponentId, "Card div should have component ID class from m.percl");
 	});
 
-	await t.step("Card component with dynamic content updates", async () => {
+	it("Card component with dynamic content updates", () => {
 		registry.register('test.csr.compound.card2', ls([
 			'allowLate', true,
 			'scopedCSS', '.@@ { background: #f9f9f9; }',
@@ -87,8 +85,6 @@ Deno.test("MWICoreScpCSS CSR Compound - Card Component with m.coat", async (t) =
 		$c.sm(cardNode, 'setAttr', ls([, 'content', , ps('[([m.t t="Initial content"])]')]));
 		$c.sm(doc, 'append', cardNode);
 
-		await globalThis.reactive.wait();
-
 		// Style should now exist
 		styleDom = $c.sm(scpNode, 'getDOM');
 		assertEquals(styleDom.size, 1, "Should have style element after card added");
@@ -97,8 +93,8 @@ Deno.test("MWICoreScpCSS CSR Compound - Card Component with m.coat", async (t) =
 	});
 });
 
-Deno.test("MWICoreScpCSS CSR Compound - Nested Components", async (t) => {
-	await t.step("Parent and child components with scoped CSS", async () => {
+describe("MWICoreScpCSS CSR Compound - Nested Components", () => {
+	it("Parent and child components with scoped CSS", () => {
 		// Register parent component
 		registry.register('test.csr.compound.parent', ls([
 			'allowLate', true,
@@ -131,8 +127,6 @@ Deno.test("MWICoreScpCSS CSR Compound - Nested Components", async (t) => {
 
 		$c.sm(doc, 'append', parentNode);
 
-		await globalThis.reactive.wait();
-
 		// Verify both CSS blocks are present
 		const styleDom = $c.sm(scpNode, 'getDOM');
 		assertEquals(styleDom.size, 1, "Should have style element");
@@ -149,7 +143,7 @@ Deno.test("MWICoreScpCSS CSR Compound - Nested Components", async (t) => {
 		assertEquals(uniqueIds.size, 2, "Should have two unique component IDs (parent and child)");
 	});
 
-	await t.step("Deeply nested components with reactive updates", async () => {
+	it("Deeply nested components with reactive updates", async () => {
 		registry.register('test.csr.compound.level1', ls([
 			'allowLate', true,
 			'scopedCSS', '.@@ { background: #f0f0f0; }',
@@ -176,8 +170,6 @@ Deno.test("MWICoreScpCSS CSR Compound - Nested Components", async (t) => {
 		const level1 = doc.createNode('test.csr.compound.level1');
 		$c.sm(doc, 'append', level1);
 
-		await globalThis.reactive.wait();
-
 		let styleDom = $c.sm(scpNode, 'getDOM');
 		let styleElem = styleDom.at(0);
 		assert(styleElem.textContent.includes('#f0f0f0'), "Should include level1 CSS");
@@ -187,7 +179,7 @@ Deno.test("MWICoreScpCSS CSR Compound - Nested Components", async (t) => {
 		const level2 = doc.createNode('test.csr.compound.level2');
 		$c.sm(level1, 'setAttr', ls([, 'content', , level2]));
 
-		await globalThis.reactive.wait();
+		await reactive.wait();
 
 		styleDom = $c.sm(scpNode, 'getDOM');
 		styleElem = styleDom.at(0);
@@ -200,7 +192,7 @@ Deno.test("MWICoreScpCSS CSR Compound - Nested Components", async (t) => {
 		$c.sm(level3, 'setAttr', ls([, 'content', , ps('[([m.t t="Deep content"])]')]));
 		$c.sm(level2, 'setAttr', ls([, 'content', , level3]));
 
-		await globalThis.reactive.wait();
+		await reactive.wait();
 
 		styleDom = $c.sm(scpNode, 'getDOM');
 		styleElem = styleDom.at(0);
@@ -210,8 +202,8 @@ Deno.test("MWICoreScpCSS CSR Compound - Nested Components", async (t) => {
 	});
 });
 
-Deno.test("MWICoreScpCSS CSR Compound - Template with Scoped CSS", async (t) => {
-	await t.step("Template with scoped CSS and slotting", async () => {
+describe("MWICoreScpCSS CSR Compound - Template with Scoped CSS", () => {
+	it("Template with scoped CSS and slotting", () => {
 		registry.register('test.csr.compound.tpl', ls([
 			'allowLate', true,
 			'scopedCSS', '.@@ { display: flex; gap: 1rem; } .@@ .item { flex: 1; }',
@@ -231,8 +223,6 @@ Deno.test("MWICoreScpCSS CSR Compound - Template with Scoped CSS", async (t) => 
 
 		$c.sm(doc, 'append', tplNode);
 
-		await globalThis.reactive.wait();
-
 		// Verify CSS
 		const styleDom = $c.sm(scpNode, 'getDOM');
 		const styleElem = styleDom.at(0);
@@ -247,7 +237,7 @@ Deno.test("MWICoreScpCSS CSR Compound - Template with Scoped CSS", async (t) => 
 		assert(tplDom.size > 0, "Template should have DOM elements");
 
 		const containerDiv = tplDom.at(0);
-		assert(containerDiv instanceof globalThis.window.HTMLDivElement, "Should be div element");
+		assertEquals(containerDiv.tagName, 'DIV', "Should be div element");
 
 		// Verify component ID class is applied
 		const classes = containerDiv.className.split(' ');
@@ -255,7 +245,7 @@ Deno.test("MWICoreScpCSS CSR Compound - Template with Scoped CSS", async (t) => 
 		assert(hasComponentId, "Container should have component ID class");
 	});
 
-	await t.step("Template with conditional slotting", async () => {
+	it("Template with conditional slotting", async () => {
 		registry.register('test.csr.compound.conditional', ls([
 			'allowLate', true,
 			'scopedCSS', '.@@ { border: 1px dashed gray; }',
@@ -269,8 +259,6 @@ Deno.test("MWICoreScpCSS CSR Compound - Template with Scoped CSS", async (t) => 
 		const tplNode = doc.createNode('test.csr.compound.conditional');
 		$c.sm(doc, 'append', tplNode);
 
-		await globalThis.reactive.wait();
-
 		// Initially with no slotted content
 		let styleDom = $c.sm(scpNode, 'getDOM');
 		let styleElem = styleDom.at(0);
@@ -279,7 +267,7 @@ Deno.test("MWICoreScpCSS CSR Compound - Template with Scoped CSS", async (t) => 
 		// Add slotted content
 		$c.sm(tplNode, 'setAttr', ls([, 'content', , ps('[([m.t t="Now with content"])]')]));
 
-		await globalThis.reactive.wait();
+		await reactive.wait();
 
 		// CSS should remain the same
 		styleDom = $c.sm(scpNode, 'getDOM');
@@ -288,8 +276,8 @@ Deno.test("MWICoreScpCSS CSR Compound - Template with Scoped CSS", async (t) => 
 	});
 });
 
-Deno.test("MWICoreScpCSS CSR Compound - Component Library Pattern", async (t) => {
-	await t.step("Button, input, and card components", async () => {
+describe("MWICoreScpCSS CSR Compound - Component Library Pattern", () => {
+	it("Button, input, and card components", async () => {
 		// Register button component
 		registry.register('test.csr.compound.button', ls([
 			'allowLate', true,
@@ -329,7 +317,7 @@ Deno.test("MWICoreScpCSS CSR Compound - Component Library Pattern", async (t) =>
 		$c.sm(cardNode, 'setAttr', ls([, 'content', , formFrag]));
 		$c.sm(doc, 'append', cardNode);
 
-		await globalThis.reactive.wait();
+		await reactive.wait();
 
 		// Verify all component CSS is present
 		const styleDom = $c.sm(scpNode, 'getDOM');
@@ -347,7 +335,7 @@ Deno.test("MWICoreScpCSS CSR Compound - Component Library Pattern", async (t) =>
 		assertEquals(uniqueIds.size, 3, "Should have three unique component IDs");
 	});
 
-	await t.step("Selective component loading", async () => {
+	it("Selective component loading", () => {
 		// Register many components
 		for (let i = 0; i < 10; i++) {
 			registry.register(`test.csr.compound.comp${i}`, ls([
@@ -366,8 +354,6 @@ Deno.test("MWICoreScpCSS CSR Compound - Component Library Pattern", async (t) =>
 		doc.createNode('test.csr.compound.comp4');
 		doc.createNode('test.csr.compound.comp7');
 
-		await globalThis.reactive.wait();
-
 		const styleDom = $c.sm(scpNode, 'getDOM');
 		const styleElem = styleDom.at(0);
 
@@ -380,8 +366,8 @@ Deno.test("MWICoreScpCSS CSR Compound - Component Library Pattern", async (t) =>
 	});
 });
 
-Deno.test("MWICoreScpCSS CSR Compound - CSS Deduplication", async (t) => {
-	await t.step("Multiple instances of same component type", async () => {
+describe("MWICoreScpCSS CSR Compound - CSS Deduplication", () => {
+	it("Multiple instances of same component type", () => {
 		registry.register('test.csr.compound.dedup', ls([
 			'allowLate', true,
 			'scopedCSS', '.@@ { background: lightblue; padding: 0.5rem; }',
@@ -399,8 +385,6 @@ Deno.test("MWICoreScpCSS CSR Compound - CSS Deduplication", async (t) => {
 			$c.sm(doc, 'append', instance);
 		}
 
-		await globalThis.reactive.wait();
-
 		const styleDom = $c.sm(scpNode, 'getDOM');
 		const styleElem = styleDom.at(0);
 
@@ -409,7 +393,7 @@ Deno.test("MWICoreScpCSS CSR Compound - CSS Deduplication", async (t) => {
 		assertEquals(matches?.length, 1, "CSS should appear only once despite 5 instances");
 	});
 
-	await t.step("Complex structure with component reuse", async () => {
+	it("Complex structure with component reuse", () => {
 		registry.register('test.csr.compound.reuse', ls([
 			'allowLate', true,
 			'scopedCSS', '.@@ { margin: 0.25rem; }',
@@ -432,8 +416,6 @@ Deno.test("MWICoreScpCSS CSR Compound - CSS Deduplication", async (t) => {
 
 		$c.sm(doc, 'append', parent);
 
-		await globalThis.reactive.wait();
-
 		const styleDom = $c.sm(scpNode, 'getDOM');
 		const styleElem = styleDom.at(0);
 
@@ -443,8 +425,8 @@ Deno.test("MWICoreScpCSS CSR Compound - CSS Deduplication", async (t) => {
 	});
 });
 
-Deno.test("MWICoreScpCSS CSR Compound - Multiple m.scpcss Nodes", async (t) => {
-	await t.step("Multiple m.scpcss nodes in different locations", async () => {
+describe("MWICoreScpCSS CSR Compound - Multiple m.scpcss Nodes", () => {
+	it("Multiple m.scpcss nodes in different locations", () => {
 		registry.register('test.csr.compound.multiscpcss', ls([
 			'allowLate', true,
 			'if', 'MWIHTML',
@@ -464,8 +446,6 @@ Deno.test("MWICoreScpCSS CSR Compound - Multiple m.scpcss Nodes", async (t) => {
 		const scpNode2 = doc.createNode('m.scpcss');
 		$c.sm(doc, 'append', scpNode2);
 
-		await globalThis.reactive.wait();
-
 		// Both should have style elements with same CSS
 		const dom1 = $c.sm(scpNode1, 'getDOM');
 		const dom2 = $c.sm(scpNode2, 'getDOM');
@@ -481,19 +461,17 @@ Deno.test("MWICoreScpCSS CSR Compound - Multiple m.scpcss Nodes", async (t) => {
 	});
 });
 
-Deno.test("MWICoreScpCSS CSR Compound - Edge Cases", async (t) => {
-	await t.step("Empty document with m.scpcss", async () => {
+describe("MWICoreScpCSS CSR Compound - Edge Cases", () => {
+	it("Empty document with m.scpcss", () => {
 		const doc = getInstance('MWIDocument');
 		const scpNode = doc.createNode('m.scpcss');
 		$c.sm(doc, 'append', scpNode);
-
-		await globalThis.reactive.wait();
 
 		const styleDom = $c.sm(scpNode, 'getDOM');
 		assertEquals(styleDom.size, 0, "Should have no style element for empty document");
 	});
 
-	await t.step("Component with CSS escaping in compound context", async () => {
+	it("Component with CSS escaping in compound context", () => {
 		registry.register('test.csr.compound.escape', ls([
 			'allowLate', true,
 			'scopedCSS', '.@@ { content: "</style>"; }',
@@ -508,8 +486,6 @@ Deno.test("MWICoreScpCSS CSR Compound - Edge Cases", async (t) => {
 		$c.sm(compNode, 'setAttr', ls([, 'content', , ps('[([m.t t="Test"])]')]));
 		$c.sm(doc, 'append', compNode);
 
-		await globalThis.reactive.wait();
-
 		const styleDom = $c.sm(scpNode, 'getDOM');
 		const styleElem = styleDom.at(0);
 
@@ -518,7 +494,7 @@ Deno.test("MWICoreScpCSS CSR Compound - Edge Cases", async (t) => {
 		assert(styleElem.textContent.includes('content:'), "Should include CSS content property");
 	});
 
-	await t.step("Rapid component additions and removals", async () => {
+	it("Rapid component additions and removals", () => {
 		registry.register('test.csr.compound.rapid', ls([
 			'allowLate', true,
 			'if', 'MWIHTML',
@@ -536,8 +512,6 @@ Deno.test("MWICoreScpCSS CSR Compound - Edge Cases", async (t) => {
 			nodes.push(node);
 			$c.sm(doc, 'append', node);
 		}
-
-		await globalThis.reactive.wait();
 
 		const styleDom = $c.sm(scpNode, 'getDOM');
 		const styleElem = styleDom.at(0);

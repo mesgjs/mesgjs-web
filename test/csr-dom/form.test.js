@@ -1,8 +1,9 @@
+import { describe, it } from '@compat/test';
 import {
 	assertEquals,
 	assert,
 	assertExists,
-} from "https://deno.land/std@0.152.0/testing/asserts.ts";
+} from '@std/assert';
 
 import { setupRuntime, simulateBrowser } from '../harness.esm.js';
 
@@ -21,12 +22,13 @@ await setupRuntime({
 });
 
 const { fwait, getInstance } = globalThis.$c;
+const { reactive } = globalThis;
 await fwait(REG_READY_FT, 'mwi.comp.MWIForm');
 
 const doc = getInstance('MWIDocument');
 
-Deno.test("MWI Form Components - CSR-DOM Tests", async (t) => {
-	await t.step("m.button - button vs link DOM", () => {
+describe("MWI Form Components - CSR-DOM Tests", () => {
+	it("m.button - button vs link DOM", () => {
 		// Created without href -> renders as <button>
 		const btnNode = doc.createNode('m.button');
 		btnNode.setAttr('type', 'submit');
@@ -47,7 +49,7 @@ Deno.test("MWI Form Components - CSR-DOM Tests", async (t) => {
 		assert(linkDOM.classList.contains('a--button'));
 	});
 
-	await t.step("m.button - disabled link DOM", async () => {
+	it("m.button - disabled link DOM", async () => {
 		const linkNode = doc.createNode('m.button');
 		linkNode.setAttr('href', '/home');
 		linkNode.setAttr('disabled', true);
@@ -58,12 +60,12 @@ Deno.test("MWI Form Components - CSR-DOM Tests", async (t) => {
 
 		// Enable <a> mode
 		linkNode.delAttr('disabled');
-		await globalThis.reactive.wait();
+		await reactive.wait();
 		assertEquals(linkDOM.hasAttribute('tabindex'), false);
 		assertEquals(linkDOM.hasAttribute('aria-disabled'), false);
 	});
 
-	await t.step("m.input - DOM and data binding", async () => {
+	it("m.input - DOM and data binding", async () => {
 		// Initialize MWIData
 		const mwiData = doc.rxNANOS();
 		globalThis.$gss.set('MWIData', mwiData);
@@ -78,14 +80,14 @@ Deno.test("MWI Form Components - CSR-DOM Tests", async (t) => {
 
 		// Update from MWIData -> UI
 		mwiData.set('user.email', 'updated@example.com');
-		await globalThis.reactive.wait();
+		await reactive.wait();
 		assertEquals(inputDOM.value, 'updated@example.com');
 
 		// Update from UI -> MWIData via event
 		inputDOM.value = 'user@example.com';
 		const event = new window.Event('change', { bubbles: true });
 		inputDOM.dispatchEvent(event);
-		await globalThis.reactive.wait();
+		await reactive.wait();
 		assertEquals(mwiData.at('user.email'), 'user@example.com');
 		assertEquals(inputNode.changeValue, 'user@example.com');
 
@@ -93,7 +95,7 @@ Deno.test("MWI Form Components - CSR-DOM Tests", async (t) => {
 		globalThis.$gss.delete('MWIData');
 	});
 
-	await t.step("m.textarea - DOM and data binding", async () => {
+	it("m.textarea - DOM and data binding", async () => {
 		const mwiData = doc.rxNANOS();
 		globalThis.$gss.set('MWIData', mwiData);
 		mwiData.set('user.bio', 'Hello World');
@@ -109,7 +111,7 @@ Deno.test("MWI Form Components - CSR-DOM Tests", async (t) => {
 		textareaDOM.value = 'Hello updated';
 		const event = new window.Event('input', { bubbles: true });
 		textareaDOM.dispatchEvent(event);
-		await globalThis.reactive.wait();
+		await reactive.wait();
 		assertEquals(mwiData.at('user.bio'), 'Hello updated');
 		assertEquals(textareaNode.inputValue, 'Hello updated');
 
@@ -117,7 +119,7 @@ Deno.test("MWI Form Components - CSR-DOM Tests", async (t) => {
 		globalThis.$gss.delete('MWIData');
 	});
 
-	await t.step("m.check - checkbox and radio DOM", async () => {
+	it("m.check - checkbox and radio DOM", async () => {
 		const mwiData = doc.rxNANOS();
 		globalThis.$gss.set('MWIData', mwiData);
 
@@ -142,7 +144,7 @@ Deno.test("MWI Form Components - CSR-DOM Tests", async (t) => {
 		// Check first checkbox
 		dom1.checked = true;
 		dom1.dispatchEvent(new window.Event('change', { bubbles: true }));
-		await globalThis.reactive.wait();
+		await reactive.wait();
 
 		const roles = mwiData.at('user.roles');
 		assert(roles instanceof NANOS);
@@ -152,13 +154,13 @@ Deno.test("MWI Form Components - CSR-DOM Tests", async (t) => {
 		// Check second checkbox
 		dom2.checked = true;
 		dom2.dispatchEvent(new window.Event('change', { bubbles: true }));
-		await globalThis.reactive.wait();
+		await reactive.wait();
 		assertEquals(roles.keyOf('user') !== undefined, true);
 
 		// Uncheck first checkbox
 		dom1.checked = false;
 		dom1.dispatchEvent(new window.Event('change', { bubbles: true }));
-		await globalThis.reactive.wait();
+		await reactive.wait();
 		assertEquals(roles.keyOf('admin') !== undefined, false);
 		assertEquals(roles.keyOf('user') !== undefined, true);
 
@@ -185,7 +187,7 @@ Deno.test("MWI Form Components - CSR-DOM Tests", async (t) => {
 		// Select female
 		rdom2.checked = true;
 		rdom2.dispatchEvent(new window.Event('change', { bubbles: true }));
-		await globalThis.reactive.wait();
+		await reactive.wait();
 		assertEquals(mwiData.at('user.gender'), 'female');
 		assertEquals(rdom1.checked, false);
 		assertEquals(rdom2.checked, true);
@@ -194,7 +196,7 @@ Deno.test("MWI Form Components - CSR-DOM Tests", async (t) => {
 		globalThis.$gss.delete('MWIData');
 	});
 
-	await t.step("m.select - single and multiple select DOM", async () => {
+	it("m.select - single and multiple select DOM", async () => {
 		const mwiData = doc.rxNANOS();
 		globalThis.$gss.set('MWIData', mwiData);
 		mwiData.set('user.country', 'US');
@@ -219,7 +221,7 @@ Deno.test("MWI Form Components - CSR-DOM Tests", async (t) => {
 		// Change selection from UI
 		selectDOM.value = 'CA';
 		selectDOM.dispatchEvent(new window.Event('change', { bubbles: true }));
-		await globalThis.reactive.wait();
+		await reactive.wait();
 		assertEquals(mwiData.at('user.country'), 'CA');
 
 		// Clean up

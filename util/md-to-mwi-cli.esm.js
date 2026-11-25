@@ -11,27 +11,30 @@
  */
 
 import { markdownToMWISpec, parseFrontmatter } from './md-to-mwi-lib.esm.js';
+import { args as cliArgs } from '@compat/cli';
+import { exit } from '@compat/runtime';
+import { readTextFileSync } from '@compat/file';
 
 /**
  * Main CLI function
  */
-function main() {
+export function main(args = cliArgs()) {
 	// Check for required argument
-	if (Deno.args.length === 0) {
+	if (args.length === 0) {
 		console.error('Error: No input file specified');
 		console.error('Usage: deno run --allow-read util/md-to-mwi-cli.esm.js <markdown-file>');
-		Deno.exit(1);
+		exit(1);
 	}
 
-	const inputFile = Deno.args[0];
+	const inputFile = args[0];
 
 	// Read the markdown file
 	let markdownContent;
 	try {
-		markdownContent = Deno.readTextFileSync(inputFile);
+		markdownContent = readTextFileSync(inputFile);
 	} catch (error) {
 		console.error(`Error reading file '${inputFile}':`, error.message);
-		Deno.exit(1);
+		exit(1);
 	}
 
 	// Parse frontmatter if present
@@ -43,7 +46,7 @@ function main() {
 		mwiSpec = markdownToMWISpec(content);
 	} catch (error) {
 		console.error('Error converting markdown to MWI spec:', error.message);
-		Deno.exit(1);
+		exit(1);
 	}
 
 	// Output in compact SLID format
@@ -52,7 +55,7 @@ function main() {
 		console.log(slidOutput);
 	} catch (error) {
 		console.error('Error generating SLID output:', error.message);
-		Deno.exit(1);
+		exit(1);
 	}
 
 	// If frontmatter was present, output it as a comment to stderr
